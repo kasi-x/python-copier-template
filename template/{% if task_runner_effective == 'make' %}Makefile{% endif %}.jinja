@@ -1,0 +1,14 @@
+{% import "_tasks.jinja" as _t with context %}
+.PHONY: default {% for task in _t.tasks %}{{ task.name }} {% endfor %}
+
+default:
+	@echo "Available tasks:"
+	@awk -F: '/^[a-zA-Z_-]+:/ {print "  " $$1}' Makefile | sort -u
+{% for task in _t.tasks %}
+
+{{ task.name }}:{% if task.deps is defined %} {{ task.deps | join(" ") }}{% endif %}
+	@echo "==> {{ task.desc }}"
+{%- if task.cmd is defined %}
+	{{ task.cmd | join('\n\t') }}
+{% endif -%}
+{% endfor -%}

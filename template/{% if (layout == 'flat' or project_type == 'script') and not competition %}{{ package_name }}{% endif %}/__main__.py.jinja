@@ -1,0 +1,34 @@
+"""Interface for ``python -m {{package_name}}``."""
+
+from argparse import ArgumentParser
+from collections.abc import Sequence
+
+from . import __version__
+from .logging_setup import logger
+{% if include_sentry %}
+import os
+
+import sentry_sdk
+{% endif %}
+__all__ = ["main"]
+
+
+def main(args: Sequence[str] | None = None) -> None:
+    """Argument parser for the CLI."""
+    {% if include_sentry %}sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN"),
+        traces_sample_rate=1.0,
+    )
+    {% endif %}parser = ArgumentParser()
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version=__version__,
+    )
+    parsed = parser.parse_args(args)
+    logger.info("{{ package_name }}_invoked", args=parsed)
+
+
+if __name__ == "__main__":
+    main()

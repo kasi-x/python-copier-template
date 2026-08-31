@@ -27,10 +27,10 @@ The developer container creates and activates a venv (stored in `/cache/venv-for
 Now you have a development environment you can run the tests in a new terminal:
 
 ```
-tox -p
+task check
 ```
 
-This will run in parallel the following checks:
+This will run the following checks (as parallel task dependencies):
 
 - [](./build-docs)
 - [](./run-tests)

@@ -1,0 +1,70 @@
+# GitLab CI for {{ repo_name }}
+# Runs lint, type-checking, tests and docs on every push / MR.
+#
+# Assumes the uv package manager (uv.lock). The chosen task runner's binary
+# is installed on the fly when it is not already in the image.
+
+stages:
+  - lint
+  - test
+  - docs
+
+image: python:3.12
+{% if task_runner_effective == 'task' %}
+# https://taskfile.dev/installation/
+.before_tasks:
+  before_script:
+    - pip install uv
+    - uv sync --locked
+    - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+{%- elif task_runner_effective == 'just' %}
+# https://just.systems/man/en/pre-built-binaries.html
+.before_just:
+  before_script:
+    - pip install uv
+    - uv sync --locked
+    - curl --proto "=https" --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+{%- elif task_runner_effective == 'make' %}
+.before_make:
+  before_script:
+    - pip install uv
+    - uv sync --locked
+{%- else %}
+# poe lives in the dev dependency group, no extra binary needed.
+.before_poe:
+  before_script:
+    - pip install uv
+    - uv sync --locked
+{%- endif %}
+{% set type_check = " type-check" if strictness in ['recommended', 'full'] else "" %}
+lint:
+  stage: lint
+  extends: .before_{{ task_runner_effective }}
+  script:
+{%- if task_runner_effective == 'poe' %}
+    - poe lint && poe{{ type_check }}
+{%- else %}
+    - {{ task_runner_effective }} lint{{ type_check }}
+{%- endif %}
+
+test:
+  stage: test
+  extends: .before_{{ task_runner_effective }}
+  script:
+{%- if task_runner_effective == 'poe' %}
+    - poe test
+{%- else %}
+    - {{ task_runner_effective }} test
+{%- endif %}
+
+{% if docs %}
+docs:
+  stage: docs
+  extends: .before_{{ task_runner_effective }}
+  script:
+{%- if task_runner_effective == 'poe' %}
+    - poe docs
+{%- else %}
+    - {{ task_runner_effective }} docs
+{%- endif %}
+{% endif %}

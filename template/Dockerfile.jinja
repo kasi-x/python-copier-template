@@ -1,12 +1,12 @@
 # The devcontainer should use the developer target and run as root with podman
 # or docker with user namespaces.
-FROM ghcr.io/diamondlightsource/ubuntu-devcontainer:resolute AS developer
+FROM ghcr.io/kasi-x/ubuntu-devcontainer:resolute AS developer
 
 # Add any system dependencies for the developer/build environment here
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
     graphviz \
     && apt-get dist-clean{% if docker %}
-
+{% if package_manager == "uv" %}
 # The build stage installs the context into the venv
 FROM developer AS build
 
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # The runtime stage copies the built venv into a runtime container
 FROM ubuntu:resolute AS runtime
 
-# Add apt-get system dependecies for runtime here if needed
+# Add apt-get system dependencies for runtime here if needed
 # RUN apt-get update -y && apt-get install -y --no-install-recommends \
 #     some-library \
 #     && apt-get dist-clean
@@ -37,6 +37,32 @@ COPY --from=build /python /python
 # Copy the environment, but not the source code
 COPY --from=build /app/.venv /app/.venv
 ENV PATH=/app/.venv/bin:$PATH
+{% else %}
+# The build stage installs the context into the pixi environment
+FROM developer AS build
+
+# Change the working directory to the `app` directory
+# and copy in the project
+WORKDIR /app
+COPY . /app
+RUN chmod o+wrX .
+
+# Install the project without its dev dependencies, using the lockfile
+RUN --mount=type=cache,target=/root/.cache/pixi \
+    pixi install --locked
+
+# The runtime stage copies the built environment into a runtime container
+FROM ubuntu:resolute AS runtime
+
+# Add apt-get system dependencies for runtime here if needed
+# RUN apt-get update -y && apt-get install -y --no-install-recommends \
+#     some-library \
+#     && apt-get dist-clean
+
+# Copy the environment, but not the source code
+COPY --from=build /app/.pixi /app/.pixi
+ENV PATH=/app/.pixi/envs/default/bin:$PATH
+{% endif %}
 
 # change this entrypoint if it is not the same as the repo
 ENTRYPOINT ["{{ repo_name }}"]

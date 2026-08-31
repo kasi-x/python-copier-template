@@ -1,0 +1,24 @@
+# Configuration for zizmor (GitHub Actions security analysis), run via pre-commit.
+# See https://woodruffw.github.io/zizmor for the full reference.
+
+rules:
+  # Actions are referenced by tag (e.g. @v7) and pinned via renovate, which
+  # also bumps the exact commit. zizmor's SHA pinning audit is therefore
+  # disabled for this template.
+  unpinned-uses:
+    disable: true
+  # The generated workflows use `${{ }}` in `run:` steps only for safe
+  # variable expansion (e.g. matrix values), not untrusted user input.
+  template-injection:
+    disable: true
+  # Release/publish workflows explicitly need `contents: write` and
+  # `id-token: write`; the per-job `permissions` blocks are deliberate.
+  excessive-permissions:
+    disable: true
+  # `actions/checkout` is the standard, pinned upstream action.
+  superfluous-actions:
+    disable: true
+  # `_example.yml` needs to push to the example repo, so its checkout keeps
+  # credentials; the template's generated projects don't ship this workflow.
+  artipacked:
+    disable: true

@@ -1,0 +1,91 @@
+name: CI
+{% raw %}
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  pull_request:
+{% endraw %}
+jobs:
+
+  lint:
+    uses: ./.github/workflows/_tasks.yml
+    with:
+      task_runner: {{ task_runner_effective }}
+      task: lint{{ ",type-check" if strictness in ['recommended', 'full'] else "" }}
+{% raw %}
+  test:
+    strategy:
+      matrix:
+        runs-on: ["ubuntu-latest"] # can add windows-latest, macos-latest
+{% endraw %}
+        python-version: {{ '["3.11", "3.12", "3.13", "3.14"]' if package_manager == "uv" else '["3.11"]' }}
+{% raw %}
+      fail-fast: false
+    uses: ./.github/workflows/_test.yml
+    with:
+      runs-on: ${{ matrix.runs-on }}
+      python-version: ${{ matrix.python-version }}
+{% endraw %}      task_runner: {{ task_runner_effective }}
+{% if docker %}{% raw %}
+  container:
+    needs: test
+    if: always()
+    uses: ./.github/workflows/_container.yml
+    with:
+      publish: ${{ needs.test.result == 'success' }}
+    permissions:
+      contents: read
+      packages: write
+{% endraw %}{% endif %}{% if docs %}
+  docs:
+    uses: ./.github/workflows/_docs.yml
+    with:
+      task_runner: {{ task_runner_effective }}
+    permissions:
+      contents: write
+{% endif %}
+  dist:
+    uses: ./.github/workflows/_dist.yml
+  {% if pypi %}
+  pypi:
+    needs: [dist, test]
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/_pypi.yml
+    permissions:
+      id-token: write
+  {% endif %}
+  release:
+    needs: [dist, test{% if docs %}, docs{% endif %}]
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/_release.yml
+    permissions:
+      contents: write
+  required-checks-passed:
+    name: all required checks passed
+    needs: [lint, test{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}, dist]
+{% raw %}
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all required jobs passed
+        run: |
+          failing=$(echo '${{ toJSON(needs) }}' | jq -r '
+            to_entries[] |
+            select(.value.result != "success" and .value.result != "skipped") |
+            "\(.key): \(.value.result)"
+          ')
+          if [ -n "$failing" ]; then
+            echo "$failing"
+            exit 1
+          fi
+{% endraw -%}

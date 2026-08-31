@@ -3,10 +3,12 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        exclude: ^uv.lock
+        exclude: ^(uv|pixi)\.lock
       - id: check-yaml
       - id: check-merge-conflict
       - id: end-of-file-fixer
+        # uv/pixi lockfiles are machine-generated and may not end in a newline
+        exclude: ^(uv|pixi)\.lock$
 
   - repo: local
     hooks:
@@ -24,14 +26,37 @@ repos:
         types: [python]
         require_serial: true
 
-      - id: uv-sync
-        name: update uv.lock and venv
+      - id: lock-sync
+        name: sync lockfile and environment
         pass_filenames: false
         language: system
-        entry: uv sync
-        files: ^(uv\.lock|pyproject\.toml)$
+        entry: bash -c 'if [ -f pixi.lock ]; then pixi install; else uv sync; fi'
+        files: ^(uv\.lock|pixi\.lock|pyproject\.toml)$
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
     hooks:
       - id: gitleaks
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout
+        name: nbstripout
+        description: "nbstripout: strip output from Jupyter and IPython notebooks"
+        entry: nbstripout
+        language: python
+        types: [jupyter]
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+        language: golang
+        additional_dependencies:
+          - "github.com/wasilibs/go-shellcheck/cmd/shellcheck@v0.11.1"
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.29.0
+    hooks:
+      - id: zizmor

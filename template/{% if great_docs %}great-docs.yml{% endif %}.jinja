@@ -1,0 +1,20 @@
+{% if great_docs %}# {{ repo_name }} configuration
+
+This file configures [Great Docs](https://github.com/posit-dev/great-docs),
+a Quarto-based documentation tool for Python packages.
+
+```yaml
+# Theming
+navbar_style: sky
+content_style: lilac
+dark_mode_toggle: true
+accent_color: "#3b82f6"
+
+# Branding
+display_name: {{ repo_name }}
+repo: {{ repo_url }}
+
+# GitHub integration
+github_style: widget
+```
+{% endif %}

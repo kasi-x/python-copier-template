@@ -11,7 +11,7 @@ $ pytest
 When you have some fully working tests then you can run it with coverage:
 
 ```
-$ tox -e tests
+$ task test
 ```
 
 It will also report coverage to the commandline and to `cov.xml`.

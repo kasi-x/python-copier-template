@@ -1,0 +1,7 @@
+{% if package_manager == "uv" %}version = 1
+revision = 3
+requires-python = ">=3.11"
+{% else %}version: 6
+environments: {}
+packages: []
+{% endif %}

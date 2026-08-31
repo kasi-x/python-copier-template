@@ -1,0 +1,35 @@
+version: '3'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmd: task --list
+
+  lint:
+    desc: Run pre-commit on all files
+    cmd: uv run --locked pre-commit run --all-files --show-diff-on-failure
+
+  type-check:
+    desc: Run basedpyright + pyrefly + 静的解析
+    cmds:
+      - uv run --locked basedpyright
+      - uv run --locked pyrefly check
+      - uv run --locked vulture
+      - uv run --locked deptry .
+      - uv run --locked typos .
+
+  test:
+    desc: Run tests
+    cmd: uv run --locked pytest
+
+  docs:
+    desc: Run docs build with clean environment
+    cmd: uv run --locked sphinx-build --fresh-env --show-traceback --fail-on-warning --keep-going docs build/html
+
+  docs-serve:
+    desc: Run docs with autobuild on change
+    cmd: uv run --locked sphinx-autobuild --show-traceback --watch README.md docs build/html {{ .CLI_ARGS }}
+
+  check:
+    desc: Run all quality checks
+    deps: [lint, type-check, test, docs]

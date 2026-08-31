@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-The previous attempt, [python3-pip-skeleton](https://github.com/DiamondLightSource/python3-pip-skeleton) was a repo that can be forked and updates merged into projects tracking it. This was initially encouraging, but led to downstream confusion on who had actually contributed to the repository, as well as messy merges when text that contained the project name (like documentation) was changed upstream.
+The previous attempt, [python3-pip-skeleton](https://github.com/kasi-x/python3-pip-skeleton) was a repo that can be forked and updates merged into projects tracking it. This was initially encouraging, but led to downstream confusion on who had actually contributed to the repository, as well as messy merges when text that contained the project name (like documentation) was changed upstream.
 
 ## Decision
 

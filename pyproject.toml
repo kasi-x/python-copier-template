@@ -9,16 +9,29 @@ requires-python = ">=3.11"
 
 [dependency-groups]
 dev = [
+    "basedpyright>=1.39.9,<1.40",
     "copier",
+    "copier-template-extensions>=0.3.3,<0.4",
+    "coverage>=7.15.4,<8",
+    "deptry>=0.25.1,<0.26",
+    "hypothesis>=6.130.0,<7.0",
     "myst-parser",
-    "pre-commit",
+    "pip-audit>=2.9.0,<3.0",
+    "pre-commit>=4.6.1,<5",
+    "pyproject-fmt>=2.27.0,<3.0",
     "pydata-sphinx-theme>=0.12",
-    "pytest",
-    "ruff",
+    "pyrefly>=1.2.0,<1.3",
+    "pytest>=9.1.1,<9.2",
+    "pytest-cov>=7.1.0,<7.2",
+    "pytest-mock>=3.14.0,<4.0",
+    "pytest-timeout>=2.4.0,<2.5",
+    "pytest-xdist>=3.8.0,<3.9",
+    "ruff>=0.16.2,<0.17",
     "sphinx-autobuild",
     "sphinx-copybutton",
     "sphinx-design",
-    "tox-uv",
+    "typos>=1.49.0,<1.50",
+    "vulture>=2.14.0,<3.0",
 ]
 
 [tool.setuptools_scm]
@@ -31,72 +44,231 @@ addopts = """
 # Doctest python code in docs, python code in src docstrings, test functions in tests
 testpaths = "tests"
 
-[tool.tox]
-skipsdist = true
-# envs to runs automatically with tox -p
-env_list = ["pre-commit", "tests", "docs"]
-
-[tool.tox.env_run_base]
-# Pass all environment variables to the test environments
-passenv = ["*"]
-
-[tool.tox.env.pre-commit]
-description = "Run pre-commit on all files"
-commands = [
-    [
-        "pre-commit",
-        "run",
-        "--all-files",
-        "--show-diff-on-failure",
-        { replace = "posargs", default = [
-        ], extend = true },
-    ],
+[tool.basedpyright]
+pythonVersion = "3.11"
+include = ["tests"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/typestubs",
+    "**/stubs",
+    "build",
+    "dist",
+    ".venv",
+    "template",
 ]
+typeCheckingMode = "recommended"
+reportMissingTypeStubs = false
+reportAny = false # WHYNOT: too punishing for a template repo
+reportExplicitAny = false
+reportUnknownParameterType = false
+reportUnknownArgumentType = false
+reportUnknownLambdaType = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportMissingTypeArgument = false
+reportUnusedCallResult = false
+reportUnannotatedClassAttribute = false
+reportIgnoreCommentWithoutRule = false
+reportCallInDefaultInitializer = false
+reportImplicitRelativeImport = false # tests はパッケージ化せず平置きのため、test_example からの import は暗黙相対でOK
+reportImplicitStringConcatenation = false # コメントを挟んだ意図的な文字列連結は既存コードに多用
 
-[tool.tox.env.tests]
-description = "Run tests"
-commands = [["pytest", { replace = "posargs", default = [], extend = true }]]
-
-[tool.tox.env.docs]
-description = "Run docs build with clean environment"
-commands = [
-    [
-        "sphinx-build",
-        "--fresh-env",
-        "--show-traceback",
-        "--fail-on-warning",
-        "--keep-going",
-        "docs",
-        "build/html",
-        { replace = "posargs", default = [
-        ], extend = true },
-    ],
-]
-
-[tool.tox.env.docs-autobuild]
-description = "Run docs with autobuild on change"
-commands = [
-    [
-        "sphinx-autobuild",
-        "--show-traceback",
-        "--watch",
-        "README.md",
-        "docs",
-        "build/html",
-        { replace = "posargs", default = [
-        ], extend = true },
-    ],
-]
+[tool.pyrefly]
+python-version = "3.11"
+search-path = ["tests"]
+project-includes = ["tests"]
+project-excludes = [".venv", "template"]
+preset = "default"
 
 [tool.ruff]
-src = ["src", "tests"]
-line-length = 88
-lint.select = [
-    "B",  # flake8-bugbear - https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
-    "C4", # flake8-comprehensions - https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
-    "E",  # pycodestyle errors - https://docs.astral.sh/ruff/rules/#error-e
-    "F",  # pyflakes rules - https://docs.astral.sh/ruff/rules/#pyflakes-f
-    "W",  # pycodestyle warnings - https://docs.astral.sh/ruff/rules/#warning-w
-    "I",  # isort - https://docs.astral.sh/ruff/rules/#isort-i
-    "UP", # pyupgrade - https://docs.astral.sh/ruff/rules/#pyupgrade-up
+line-length = 120
+fix = true
+unsafe-fixes = false
+src = ["tests"]
+# template/ は生成コード（_figlet.py 等 vendored 含む）。生成先プロジェクト側でチェックされる。
+# .github/pages は共有の CI ヘルパー。docs/conf.py は Sphinx 生成支援コード。
+extend-exclude = ["template", ".github/pages", "docs"]
+
+[tool.ruff.lint]
+preview = true
+explicit-preview-rules = true
+extend-ignore = [
+    "D10",     # undocumented-code  WHYNOT: not a concern in this repo.
+    "DOC",     # pydoclint  WHYNOT: form over substance.
+    "PLR2004", # magic-value-comparison  WHYNOT: a constant would just restate the literal.
+    "PLR6301", # no-self-use  WHYNOT: self-free methods still override.
+    "T20",     # flake8-print  WHYNOT: print is the fastest debugger.
+    "TD",      # flake8-todos  WHYNOT: task-tags below replace it.
+    "FIX",     # flake8-fixme  WHYNOT: same as TD.
+    "TRY002",  # raise-vanilla-class  WHYNOT: exception taxonomy is ceremony until something catches it.
+    "TRY003",  # raise-vanilla-args  WHYNOT: the message lives at the raise site.
+    "COM812",  # missing-trailing-comma  WHYNOT: fights the formatter.
+    "TC",      # flake8-type-checking  WHYNOT: import cost isn't a concern.
+    "ISC001",  # single-line-implicit-str-concat  WHYNOT: same as COM812.
+    "CPY001",  # missing-copyright-notice  WHYNOT: not a library.
+    "SIM401",  # if-else-block-instead-of-dict-get  WHYNOT: unsafe-fix が dict 前提で .get() に変換し、
+    "S101",    # assert-used  WHYNOT: 型絞り込み assert。python -O で消えても実害なし。
+    "PT018",   # pytest-composite-assertion  WHYNOT: 型絞り込みの隣接 assert を分割したくない。
+    "RUF105",  # noqa-comments  WHYNOT: noqa is shared with pyright.
+    "RUF106",  # rule-codes-in-suppression  WHYNOT: same as RUF105.
+    "RUF201",  # rule-codes-in-selectors  WHYNOT: config should be terse.
+    "PLW1514", # unspecified-encoding  WHYNOT: UTF-8 is the only sane default.
+    "PT029",   # pytest-warns-without-warning  WHYNOT: any warning will do.
+    "TID254",  # lazy-import-mismatch  WHYNOT: startup perf is YAGNI.
+    "TID255",  # lazy-import-immediately-resolved  WHYNOT: same as TID254.
+    "ANN001",  # missing-type-function-argument  WHYNOT: 引数は pyright が推論。
+    "ANN002",  # missing-type-args  WHYNOT: same as ANN001.
+    "ANN003",  # missing-type-kwargs  WHYNOT: same as ANN001.
+    "ANN202",  # missing-return-type-private-function  WHYNOT: same as ANN001.
+    "ANN204",  # missing-return-type-special-method  WHYNOT: same as ANN001.
+    "ANN205",  # missing-return-type-static-method  WHYNOT: same as ANN001.
+    "ANN206",  # missing-return-type-class-method  WHYNOT: same as ANN001.
+    "ANN401",  # any-type  WHYNOT: 外部 API の未型付けオブジェクトを Any で受けるのは正当。
+    "FA",      # flake8-future-annotations  WHYNOT: 未来 import の強制は不要。
 ]
+logger-objects = []
+select = ["ALL"]
+task-tags = [
+    "WIP",
+    "TBD",
+    "HOLD",
+    "PLAN",
+    "MVP",
+    "WANT",
+    "PILOT",
+    "TODO",
+    "BUG",
+    "FIXME",
+    "HACK",
+    "MISSING",
+    "DOCME",
+    "UPGRADE",
+    "MEMO",
+    "NOTE",
+    "DEMO",
+    "CASE",
+    "MUST",
+    "SHOULD",
+    "MAY",
+    "OPTIONAL",
+    "FOLLOW",
+    "WHYNOT",
+    "RISK",
+    "WARN",
+    "IDEA",
+    "IMO",
+    "YAGNI",
+    "ADR",
+    "CONTEXT",
+    "BLOCKER",
+    "REVIEW",
+    "DISCUSS",
+    "REQUEST",
+    "ISSUE",
+    "QUESTION",
+    "BLUE",
+    "RED",
+    "GREEN",
+    "REFACTOR",
+    "UNCOVERED",
+    "FLAKY",
+    "SLOW",
+    "OVERTEST",
+    "BENCHMARK",
+    "SCALE",
+    "BOTTLENECK",
+    "SECURE",
+    "VULNERABILITY",
+    "PRIVACY",
+    "ILLEGAL",
+    "ACCESSIBILITY",
+    "LOCALIZE",
+    "DEPRECATE",
+    "DEBT",
+    "UNKNOWN",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# CONTEXT: E402/INP001 are self-evident for __init__.py; skipping per-code notes.
+"__init__.py" = ["E402", "INP001", "N999"]
+"tests/*" = [
+    "ARG",    # flake8-unused-arguments  CONTEXT: fixtures inject args tests don't always use.
+    "FBT",    # flake8-boolean-trap  CONTEXT: parametrize passes bare booleans.
+    "S",      # flake8-bandit  CONTEXT: hardcoded secrets/asserts are expected in tests.
+    "E402",   # module-import-not-at-top  CONTEXT: fixtures often import after setup code.
+    "E501",   # line-too-long  CONTEXT: assertion diffs run long.
+    "INP001", # implicit-namespace-package  CONTEXT: test dirs skip __init__.py by convention.
+    "ANN",    # flake8-annotations  CONTEXT: テストの型注釈は要求しない。
+    "PT011",  # pytest-raises-too-broad  CONTEXT: ValueError 等の広さがテスト意図に合致。
+    "PT013",  # pytest-raises-with-multiple-exceptions  CONTEXT: 複数例外はテストで自然。
+    "PT015",  # pytest-assertion-in-raisable-block  CONTEXT: raises 内の assert は意図的。
+    "B011",   # assert-false  CONTEXT: 到達しないことを明示する assert はテストで正当。
+    "D",      # pydocstyle  CONTEXT: テスト docstring の整形は要求しない。
+    "RUF003", # ambiguous-unicode-character-comment  CONTEXT: 全角引用符コメント。
+    "PLC0415",# import-outside-top-level  CONTEXT: fixtures が setup 後に import する。
+    "N999",   # invalid-module-name  CONTEXT: test_example.py は既存の命名。
+    "PLW1510",# subprocess-run-without-check  CONTEXT: run_pipe は returncode を assert する。
+    "PT006",  # pytest-parametrize-names-wrong-type  CONTEXT: 既存の parametrize 名。
+]
+"tools/*" = [
+    "INP001", # implicit-namespace-package  CONTEXT: standalone maintenance scripts, not a package.
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-decorators = ["typing.overload"]
+
+[tool.ruff.lint.pycodestyle]
+ignore-overlong-task-comments = true
+max-doc-length = 150
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
+"dask.dataframe" = "dd"
+"xarray" = "xr"
+"scipy" = "sp"
+"skopt" = "sko"
+"skimage" = "ski"
+"sklearn" = "sk"
+"returns" = "rt"
+"pandera" = "pa"
+
+[tool.ruff.lint.flake8-type-checking]
+exempt-modules = ["typing", "typing_extensions"]
+quote-annotations = true
+
+[tool.ruff.lint.flake8-errmsg]
+max-string-length = 20
+
+[tool.ruff.lint.flake8-annotations]
+ignore-fully-untyped = true
+
+[tool.typos.default]
+extend-ignore-words-re = ['\b[A-Z]{3}\b']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
+
+[tool.typos.files]
+# template/ は生成コード（_figlet.py 等 vendored 含む）。生成先プロジェクト側でチェックされる。
+extend-exclude = ["template", "docs", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS"]
+
+[tool.vulture]
+paths = ["tests"]
+min_confidence = 60
+
+[tool.deptry]
+# 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
+per_rule_ignores = "DEP002=copier|myst-parser|pydata-sphinx-theme|sphinx-autobuild|sphinx-copybutton|sphinx-design|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template"
+# template/ は生成コード。依存は生成先プロジェクト側で検査される。
+# tests/ は pytest の暗黙パッケージ import (test_example) があり依存検査と相性が悪い。
+# docs/conf.py は requests を transitive 依存として利用。
+exclude = ["template", "tests", "docs", ".venv", ".pixi", ".tox", "build", "dist"]
+
+[tool.pyproject_fmt]
+keep-full-version = true
+no-generate-python-version-classifiers = true

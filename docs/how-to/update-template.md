@@ -5,7 +5,7 @@
 To track changes to the upstream template, run
 
 ```
-uvx copier update
+uvx copier update --trust
 ```
 
 This will fetch the latest tagged release of the template, and apply any changes to your working copy. It will prompt for answers again, giving your previous answers as the defaults.
@@ -28,13 +28,13 @@ The following steps are recommended to update your project, especially for infre
     - for local development
         - `uv sync`
 - validate your project against the latest tools
-    - `tox -p`
+    - `task check`
 - fix issues found by the above
 - commit the changes
 - update the template
-    - `uvx copier update`
+    - `uvx copier update --trust`
 - fix any merge conflicts
 - validate that the project still works
-    - `tox -p`
+    - `task check`
 - fix any issues found by the above
 - commit the changes

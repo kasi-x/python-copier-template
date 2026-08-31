@@ -8,5 +8,5 @@ Technical reference material including APIs and release notes.
 
 reference/*
 genindex
-Release Notes <https://github.com/DiamondLightSource/python-copier-template/releases>
+Release Notes <https://github.com/kasi-x/python-copier-template/releases>
 ```

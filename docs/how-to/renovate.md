@@ -11,7 +11,8 @@ The renovate app will:
 - Create weekly PRs to update the lockfile to the latest versions, automerging if tests pass
 - Create PRs for other dependencies whenever they are released, but not automerge
 
-If your repo is hosted in the DiamondLightSource org, then the Renovate GitHub app is already installed so you don't need to do anything.
+If your repo is hosted in an org where the Renovate GitHub app is already
+installed, then you don't need to do anything.
 
 If your repo is in an org where the Renovate GitHub app is not installed, then follow these steps to install it on the org:
 

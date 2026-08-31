@@ -1,0 +1,21 @@
+# Hydra config for utils.modeling.train
+# Usage:
+#   python -m utils.modeling.train                    # defaults
+#   python -m utils.modeling.train params.lr=1e-3     # override a value
+#   python -m utils.modeling.train --multirun params.lr=1e-3,1e-4
+
+defaults:
+  - _self_
+
+# Data paths (relative to src/)
+input_path: input/train.csv
+data_dir: data
+features_dir: features
+models_dir: models
+
+params:
+  lr: 1.0e-3
+  n_estimators: 200
+
+optuna:
+  trials: 20  # number of Optuna trials; 0 to skip tuning

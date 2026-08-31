@@ -14,8 +14,8 @@ from copier import run_copy
 TOP = Path(__file__).absolute().parent.parent
 
 
-def copy_project(project_path: Path, **kwargs):
-    with open(TOP / "example-answers.yml") as f:
+def copy_project(project_path: Path, **kwargs: object):
+    with Path(TOP / "example-answers.yml").open() as f:
         answers = yaml.safe_load(f)
     answers.update(kwargs)
     run_pipe(f"git init {project_path}")
@@ -24,17 +24,19 @@ def copy_project(project_path: Path, **kwargs):
         dst_path=project_path,
         data=answers,
         vcs_ref="HEAD",
+        unsafe=True,
+        defaults=True,
     )
     run_pipe("git add .", cwd=str(project_path))
 
 
-def run_pipe(cmd: str, cwd=None, venv="") -> str:
+def run_pipe(cmd: str, cwd: str | Path | None = None, venv: str | Path = "") -> str:
     sp = subprocess.run(
         shlex.split(cmd),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=cwd,
-        env=dict(os.environ, UV_PROJECT_ENVIRONMENT="", VIRTUAL_ENV=venv),
+        env=dict(os.environ, UV_PROJECT_ENVIRONMENT="", VIRTUAL_ENV=str(venv)),
     )
     output = sp.stdout.decode()
     assert sp.returncode == 0, output
@@ -46,11 +48,15 @@ def make_venv(project_path: Path) -> Callable[[str], str]:
     run = functools.partial(run_pipe, cwd=str(project_path), venv=venv_path)
     run("uv sync")  # Create a lockfile and install packages
 
-    for exe_path in [
-        venv_path / "bin" / "tox",
-        venv_path / "bin" / "python",
-    ]:
-        assert exe_path.exists(), f"UV created a venv but did not install {exe_path}"
+    exe_path = venv_path / "bin" / "python"
+    assert exe_path.exists(), f"UV created a venv but did not install {exe_path}"
+
+    # Commit the freshly created lockfile so pre-commit's `uv sync` hook does
+    # not report a diff.
+    run("git config user.email 'you@example.com'")
+    run("git config user.name 'Your Name'")
+    run("git add -A")
+    run("git commit -qm 'Initial sync'")
 
     return run
 
@@ -61,31 +67,27 @@ def test_template_defaults(tmp_path: Path):
     container_doc = tmp_path / "docs" / "how-to" / "run-container.md"
     pyproject_toml = tmp_path / "pyproject.toml"
     assert container_doc.exists()
-    catalog_info = tmp_path / "catalog-info.yaml"
-    assert catalog_info.exists()
-    assert 'typeCheckingMode = "strict"' in pyproject_toml.read_text()
-    run(".venv/bin/tox -p")
+    # example-answers.yml uses strictness: recommended
+    assert 'typeCheckingMode = "recommended"' in pyproject_toml.read_text()
+    run("uvx --from go-task-bin task check")
     if not run_pipe("git tag --points-at HEAD"):
         # Only run linkcheck if not on a tag, as the CI might not have pushed
-        # the docs for this tag yet, so we will fail
-        run(".venv/bin/tox -e docs -- -b linkcheck")
+        # the docs for this tag yet, so we will fail. `-b linkcheck` is
+        # sphinx-specific; example-answers uses zensical so just build docs.
+        run("uvx --from go-task-bin task docs")
     run("uvx --from build pyproject-build")
     run("uvx twine check --strict dist/*")
 
 
 def test_template_with_extra_code_and_api_docs(tmp_path: Path):
-    copy_project(tmp_path)
+    copy_project(tmp_path, docs_type="sphinx", project_type="library")
     run = make_venv(tmp_path)
     # add some code
     init = tmp_path / "src" / "python_copier_template_example" / "__init__.py"
     init.write_text(
         init.read_text().replace(
-            """
-from ._version import __version__
-
-__all__ = [""",
-            '''
-from python_copier_template_example import extra_pkg
+            'from ._version import __version__\n\n__all__ = ["__version__"]',
+            '''from python_copier_template_example import extra_pkg
 
 from ._version import __version__
 
@@ -94,7 +96,7 @@ class TopCls:
     """A top level class."""
 
 
-__all__ = ["TopCls", "extra_pkg", ''',
+__all__ = ["TopCls", "__version__", "extra_pkg"]''',
         )
     )
     extra_pkg = tmp_path / "src" / "python_copier_template_example" / "extra_pkg"
@@ -110,7 +112,7 @@ class Thing:
     # Add to make sure pre-commit doesn't moan
     run("git add .")
     # Build
-    run(".venv/bin/tox -p")
+    run("uvx --from go-task-bin task check")
     # Check it generates the right output
     api_dir = tmp_path / "build" / "html" / "_api"
     top_html = api_dir / "python_copier_template_example.html"
@@ -128,22 +130,282 @@ class Thing:
     assert "A docstring." in module_html.read_text()
 
 
-def test_template_mypy(tmp_path: Path):
-    copy_project(tmp_path, type_checker="mypy")
+def test_template_pyrefly(tmp_path: Path):
+    copy_project(tmp_path, type_checker="pyrefly")
     run = make_venv(tmp_path)
-    run(".venv/bin/tox -p")
+    run("uvx --from go-task-bin task check")
 
 
 def test_template_no_docs(tmp_path: Path):
     copy_project(tmp_path, docs_type="README")
     run = make_venv(tmp_path)
-    run(".venv/bin/tox -p")
+    run("uvx --from go-task-bin task check")
 
 
-def test_template_in_different_org_has_no_catalog(tmp_path: Path):
-    copy_project(tmp_path, github_org="bluesky")
-    catalog_info = tmp_path / "catalog-info.yaml"
-    assert not catalog_info.exists()
+def test_template_zensical_docs(tmp_path: Path):
+    copy_project(tmp_path, docs_type="zensical")
+    pyproject_toml = tmp_path / "pyproject.toml"
+    assert '"zensical"' in pyproject_toml.read_text()
+    assert (tmp_path / "zensical.toml").exists()
+    run = make_venv(tmp_path)
+    run("uvx --from go-task-bin task check")
+
+
+def test_template_great_docs(tmp_path: Path):
+    copy_project(tmp_path, docs_type="great-docs")
+    assert (tmp_path / "great-docs.yml").exists()
+    assert (tmp_path / "index.qmd").exists()
+
+
+def test_template_kaggle_competition(tmp_path: Path):
+    copy_project(tmp_path, project_type="data_science", competition=True)
+    # Top level has notebooks/ and src/, no standard DS dirs
+    assert (tmp_path / "notebooks").is_dir()
+    assert (tmp_path / "src").is_dir()
+    assert not (tmp_path / "data").exists()
+    assert not (tmp_path / "models").exists()
+    # Kaggle dirs inside src/
+    for d in ["configs", "data", "input", "output", "features", "logs", "models", "notebook", "scripts", "utils"]:
+        assert (tmp_path / "src" / d).is_dir(), f"missing src/{d}"
+    # utils is the installable package
+    assert (tmp_path / "src" / "utils" / "__init__.py").exists()
+    assert (tmp_path / "src" / "utils" / "config.py").exists()
+    assert (tmp_path / "src" / "utils" / "modeling" / "train.py").exists()
+    # GPU artifacts (always included for data_science)
+    assert (tmp_path / "Dockerfile.gpu").exists()
+    # no standard package dir
+    assert not (tmp_path / "src" / "python_copier_template_example").exists()
+    # Taskfile exists
+    assert (tmp_path / "Taskfile.yml").exists()
+    # pyproject references utils and lifelog-style deps
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("typer") for d in pyproject_toml["project"]["dependencies"])
+    assert any(d.startswith("structlog") for d in pyproject_toml["project"]["dependencies"])
+    # ML tools and experiment extras
+    assert any(d.startswith("optuna") for d in pyproject_toml["project"]["dependencies"])
+    assert any(d.startswith("torch") for d in pyproject_toml["project"]["dependencies"])
+    experiment = pyproject_toml["project"]["optional-dependencies"]["experiment"]
+    assert any(d.startswith("marimo") for d in experiment)
+    assert any(d.startswith("matplotlib") for d in experiment)
+    # marimo notebook exists
+    assert (tmp_path / "src" / "notebook" / "explore.py").exists()
+
+
+def test_template_data_science_layout(tmp_path: Path):
+    copy_project(tmp_path, project_type="data_science")
+    # Standard DS layout
+    assert (tmp_path / "notebooks").is_dir()
+    for d in ["external", "interim", "processed", "raw"]:
+        assert (tmp_path / "data" / d).is_dir(), f"missing data/{d}"
+    assert (tmp_path / "models").is_dir()
+    assert (tmp_path / "reports" / "figures").is_dir()
+    for d in ["data", "features", "models", "visualization"]:
+        assert (tmp_path / "src" / d).is_dir(), f"missing src/{d}"
+    # Package is src/<package_name>
+    assert (tmp_path / "src" / "python_copier_template_example" / "__init__.py").exists()
+    # GPU + Quarto always included for data_science
+    assert (tmp_path / "Dockerfile.gpu").exists()
+    assert (tmp_path / "paper" / "paper.qmd").exists()
+    assert (tmp_path / "slides" / "slides.qmd").exists()
+    # experiment extras
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    experiment = pyproject_toml["project"]["optional-dependencies"]["experiment"]
+    assert any(d.startswith("marimo") for d in experiment)
+    # No competition artifacts
+    assert not (tmp_path / "src" / "utils").exists()
+
+
+def test_template_script_type(tmp_path: Path):
+    copy_project(tmp_path, project_type="script")
+    # Minimal: flat package at repo root (no src/), no notebooks
+    assert (tmp_path / "python_copier_template_example" / "__init__.py").exists()
+    assert not (tmp_path / "src").exists()
+    assert not (tmp_path / "notebooks").exists()
+    # No DS extras
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert "optional-dependencies" not in pyproject_toml.get("project", {})
+
+
+def test_template_cloud_provider_aws(tmp_path: Path):
+    copy_project(tmp_path, project_type="web_api", cloud_provider="aws", aws_services="s3")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert any(d.startswith("boto3") for d in deps)
+    assert any(d.startswith("botocore") for d in deps)
+    dev = pyproject_toml["dependency-groups"]["dev"]
+    assert any("boto3-stubs[s3]" in d for d in dev)
+
+
+def test_template_cloud_provider_gcp(tmp_path: Path):
+    copy_project(tmp_path, project_type="web_api", cloud_provider="gcp")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert any(d.startswith("google-cloud-storage") for d in deps)
+
+
+def test_template_cloud_provider_azure(tmp_path: Path):
+    copy_project(tmp_path, project_type="web_api", cloud_provider="azure")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert any(d.startswith("azure-identity") for d in deps)
+
+
+def test_template_include_sentry(tmp_path: Path):
+    copy_project(tmp_path, include_sentry=True)
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("sentry-sdk") for d in pyproject_toml["project"]["dependencies"])
+    main_file = tmp_path / "src" / "python_copier_template_example" / "__main__.py"
+    assert "sentry_sdk.init" in main_file.read_text()
+
+
+def test_template_include_mcp(tmp_path: Path):
+    copy_project(tmp_path, include_mcp=True)
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d == "mcp" for d in pyproject_toml["project"]["dependencies"])
+    assert (tmp_path / "src" / "python_copier_template_example" / "mcp_server.py").exists()
+
+
+def test_template_no_ci(tmp_path: Path):
+    copy_project(tmp_path, ci_provider="none")
+    assert not (tmp_path / ".github" / "workflows").exists()
+    # GitHub-specific files are still generated
+    assert (tmp_path / ".github" / "actionlint.yaml").exists()
+
+
+def test_template_simple_mode(tmp_path: Path):
+    copy_project(tmp_path, detail_level="simple")
+    # Simple mode still generates a working project with defaults
+    assert (tmp_path / "pyproject.toml").exists()
+    # use_gpu_effective defaults to data_science -> Dockerfile.gpu present
+    assert (tmp_path / "Dockerfile.gpu").exists()
+    # simple mode never asks the license question: always MIT
+    assert "MIT License" in (tmp_path / "LICENSE").read_text()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["license"] == "MIT"
+
+
+def test_template_license_choice(tmp_path: Path):
+    copy_project(tmp_path, license="GPL-3.0")
+    assert "GNU GENERAL PUBLIC LICENSE" in (tmp_path / "LICENSE").read_text()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["license"] == "GPL-3.0"
+    assert pyproject_toml["project"]["license-files"] == ["LICENSE"]
+
+
+def test_template_license_proprietary(tmp_path: Path):
+    copy_project(tmp_path, license="Proprietary")
+    assert "All rights reserved" in (tmp_path / "LICENSE").read_text()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    # PEP 639 has no SPDX expression for "no license": omit the field entirely
+    assert "license" not in pyproject_toml["project"]
+
+
+def test_template_changelog(tmp_path: Path):
+    copy_project(tmp_path)
+    assert (tmp_path / "CHANGELOG.md").exists()
+    assert (tmp_path / "cliff.toml").exists()
+
+
+def test_template_gitlab(tmp_path: Path):
+    copy_project(tmp_path, git_platform="gitlab.com", gitlab_group="mygroup")
+    assert (tmp_path / ".gitlab-ci.yml").exists()
+    assert not (tmp_path / ".github").exists()
+
+
+def test_template_poetry(tmp_path: Path):
+    copy_project(tmp_path, package_manager="poetry")
+    assert (tmp_path / "poetry.lock").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert "tool" in pyproject_toml and "poetry" in pyproject_toml["tool"]
+
+
+def test_template_task_runner_just(tmp_path: Path):
+    copy_project(tmp_path, task_runner="just")
+    assert (tmp_path / "justfile").exists()
+    assert not (tmp_path / "Taskfile.yml").exists()
+    assert not (tmp_path / "Makefile").exists()
+    assert "lint:" in (tmp_path / "justfile").read_text()
+
+
+def test_template_task_runner_make(tmp_path: Path):
+    copy_project(tmp_path, task_runner="make")
+    assert (tmp_path / "Makefile").exists()
+    assert not (tmp_path / "Taskfile.yml").exists()
+    assert "lint:" in (tmp_path / "Makefile").read_text()
+
+
+def test_template_task_runner_poe(tmp_path: Path):
+    copy_project(tmp_path, task_runner="poe")
+    assert not (tmp_path / "Taskfile.yml").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert "lint" in pyproject_toml["tool"]["poe"]["tasks"]
+    dev = pyproject_toml["dependency-groups"]["dev"]
+    assert any(d.startswith("poethepoet") for d in dev)
+
+
+def test_template_task_runner_pixi_native(tmp_path: Path):
+    copy_project(tmp_path, package_manager="pixi", task_runner_pixi="pixi")
+    assert not (tmp_path / "Taskfile.yml").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert "lint" in pyproject_toml["tool"]["pixi"]["feature"]["dev"]["tasks"]
+
+
+def test_template_task_runner_pixi_with_task(tmp_path: Path):
+    copy_project(tmp_path, package_manager="pixi", task_runner_pixi="task")
+    assert (tmp_path / "Taskfile.yml").exists()
+    pyproject = (tmp_path / "pyproject.toml").read_text()
+    assert "[tool.pixi.feature.dev.tasks]" not in pyproject
+
+
+def test_template_task_runner_just_works(tmp_path: Path):
+    copy_project(tmp_path, task_runner="just")
+    run = make_venv(tmp_path)
+    run("uvx --from rust-just just lint")
+
+
+def test_template_specialty_mcp_server(tmp_path: Path):
+    copy_project(tmp_path, specialty="mcp_server")
+    assert (tmp_path / "scripts" / "mcp_inspector.sh").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
+
+
+def test_template_specialty_ai_agent(tmp_path: Path):
+    copy_project(tmp_path, specialty="ai_agent")
+    assert (tmp_path / "prompts" / "README.md").exists()
+    assert (tmp_path / "src" / "python_copier_template_example" / "tools" / "__init__.py").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("pydantic-ai") for d in pyproject_toml["project"]["dependencies"])
+
+
+def test_template_specialty_data_polars(tmp_path: Path):
+    copy_project(tmp_path, specialty="data_polars")
+    assert (tmp_path / "queries" / "README.md").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert any(d.startswith("polars") for d in deps)
+    assert any(d.startswith("duckdb") for d in deps)
+
+
+def test_template_specialty_rust_extension(tmp_path: Path):
+    copy_project(tmp_path, specialty="rust_extension")
+    assert (tmp_path / "rust" / "Cargo.toml").exists()
+    assert (tmp_path / "rust" / "src" / "lib.rs").exists()
+
+
+def test_template_specialty_pure_python_web(tmp_path: Path):
+    copy_project(tmp_path, specialty="pure_python_web")
+    assert (tmp_path / "app" / "app.py").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("python-fasthtml") for d in pyproject_toml["project"]["dependencies"])
+
+
+def test_template_github_org_reflected(tmp_path: Path):
+    copy_project(tmp_path, github_org="myorg")
+    # github_org is used in generated URLs and badges
+    readme = (tmp_path / "README.md").read_text()
+    assert "myorg" in readme
+    assert "DiamondLightSource" not in readme
 
 
 def test_template_no_docker_has_no_docs_and_works(tmp_path: Path):
@@ -151,7 +413,7 @@ def test_template_no_docker_has_no_docs_and_works(tmp_path: Path):
     container_doc = tmp_path / "docs" / "how-to" / "run-container.md"
     assert not container_doc.exists()
     run = make_venv(tmp_path)
-    run(".venv/bin/tox -p")
+    run("uvx --from go-task-bin task check")
 
 
 def test_bad_repo_name(tmp_path: Path):
@@ -165,22 +427,20 @@ def test_dots_in_package_name(tmp_path: Path):
 
 def test_example_repo_updates(tmp_path: Path):
     generated_path = tmp_path / "generated"
-    example_url = (
-        "https://github.com/DiamondLightSource/python-copier-template-example.git"
-    )
+    example_url = "https://github.com/DiamondLightSource/python-copier-template-example.git"
     example_path = tmp_path / "example"
     copy_project(generated_path)
     run_pipe(f"git clone {example_url} {example_path}")
-    with open(example_path / ".copier-answers.yml") as f:
+    with Path(example_path / ".copier-answers.yml").open() as f:
         d = yaml.safe_load(f)
     d["_src_path"] = str(TOP)
-    with open(example_path / ".copier-answers.yml", "w") as f:
+    with Path(example_path / ".copier-answers.yml").open("w") as f:
         yaml.dump(d, f)
     run = functools.partial(run_pipe, cwd=str(example_path))
     run("git config user.email 'you@example.com'")
     run("git config user.name 'Your Name'")
     run("git commit -am 'Update src'")
-    run(f"copier update --vcs-ref=HEAD --data-file {TOP}/example-answers.yml")
+    run(f"uvx copier update --vcs-ref=HEAD --trust --data-file {TOP}/example-answers.yml")
     output = run(
         # Git directory expected to be different
         "diff -ur --exclude=.git "
@@ -200,8 +460,8 @@ def test_example_repo_updates(tmp_path: Path):
 
 def test_gitignore_same():
     with (
-        open(TOP / ".gitignore") as top_gi,
-        open(TOP / "template" / ".gitignore") as template_gi,
+        Path(TOP / ".gitignore").open() as top_gi,
+        Path(TOP / "template" / ".gitignore").open() as template_gi,
     ):
         assert top_gi.read() == template_gi.read()
 
@@ -231,7 +491,7 @@ print(obj._bar)
     src_file = tmp_path / "src" / "python_copier_template_example" / "private_access.py"
     with src_file.open("w") as stream:
         stream.write(code)
-    with pytest.raises(AssertionError, match="SLF001 Private member accessed: `_bar`"):
+    with pytest.raises(AssertionError, match=r"private-member-access: Private member accessed: `_bar`"):
         run("ruff check")
 
 
@@ -246,29 +506,35 @@ myVariable = "foo"
     src_file = tmp_path / "src" / "python_copier_template_example" / "bad_example.py"
     with src_file.open("w") as stream:
         stream.write(code)
-    with pytest.raises(AssertionError, match=r"N816 .*"):
+    with pytest.raises(AssertionError, match=r"mixed-case-variable-in-global-scope.*"):
         run("ruff check")
 
 
-def test_pyright_works_in_standard_typing_mode(tmp_path: Path):
-    copy_project(tmp_path, type_checker="pyright", strict_typing=False)
+def test_basedpyright_works_in_none_typing_mode(tmp_path: Path):
+    copy_project(tmp_path, strictness="none")
     pyproject_toml = tmp_path / "pyproject.toml"
 
-    # Check standard mode is configured
-    assert 'typeCheckingMode = "standard"' in pyproject_toml.read_text()
-
-    # Ensure pyright is still happy
-    run = make_venv(tmp_path)
-    run(f".venv/bin/pyright {tmp_path}")
+    # none: pytest + ruff (minimal rules) - no basedpyright, no type-checking env
+    assert "basedpyright" not in pyproject_toml.read_text()
+    assert "[tool.ruff]" in pyproject_toml.read_text()
+    assert "type-check" not in (tmp_path / "Taskfile.yml").read_text()
 
 
-def test_pyright_works_with_external_deps(tmp_path: Path):
+def test_basedpyright_works_in_basic_mode(tmp_path: Path):
+    copy_project(tmp_path, strictness="basic")
+    pyproject_toml = tmp_path / "pyproject.toml"
+
+    # basic: ruff but no type checking
+    assert "[tool.ruff]" in pyproject_toml.read_text()
+    assert "basedpyright" not in pyproject_toml.read_text()
+    assert "type-check" not in (tmp_path / "Taskfile.yml").read_text()
+
+
+def test_basedpyright_works_with_external_deps(tmp_path: Path):
     copy_project(tmp_path)
     # Add an external dependency
     pyproject_toml = tmp_path / "pyproject.toml"
-    text = pyproject_toml.read_text().replace(
-        "dependencies = []", 'dependencies = ["numpy"]'
-    )
+    text = pyproject_toml.read_text().replace('dependencies = ["structlog"]', 'dependencies = ["structlog", "numpy"]')
     pyproject_toml.write_text(text)
     # And some code that uses it
     src_file = tmp_path / "src" / "python_copier_template_example" / "example.py"
@@ -278,59 +544,40 @@ import numpy as np
 def is_big(arr: np.ndarray) -> bool:
     return arr.size > 0
 """)
-    # Ensure pyright is still happy
+    # Ensure basedpyright is still happy
     run = make_venv(tmp_path)
-    run(".venv/bin/tox -e type-checking")
+    run("uvx --from go-task-bin task type-check")
 
 
-def test_ignores_mypy_strict_mode(tmp_path: Path):
-    copy_project(tmp_path, type_checker="mypy", strict_typing=True)
+def test_full_strictness_mode(tmp_path: Path):
+    copy_project(tmp_path, strictness="full")
     pyproject_toml = tmp_path / "pyproject.toml"
 
-    # Check strict mode is not configured
-    assert "typeCheckingMode =" not in pyproject_toml.read_text()
+    # Check strict mode with Any-reporting is configured
+    assert 'typeCheckingMode = "strict"' in pyproject_toml.read_text()
+    assert "reportAny = true" in pyproject_toml.read_text()
 
 
 def test_works_with_pydocstyle(tmp_path: Path):
-    copy_project(tmp_path)
+    # Use English docstrings (allow_japanese=False) so ruff's D415
+    # (punctuation check) applies cleanly.
+    copy_project(tmp_path, allow_japanese=False)
     pyproject_toml = tmp_path / "pyproject.toml"
     text = (
         pyproject_toml.read_text()
         .replace('"C4",', '"C4", "D",')  # Enable all pydocstyle
         .replace(
-            '"tests/**/*" = ["SLF001"]',
-            # But exclude on tests and allow o put their own docstring on __init__.py
-            '"tests/**/*" = ["SLF001", "D"]\n"__init__.py" = ["D104"]',
+            '"tests/**/*" = [',
+            '"tests/**/*" = [\n    "D",',
         )
     )
+    # Add __init__.py as a separate key at the end of the per-file-ignores table
+    text += '\n"__init__.py" = ["D104"]\n'
     pyproject_toml.write_text(text)
 
     # Ensure ruff is still happy
     run = make_venv(tmp_path)
     run("ruff check")
-
-
-def test_catalog_info(tmp_path: Path):
-    copy_project(tmp_path)
-    catalog_info_path = tmp_path / "catalog-info.yaml"
-    with catalog_info_path.open("r") as stream:
-        catalog_info = yaml.safe_load(stream)
-    assert catalog_info == {
-        "apiVersion": "backstage.io/v1alpha1",
-        "kind": "Component",
-        "metadata": {
-            "name": "dls-python-copier-template-example",
-            "title": "python-copier-template-example",
-            "description": "An expanded "
-            "https://github.com/DiamondLightSource/python-copier-template "
-            "to illustrate how it looks with all the options enabled.",
-        },
-        "spec": {
-            "type": "service",
-            "lifecycle": "experimental",
-            "owner": "group:default/daq",
-        },
-    }
 
 
 @pytest.mark.parametrize(
@@ -341,6 +588,9 @@ def test_catalog_info(tmp_path: Path):
         {"docker": True, "docker_debug": True},
         {"pypi": True},
         {"docs_type": "sphinx"},
+        {"docs_type": "zensical"},
+        {"docs_type": "great-docs"},
+        {"package_manager": "pixi"},
     ],
 )
 def test_renovate_actions_match_what_is_shipped(override: dict, tmp_path: Path):
@@ -384,7 +634,4 @@ def test_python_versions_match(tmp_path: Path):
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert pyproject_toml["project"]["requires-python"] == f">={min_version}"
     for version in python_versions:
-        assert (
-            f"Programming Language :: Python :: {version}"
-            in pyproject_toml["project"]["classifiers"]
-        )
+        assert f"Programming Language :: Python :: {version}" in pyproject_toml["project"]["classifiers"]

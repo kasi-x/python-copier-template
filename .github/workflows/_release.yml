@@ -6,6 +6,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        # Into its own directory, not the workspace root: `files: "*"` below
+        # uploads everything sitting in the workspace root as release
+        # assets, and that must stay limited to the downloaded artifacts.
+        uses: actions/checkout@v7
+        with:
+          path: _checkout
+          fetch-depth: 0
+
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
@@ -15,10 +24,17 @@ jobs:
         run: |
           set -vxeuo pipefail
           if [ -d html ]; then
-            mv html $GITHUB_REF_NAME
-            zip -r docs.zip $GITHUB_REF_NAME
-            rm -rf $GITHUB_REF_NAME
+            mv html "$GITHUB_REF_NAME"
+            zip -r docs.zip "$GITHUB_REF_NAME"
+            rm -rf "$GITHUB_REF_NAME"
           fi
+
+      - name: Generate release notes with git-cliff
+        # Only this tag's conventional-commit history, categorised by type.
+        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4.8.0
+        with:
+          config: _checkout/cliff.toml
+          args: --repository _checkout --latest --strip all -o CHANGES.md
 
       - name: Create GitHub Release
         # We pin to the SHA, not the tag, for security reasons.
@@ -26,7 +42,9 @@ jobs:
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           prerelease: ${{ contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc') }}
-          files: "*"
-          generate_release_notes: true
+          files: |
+            *
+            !_checkout
+          body_path: CHANGES.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

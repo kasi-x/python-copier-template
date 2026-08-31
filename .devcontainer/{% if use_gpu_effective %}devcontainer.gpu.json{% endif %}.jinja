@@ -1,0 +1,27 @@
+// GPU-enabled devcontainer (nvidia-docker / CUDA).
+// Requires the NVIDIA Container Toolkit on the host.
+{
+    "name": "GPU Python Developer Container",
+    "build": {
+        "dockerfile": "../Dockerfile.gpu",
+        "target": "developer"
+    },
+    "runArgs": [
+        "--gpus=all",
+        "--shm-size=8g"
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "{% if package_manager == 'uv' %}/app/.venv/bin/python{% else %}/app/.pixi/envs/default/bin/python{% endif %}"
+            },
+            "extensions": [
+                "ms-python.python",
+                "charliermarsh.ruff",
+                "ms-toolsai.jupyter",
+                "ms-toolsai.jupyter-keymap",
+                "ms-toolsai.vscode-jupyter-cell-tags"
+            ]
+        }
+    }
+}

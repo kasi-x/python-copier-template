@@ -36,7 +36,7 @@ pip-delete-this-directory.txt
 
 # Unit test / coverage reports
 htmlcov/
-.tox/
+.task/
 .coverage
 .coverage.*
 .cache
@@ -57,12 +57,70 @@ cov.xml
 docs/_build/
 docs/_api
 
+# Zensical (mkdocs) output
+/site/
+
+# Quarto paper / slides output
+*.quarto_ipynb
+paper/paper.aux
+paper/arxiv.sty
+paper/orcidlink.sty
+paper/paper.pdf
+paper/paper.tex
+paper/paper.html
+paper/*.bbl
+paper/*.log
+paper/paper_files/**
+slides/*_slides.html
+slides/slides_files/*
+
+# DS project data
+notebooks/*
+!notebooks/.gitkeep
+data/raw/*
+!data/raw/.gitkeep
+data/interim/*
+!data/interim/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/external/*
+!data/external/.gitkeep
+models/*
+!models/.gitkeep
+reports/figures/*
+!reports/figures/.gitkeep
+outputs/*
+!outputs/.gitkeep
+input/*
+!input/.gitkeep
+exp/*
+!exp/.gitkeep
+# Kaggle competition data
+src/input/*
+!src/input/.gitkeep
+src/output/*
+!src/output/.gitkeep
+src/logs/*
+!src/logs/.gitkeep
+src/models/*
+!src/models/.gitkeep
+src/features/*
+!src/features/.gitkeep
+src/data/*
+!src/data/.gitkeep
+src/notebook/*
+!src/notebook/.gitkeep
+
 # PyBuilder
 target/
 
 # likely venv names
 .venv*
 venv*
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml
 
 # further build artifacts
 lockfiles/

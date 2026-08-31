@@ -9,6 +9,10 @@ on:
         type: string
         description: The runner to run this job on
         required: true
+      task_runner:
+        type: string
+        description: Which task runner drives the test task (task, just, poe, make, pixi)
+        required: true
 
 env:
   # https://github.com/pytest-dev/pytest/issues/2042
@@ -23,14 +27,51 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          persist-credentials: false
           # Need this to get version number from last tag
           fetch-depth: 0
 
       - name: Install uv
+        if: hashFiles('pixi.lock', 'poetry.lock') == ''
         uses: astral-sh/setup-uv@v9.0.0
 
+      - name: Install pixi
+        if: hashFiles('pixi.lock') != ''
+        uses: prefix-dev/setup-pixi@v0.10.1
+
+      - name: Install poetry
+        if: hashFiles('poetry.lock') != ''
+        uses: snok/install-poetry@v1
+
+      - name: Install Task
+        if: inputs.task_runner == 'task'
+        uses: arduino/setup-task@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Just
+        if: inputs.task_runner == 'just'
+        uses: extractions/setup-just@v2
+
       - name: Run tests
-        run: uv run --locked tox -e tests
+        env:
+          TASK_RUNNER: ${{ inputs.task_runner }}
+        run: |
+          set -eu
+          case "$TASK_RUNNER" in
+            task) task test ;;
+            just) just test ;;
+            make) make test ;;
+            poe)
+              if [ -f poetry.lock ]; then
+                poetry run poe test
+              else
+                uv run --locked poe test
+              fi
+              ;;
+            pixi) pixi run -e dev --locked test ;;
+            *) echo "Unknown task runner: $TASK_RUNNER" >&2; exit 1 ;;
+          esac
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7

@@ -1,10 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    ":configMigration",
+    ":enableVulnerabilityAlerts"
   ],
+  "vulnerabilityAlerts": {
+    "automerge": true
+  },
   "lockFileMaintenance": {
-    "description": "Keep uv.lock up to date, merging if tests pass",
+    "description": "Keep the {{ "uv.lock" if package_manager == "uv" else "pixi.lock" }} up to date, merging if tests pass",
     "enabled": true,
     "automerge": true
   },
@@ -21,15 +26,20 @@
       "matchPackageNames": [
         "actions/checkout",
         "astral-sh/setup-uv",
+        "prefix-dev/setup-pixi",
+        "snok/install-poetry",
         "actions/upload-artifact",
         "actions/download-artifact",
         "softprops/action-gh-release",
-        "codecov/codecov-action"{% if docker %},
+        "orhun/git-cliff-action",
+        "codecov/codecov-action",
+        "arduino/setup-task",
+        "extractions/setup-just"{% if docker %},
         "docker/setup-buildx-action",
         "docker/login-action",
         "docker/build-push-action",
         "docker/metadata-action"{% endif %}{% if pypi %},
-        "pypa/gh-action-pypi-publish"{% endif %}{% if sphinx %},
+        "pypa/gh-action-pypi-publish"{% endif %}{% if docs %},
         "peaceiris/actions-gh-pages"{% endif %}
       ],
       "matchManagers": [

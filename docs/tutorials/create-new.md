@@ -5,7 +5,7 @@ Once you have followed the [](./installation) tutorial, you can use `copier` to 
 ```
 git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
-uvx copier copy https://github.com/DiamondLightSource/python-copier-template.git $_
+uvx copier copy --trust https://github.com/kasi-x/python-copier-template.git $_
 ```
 
 This will:

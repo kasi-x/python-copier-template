@@ -21,7 +21,7 @@ jobs:
         run: |
           git init /tmp/example
           uvx copier copy --data-file example-answers.yml --vcs-ref=HEAD . /tmp/example
-          sed -i 's|_src_path: .|_src_path: https://github.com/DiamondLightSource/python-copier-template.git|' /tmp/example/.copier-answers.yml
+          sed -i 's|_src_path: .|_src_path: https://github.com/kasi-x/python-copier-template.git|' /tmp/example/.copier-answers.yml
           uv lock --directory /tmp/example
           rm -rf /tmp/example/.git
           
@@ -32,7 +32,7 @@ jobs:
         with:
           deploy_key: ${{ secrets.EXAMPLE_DEPLOY_KEY }}
           publish_dir: /tmp/example
-          external_repository: DiamondLightSource/python-copier-template-example
+          external_repository: kasi-x/python-copier-template-example
           publish_branch: main
           enable_jekyll: true  # don't put a .nojekyll
           exclude_assets: ''  # default would exclude .github

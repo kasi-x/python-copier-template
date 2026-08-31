@@ -1,0 +1,19 @@
+{% import "_tasks.jinja" as _t with context %}
+version: '3'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmd: task --list
+{% for task in _t.tasks %}
+  {{ task.name }}:
+    desc: "{{ task.desc }}"
+{% if task.deps is defined %}
+    deps: [{{ task.deps | join(', ') }}]
+{% else %}
+    cmds:
+{% for c in task.cmd %}
+      - "{{ c }}"
+{% endfor %}
+{% endif -%}
+{% endfor -%}

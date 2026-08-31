@@ -1,43 +1,176 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm[toml]>=8"]
+requires = ["setuptools>=77", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "{{ distribution_name }}"
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
 description = "{{ description }}"
-dependencies = [] # Add project dependencies here, e.g. ["click", "numpy"]
+dependencies = ["structlog"{% if sphinx %}, "requests"{% endif %}{% if competition %}, "hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "polars>=0.20.15", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15.0.0,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15.0,<1.0", "xgboost>=2.0"{% endif %}{% if cloud_provider == 'aws' %}, "boto3>=1.34.0", "botocore>=1.34.0"{% endif %}{% if cloud_provider == 'gcp' %}, "google-cloud-storage>=2.14.0"{% endif %}{% if cloud_provider == 'azure' %}, "azure-identity>=1.15.0"{% endif %}{% if include_sentry %}, "sentry-sdk"{% endif %}{% if include_mcp or specialty == 'mcp_server' %}, "mcp"{% endif %}{% if specialty == 'ai_agent' %}, "pydantic-ai", "pydantic-settings>=2.2.1"{% endif %}{% if specialty == 'data_polars' %}, "polars>=0.20.15", "duckdb", "pyarrow"{% endif %}{% if specialty == 'pure_python_web' %}, "python-fasthtml"{% endif %}] # Add project dependencies here, e.g. ["click", "numpy"]
 dynamic = ["version"]
-license.file = "LICENSE"
+{% if license_effective != 'Proprietary' -%}
+license = "{{ license_effective }}"
+{% endif -%}
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.11"
 
 [dependency-groups]
 dev = [
-    {% if type_checker=="mypy" %}"mypy",
-    {% endif %}{% if sphinx %}"myst-parser",
-    {% endif %}"pre-commit",
-    {% if sphinx %}"pydata-sphinx-theme>=0.12",
-    {% endif %}{% if type_checker=="pyright" %}"pyright",
-    {% endif %}"pytest",
-    "pytest-cov",
+    {% if strictness == 'none' %}"pre-commit",
+    "pytest",
     "ruff",
-    {% if sphinx %}"sphinx-autobuild",
+    {% if zensical %}"zensical",
+    "mkdocstrings[python]",
+    {% endif %}{% if sphinx %}"pydata-sphinx-theme>=0.12",
+    "myst-parser",
+    "sphinx-autobuild",
     "sphinx-copybutton",
     "sphinx-design",
-    {% endif %}"tox-uv",
-    "types-mock",
+    {% endif %}{% if great_docs %}"great-docs",
+    {% endif %}{% if data_science %}"ipykernel",
+    "nbclient",
+    "nbstripout",
+    {% endif %}{% if data_science %}"pandas",
+    "tomli",
+    "quartodoc",
+    {% endif %}{% if task_runner_effective == 'poe' %}"poethepoet",
+    {% endif %}{% elif strictness == 'basic' %}"pre-commit",
+    "pytest",
+    "ruff",
+    {% if zensical %}"zensical",
+    "mkdocstrings[python]",
+    {% endif %}{% if sphinx %}"pydata-sphinx-theme>=0.12",
+    "myst-parser",
+    "sphinx-autobuild",
+    "sphinx-copybutton",
+    "sphinx-design",
+    {% endif %}{% if great_docs %}"great-docs",
+    {% endif %}{% if data_science %}"ipykernel",
+    "nbclient",
+    "nbstripout",
+    {% endif %}{% if data_science %}"pandas",
+    "tomli",
+    "quartodoc",
+    {% endif %}{% if task_runner_effective == 'poe' %}"poethepoet",
+    {% endif %}{% else %}{% if type_checker=="basedpyright" %}"basedpyright",
+    {% endif %}{% if zensical %}"zensical",
+    "mkdocstrings[python]",
+    {% endif %}"pre-commit",
+    {% if sphinx %}"pydata-sphinx-theme>=0.12",
+    {% endif %}{% if type_checker=="pyrefly" %}"pyrefly",
+    {% endif %}    "pytest",
+    "pytest-cov",
+    "ruff",
+    {% if sphinx %}"myst-parser",
+    "sphinx-autobuild",
+    "sphinx-copybutton",
+    "sphinx-design",
+    {% endif %}    {% if great_docs %}"great-docs",
+    {% endif %}    {% if data_science %}"ipykernel",
+    "nbclient",
+    "nbstripout",
+    {% endif %}{% if competition %}"responses",
+    {% endif %}{% if data_science %}"pandas",
+    "tomli",
+    "quartodoc",
+    {% endif %}{% if task_runner_effective == 'poe' %}"poethepoet",
+    {% endif %}{% if cloud_provider == 'aws' %}"boto3-stubs[{{ 'essential' if aws_services == 'essential' else aws_services }}]>=1.34.0",
+    {% endif %}"types-mock",
+    "vulture",
+    "deptry",
+    "typos",
+    # strictness recommended/full: dotfiles 由来の解析ツール一式
+    "coverage>=7.15.4,<8",
+    "hypothesis>=6.130.0,<7.0",
+    "pip-audit>=2.9.0,<3.0",
+    "pyproject-fmt>=2.27.0,<3.0",
+    "pytest-mock>=3.14.0,<4.0",
+    "pytest-timeout>=2.4.0,<2.5",
+    "pytest-xdist>=3.8.0,<3.9",
+    {% endif %}
 ]
 
-[project.scripts]
-{{ repo_name }} = "{{ package_name }}.__main__:main"
+{% if data_science %}[project.optional-dependencies]
+experiment = [
+    # 実験・探索・デバッグ用の依存 (marimo / 可視化 / LLM API)。
+    # uv: `uv sync --extra experiment` で追加インストール。
+    # pixi: `[tool.pixi.feature.experiment]` として分離。
+    "httpx>=0.27,<1",
+    "ipykernel",
+    "marimo",
+    "matplotlib>=3.8",
+    "nbclient",
+    "nbstripout",
+    "openai>=2.53.0,<3",
+    "pendulum>=3.2.0,<4",
+    "plotly>=5.20",
+    "seaborn>=0.13.2",
+    "wandb>=0.16.4",
+]
+{% endif %}
+
+{% if package_manager == "pixi" %}[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[tool.pixi.pypi-dependencies]
+{% if competition %}utils = { path = "src/utils", editable = true }
+{% else %}{{ package_name }} = { path = ".", editable = true }
+{% endif %}
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+{% if data_science %}experiment = { features = ["experiment"], solve-group = "default" }
+{% endif %}
+{% if data_science %}[tool.pixi.feature.experiment.pypi-dependencies]
+httpx = ">=0.27,<1"
+ipykernel = "*"
+marimo = "*"
+matplotlib = ">=3.8"
+nbclient = "*"
+nbstripout = "*"
+openai = ">=2.53.0,<3"
+pendulum = ">=3.2.0,<4"
+plotly = ">=5.20"
+seaborn = ">=0.13.2"
+wandb = ">=0.16.4"
+{% endif %}
+{# lint/type-check/test/docs tasks live in the chosen task_runner's file
+   instead (Taskfile.yml / justfile / Makefile / [tool.poe.tasks] / the
+   [tool.pixi.feature.dev.tasks] below) — one definition regardless of
+   package_manager. #}
+{% if task_runner_effective == 'pixi' %}
+{% import "_tasks.jinja" as _t with context %}
+[tool.pixi.feature.dev.tasks]
+{% for t in _t.tasks %}
+{% if t.deps is defined %}
+"{{ t.name }}" = { depends-on = [{{ t.deps | map('tojson') | join(', ') }}] }
+{% else %}
+"{{ t.name }}" = { cmd = "{{ t.cmd | join(' && ') }}" }
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% endif %}{% if package_manager == "uv" and competition and use_gpu_effective %}
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+torchvision = { index = "pytorch-cu124" }
+{% endif %}[project.scripts]
+{% if not competition %}{{ repo_name }} = "{{ package_name }}.__main__:main"
+{% endif %}
 
 [project.urls]
 GitHub = "{{ repo_url }}"
@@ -47,16 +180,40 @@ email = "{{ author_email }}"
 name = "{{ author_name }}"
 
 [tool.setuptools_scm]
-version_file = "src/{{ package_name }}/_version.py"
-{% if type_checker=="pyright" %}
-[tool.pyright]{% if strict_typing %}
-typeCheckingMode = "strict"
-{% else %}
-typeCheckingMode = "standard"
-{% endif %}reportMissingImports = false # Ignore missing stubs in imported modules
-{% endif %}{% if type_checker=="mypy" %}
-[tool.mypy]
-ignore_missing_imports = true # Ignore missing stubs in imported modules
+version_file = "{{ pkg_dir }}/_version.py"
+{% if type_checker=="basedpyright" and strictness in ['recommended', 'full'] %}
+[tool.basedpyright]
+typeCheckingMode = "{{ 'strict' if strictness == 'full' else 'recommended' }}"
+include = ["{{ pkg_dir }}", "tests"]
+# Vendored pyfiglet is MIT-licensed third-party code; don't type-check it.
+# mcp_server.py is a scaffolded sample; the mcp SDK has no full stubs yet.
+exclude = ["tools/_figlet.py", "tools/version.py"{% if include_mcp %}, "{{ pkg_dir }}/mcp_server.py"{% endif %}]
+reportMissingImports = false # Ignore missing stubs in imported modules
+reportMissingTypeStubs = false
+{%- if strictness == 'recommended' %}
+analyzeUnannotatedFunctions = false # 完全未注釈関数はスキップ（partial のみ。none はもっと緩い）
+{%- endif %}{% if strictness == 'full' %}
+# full: Any を許さない。外部 API も明示的に型を書く
+reportAny = true
+reportExplicitAny = true
+reportUnknownParameterType = true
+reportUnknownArgumentType = true
+reportUnknownVariableType = true
+{% endif %}
+# 重複検出は ruff / vulture が担うので無効化（片方に寄せる）
+reportPrivateUsage = false
+reportUnusedParameter = false
+reportUnusedFunction = false
+reportUnusedImport = false
+reportCallInDefaultInitializer = false # typer のデフォルト引数は正当
+reportUnusedCallResult = false # argparse add_argument 等の副作用目的の呼び出しは正当
+enableTypeIgnoreComments = true # # type: ignore も受け付ける（mypy 互換）
+{% endif %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
+[tool.pyrefly]
+python-version = "3.12"
+project-includes = ["{{ pkg_dir }}"]
+project-excludes = ["venv", ".venv"{% if include_mcp %}, "{{ pkg_dir }}/mcp_server.py"{% endif %}]
+preset = "{{ 'strict' if strictness == 'full' else 'default' }}"
 {% endif %}
 [tool.pytest.ini_options]
 # Run pytest with all our checkers, and don't spam us with massive tracebacks on error
@@ -66,102 +223,73 @@ addopts = """
 # https://iscinumpy.gitlab.io/post/bound-version-constraints/#watch-for-warnings
 filterwarnings = "error"
 # Doctest python code in docs, python code in src docstrings, test functions in tests
-testpaths = "docs src tests"
+testpaths = "{% if sphinx %}docs {% endif %}{{ pkg_dir }} tests"
 
+{% if strictness in ['recommended', 'full'] %}
 [tool.coverage.run]
 patch = ["subprocess"]
 data_file = "/tmp/{{ package_name }}.coverage"
 
 [tool.coverage.paths]
 # Tests are run from installed location, map back to the src directory
-source = ["src", "**/site-packages/"]
+source = ["{{ pkg_dir }}", "**/site-packages/"]
 
-[tool.tox]
-skipsdist = true
-# envs to runs automatically with tox -p
-env_list = ["pre-commit", "type-checking", "tests"{% if sphinx %}, "docs"{% endif %}]
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+skip_empty = true
 
-[tool.tox.env_run_base]
-# Pass all environment variables to the test environments
-passenv = ["*"]
+[tool.typos.default]
+extend-ignore-words-re = ['\b[A-Z]{3}\b']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
 
-[tool.tox.env.pre-commit]
-description = "Run pre-commit on all files"
-commands = [
-    [
-        "pre-commit",
-        "run",
-        "--all-files",
-        "--show-diff-on-failure",
-        { replace = "posargs", default = [
-        ], extend = true },
-    ],
-]
+[tool.typos.files]
+# Vendored pyfiglet は外部コードなのでスペルチェック対象外。
+# 日本語ドキュメント (lint-notes / tooling-lessons) は日本語散文で、
+# 英単語と誤検出されるトークンが頻出するため対象外。
+extend-exclude = ["tools/_figlet.py", "tools/version.py", "docs/how-to/lint-notes.md", "docs/how-to/tooling-lessons.md", "site"]
 
-[tool.tox.env.type-checking]
-description = "Run {{ type_checker }}"
-commands = [
-    [
-        "{{ type_checker }}",
-        {% if type_checker=="pyright" %}"--pythonpath",
-        "{env:VIRTUAL_ENV}/bin/python",
-        {% endif %}"src",
-        "tests",
-        { replace = "posargs", default = [
-        ], extend = true },
-    ],
-]
+[tool.vulture]
+paths = ["{{ pkg_dir }}"]
+min_confidence = 80
 
-[tool.tox.env.tests]
-description = "Run tests with coverage"
-commands = [
-    [
-        "pytest",
-        "--cov={{ package_name }}",
-        "--cov-report",
-        "term",
-        "--cov-report",
-        "xml:cov.xml",
-        { replace = "posargs", default = [
-        ], extend = true },
-    ],
-]
-{% if sphinx %}
-[tool.tox.env.docs]
-description = "Run docs build with clean environment"
-commands = [
-    [
-        "sphinx-build",
-        "--fresh-env",
-        "--show-traceback",
-        "--fail-on-warning",
-        "--keep-going",
-        "docs",
-        "build/html",
-        { replace = "posargs", default = [
-        ], extend = true },
-    ],
-]
+[tool.deptry]
+# 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
+per_rule_ignores = "DEP002=click|fastapi|httpx|pydantic|pydantic-settings|pendulum|rich|structlog|typer|uvicorn{% if data_science %}|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %},DEP003={{ package_name }}|requests"
+# Vendored pyfiglet (tools/) はローカルインポートを依存と誤認するので除外
+exclude = ["tools", ".venv", ".pixi", ".task", "build", "dist"]
 
-[tool.tox.env.docs-autobuild]
-description = "Run docs with autobuild on change"
-commands = [
-    [
-        "sphinx-autobuild",
-        "--show-traceback",
-        "--watch",
-        "README.md",
-        "docs",
-        "build/html",
-        { replace = "posargs", default = [
-        ], extend = true },
-    ],
-]
+[tool.pyproject_fmt]
+keep-full-version = true
+no-generate-python-version-classifiers = true
+{% endif %}
+
+{% if task_runner_effective == 'poe' %}
+{% import "_tasks.jinja" as _t with context %}
+[tool.poe.tasks]
+{% for t in _t.tasks %}
+{% if t.deps is defined %}
+"{{ t.name }}" = { sequence = [{{ t.deps | map('tojson') | join(', ') }}] }
+{% elif t.cmd | length > 1 %}
+"{{ t.name }}" = { shell = "{{ t.cmd | join(' && ') }}", help = "{{ t.desc }}" }
+{% else %}
+"{{ t.name }}" = { cmd = "{{ t.cmd[0] }}", help = "{{ t.desc }}" }
+{% endif %}
+{% endfor %}
 {% endif %}
 [tool.ruff]
-src = ["src", "tests"]
-line-length = 88
-lint.select = [
+src = ["{{ pkg_dir }}", "tests"]
+# Vendored pyfiglet (tools/) と共有の CI ヘルパー (.github/pages/) は対象外
+extend-exclude = ["tools", ".github/pages"{% if sphinx %}, "docs"{% endif %}]
+line-length = {{ 88 if not allow_japanese else 120 }}
+# unsafe-fixes は挙動を変える可能性がある（sqlite3.Row を dict.get() に誤変換する事故を踏んだ）。
+# 自動修正は safe-fix に限定し、修正後は必ずテストで検証すること。
+unsafe-fixes = false
+lint.logger-objects = ["{{ package_name }}.logging_setup.get_logger"]
+{% if strictness in ['recommended', 'full'] %}lint.preview = true
+lint.explicit-preview-rules = true
+lint.select = ["ALL"]
+{% elif strictness == 'basic' %}lint.select = [
     "B",   # flake8-bugbear - https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
     "C4",  # flake8-comprehensions - https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
     "E",   # pycodestyle errors - https://docs.astral.sh/ruff/rules/#error-e
@@ -171,10 +299,240 @@ lint.select = [
     "I",   # isort - https://docs.astral.sh/ruff/rules/#isort-i
     "UP",  # pyupgrade - https://docs.astral.sh/ruff/rules/#pyupgrade-up
     "SLF", # self - https://docs.astral.sh/ruff/settings/#lintflake8-self
+    "S",   # flake8-bandit - https://docs.astral.sh/ruff/rules/#flake8-bandit-s
+    "PT",  # flake8-pytest-style - https://docs.astral.sh/ruff/rules/#flake8-pytest-style-pt
 ]
+{% else %}lint.select = [
+    "E",   # pycodestyle errors - https://docs.astral.sh/ruff/rules/#error-e
+    "F",   # pyflakes rules - https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "W",   # pycodestyle warnings - https://docs.astral.sh/ruff/rules/#warning-w
+    "I",   # isort - https://docs.astral.sh/ruff/rules/#isort-i
+]
+{% endif %}{% if strictness == 'full' %}lint.extend-ignore = [
+    "SIM401",  # if-else-block-instead-of-dict-get  WHYNOT: unsafe-fix が dict 前提で .get() に変換し、
+               #   sqlite3.Row 等 .get() を持たない型を壊す。実際にバグを踏んだ。
+    "S101",    # assert-used  WHYNOT: 型チェッカーへの None 絞り込み assert。python -O で消えても実害なし。
+    "PT018",   # pytest-composite-assertion  WHYNOT: 型絞り込みの隣接 assert を分割したくない。
+]
+{% elif strictness == 'recommended' %}lint.extend-ignore = [
+    "ANN001",  # missing-type-function-argument  WHYNOT: 引数は pyright が推論。a: int = 5 と同じ儀式。
+    "ANN002",  # missing-type-args  WHYNOT: same as ANN001.
+    "ANN003",  # missing-type-kwargs  WHYNOT: same as ANN001.
+    "ANN202",  # missing-return-type-private-function  WHYNOT: same as ANN001.
+    "ANN204",  # missing-return-type-special-method  WHYNOT: same as ANN001.
+    "ANN205",  # missing-return-type-static-method  WHYNOT: same as ANN001.
+    "ANN206",  # missing-return-type-class-method  WHYNOT: same as ANN001.
+    "ANN401",  # any-type  WHYNOT: 外部 API（boto3 等）の未型付けオブジェクトを Any で受けるのは正当。
+               #   ignore-fully-untyped は「未注釈関数のスキップ」であり、Any の使用は制御しない。
+    "SIM401",  # if-else-block-instead-of-dict-get  WHYNOT: unsafe-fix が dict 前提で .get() に変換し、
+               #   sqlite3.Row 等 .get() を持たない型を壊す。実際にバグを踏んだ。
+    "S101",    # assert-used  WHYNOT: 型チェッカーへの None 絞り込み assert。python -O で消えても実害なし。
+    "PT018",   # pytest-composite-assertion  WHYNOT: 型絞り込みの隣接 assert を分割したくない。
+    "TD",      # flake8-todos  WHYNOT: task-tags がコメントタグ規約を担う。
+    "FIX",     # flake8-fixme  WHYNOT: same as TD.
+    "T20",     # flake8-print  WHYNOT: print is the fastest debugger.
+    "TRY002",  # raise-vanilla-class  WHYNOT: exception taxonomy is ceremony until something catches it.
+    "TRY003",  # raise-vanilla-args  WHYNOT: the message lives at the raise site.
+    "D10",     # undocumented-code  WHYNOT: not a concern in a prototype.
+    "DOC",     # pydoclint  WHYNOT: form over substance.
+    "D420",    # incorrect-section-order  WHYNOT: form over substance.
+    "D421",    # property-docstring-verb  WHYNOT: same as D420.
+    "PLR2004", # magic-value-comparison  WHYNOT: a constant would just restate the literal.
+    "PLR6301", # no-self-use  WHYNOT: self-free methods still override.
+    "E1",      # pycodestyle indentation  WHYNOT: the formatter owns spacing.
+    "E2",      # pycodestyle whitespace  WHYNOT: same as E1.
+    "E3",      # pycodestyle blank lines  WHYNOT: same as E1.
+    "E502",    # redundant-backslash  WHYNOT: same as E1.
+    "W391",    # too-many-newlines  WHYNOT: same as E1.
+    "COM812",  # missing-trailing-comma  WHYNOT: fights the formatter.
+    "ISC001",  # single-line-implicit-str-concat  WHYNOT: same as COM812.
+    "TC",      # flake8-type-checking  WHYNOT: import cost isn't a concern in a prototype.
+    "CPY001",  # missing-copyright-notice  WHYNOT: not a library.
+    "RUF105",  # noqa-comments  WHYNOT: noqa is shared with pyright.
+    "RUF106",  # rule-codes-in-suppression  WHYNOT: same as RUF105.
+    "RUF201",  # rule-codes-in-selectors  WHYNOT: config should be terse.
+    "PLW1514", # unspecified-encoding  WHYNOT: UTF-8 is the only sane default.
+    "PT029",   # pytest-warns-without-warning  WHYNOT: any warning will do in a prototype.
+    "TID254",  # lazy-import-mismatch  WHYNOT: startup perf is YAGNI.
+    "TID255",  # lazy-import-immediately-resolved  WHYNOT: same as TID254.
+    "FA",      # flake8-future-annotations  WHYNOT: 未来 import の強制は pyright 不要; 前方参照は prototype では稀。
+]
+{% elif strictness == 'basic' %}lint.extend-ignore = [
+    "ANN401",  # any-type  WHYNOT: 外部 API（boto3 等）の未型付けオブジェクトを Any で受けるのは正当。
+               #   ignore-fully-untyped は「未注釈関数のスキップ」であり、Any の使用は制御しない。
+    "SIM401",  # if-else-block-instead-of-dict-get  WHYNOT: unsafe-fix が dict 前提で .get() に変換し、
+               #   sqlite3.Row 等 .get() を持たない型を壊す。実際にバグを踏んだ。
+    "S101",    # assert-used  WHYNOT: 型チェッカーへの None 絞り込み assert。python -O で消えても実害なし。
+    "PT018",   # pytest-composite-assertion  WHYNOT: 型絞り込みの隣接 assert を分割したくない。
+    "TD",      # flake8-todos  WHYNOT: task-tags がコメントタグ規約を担う。
+]
+{% else %}lint.extend-ignore = [
+    "ANN001",  # missing-type-function-argument  WHYNOT: 引数は pyright が推論。a: int = 5 と同じ儀式。
+    "ANN002",  # missing-type-args  WHYNOT: same as ANN001.
+    "ANN003",  # missing-type-kwargs  WHYNOT: same as ANN001.
+    "ANN202",  # missing-return-type-private-function  WHYNOT: same as ANN001.
+    "ANN204",  # missing-return-type-special-method  WHYNOT: same as ANN001.
+    "ANN205",  # missing-return-type-static-method  WHYNOT: same as ANN001.
+    "ANN206",  # missing-return-type-class-method  WHYNOT: same as ANN001.
+    "ANN401",  # any-type  WHYNOT: 外部 API（boto3 等）の未型付けオブジェクトを Any で受けるのは正当。
+    "SIM401",  # if-else-block-instead-of-dict-get  WHYNOT: unsafe-fix が dict 前提で .get() に変換し、
+    "S101",    # assert-used  WHYNOT: 型チェッカーへの None 絞り込み assert。python -O で消えても実害なし。
+    "PT018",   # pytest-composite-assertion  WHYNOT: 型絞り込みの隣接 assert を分割したくない。
+    "TD",      # flake8-todos  WHYNOT: task-tags がコメントタグ規約を担う。
+]
+{% endif %}lint.task-tags = [
+    # Future
+    "WIP",    # Work in progress.
+    "TBD",    # To be decided.
+    "HOLD",
+    "PLAN",
+    "MVP",    # Minimum viable product; unfinished.
+    "WANT",   # The target this doesn't hit yet.
+    "PILOT",  # Experimental - rip out.
+
+    # Fixes
+    "TODO",
+    "BUG",
+    "FIXME",
+    "HACK",
+    "MISSING",
+    "DOCME",
+    "UPGRADE",
+
+    # Memo
+    "MEMO",   # Everything you write.
+    "NOTE",   # A reminder, nothing urgent.
+    "CASE",   # A real instance in this codebase.
+
+    # Judgment
+    "MUST",   # Breaking it is a defect.
+    "SHOULD", # Needs a stated reason.
+    "MAY",    # Fine.
+    "FOLLOW", # A lead worth chasing.
+    "WHYNOT", # Justifies anything.
+    "RISK",   # A consequence too important to bury as ordinary background.
+    "WARN",   # A caution for whoever edits this next, not about the output.
+    "IDEA",   # Voluntary credit for an inspiration.
+
+    # Reflection
+    "IMO",    # In my opinion - a stance offered with no obligation to justify it.
+    "YAGNI",  # You ain't gonna need it.
+
+    # History
+    "ADR",    # Architecture decision record - why this won.
+    "CONTEXT", # Background that explains the code's shape.
+
+    # Conversation
+    "BLOCKER", # What's stopping this.
+    "REVIEW",  # Asks someone to judge this before it ships.
+    "DISCUSS", # A design call that needs the team's input.
+    "REQUEST", # An ask to a named person for a named action.
+
+    # Tools
+    "ISSUE",   # For issue trackers.
+    "QUESTION", # A technical doubt you can resolve by checking.
+
+    # TDD
+    "BLUE",
+    "RED",
+    "GREEN",
+    "REFACTOR",
+    "UNCOVERED",
+    "FLAKY",
+    "SLOW",
+    "OVERTEST",
+
+    # Performance
+    "BENCHMARK",
+    "SCALE",
+    "BOTTLENECK",
+
+    # Compliance
+    "SECURE",
+    "VULNERABILITY",
+    "PRIVACY",
+    "ILLEGAL",
+    "ACCESSIBILITY",
+    "LOCALIZE",
+
+    # Legacy
+    "DEPRECATE",
+    "DEBT",
+    "UNKNOWN",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-decorators = ["typing.overload"]
+
+[tool.ruff.lint.pycodestyle]
+ignore-overlong-task-comments = true
+max-line-length = {{ 88 if not allow_japanese else 120 }}
+max-doc-length = {{ 150 if not allow_japanese else 200 }}
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "parents"
+
+[tool.ruff.lint.flake8-type-checking]
+exempt-modules = ["typing", "typing_extensions"]
+quote-annotations = true
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
+"dask.dataframe" = "dd"
+"xarray" = "xr"
+"scipy" = "sp"
+"skopt" = "sko"
+"skimage" = "ski"
+"sklearn" = "sk"
+"returns" = "rt"
+"pandera" = "pa"
+
+[tool.ruff.lint.flake8-errmsg]
+max-string-length = 20
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10 # テンプレートの 4 は厳しすぎ。10 超（真に読めない関数）だけを検出する。
+
+[tool.ruff.lint.flake8-annotations]
+{%- if strictness == 'full' %}
+ignore-fully-untyped = false # full: 全関数に注釈を要求
+{%- else %}
+ignore-fully-untyped = true # 完全未注釈関数はスキップ（部分注釈の残りは要求）
+{%- endif %}
+allow-star-arg-any = false
+suppress-dummy-args = false
+suppress-none-returning = false
 
 [tool.ruff.lint.per-file-ignores]
 # By default, private member access is allowed in tests
-# See https://github.com/DiamondLightSource/python-copier-template/issues/154
+# See https://github.com/kasi-x/python-copier-template/issues/154
 # Remove this line to forbid private member access in tests
-"tests/**/*" = ["SLF001"]
+"tests/**/*" = [
+    "SLF001", # private member access  CONTEXT: テストは private を直接叩くことがある
+    "ANN",    # type annotations  CONTEXT: fixture 引数等の型注釈省略はテストで普通
+    "S",      # bandit  CONTEXT: テストの assert / モックは想定内
+    "PT011",  # pytest-raises-too-broad  CONTEXT: ValueError 等の広さがテスト意図に合致
+    "PT013",  # pytest-raises-with-multiple-exceptions  CONTEXT: 複数例外はテストで自然
+    "PT015",  # pytest-assertion-in-raisable-block  CONTEXT: raises 内の assert は意図的
+    "B011",   # assert-false  CONTEXT: 到達しないことを明示する assert はテストで正当
+]
+# structlog の長い呼び出し（ConsoleRenderer / make_filtering_bound_logger）は
+# line-length 設定により ruff format が折り返しを変えるため、E501 は免除する。
+# 日本語 docstring の終端句読点（D415）とシングルトン設定の global（PLW0603）も免除。
+"{{ pkg_dir }}/logging_setup.py" = ["E501", "D", "PLW0603"]
+{% if package_manager == "poetry" %}
+[tool.poetry]
+# Poetry reads the PEP 621 [project] table and [dependency-groups] above.
+# packages are auto-detected from the project layout.
+[tool.poetry.group.dev.dependencies]
+{% endif -%}

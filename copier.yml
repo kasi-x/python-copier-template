@@ -1,12 +1,364 @@
+_jinja_extensions:
+    - copier_template_extensions.TemplateExtensionLoader
+    - extensions.py:GitExtension
+    - extensions.py:CurrentYearExtension
+
+# Template Options
+detail_level:
+    type: str
+    help: |
+        How much would you like to customise?
+        - simple: ask only the essential questions, use defaults for the rest.
+        - detailed: ask about every option (CI provider, package manager,
+          GPU, docs tool, integrations, ...).
+    choices:
+        - simple
+        - detailed
+    default: detailed
+
+package_manager:
+    type: str
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Which package manager would you like to use?
+        - uv: Fast, pure Python package manager with a pip-like workflow.
+        - pixi: Conda-based package manager with cross-language support.
+        - poetry: Dependency management and packaging with Poetry.
+        Choose pixi if you need native (non-Python) dependencies.
+    choices:
+        - uv
+        - pixi
+        - poetry
+    default: uv
+
+task_runner:
+    type: str
+    when: "{{ detail_level == 'detailed' and package_manager != 'pixi' }}"
+    help: |
+        Which task runner would you like to use to drive lint / type-check /
+        test / docs (and, for data_science's competition sub-option, the ML
+        pipeline shortcuts)?
+        - just: Just. Simple justfile, external binary.
+        - task: Task (go-task). YAML, external binary, used by CI too.
+        - poe: poethepoet. Pure Python, lives in pyproject.toml, no extra
+          binary to install (just a dev dependency).
+        - make: GNU Make. Universally available, terse Makefile syntax.
+    choices:
+        Just: just
+        Task (go-task): task
+        poethepoet: poe
+        Make: make
+    default: just
+
+task_runner_pixi:
+    type: str
+    when: "{{ detail_level == 'detailed' and package_manager == 'pixi' }}"
+    help: |
+        Which task runner would you like to use? (poethepoet doesn't work
+        with pixi, so pixi's own native tasks take its place here.)
+        - pixi: pixi's own native tasks (`pixi run <name>`). No extra tool.
+        - task: Task (go-task). YAML, external binary, used by CI too.
+        - just: Just. Simple justfile, external binary.
+        - make: GNU Make. Universally available, terse Makefile syntax.
+    choices:
+        pixi (native tasks): pixi
+        Task (go-task): task
+        Just: just
+        Make: make
+    default: pixi
+
+project_type:
+    type: str
+    help: |
+        What kind of project is this?
+        - library: a Python library/package.
+        - web_api: a web API service (Docker included).
+        - cli: a command-line tool.
+        - data_science: a data science project with notebooks, data/,
+          models/, reports/ and experiment extras. GPU Dockerfile and
+          Quarto paper are included.
+        - script: a minimal script, no package layout.
+    choices:
+        - library
+        - web_api
+        - cli
+        - data_science
+        - script
+    default: library
+
+competition:
+    type: bool
+    when: "{{ detail_level == 'detailed' and project_type == 'data_science' }}"
+    help: |
+        Is this a Kaggle-style competition project?
+        If yes, input/ and exp/ directories are added for competition data
+        and experiments.
+    default: false
+
+use_gpu:
+    type: bool
+    when: "{{ detail_level == 'detailed' and project_type == 'data_science' }}"
+    help: |
+        Will you run GPU workloads?
+        If yes, an NVIDIA CUDA Dockerfile and devcontainer are prepared.
+        In simple mode, this is enabled for data_science projects.
+    default: true
+
+layout:
+    type: str
+    when: "{{ detail_level == 'detailed' and project_type != 'data_science' }}"
+    help: |
+        Which layout would you like to use for the package?
+        - src: package in a src/ directory (recommended, prevents accidental
+               imports of an uninstalled package).
+        - flat: package at the repository root.
+    choices:
+        - src
+        - flat
+    default: src
+
+allow_japanese:
+    type: bool
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Allow Japanese (multibyte) characters in comments and docstrings?
+        If true, ruff's line-length and max-doc-length are relaxed so that
+        wide multibyte characters do not trigger E501/D rules.
+    default: false
+
+ascii_banner:
+    type: bool
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Add an ASCII-art banner of the repo name to the top of the README?
+        This bundles a small MIT-licensed copy of pyfiglet (with the slant
+        font) so the banner can be regenerated without extra dependencies.
+    default: true
+
+docker:
+    type: bool
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Would you like to publish your project in a Docker container?
+        You should select this if you are making a service.
+
+docs_type:
+    type: str
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Which documentation tool would you like to use?
+        - README: just a README, no dedicated docs site.
+        - zensical: Zensical, an MkDocs fork with mkdocstrings. Fast to set up.
+        - sphinx: Sphinx with the pydata theme. More powerful, more config.
+        - great-docs: Great Docs, a Quarto-based tool. Requires Quarto installed.
+    choices:
+        - README
+        - zensical
+        - sphinx
+        - great-docs
+    default: zensical
+
+type_checker:
+    type: str
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        What type checker would you like to use?
+        Basedpyright (pyright の fork) is recommended: 実バグ検出を重視しつつ、
+        警告レベルを制御しやすい。Pyrefly (Meta) は軽量で補助に使える。
+    choices:
+        - basedpyright
+        - pyrefly
+
+strictness:
+    type: str
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        How strict should the toolchain be? One axis controls both the
+        type-annotation requirements and the static-analysis toolchain.
+        - none: pytest + ruff (minimal rules), no type checking.
+        - basic: pytest + ruff, no type checking.
+        - recommended: ruff (ALL rules), basedpyright + pyrefly,
+          typos/vulture/deptry/pip-audit, driven by your chosen task runner.
+          Recommended default.
+        - full: recommended + strict type checking (Any forbidden),
+          minimized ruff ignores, full annotations required.
+    choices:
+        - none
+        - basic
+        - recommended
+        - full
+    default: recommended
+
+license_simple:
+    type: str
+    when: "{{ detail_level == 'simple' }}"
+    help: Which license would you like to use?
+    choices:
+        MIT License: MIT
+        Proprietary / all rights reserved: Proprietary
+    default: MIT
+
+license:
+    type: str
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Which license would you like to use?
+        The full list from https://choosealicense.com, generated by
+        tools/generate_license_template.py.
+    choices:
+        Academic Free License v3.0: AFL-3.0
+        Apache License 2.0: Apache-2.0
+        Artistic License 2.0: Artistic-2.0
+        BSD 2-Clause "Simplified" License: BSD-2-Clause
+        BSD 3-Clause "New" or "Revised" License: BSD-3-Clause
+        BSD 3-Clause Clear License: BSD-3-Clause-Clear
+        BSD 4-Clause "Original" or "Old" License: BSD-4-Clause
+        BSD Zero Clause License: 0BSD
+        BSD-2-Clause Plus Patent License: BSD-2-Clause-Patent
+        Blue Oak Model License 1.0.0: BlueOak-1.0.0
+        Boost Software License 1.0: BSL-1.0
+        CERN Open Hardware Licence Version 2 - Permissive: CERN-OHL-P-2.0
+        CERN Open Hardware Licence Version 2 - Strongly Reciprocal: CERN-OHL-S-2.0
+        CERN Open Hardware Licence Version 2 - Weakly Reciprocal: CERN-OHL-W-2.0
+        CeCILL Free Software License Agreement v2.1: CECILL-2.1
+        Creative Commons Attribution 4.0 International: CC-BY-4.0
+        Creative Commons Attribution Share Alike 4.0 International: CC-BY-SA-4.0
+        Creative Commons Zero v1.0 Universal: CC0-1.0
+        Do What The F*ck You Want To Public License: WTFPL
+        Eclipse Public License 1.0: EPL-1.0
+        Eclipse Public License 2.0: EPL-2.0
+        Educational Community License v2.0: ECL-2.0
+        European Union Public License 1.1: EUPL-1.1
+        European Union Public License 1.2: EUPL-1.2
+        GNU Affero General Public License v3.0: AGPL-3.0
+        GNU Free Documentation License v1.3: GFDL-1.3
+        GNU General Public License v2.0: GPL-2.0
+        GNU General Public License v3.0: GPL-3.0
+        GNU Lesser General Public License v2.1: LGPL-2.1
+        GNU Lesser General Public License v3.0: LGPL-3.0
+        ISC License: ISC
+        LaTeX Project Public License v1.3c: LPPL-1.3c
+        MIT License: MIT
+        MIT No Attribution: MIT-0
+        Microsoft Public License: MS-PL
+        Microsoft Reciprocal License: MS-RL
+        Mozilla Public License 2.0: MPL-2.0
+        Mulan Permissive Software License, Version 2: MulanPSL-2.0
+        Open Data Commons Open Database License v1.0: ODbL-1.0
+        Open Software License 3.0: OSL-3.0
+        PostgreSQL License: PostgreSQL
+        SIL Open Font License 1.1: OFL-1.1
+        The Unlicense: Unlicense
+        Universal Permissive License v1.0: UPL-1.0
+        University of Illinois/NCSA Open Source License: NCSA
+        Vim License: Vim
+        zlib License: Zlib
+        Proprietary / all rights reserved: Proprietary
+    default: MIT
+
+pypi:
+    type: bool
+    when: "{{ detail_level == 'detailed' }}"
+    help: Would you like the wheel and source distribution to be automatically uploaded to PyPI when a release is made?
+
+cloud_provider:
+    type: str
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Which cloud provider will this project deploy to?
+        - none: no cloud-specific code or dependencies.
+        - aws: boto3 and service-specific dependencies are added.
+        - gcp: google-cloud-storage is added.
+        - azure: azure-identity is added.
+    choices:
+        - none
+        - aws
+        - gcp
+        - azure
+    default: none
+
+aws_services:
+    type: str
+    when: "{{ detail_level == 'detailed' and cloud_provider == 'aws' }}"
+    help: |
+        Which AWS services will you use?
+        - essential: core services (S3, SQS, DynamoDB, Lambda types).
+        - s3: just S3.
+        - dynamodb: just DynamoDB.
+        - sqs: just SQS.
+        - lambda: just Lambda.
+    choices:
+        - essential
+        - s3
+        - dynamodb
+        - sqs
+        - lambda
+    default: essential
+
+include_sentry:
+    type: bool
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Would you like to include Sentry for error tracking?
+        If yes, sentry-sdk is added and initialised from SENTRY_DSN.
+    default: false
+
+include_mcp:
+    type: bool
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Would you like to include MCP (Model Context Protocol) support?
+        If yes, the mcp SDK is added with stdio and SSE transports.
+    default: false
+
+ci_provider:
+    type: str
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Which CI provider would you like to use?
+        - github_actions: GitHub Actions workflows for lint, type-checking,
+          tests and docs.
+        - none: no CI workflows are generated.
+    choices:
+        - github_actions
+        - none
+    default: github_actions
+
+specialty:
+    type: str
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Is this project specialised for a particular domain? This adds
+        domain-specific structure on top of the base toolchain.
+        - none: no specialisation.
+        - mcp_server: an MCP (Model Context Protocol) server with stdio/SSE
+          transports and an inspector script.
+        - ai_agent: an LLM agent / RAG app with a tools/ folder, prompts/
+          directory and pydantic-settings.
+        - data_polars: a Polars + DuckDB data pipeline with zero-copy Arrow
+          sharing and a data boundary layout.
+        - rust_extension: a PyO3 / maturin Rust extension with Cargo.toml and
+          cross-compilation CI.
+        - pure_python_web: a FastHTML full-stack web app with hot reload.
+    choices:
+        - none
+        - mcp_server
+        - ai_agent
+        - data_polars
+        - rust_extension
+        - pure_python_web
+    default: none
+
 # Project Details
 package_name:
     type: str
     help: |
         Name of the python import package.
-        Must be a valid python identifier, i.e. my_package
+        Must be a valid python identifier, i.e. my_package.
+        ASCII characters only (a-z, A-Z, 0-9, _).
     validator: >-
         {% if not (package_name | regex_search('^[a-zA-Z][a-zA-Z_0-9]+$')) %}
-        {{package_name}} is not a valid python package name
+        {{ package_name }} is not a valid python package name. Use ASCII letters, digits and underscores only.
         {% endif %}
 
 description:
@@ -19,15 +371,22 @@ git_platform:
     help: Git platform hosting the repository
     choices:
         - github.com
+        - gitlab.com
 
 github_org:
     type: str
     help: |
-        GitHub organisation that will contain this repo.
-        Set to your GitHub username to make a personal repo, or DiamondLightSource
-        if you have permissions to make it in the DiamondLightSource organisation.
+        GitHub organisation or username that will contain this repo.
+        Set to your GitHub username (e.g. kasi-x) for a personal repo,
+        or the name of an organisation you belong to.
     when: "{{ git_platform == 'github.com' }}"
-    default: DiamondLightSource
+    default: "{{ github_username() }}"
+
+gitlab_group:
+    type: str
+    help: |
+        GitLab group (or username) that will contain this repo.
+    when: "{{ git_platform == 'gitlab.com' }}"
 
 repo_name:
     type: str
@@ -37,7 +396,7 @@ repo_name:
     default: "{{ package_name | replace('_', '-') }}"
     validator: >-
         {% if not (repo_name | regex_search('^[a-zA-Z][a-zA-Z_\\.\\-0-9]+$')) %}
-        {{ repo_name }} is not a valid repo name
+        {{ repo_name }} is not a valid repo name. Use ASCII letters, digits, dashes and underscores only.
         {% endif %}
 
 distribution_name:
@@ -51,95 +410,26 @@ distribution_name:
 author_name:
     type: str
     help: Your full name
+    default: "{{ git_user_name() }}"
     placeholder: FirstName LastName
 
 author_email:
     type: str
     help: Your email address
+    default: "{{ git_user_email() }}"
     placeholder: email@diamond.ac.uk
 
-# Catalog info
-component_owner:
-    type: str
-    when: "{{ github_org == 'DiamondLightSource' }}"
-    help: |
-        The unique name of the person or group who owns this component in
-        the Developer Portal Software Catalogue.
-        This will normally be group:default/<your_group>. For a full list of groups visit
-        https://dev-portal.diamond.ac.uk/catalog?filters%5Bkind%5D=group&filters%5Buser%5D=all
-        and hover over each group link to see its group ID, e.g.
-        https://dev-portal.diamond.ac.uk/catalog/default/group/accelerator-controls
-        would go here as group:default/accelerator-controls.
-
-component_type:
-    type: str
-    when: "{{ github_org == 'DiamondLightSource' }}"
-    help: |
-        Type of the component in the Developer Portal Software Catalogue.
-        Most likely service, library or application (without quotes).
-    choices:
-        - library
-        - service
-        - user-interface
-        - website
-        - application
-    default: library
-
-component_lifecycle:
-    type: str
-    when: "{{ github_org == 'DiamondLightSource' }}"
-    help: |
-        Project's current lifecycle stage, to be displayed in the Developer
-        Portal Software Catalogue.
-    choices:
-        - experimental
-        - production
-        - deprecated
-    default: experimental
-
-# Template Options
-docker:
-    type: bool
-    help: |
-        Would you like to publish your project in a Docker container?
-        You should select this if you are making a service.
-
-docs_type:
-    type: str
-    help: |
-        How would you like to document your project?
-        You can start with just a README and change your answer to add a sphinx project later.
-    choices:
-        - README
-        - sphinx
-
-type_checker:
-    type: str
-    help: |
-        What type checker would you like to use?
-        Pyright is recommended for new projects, but it is stricter,
-        so you might need to select mypy for existing projects.
-    choices:
-        - pyright
-        - mypy
-
-strict_typing:
-    type: bool
-    when: >-
-        {{ type_checker == 'pyright' }}
-    default: true
-    help: |
-        Would you like to run pyright in strict mode?
-        The recommended approach is to start with strict mode and disable it if it 
-        becomes too costly to maintain. 
-        See https://diamondlightsource.github.io/python-copier-template/main/how-to/strict-mode.html 
-        for more information.
-
-pypi:
-    type: bool
-    help: Would you like the wheel and source distribution to be automatically uploaded to PyPI when a release is made?
-
 # Internal variables
+data_science:
+    type: bool
+    default: "{{ project_type == 'data_science' }}"
+    when: false
+
+use_gpu_effective:
+    type: bool
+    default: "{{ use_gpu if detail_level == 'detailed' else (project_type == 'data_science') }}"
+    when: false
+
 repo_url:
     type: str
     default: "https://github.com/{{github_org}}/{{repo_name}}"
@@ -155,7 +445,51 @@ sphinx:
     default: "{{ docs_type == 'sphinx' }}"
     when: false
 
+zensical:
+    type: bool
+    default: "{{ docs_type == 'zensical' }}"
+    when: false
+
+great_docs:
+    type: bool
+    default: "{{ docs_type == 'great-docs' }}"
+    when: false
+
+docs:
+    type: bool
+    default: "{{ docs_type != 'README' }}"
+    when: false
+
+task_runner_effective:
+    type: str
+    default: "{{ task_runner_pixi if package_manager == 'pixi' else task_runner }}"
+    when: false
+
+license_effective:
+    type: str
+    default: "{{ license if detail_level == 'detailed' else license_simple }}"
+    when: false
+
+license_year:
+    type: str
+    default: "{{ current_year() }}"
+    when: false
+
+pkg_dir:
+    type: str
+    default: "{{ 'src/utils' if competition else (('src/' if layout == 'src' and project_type != 'script' else '') + package_name) }}"
+    when: false
+
 _subdirectory: "template"
+
+_skip_if_exists:
+    - CHANGELOG.md
+
+_tasks:
+    - >-
+        {% if ascii_banner %}
+        python -B tools/ascii_banner.py {{ repo_name }} README.md
+        {% endif %}
 
 _migrations:
     - version: 2.0.0

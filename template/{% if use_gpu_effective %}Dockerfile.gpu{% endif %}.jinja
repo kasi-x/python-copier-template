@@ -1,0 +1,43 @@
+{% if use_gpu_effective %}# GPU-enabled developer container (nvidia-docker / CUDA).
+# Build and run with:
+#   docker build --target developer -f Dockerfile.gpu -t {{ repo_name }}:gpu .
+#   docker run --gpus all -it {{ repo_name }}:gpu
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS developer
+
+# Install system dependencies
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv \
+    git \
+    curl \
+    && apt-get dist-clean
+{% if package_manager == "uv" %}
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+{% else %}
+# Install pixi
+ARG TARGETARCH
+COPY --from=ghcr.io/prefix-dev/pixi:latest /usr/local/bin/pixi /usr/local/bin/pixi
+{% endif %}
+
+# Change the working directory to the `app` directory
+WORKDIR /app
+
+# Copy the lockfile and pyproject in first for better layer caching
+COPY pyproject.toml ./
+{% if package_manager == "uv" %}COPY uv.lock ./{% else %}COPY pixi.lock ./{% endif %}
+
+# Install dependencies
+{% if package_manager == "uv" %}
+RUN uv sync --locked --no-install-project
+{% else %}
+RUN pixi install --locked
+{% endif %}
+
+# Copy the rest of the project
+COPY . .
+
+# Default to bash
+CMD ["/bin/bash"]
+{% endif %}

@@ -1,16 +1,28 @@
-author_email: tom.cobb@diamond.ac.uk
-author_name: Tom Cobb
-component_owner: group:default/daq
-component_type: service
-component_lifecycle: experimental
-description: An expanded https://github.com/DiamondLightSource/python-copier-template to illustrate how it looks with all the options enabled.
-distribution_name: dls-python-copier-template-example
+# Template Options
+detail_level: detailed
+author_email: kashimiya.exe@gmail.com
+author_name: kashi-x
+description: An expanded https://github.com/kasi-x/python-copier-template to illustrate how it looks with all the options enabled.
+distribution_name: kasi-x-python-copier-template-example
 docker: true
-docs_type: sphinx
+docs_type: zensical
 git_platform: github.com
-github_org: DiamondLightSource
+github_org: kasi-x
+gitlab_group: mygroup
 package_name: python_copier_template_example
+package_manager: uv
+task_runner: task
+allow_japanese: true
+layout: src
+project_type: data_science
+competition: false
+ascii_banner: true
 repo_name: python-copier-template-example
-type_checker: pyright
-strict_typing: true
+type_checker: basedpyright
+strictness: recommended
+cloud_provider: none
+include_sentry: false
+include_mcp: false
+ci_provider: github_actions
 pypi: true
+license: Apache-2.0

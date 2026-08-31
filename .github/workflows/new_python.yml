@@ -11,9 +11,9 @@ jobs:
     steps:
       - name: Create new version of python issue
         run: |
-          new_issue_url=$(gh issue create \
+          gh issue create \
             --title "$TITLE" \
-            --body "$BODY")
+            --body "$BODY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -27,6 +27,6 @@ jobs:
             - [ ] Change `requires-python` in `pyproject.toml` to be the oldest supported version
             - [ ] Change `classifiers` in `template/pyproject.toml.jinja` to have all 4 versions
             - [ ] Change `requires-python` in `template/pyproject.toml.jinja` to be the oldest supported version
-            - [ ] Change `requires-python` in `template/uv.lock` to be the oldest supported version
+            - [ ] Change `requires-python` in the template lockfile (`template/uv.lock` or `template/pixi.lock`) to be the oldest supported version
             - [ ] Change `python-version` in `template/*/workflows/ci.yml.jinja` to have all 4 versions
             - [ ] Change first paragraph in `template/*/tutorials/installation.md.jinja` to be the oldest supported version

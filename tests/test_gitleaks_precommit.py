@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from test_example import copy_project, make_venv
+from test_example import copy_project
+from test_example import make_venv
 
 # --- Stable patterns gitleaks flags out-of-the-box (should FAIL) ---
 STABLE_LEAK_CASES = [
@@ -17,8 +18,7 @@ STABLE_LEAK_CASES = [
 
 @pytest.mark.parametrize("fname, content", STABLE_LEAK_CASES)
 def test_gitleaks_stable_patterns_fail(tmp_path: Path, fname: str, content: str):
-    """
-    Generate a project, add a known-leaky pattern, stage it,
+    """Generate a project, add a known-leaky pattern, stage it,
     and verify tox -e pre-commit (gitleaks) fails.
     """
     copy_project(tmp_path)
@@ -33,8 +33,7 @@ def test_gitleaks_stable_patterns_fail(tmp_path: Path, fname: str, content: str)
 
 # --- Sealed-secrets: YAML/YML allowlisted; non-YAML should be flagged ---
 def _fake_sealed_secret_blob(n: int = 800, seed: str = "sealed-secrets-test") -> str:
-    """
-    Generate a deterministic, base64-looking ciphertext that resembles a SealedSecret.
+    """Generate a deterministic, base64-looking ciphertext that resembles a SealedSecret.
     - Always starts with 'Ag'
     - Uses a realistic base64 alphabet mix (via sha256-derived bytes)
     - Adds '=' padding only if required by base64 length
@@ -62,9 +61,7 @@ def _fake_sealed_secret_blob(n: int = 800, seed: str = "sealed-secrets-test") ->
 
 
 def test_gitleaks_yaml_allowlist_for_sealed_secrets_yaml(tmp_path: Path):
-    """
-    Case 1: .yaml (allowlisted => PASS)
-    """
+    """Case 1: .yaml (allowlisted => PASS)"""
     blob = _fake_sealed_secret_blob()
 
     sealed_yaml = f"""\
@@ -88,9 +85,7 @@ spec:
 
 
 def test_gitleaks_yaml_allowlist_for_sealed_secrets_yml(tmp_path: Path):
-    """
-    Case 2: .yml (allowlisted => PASS)
-    """
+    """Case 2: .yml (allowlisted => PASS)"""
     blob = _fake_sealed_secret_blob()
 
     sealed_yaml = f"""\
@@ -114,9 +109,7 @@ spec:
 
 
 def test_leaky_code_fails_gitleaks(tmp_path: Path):
-    """
-    Case 3: non-YAML (should be flagged => FAIL)
-    """
+    """Case 3: non-YAML (should be flagged => FAIL)"""
     blob = _fake_sealed_secret_blob()
 
     proj_code = tmp_path / "proj_code"

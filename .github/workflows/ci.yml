@@ -1,5 +1,12 @@
 name: CI
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -10,17 +17,21 @@ on:
 
 jobs:
   lint:
-    uses: ./.github/workflows/_tox.yml
+    uses: ./.github/workflows/_tasks.yml
     with:
-      tox: pre-commit
+      task_runner: task
+      task: lint,type-check
 
   test:
     uses: ./.github/workflows/_test.yml
     with:
       runs-on: ubuntu-latest
+      task_runner: task
 
   docs:
     uses: ./.github/workflows/_docs.yml
+    with:
+      task_runner: task
     permissions:
       contents: write
 
@@ -37,3 +48,21 @@ jobs:
     uses: ./.github/workflows/_release.yml
     permissions:
       contents: write
+
+  required-checks-passed:
+    name: all required checks passed
+    needs: [lint, test, docs]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check all required jobs passed
+        run: |
+          failing=$(echo '${{ toJSON(needs) }}' | jq -r '
+            to_entries[] |
+            select(.value.result != "success" and .value.result != "skipped") |
+            "\(.key): \(.value.result)"
+          ')
+          if [ -n "$failing" ]; then
+            echo "$failing"
+            exit 1
+          fi

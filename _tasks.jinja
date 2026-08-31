@@ -1,0 +1,85 @@
+{#
+  Canonical task list, included (not copied — this file lives outside
+  `template/`, like `extensions.py`) by each of the task-runner outputs so
+  the task set is defined once and only formatted differently per tool:
+    - template/{% if task_runner_effective == 'task' %}Taskfile.yml{% endif %}.jinja
+    - template/{% if task_runner_effective == 'just' %}justfile{% endif %}.jinja
+    - template/{% if task_runner_effective == 'make' %}Makefile{% endif %}.jinja
+    - the `[tool.poe.tasks]` table in template/pyproject.toml.jinja
+      (task_runner_effective == 'poe')
+    - the `[tool.pixi.feature.dev.tasks]` table in template/pyproject.toml.jinja
+      (task_runner_effective == 'pixi')
+
+  Sets `tasks`: a list of {name, desc, cmd: [str, ...]} or
+  {name, desc, deps: [name, ...]} dicts, in the order they should be shown.
+
+  `cmd` entries already include the right package-manager run-prefix, EXCEPT
+  when task_runner_effective == 'pixi': pixi's own tasks already run inside
+  the activated environment, so no `pixi run` prefix is needed there.
+#}
+{% set run = '' if task_runner_effective == 'pixi' else (
+    'uv run --locked ' if package_manager == 'uv' else (
+    'pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ')) %}
+{% set run_x = '' if task_runner_effective == 'pixi' else (
+    'uv run --extra experiment --locked ' if package_manager == 'uv' else (
+    'pixi run -e experiment ' if package_manager == 'pixi' else 'poetry run ')) %}
+{% set docs_build_cmd = 'sphinx-build --fresh-env --show-traceback --fail-on-warning --keep-going docs build/html' if sphinx else ('zensical build' if zensical else 'great-docs build') %}
+{% set docs_serve_cmd = 'sphinx-autobuild --show-traceback --watch README.md docs build/html' if sphinx else ('zensical serve' if zensical else 'great-docs preview') %}
+
+{% set tasks = [
+    {
+        'name': 'lint',
+        'desc': 'Run pre-commit on all files',
+        'cmd': [run ~ 'pre-commit run --all-files --show-diff-on-failure'],
+    },
+] %}
+{% if strictness in ['recommended', 'full'] %}
+{% set tasks = tasks + [{
+    'name': 'type-check',
+    'desc': 'Run ' ~ type_checker ~ ' + static analysis',
+    'cmd': [
+        run ~ ('pyrefly check' if type_checker == 'pyrefly' else 'basedpyright'),
+        run ~ 'vulture ' ~ pkg_dir ~ ' --min-confidence 80',
+        run ~ 'deptry .',
+        run ~ 'typos .',
+    ],
+}] %}
+{% endif %}
+{% set tasks = tasks + [{
+    'name': 'test',
+    'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] else ''),
+    'cmd': [run ~ 'pytest' ~ (' --cov=' ~ package_name ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] else '')],
+}] %}
+{% if docs %}
+{% set tasks = tasks + [
+    {'name': 'docs', 'desc': 'Build documentation', 'cmd': [run ~ docs_build_cmd]},
+    {'name': 'docs-serve', 'desc': 'Serve documentation with live reload', 'cmd': [run ~ docs_serve_cmd]},
+] %}
+{% if sphinx %}
+{% set tasks = tasks + [{'name': 'docs-linkcheck', 'desc': 'Check documentation links', 'cmd': [run ~ 'sphinx-build -b linkcheck docs build/linkcheck']}] %}
+{% endif %}
+{% endif %}
+{% if competition %}
+{% set tasks = tasks + [
+    {'name': 'dataset', 'desc': 'Build the dataset from raw inputs', 'cmd': [run ~ 'python -m utils.dataset']},
+    {'name': 'features', 'desc': 'Build engineered features', 'cmd': [run ~ 'python -m utils.features']},
+    {'name': 'train', 'desc': 'Train a model', 'cmd': [run ~ 'python -m utils.modeling.train']},
+    {'name': 'tune', 'desc': 'Run Optuna hyperparameter search', 'cmd': [run ~ 'python -m utils.modeling.train optuna.trials=50']},
+    {'name': 'predict', 'desc': 'Run inference and write predictions', 'cmd': [run ~ 'python -m utils.modeling.predict']},
+    {'name': 'plots', 'desc': 'Generate exploratory plots', 'cmd': [run ~ 'python -m utils.plots']},
+] %}
+{% endif %}
+{% if data_science %}
+{% set tasks = tasks + [
+    {'name': 'marimo', 'desc': 'Launch marimo notebook editor', 'cmd': [run_x ~ 'marimo edit ' ~ ('src/notebook' if competition else 'notebooks')]},
+    {'name': 'notebook', 'desc': 'Launch Jupyter on notebooks/', 'cmd': [run_x ~ 'jupyter lab notebooks/ --allow-root']},
+    {'name': 'paper', 'desc': 'Render the paper to arxiv-pdf and html', 'cmd': ['quarto render paper/paper.qmd']},
+    {'name': 'slides', 'desc': 'Render the slides to reveal.js html', 'cmd': ['quarto render slides/slides.qmd']},
+    {'name': 'paper-api', 'desc': 'Build the quartodoc API reference', 'cmd': [run ~ 'quartodoc build --config _quarto.yml']},
+] %}
+{% endif %}
+{% set tasks = tasks + [{
+    'name': 'check',
+    'desc': 'Run all quality checks',
+    'deps': ['lint'] + (['type-check'] if strictness in ['recommended', 'full'] else []) + ['test'],
+}] %}

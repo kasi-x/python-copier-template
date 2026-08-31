@@ -1,9 +1,9 @@
 # Contribute to the template
-Contributions and issues are most welcome! All issues and pull requests are handled through [GitHub](https://github.com/DiamondLightSource/python-copier-template/issues). Also, please check for any existing issues before filing a new one. If you have a great idea but it involves big changes, please file a ticket before making a pull request! We want to make sure you don't spend your time coding something that might not fit the scope of the project.
+Contributions and issues are most welcome! All issues and pull requests are handled through [GitHub](https://github.com/kasi-x/python-copier-template/issues). Also, please check for any existing issues before filing a new one. If you have a great idea but it involves big changes, please file a ticket before making a pull request! We want to make sure you don't spend your time coding something that might not fit the scope of the project.
 
 ## Issue or Discussion?
 
-Github also offers [discussions](https://github.com/DiamondLightSource/python-copier-template/discussions) as a place to ask questions and share ideas. If your issue is open ended and it is not obvious when it can be "closed", please raise it as a discussion instead.
+Github also offers [discussions](https://github.com/kasi-x/python-copier-template/discussions) as a place to ask questions and share ideas. If your issue is open ended and it is not obvious when it can be "closed", please raise it as a discussion instead.
 
 ## Getting changes into the template
 
@@ -14,12 +14,12 @@ This template is a place to pull together agreed best practices from various sou
 The template has tests for:
 
 - Generating a new project from scratch
-- Updating the [example project](https://github.com/DiamondLightSource/python-copier-template-example)
+- Updating the [example project](https://github.com/kasi-x/python-copier-template-example)
 - Checking that both of the above produce the same results
 
 However, this does not test whether processes like CI and docs work correctly. You can ensure that these are checked by:
 
-- Making your changes on a branch of <https://github.com/DiamondLightSource/python-copier-template>
+- Making your changes on a branch of <https://github.com/kasi-x/python-copier-template>
 - Running `uvx copier update --vcs-ref=<branch_name>` in the repo where you would like to demonstrate the behaviour
 - Linking to that demonstration repo in the PR
 

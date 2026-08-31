@@ -1,5 +1,10 @@
 on:
   workflow_call:
+    inputs:
+      task_runner:
+        type: string
+        description: Which task runner drives the docs task (task, just, poe, make, pixi)
+        required: true
 
 
 jobs:
@@ -14,6 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          persist-credentials: false
           # Need this to get version number from last tag
           fetch-depth: 0
 
@@ -21,13 +27,46 @@ jobs:
         run: sudo apt-get install graphviz
 
       - name: Install uv
+        if: hashFiles('pixi.lock', 'poetry.lock') == ''
         uses: astral-sh/setup-uv@v9.0.0
 
-      - name: Build docs
-        run: uv run --locked tox -e docs
+      - name: Install pixi
+        if: hashFiles('pixi.lock') != ''
+        uses: prefix-dev/setup-pixi@v0.10.1
 
-      - name: Remove environment.pickle
-        run: rm build/html/.doctrees/environment.pickle
+      - name: Install poetry
+        if: hashFiles('poetry.lock') != ''
+        uses: snok/install-poetry@v1
+
+      - name: Install Task
+        if: inputs.task_runner == 'task'
+        uses: arduino/setup-task@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Just
+        if: inputs.task_runner == 'just'
+        uses: extractions/setup-just@v2
+
+      - name: Build docs
+        env:
+          TASK_RUNNER: ${{ inputs.task_runner }}
+        run: |
+          set -eu
+          case "$TASK_RUNNER" in
+            task) task docs ;;
+            just) just docs ;;
+            make) make docs ;;
+            poe)
+              if [ -f poetry.lock ]; then
+                poetry run poe docs
+              else
+                uv run --locked poe docs
+              fi
+              ;;
+            pixi) pixi run -e dev --locked docs ;;
+            *) echo "Unknown task runner: $TASK_RUNNER" >&2; exit 1 ;;
+          esac
 
       - name: Upload built docs artifact
         uses: actions/upload-artifact@v7
@@ -36,13 +75,19 @@ jobs:
           path: build
 
       - name: Sanitize ref name for docs version
-        run: echo "DOCS_VERSION=${GITHUB_REF_NAME//[^A-Za-z0-9._-]/_}" >> $GITHUB_ENV
+        run: echo "DOCS_VERSION=${GITHUB_REF_NAME//[^A-Za-z0-9._-]/_}" >> "$GITHUB_ENV"
 
       - name: Move to versioned directory
-        run: mv build/html .github/pages/$DOCS_VERSION
+        run: |
+          if [ -f docs/conf.py ]; then
+            mv build/html ".github/pages/$DOCS_VERSION"
+          else
+            mv build/site ".github/pages/$DOCS_VERSION"
+          fi
 
       - name: Write switcher.json
-        run: python .github/pages/make_switcher.py --add $DOCS_VERSION ${{ github.repository }} .github/pages/switcher.json
+        if: hashFiles('docs/conf.py') != ''
+        run: python .github/pages/make_switcher.py --add "$DOCS_VERSION" "${{ github.repository }}" .github/pages/switcher.json
 
       - name: Publish Docs to gh-pages
         if: github.ref_type == 'tag' || github.ref_name == 'main'

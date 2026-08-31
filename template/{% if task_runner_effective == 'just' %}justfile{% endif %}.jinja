@@ -1,0 +1,13 @@
+{% import "_tasks.jinja" as _t with context -%}
+default:
+    @just --list
+
+{% for task in _t.tasks %}
+# {{ task.desc }}
+{% if task.deps is defined %}
+{{ task.name }}: {{ task.deps | join(' ') }}
+{% else %}
+{{ task.name }}:
+    {{ task.cmd | join('\n    ') }}
+{% endif -%}
+{% endfor -%}

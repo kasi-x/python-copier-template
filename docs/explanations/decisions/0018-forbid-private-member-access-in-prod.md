@@ -9,7 +9,7 @@ Accepted
 ## Context
 
 Most programming languages forbid access to private member variables at compile time to guarantee encapsulation. Python only does this by convention. Ruff now provides a rule (SLF001) that forbids it.
-See https://github.com/DiamondLightSource/python-copier-template/issues/154 for further discussion.
+See https://github.com/kasi-x/python-copier-template/issues/154 for further discussion.
 
 ## Decision
 

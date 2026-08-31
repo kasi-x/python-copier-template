@@ -7,7 +7,7 @@ Code linting is handled by [ruff](https://docs.astral.sh/ruff) run under [pre-co
 You can run the above checks on all files with this command:
 
 ```
-$ tox -e pre-commit
+$ task lint
 ```
 
 The devcontainer will also install a pre-commit hook that will run each time you do a `git commit` on just the files that have changed.

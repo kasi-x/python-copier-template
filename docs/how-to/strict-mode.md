@@ -1,13 +1,53 @@
-# Use Pyright's Strict Mode
+# Choose your strictness level
 
-For projects using pyright you can enable strict mode for stricter than normal type checking. See [the docs](https://github.com/microsoft/pyright/blob/main/docs/configuration.md) for a full breakdown. 
+The template offers a single axis — `strictness` — that controls both how
+strictly type annotations are required and how thorough the static-analysis
+toolchain is. Pick one level when prompted; it drives the generated
+`pyproject.toml`, `pre-commit` hooks and CI configuration together.
 
-## How to Enable
+## The 4 levels
 
-When creating a template, select `pyright` as the type checker and type `y` when prompted to enable strict mode.
+| Level | Type annotations | Type checkers | Static analysis | Ruff |
+|---|---|---|---|---|
+| `none` | Not required | None | None | Minimal set (pycodestyle, pyflakes, isort) |
+| `basic` | Not required | None | None | Basic set (bugbear, pycodestyle, isort, pyupgrade, ...) |
+| `recommended` | Partial (fully-untyped functions pass) | basedpyright + pyrefly | typos, vulture, deptry, pip-audit | `ALL` rules with pragmatic ignores |
+| `full` | All functions annotated | basedpyright (strict, `Any` forbidden) + pyrefly | Same as recommended | `ALL` rules with minimal ignores |
 
-## Who Should Use Strict Mode?
+- **`none`**: pytest + ruff with a minimal rule set. No type checking, no
+  static analysis. For throwaway scripts and experiments.
+- **`basic`**: pytest + ruff with a curated basic rule set. No type checking.
+  Good for small prototypes that still want consistent style.
+- **`recommended`** (default): the full toolchain — ruff with `ALL` rules
+  (preview enabled, pragmatic `WHYNOT` ignores), basedpyright + pyrefly,
+  typos / vulture / deptry / pip-audit, driven by your task runner.
+  Partially-annotated functions are allowed.
+- **`full`**: everything in recommended plus strict type checking. `Any` is
+  forbidden (`reportAny` etc.), every function must be annotated, and ruff's
+  ignores are minimized. Best for a brand-new project you intend to maintain
+  long-term.
 
-Strict mode enforces good practices such as type hints on function signatures, providing increased confidence in code that has been more thoroughly analyzed and a shorter development time thanks to fast feedback from the type checker. Starting a new project and continually keeping it passing provides a long-term benefit when it comes to maintanability and robustness. However, adopting strict mode on top of legacy projects is likely to lead to lots of errors to work through - probably thousands. Additionally it does not usually work well with libraries that do not have [type stubs](https://github.com/microsoft/pyright/blob/main/docs/type-stubs.md), you will likely need a `# type: ignore` on any line that directly uses the library code. This may limit the usefulness of pyright but it can still be worth doing to ensure your own code is internally consistent.
+## How to Choose
 
-The recommended approach for brand new projects is to enable strict mode and stick with it for as long as is practical, moving away if it starts to cause more hindrance than help (e.g. because too many major dependencies do not support it).
+When creating a project, select your `strictness` level when prompted.
+
+- **`none`**: you want fast iteration without thinking about types or style.
+  Good for throwaway scripts and experiments.
+- **`basic`**: you want consistent style but no type checking.
+- **`recommended`** (default): a balanced default. Fits both new code and
+  applying the template to existing code.
+- **`full`**: you treat `Any` as a code smell and want strict typing from day
+  one. Best for a brand-new project you intend to maintain long-term.
+
+## Lessons from practice
+
+- **`full` is for new projects.** Applying strict mode to legacy code can
+  produce thousands of errors. Use `recommended` for retrofits.
+- **`recommended` survives retrofits.** `analyzeUnannotatedFunctions = false`
+  skips fully-untyped functions, so an existing codebase stays green while new
+  code gets stricter.
+- **`Any` is sometimes necessary.** Libraries like `boto3` without full stubs
+  need `Any` (or `types-boto3`). `full` requires the latter.
+- **Type checkers are not interchangeable.** `# pyright: ignore[Rule]` is the
+  correct comment for pyright-based checkers; mypy's `# type: ignore[code]`
+  codes are not recognized.
