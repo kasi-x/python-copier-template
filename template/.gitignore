@@ -127,3 +127,13 @@ lockfiles/
 
 # ruff cache
 .ruff_cache/
+
+# Local environment variables (see .env.example)
+.env
+.envs/
+*.pem
+
+# ROS 2 / colcon workspace artifacts
+{% if ros2_pkg %}install/
+log/
+{% endif %}

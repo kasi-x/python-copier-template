@@ -9,9 +9,8 @@ This will:
 - Ask if you would like to overwrite conflicting files (always choose yes)
 - Record the answers in the project so they can be used in later updates
 
-:::{note}
-Copier will *overwrite* files with the template files. Please check the changes using `git diff` and put back anything you would like to keep from the existing project files.
-:::
+!!! note
+    Copier will *overwrite* files with the template files. Please check the changes using `git diff` and put back anything you would like to keep from the existing project files.
 
 ## If you have a skeleton-based project
 
@@ -39,10 +38,9 @@ git diff
 git commit -m "Adopt python-copier-template x.x.x"
 ```
 
-:::{note}
-Copier does not touch any already existing files that do not conflict with the ones in the template. Therefore, you may end up with files in your project you no longer need such as old github workflows. These would need to be manually deleted.
-:::
+!!! note
+    Copier does not touch any already existing files that do not conflict with the ones in the template. Therefore, you may end up with files in your project you no longer need such as old github workflows. These would need to be manually deleted.
 
 ## Getting started with your new structure
 
-You can now [](../how-to/setup-repo), [](../how-to/dev-install), and then follow some of the other [](../how-to).
+You can now read [Setup Repository](../how-to/setup-repo.md), [Developer Installation](../how-to/dev-install.md), and then follow some of the other [How-to Guides](../how-to.md).

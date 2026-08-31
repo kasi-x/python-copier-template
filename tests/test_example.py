@@ -145,6 +145,7 @@ class Thing:
     run("git add .")
     # Build
     run("uvx --from go-task-bin task check")
+    run("uvx --from go-task-bin task docs")
     # Check it generates the right output
     api_dir = tmp_path / "build" / "html" / "_api"
     top_html = api_dir / "python_copier_template_example.html"
@@ -454,6 +455,22 @@ def test_template_poetry(tmp_path: Path):
     assert (tmp_path / "poetry.lock").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert "tool" in pyproject_toml and "poetry" in pyproject_toml["tool"]
+    readme = (tmp_path / "README.md").read_text()
+    # only the uv-tested matrix gets the full "3.11 | 3.12 | 3.13 | 3.14" range
+    assert "Python-3.11-3776AB" in readme
+
+
+def test_template_readme_badges(tmp_path: Path):
+    copy_project(tmp_path)  # example-answers.yml uses package_manager: uv
+    readme = (tmp_path / "README.md").read_text()
+    # only officially-documented tool badges: no unofficial/inferred ones
+    # (e.g. uv, pixi have no official "used by" badge upstream)
+    assert "astral-sh/ruff/main/assets/badge/v2.json" in readme
+    assert "copier-org/copier/master/img/badge/badge-black.json" in readme
+    assert "pre--commit-enabled-brightgreen" in readme
+    assert "astral-sh/uv" not in readme
+    assert "prefix-dev/pixi" not in readme
+    assert "Python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776AB" in readme
 
 
 def test_template_task_runner_just(tmp_path: Path):
@@ -556,6 +573,168 @@ def test_template_no_docker_has_no_docs_and_works(tmp_path: Path):
 def test_bad_repo_name(tmp_path: Path):
     with pytest.raises(ValueError, match="bad:thing is not a valid repo name"):
         copy_project(tmp_path, repo_name="bad:thing")
+
+
+def test_django_not_supported_aborts(tmp_path: Path):
+    # Selecting the web_django project type must abort generation with a
+    # pointer to the alternatives, instead of generating a project.
+    with pytest.raises(Exception, match="Django is not supported"):
+        copy_project(tmp_path, project_type="web_django")
+
+
+def test_web_api_ships_env_and_compose(tmp_path: Path):
+    copy_project(tmp_path, project_type="web_api", docker=True)
+    # cookiecutter-django style additions
+    assert (tmp_path / ".editorconfig").exists()
+    assert (tmp_path / ".env.example").exists()
+    assert (tmp_path / ".dockerignore").exists()
+    assert (tmp_path / "compose.local.yml").exists()
+    # The compose file wires up the API + postgres
+    compose = (tmp_path / "compose.local.yml").read_text()
+    assert "postgres" in compose
+    assert "8000:8000" in compose
+    # .env is git-ignored
+    gitignore = (tmp_path / ".gitignore").read_text()
+    assert ".env" in gitignore
+
+
+def test_web_api_ci_postgres_service(tmp_path: Path):
+    # Without docker, the CI test job gets a postgres service container
+    copy_project(tmp_path, project_type="web_api", docker=False)
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "postgres" in ci
+    assert "postgres-host: localhost" in ci
+    assert "postgres:17-alpine" in ci
+    # No compose file when docker is off
+    assert not (tmp_path / "compose.local.yml").exists()
+    assert not (tmp_path / ".dockerignore").exists()
+
+
+def test_library_no_web_api_extras(tmp_path: Path):
+    # A plain library should not get the web_api-only compose/env additions
+    copy_project(tmp_path, project_type="library", docker=False)
+    assert not (tmp_path / "compose.local.yml").exists()
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "postgres" not in ci
+    # .env.example and .editorconfig are always shipped
+    assert (tmp_path / ".env.example").exists()
+    assert (tmp_path / ".editorconfig").exists()
+
+
+def test_pr_template_shipped(tmp_path: Path):
+    copy_project(tmp_path)
+    pr = tmp_path / ".github" / "PULL_REQUEST_TEMPLATE" / "pull_request_template.md"
+    assert pr.exists()
+    assert "Checks for reviewer" in pr.read_text()
+
+
+def test_template_ros2_python_apt(tmp_path: Path):
+    copy_project_recommended(
+        tmp_path,
+        project_type="ros2",
+        pkg_language="python",
+        ros_distro="humble",
+        ros2_package_manager="apt",
+    )
+    # ament_python layout
+    assert (tmp_path / "package.xml").exists()
+    assert "ament_python" in (tmp_path / "package.xml").read_text()
+    assert "<depend>rclpy</depend>" in (tmp_path / "package.xml").read_text()
+    assert (tmp_path / "setup.py").exists()
+    assert (tmp_path / "setup.cfg").exists()
+    assert (tmp_path / "resource" / "recommended_example").exists()
+    assert (tmp_path / "test" / "test_flake8.py").exists()
+    assert (tmp_path / "recommended_example" / "main.py").exists()
+    # The standard toolchain coexists: pyproject has [project] (no rclpy dep —
+    # package.xml owns the ROS deps), uv.lock and Dockerfile are generated.
+    pyproject = (tmp_path / "pyproject.toml").read_text()
+    assert "[project]" in pyproject
+    assert "requires-python" in pyproject
+    assert "rclpy" not in pyproject
+    assert (tmp_path / "uv.lock").exists()
+    assert (tmp_path / "Dockerfile").exists()
+    # Humble -> Python 3.10
+    assert (tmp_path / ".python-version").read_text().strip() == "3.10"
+    # CI uses industrial_ci (apt flavour)
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "industrial_ci" in ci
+    assert "ROS_DISTRO: humble" in ci
+    # ros2-specific Dockerfile + the standard one coexist
+    dockerfile = (tmp_path / "Dockerfile.ros2").read_text()
+    assert "ros:humble-ros-base" in dockerfile
+    # justfile drives colcon
+    justfile = (tmp_path / "justfile").read_text()
+    assert "colcon build" in justfile
+
+
+def test_template_ros2_cpp_apt(tmp_path: Path):
+    copy_project_recommended(
+        tmp_path,
+        project_type="ros2",
+        pkg_language="cpp",
+        ros_distro="humble",
+        ros2_package_manager="apt",
+    )
+    # ament_cmake layout
+    assert (tmp_path / "CMakeLists.txt").exists()
+    assert "ament_cmake" in (tmp_path / "package.xml").read_text()
+    assert "<depend>rclcpp</depend>" in (tmp_path / "package.xml").read_text()
+    assert (tmp_path / "src" / "talker.cpp").exists()
+    assert (tmp_path / "include" / "recommended_example" / "talker.hpp").exists()
+    # C++ package: the build is CMake, so no pyproject.toml/setup.py is needed
+    # (the standard toolchain files stay, but the ament build is authoritative).
+    assert not (tmp_path / "pyproject.toml").exists()
+    assert not (tmp_path / "setup.py").exists()
+
+
+def test_template_ros2_python_pixi(tmp_path: Path):
+    copy_project_recommended(
+        tmp_path,
+        project_type="ros2",
+        pkg_language="python",
+        ros_distro="jazzy",
+        ros2_package_manager="pixi",
+    )
+    # pixi.toml with the RoboStack distro channel
+    pixi = (tmp_path / "pixi.toml").read_text()
+    assert "robostack-jazzy" in pixi
+    assert "ros-jazzy-rclpy" in pixi
+    # Jazzy -> Python 3.12
+    assert (tmp_path / ".python-version").read_text().strip() == "3.12"
+    # CI uses setup-pixi
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "setup-pixi" in ci
+    assert "industrial_ci" not in ci
+    # Dockerfile.ros2 pixi flavour
+    dockerfile = (tmp_path / "Dockerfile.ros2").read_text()
+    assert "pixi install" in dockerfile
+    # pixi manages everything: no justfile, package_manager is pixi
+    assert not (tmp_path / "justfile").exists()
+    assert (tmp_path / "pixi.lock").exists()
+    # pyproject still coexists (dev tooling config)
+    assert (tmp_path / "pyproject.toml").exists()
+    assert "[project]" in (tmp_path / "pyproject.toml").read_text()
+
+
+def test_template_ros2_coexists_with_standard_tooling(tmp_path: Path):
+    copy_project_recommended(
+        tmp_path,
+        project_type="ros2",
+        pkg_language="python",
+        ros_distro="humble",
+        ros2_package_manager="apt",
+    )
+    # Docs, ASCII banner and dev tooling all coexist with the ament layout
+    assert (tmp_path / "docs").exists()
+    assert (tmp_path / "tools" / "ascii_banner.py").exists()
+    assert (tmp_path / "NOTICE").exists()
+    # The ros2 package __init__ exports __version__ (docs import it)
+    init = (tmp_path / "recommended_example" / "__init__.py").read_text()
+    assert "__version__" in init
+    # devcontainer is ROS-aware and rendered (no raw jinja)
+    devcontainer = (tmp_path / ".devcontainer" / "devcontainer.json").read_text()
+    assert "Dockerfile.ros2" in devcontainer
+    assert "{%" not in devcontainer
 
 
 def test_dots_in_package_name(tmp_path: Path):

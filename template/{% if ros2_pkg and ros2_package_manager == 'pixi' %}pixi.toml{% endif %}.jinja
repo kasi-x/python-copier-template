@@ -1,0 +1,43 @@
+# pixi project for the ROS 2 package (RoboStack conda-forge packages).
+#
+# RoboStack publishes ros-* packages for each distro on its own channel:
+#   - Humble: https://prefix.dev/robostack-humble
+#   - Jazzy:  https://prefix.dev/robostack-jazzy
+# See https://pixi.prefix.dev/latest/robotics/ for the recommended setup.
+
+[workspace]
+channels = ["https://prefix.dev/robostack-{{ ros_distro }}", "https://prefix.dev/conda-forge"]
+platforms = ["linux-64"]
+
+[features]
+dev = ["dev"]
+
+[dependencies]
+# ROS 2 core + the package's runtime deps (from package.xml).
+# Add more ros-{{ ros_distro }}-* packages as needed (or the full
+# ros-{{ ros_distro }}-desktop meta-package: pixi add ros-{{ ros_distro }}-desktop).
+{% if pkg_language == 'python' %}ros-{{ ros_distro }}-rclpy = "*"
+{% else %}ros-{{ ros_distro }}-rclcpp = "*"
+{% endif %}python = "{{ '3.10' if ros_distro == 'humble' else '3.12' }}"
+
+[feature.dev.dependencies]
+# Build tools + linters used by the ament test suite.
+colcon-common-extensions = "*"
+rosdep = "*"
+{% if pkg_language == 'python' %}ros-{{ ros_distro }}-ament-copyright = "*"
+ros-{{ ros_distro }}-ament-flake8 = "*"
+ros-{{ ros_distro }}-ament-pep257 = "*"
+{% else %}ros-{{ ros_distro }}-ament-lint-auto = "*"
+ros-{{ ros_distro }}-ament-lint-common = "*"
+{% endif %}pre-commit = "*"
+pytest = "*"
+ruff = "*"
+
+[environments]
+default = ["dev"]
+
+[tasks]
+lint = { cmd = "pre-commit run --all-files --show-diff-on-failure" }
+build = { cmd = "colcon build --symlink-install --packages-select {{ package_name }}" }
+test = { cmd = "colcon test --packages-select {{ package_name }} && colcon test-result --verbose" }
+check = { depends-on = ["lint", "build", "test"] }

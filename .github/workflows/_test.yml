@@ -13,6 +13,26 @@ on:
         type: string
         description: Which task runner drives the test task (task, just, poe, make, pixi)
         required: true
+      postgres-host:
+        type: string
+        description: Host of the postgres service container, when the project needs a database
+        default: ""
+      postgres-port:
+        type: string
+        description: Port of the postgres service container
+        default: "5432"
+      postgres-user:
+        type: string
+        description: Username for the postgres service container
+        default: ""
+      postgres-password:
+        type: string
+        description: Password for the postgres service container
+        default: ""
+      postgres-db:
+        type: string
+        description: Database name for the postgres service container
+        default: ""
 
 env:
   # https://github.com/pytest-dev/pytest/issues/2042
@@ -56,6 +76,14 @@ jobs:
       - name: Run tests
         env:
           TASK_RUNNER: ${{ inputs.task_runner }}
+          # Postgres service container connection info (empty unless the
+          # project opted in via ci.yml's postgres service).
+          POSTGRES_HOST: ${{ inputs.postgres-host }}
+          POSTGRES_PORT: ${{ inputs.postgres-port }}
+          POSTGRES_USER: ${{ inputs.postgres-user }}
+          POSTGRES_PASSWORD: ${{ inputs.postgres-password }}
+          POSTGRES_DB: ${{ inputs.postgres-db }}
+          DATABASE_URL: ${{ inputs.postgres-host != '' && format('postgresql://{0}:{1}@{2}:{3}/{4}', inputs.postgres-user, inputs.postgres-password, inputs.postgres-host, inputs.postgres-port, inputs.postgres-db) || '' }}
         run: |
           set -eu
           case "$TASK_RUNNER" in

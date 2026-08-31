@@ -3,7 +3,7 @@ on:
     inputs:
       task_runner:
         type: string
-        description: Which task runner drives the tasks (task, just, poe, make, pixi)
+        description: Which task runner drives the tasks (task, just, poe, make, invoke, duty, pixi)
         required: true
       task:
         type: string
@@ -59,6 +59,20 @@ jobs:
                   poetry run poe "$t"
                 else
                   uv run --locked poe "$t"
+                fi
+                ;;
+              invoke)
+                if [ -f poetry.lock ]; then
+                  poetry run invoke "$t"
+                else
+                  uv run --locked invoke "$t"
+                fi
+                ;;
+              duty)
+                if [ -f poetry.lock ]; then
+                  poetry run duty "$t"
+                else
+                  uv run --locked duty "$t"
                 fi
                 ;;
               pixi) pixi run -e dev --locked "$t" ;;

@@ -1,12 +1,6 @@
 # Reference
 
-Technical reference material including APIs and release notes.
+Technical reference material including standards and release notes.
 
-```{toctree}
-:maxdepth: 1
-:glob:
-
-reference/*
-genindex
-Release Notes <https://github.com/kasi-x/python-copier-template/releases>
-```
+- [Standards](reference/standards.md)
+- [Release Notes](https://github.com/DiamondLightSource/python-copier-template/releases)

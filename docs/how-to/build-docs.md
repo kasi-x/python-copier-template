@@ -1,47 +1,32 @@
-# Build the docs using sphinx
+# Build the docs using Zensical
 
-You can build the [sphinx](https://www.sphinx-doc.org) based docs from the project directory by running:
+You can build the [Zensical](https://github.com/zenseact/zensical) / MkDocs based docs from the project directory by running:
 
-```
+```bash
 $ task docs
 ```
 
-This will build the static docs on the `docs` directory, which includes API docs that pull in docstrings from the code.
+This will build the static docs in the `site` directory, which includes API docs that pull in docstrings from the code.
 
-:::{seealso}
-[](documentation_standards)
-:::
+See also: [Standards](../reference/standards.md).
 
-The docs will be built into the `build/html` directory, and can be opened locally with a web browse:
-
-```
-$ firefox build/html/index.html
+```bash
+$ firefox site/index.html
 ```
 
-## Autobuild
+## Autobuild / Local Server
 
-You can also run an autobuild process, which will watch your `docs` and `src` directories for changes and rebuild whenever it sees changes, reloading any browsers watching the pages:
+You can also run a local preview server, which will watch your `docs` directory for changes and rebuild automatically:
 
-```
+```bash
 $ task docs-serve
 ```
 
-You can view the pages at localhost:
+You can view the pages at localhost (usually `http://127.0.0.1:8000`).
 
-```
-$ firefox http://localhost:8000
-```
-
-If you want to watch additional directories for changes you can pass these as arguments to the task:
-
-```
-$ task docs-serve -- --watch tests
-```
-
-(building-docs-in-ci)=
 ## Building docs in CI
 
-After a successful run of CI
+After a successful run of CI:
 
 Settings > Pages
 

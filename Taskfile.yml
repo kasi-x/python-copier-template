@@ -23,12 +23,12 @@ tasks:
     cmd: uv run --locked pytest
 
   docs:
-    desc: Run docs build with clean environment
-    cmd: uv run --locked sphinx-build --fresh-env --show-traceback --fail-on-warning --keep-going docs build/html
+    desc: Run docs build with zensical
+    cmd: uv run --locked zensical build
 
   docs-serve:
-    desc: Run docs with autobuild on change
-    cmd: uv run --locked sphinx-autobuild --show-traceback --watch README.md docs build/html {{ .CLI_ARGS }}
+    desc: Run docs server with zensical
+    cmd: uv run --locked zensical serve {{ .CLI_ARGS }}
 
   check:
     desc: Run all quality checks

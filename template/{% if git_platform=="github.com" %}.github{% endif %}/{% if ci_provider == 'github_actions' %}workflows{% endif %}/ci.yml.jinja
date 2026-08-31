@@ -16,7 +16,41 @@ on:
   pull_request:
 {% endraw %}
 jobs:
-
+{% if ros2_pkg %}{% if ros2_package_manager == 'pixi' %}
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install pixi
+        uses: prefix-dev/setup-pixi@v0.10.1
+        with:
+          environments: default
+      - name: Build the workspace
+        run: pixi run colcon build --symlink-install --packages-select {{ package_name }}
+      - name: Run the ament test suite
+        run: |
+          pixi run colcon test --packages-select {{ package_name }}
+          pixi run colcon test-result --verbose
+{% else %}
+  industrial_ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        env:
+          - ROS_DISTRO: {{ ros_distro }}
+    env:
+      ROS_DISTRO: {{ ros_distro }}
+      ROS_REPO: main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Run industrial_ci
+        uses: ros-industrial/industrial_ci@master
+{% raw %}        env:
+          ROS_DISTRO: ${{ matrix.env.ROS_DISTRO }}
+{% endraw %}{% endif %}{% else %}
   lint:
     uses: ./.github/workflows/_tasks.yml
     with:
@@ -31,11 +65,36 @@ jobs:
         python-version: {{ '["3.11", "3.12", "3.13", "3.14"]' if package_manager == "uv" else '["3.11"]' }}
 {% raw %}
       fail-fast: false
+{% endraw %}
+{% if project_type == 'web_api' and not docker %}
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+{% endif %}
+{% raw %}
     uses: ./.github/workflows/_test.yml
     with:
       runs-on: ${{ matrix.runs-on }}
       python-version: ${{ matrix.python-version }}
 {% endraw %}      task_runner: {{ task_runner_effective }}
+{% if project_type == 'web_api' and not docker %}
+      postgres-host: localhost
+      postgres-port: 5432
+      postgres-user: postgres
+      postgres-password: postgres
+      postgres-db: test
+{% endif %}
 {% if docker %}{% raw %}
   container:
     needs: test
@@ -88,4 +147,4 @@ jobs:
             echo "$failing"
             exit 1
           fi
-{% endraw -%}
+{% endraw -%}{% endif -%}

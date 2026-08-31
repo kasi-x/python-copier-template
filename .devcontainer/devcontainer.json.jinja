@@ -2,10 +2,59 @@
 {
     "name": "Python 3 Developer Container",
     "build": {
-        "dockerfile": "../Dockerfile",
+        "dockerfile": "{% if ros2_pkg %}../Dockerfile.ros2{% else %}../Dockerfile{% endif %}",
         "target": "developer"
     },
-    "remoteEnv": {
+{% if ros2_pkg %}    "remoteEnv": {
+        // ROS 2 container: no uv venv, just the sourced ROS environment.
+        "ROS_DISTRO": "{{ ros_distro }}",
+        // Put things that allow it in the persistent cache
+        "PRE_COMMIT_HOME": "/cache/pre-commit",
+        "CCACHE_DIR": "/cache/ccache"
+    },
+    "customizations": {
+        "vscode": {
+            // Set *default* container specific settings.json values on container create.
+            "settings": {
+                "python.defaultInterpreterPath": "{% if ros2_package_manager == 'pixi' %}/workspace/.pixi/envs/default/bin/python{% else %}/opt/ros/{{ ros_distro }}/lib/python3.{{ '10' if ros_distro == 'humble' else '12' }}/site-packages{% endif %}",
+                "python.terminal.activateEnvInCurrentTerminal": false,
+                "python.terminal.activateEnvironment": false
+            },
+            // Add the IDs of extensions you want installed when the container is created.
+            "extensions": [
+                "ms-python.python",
+                "ms-iot.vscode-ros",
+                "github.vscode-github-actions",
+                "redhat.vscode-yaml",
+                "charliermarsh.ruff"
+            ]
+        }
+    },
+    // Create the config folder for the bash-config feature
+    "initializeCommand": "mkdir -p ${localEnv:HOME}/.config/terminal-config",
+    "runArgs": [
+        // Allow the container to access the host X11 display
+        "--net=host",
+        // Make sure SELinux does not disable with access to host filesystems like tmp
+        "--security-opt=label=disable"
+    ],
+    "mounts": [
+        // Mount in the user terminal config folder so it can be edited
+        {
+            "source": "${localEnv:HOME}/.config/terminal-config",
+            "target": "/user-terminal-config",
+            "type": "bind"
+        },
+        // Keep a persistent cross container cache for pre-commit and ccache
+        {
+            "source": "devcontainer-shared-cache",
+            "target": "/cache",
+            "type": "volume"
+        }
+    ],
+    // After the container is created, resolve rosdep deps and build the workspace
+    "postCreateCommand": "{% if ros2_package_manager == 'pixi' %}pixi install && pixi run colcon build --symlink-install && pre-commit install --install-hooks{% else %}sudo rosdep init && rosdep update && rosdep install --from-paths . --ignore-src -r -y && colcon build --symlink-install && pre-commit install --install-hooks{% endif %}"
+{% else %}    "remoteEnv": {
         // Allow X11 apps to run inside the container
         "DISPLAY": "${localEnv:DISPLAY}",
         // Put things that allow it in the persistent cache
@@ -69,4 +118,5 @@
     "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind",
     // After the container is created, recreate the venv then make pre-commit first run faster
     "postCreateCommand": "uv venv --clear && uv sync && pre-commit install --install-hooks"
+{% endif %}
 }

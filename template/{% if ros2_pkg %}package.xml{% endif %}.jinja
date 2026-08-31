@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>{{ package_name }}</name>
+    <version>0.1.0</version>
+    <description>{{ description }}</description>
+
+    <maintainer email="{{ author_email }}">{{ author_name }}</maintainer>
+    <author email="{{ author_email }}">{{ author_name }}</author>
+
+    <license>{{ license_effective }}</license>
+
+    <url type="website">{{ repo_url }}</url>
+    <url type="bugtracker">{{ repo_url }}/issues</url>
+    <url type="repository">{{ repo_url }}</url>
+
+{% if pkg_language == 'python' %}    <depend>rclpy</depend>
+
+    <test_depend>ament_copyright</test_depend>
+    <test_depend>ament_flake8</test_depend>
+    <test_depend>ament_pep257</test_depend>
+    <test_depend>python3-pytest</test_depend>
+{% else %}    <buildtool_depend>ament_cmake</buildtool_depend>
+
+    <depend>rclcpp</depend>
+
+    <test_depend>ament_lint_auto</test_depend>
+    <test_depend>ament_lint_common</test_depend>
+{% endif %}
+    <export>
+        <build_type>{{ 'ament_python' if pkg_language == 'python' else 'ament_cmake' }}</build_type>
+    </export>
+</package>

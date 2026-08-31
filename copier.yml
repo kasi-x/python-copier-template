@@ -12,26 +12,39 @@ _jinja_extensions:
 
 use_recommended_toolchain:
     type: bool
+    when: "{{ not (project_type == 'ros2' and ros2_package_manager == 'pixi') }}"
     default: true
     help: |
         Use the recommended package manager & task runner?
         Recommended: uv (package manager) + just (task runner).
         Answer No to pick pixi/poetry, or a different task runner.
+        (For ros2 projects with the pixi ROS environment, pixi manages
+        everything — the package-manager question is not asked.)
 
 package_manager:
     type: str
-    when: "{{ not use_recommended_toolchain }}"
+    when: "{{ not use_recommended_toolchain and not (project_type == 'ros2' and ros2_package_manager == 'pixi') }}"
     help: |
         Which package manager would you like to use?
         - uv: Fast, pure Python package manager with a pip-like workflow.
         - pixi: Conda-based package manager with cross-language support.
         - poetry: Dependency management and packaging with Poetry.
         Choose pixi if you need native (non-Python) dependencies.
-    choices:
+        (For ros2 projects the package manager manages the pure-Python dev
+        tooling — ruff/pytest/pre-commit; the ROS environment itself is
+        provided by ros2_package_manager. When the ROS environment is pixi,
+        pixi manages everything, so this question is not asked. When it is
+        apt, pixi is not offered — one package manager at a time.)
+    choices: |
+        {%- if project_type == 'ros2' and ros2_package_manager == 'apt' %}
+        - uv
+        - poetry
+        {%- else %}
         - uv
         - pixi
         - poetry
-    default: uv
+        {%- endif %}
+    default: "{{ 'pixi' if project_type == 'ros2' and ros2_package_manager == 'pixi' else 'uv' }}"
 
 task_runner:
     type: str
@@ -45,11 +58,17 @@ task_runner:
         - poe: poethepoet. Pure Python, lives in pyproject.toml, no extra
           binary to install (just a dev dependency).
         - make: GNU Make. Universally available, terse Makefile syntax.
+        - invoke: pyinvoke. Pure Python, tasks.py with @task-decorated
+          functions, no extra binary to install (just a dev dependency).
+        - duty: duty (used by pawamoy's copier-uv). Pure Python, duties.py
+          with @duty-decorated functions, no extra binary to install.
     choices:
         Just: just
         Task (go-task): task
         poethepoet: poe
         Make: make
+        pyinvoke: invoke
+        duty: duty
     default: just
 
 task_runner_pixi:
@@ -80,13 +99,58 @@ project_type:
           models/, reports/ and experiment extras. GPU Dockerfile and
           Quarto paper are included.
         - script: a minimal script, no package layout.
+        - web_django: NOT supported. Selecting this aborts generation —
+          Django is not maintained by this template; use FastAPI /
+          Litestar / Flask, or the upstream cookiecutter-django instead.
+        - ros2: a ROS 2 package (ament_python or ament_cmake). Built with
+          colcon + rosdep; not a uv/pixi/poetry project.
     choices:
         - library
         - web_api
         - cli
         - data_science
         - script
+        - web_django
+        - ros2
     default: library
+
+pkg_language:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        Which language for the ROS 2 package?
+        - python: ament_python (rclpy) — setup.py + package.xml + resource/.
+        - cpp: ament_cmake — CMakeLists.txt + src/*.cpp + include/.
+    choices:
+        Python (rclpy): python
+        C++ (ament_cmake): cpp
+    default: python
+
+ros_distro:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        ROS 2 distribution. Humble (Ubuntu 22.04, Python 3.10) is the most
+        widely deployed; Jazzy (Ubuntu 24.04, Python 3.12) is the current LTS.
+    choices:
+        Humble (22.04 / Python 3.10): humble
+        Jazzy (24.04 / Python 3.12): jazzy
+    default: humble
+
+ros2_package_manager:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        How should the ROS 2 environment be provisioned?
+        - apt: the classic ROS 2 way — Ubuntu + apt (ros-{{ ros_distro }}-*)
+          + colcon + rosdep. Docker base image ros:{{ ros_distro }}-ros-base.
+        - pixi: RoboStack conda-forge packages via pixi, using the distro
+          channel (https://prefix.dev/robostack-{{ ros_distro }}). No
+          sudo/apt needed. See https://pixi.prefix.dev/latest/robotics/.
+    choices:
+        apt (colcon + rosdep): apt
+        pixi (RoboStack conda): pixi
+    default: apt
 
 use_recommended_data_science:
     type: bool
@@ -150,7 +214,7 @@ use_recommended_polish:
 
 layout:
     type: str
-    when: "{{ project_type != 'data_science' and not use_recommended_polish }}"
+    when: "{{ project_type not in ['data_science', 'ros2'] and not use_recommended_polish }}"
     help: |
         Which layout would you like to use for the package?
         - src: package in a src/ directory (recommended, prevents accidental
@@ -186,6 +250,8 @@ use_recommended_docs:
         Use the recommended documentation tool?
         Recommended: zensical (Zensical, an MkDocs fork with mkdocstrings).
         Answer No to pick README-only, Sphinx or Great Docs instead.
+        (For ros2 projects the docs build needs a sourced ROS environment,
+        e.g. the devcontainer or CI.)
 
 docs_type:
     type: str
@@ -566,6 +632,11 @@ docs:
     default: "{{ docs_type != 'README' }}"
     when: false
 
+ros2_pkg:
+    type: bool
+    default: "{{ project_type == 'ros2' }}"
+    when: false
+
 task_runner_effective:
     type: str
     default: "{{ task_runner_pixi if package_manager == 'pixi' else task_runner }}"
@@ -603,7 +674,7 @@ license_year:
 
 pkg_dir:
     type: str
-    default: "{{ 'src/utils' if competition else (('src/' if layout == 'src' and project_type != 'script' else '') + package_name) }}"
+    default: "{{ 'src/utils' if competition else (('src/' if layout == 'src' and project_type not in ['script', 'ros2'] else '') + package_name) }}"
     when: false
 
 _subdirectory: "template"
@@ -612,6 +683,9 @@ _skip_if_exists:
     - CHANGELOG.md
 
 _tasks:
+    - command: >-
+        python -c "import sys; print('Django is not supported by this template. Use FastAPI / Litestar / Flask instead, or the upstream cookiecutter-django template: https://github.com/cookiecutter/cookiecutter-django'); sys.exit(1)"
+      when: "{{ project_type == 'web_django' }}"
     - >-
         {% if ascii_banner %}
         python -B tools/ascii_banner.py {{ repo_name }} README.md

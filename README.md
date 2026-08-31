@@ -1,5 +1,7 @@
 [![CI](https://github.com/kasi-x/python-copier-template/actions/workflows/ci.yml/badge.svg)](https://github.com/kasi-x/python-copier-template/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 # python-copier-template
 
@@ -107,13 +109,29 @@ flowchart TD
 
 **Project type** (`project_type`)
 - **library** — a Python library/package
-- **web_api** — a web API service (Docker included)
+- **web_api** — a web API service (Docker included). Ships `compose.local.yml`
+  (API + Postgres), a `.env.example`, and a CI test job backed by a Postgres
+  service container
 - **cli** — a command-line tool
 - **data_science**: `data/`, `models/`, `reports/`, `notebooks/` and a `src/`
   pipeline (`src/data`, `src/features`, ...) layout. GPU Dockerfile and a
   Quarto paper are always included.
   - **Competition** (Kaggle-style): `src/{configs,data,input,output,features,logs,models,notebook,scripts,utils}` where `src/utils` is the installable package
 - **script** — a minimal script, flat package at the repo root
+- **web_django** — *not supported*: selecting it aborts generation with a
+  pointer to FastAPI / Litestar / Flask and the upstream
+  [cookiecutter-django](https://github.com/cookiecutter/cookiecutter-django)
+  (see the [web-api how-to](https://kasi-x.github.io/python-copier-template/main/how-to/web-api.html))
+- **ros2** — a ROS 2 package (`ament_python` with rclpy, or `ament_cmake`
+  with C++), built with **colcon + rosdep**. Choose **Humble** (Ubuntu
+  22.04 / Python 3.10, recommended for its wide deployment) or **Jazzy**
+  (Ubuntu 24.04 / Python 3.12), and provision the environment with **apt**
+  (classic `ros-<distro>-*` + industrial_ci) or **pixi** (RoboStack
+  conda-forge via `https://prefix.dev/robostack-<distro>`). Generates
+  `package.xml`, `setup.py`/`CMakeLists.txt`, `resource/`, ament linter
+  tests, `Dockerfile.ros2`, and a ROS-aware devcontainer. CI runs
+  industrial_ci (apt) or setup-pixi + colcon (pixi). See the
+  [ros2 how-to](https://kasi-x.github.io/python-copier-template/main/how-to/ros2.html)
 
 **Layout** (`layout`, for `library` / `web_api` / `cli`)
 - **src** — package in a `src/` directory (**default**; prevents accidental
@@ -182,6 +200,10 @@ flowchart TD
   [deptry](https://deptry.com), [typos](https://github.com/crate-ci/typos)
 - [basedpyright](https://docs.basedpyright.com) or [pyrefly](https://github.com/facebook/pyrefly)
 - [pre-commit](https://pre-commit.com) with actionlint + zizmor for CI linting
+- [editorconfig](https://editorconfig.org) (`.editorconfig`) for consistent
+  editor indentation and line endings
+- A `.env.example` with the environment variables the project understands
+  (`.env` is git-ignored and auto-loaded by direnv / the compose stack)
 - Author/GitHub-org questions default from local `git config`/`gh` (via a
   `copier-template-extensions`-loaded `extensions.py`); override at any prompt
 - A task runner of your choice ([Task](https://taskfile.dev) (default) /
@@ -192,6 +214,16 @@ flowchart TD
   [great-docs](https://posit-dev.github.io/great-docs/) for docs
 - An ASCII-art README banner generated at copy time via a bundled MIT-licensed
   copy of [pyfiglet](https://github.com/pwaller/pyfiglet) (see `tools/` and `NOTICE`)
+- README badge row: CI, coverage, license, a Python-version badge matching
+  the actual CI test matrix, and each tool's own *officially documented*
+  badge — [Ruff](https://github.com/astral-sh/ruff),
+  [pre-commit](https://pre-commit.com) and a
+  ["Made with Copier"](https://github.com/copier-org/copier#show-your-support)
+  badge (h/t [reproML](https://github.com/Excidion/reproML) and
+  [pypackage-template](https://github.com/browniebroke/pypackage-template)).
+  No unofficial/inferred tool badges (e.g. uv, pixi have none) —
+  [pawamoy/copier-uv](https://github.com/pawamoy/copier-uv), a well-known
+  uv-based copier template, only badges CI/docs/chat for the same reason.
 
 **CI/CD**
 - **CI provider** (`ci_provider`): `github_actions` (default) generates the

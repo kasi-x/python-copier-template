@@ -1,6 +1,6 @@
 # Setup the repository with recommended settings
 
-When the repository has been created, it will require some settings to be changed for all the features of the python-copier-template to work. These are listed below.
+When the repository has been created, it will require some settings to be changed for all the features of python-copier-template to work. These are listed below.
 
 ## Discussions
 
@@ -20,16 +20,16 @@ If the repository is in the `DiamondLightSource` org, then follow [the dev guide
 
 ## Code Coverage
 
-To ensure that code coverage is correctly uploaded to codecov.io follow [](#installing-codecov-github-app)
+To ensure that code coverage is correctly uploaded to codecov.io follow [Code Coverage](./coverage.md).
 
 ## Renovate
 
-To ensure that your dependencies are kept up to date follow [](./renovate.md)
+To ensure that your dependencies are kept up to date follow [Renovate](./renovate.md).
 
 ## GitHub pages
 
-If you configured the project to have sphinx docs then follow [](#building-docs-in-ci)
+If you configured the project to have docs then follow [Building docs in CI](./build-docs.md#building-docs-in-ci).
 
 ## PyPI uploading
 
-If you configured the project to upload built wheels to PyPI then follow [](./pypi.md)
+If you configured the project to upload built wheels to PyPI then follow [PyPI uploading](./pypi.md).

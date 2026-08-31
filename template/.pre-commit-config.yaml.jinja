@@ -34,12 +34,21 @@ repos:
         types: [python]
         require_serial: true
 
+{% if ros2_pkg and ros2_package_manager == 'pixi' %}
+      - id: lock-sync
+        name: sync lockfile and environment
+        pass_filenames: false
+        language: system
+        entry: bash -c 'if [ -f pixi.lock ]; then pixi install --locked; fi'
+        files: ^(pixi\.lock|pixi\.toml)$
+{% else %}
       - id: lock-sync
         name: sync lockfile and environment
         pass_filenames: false
         language: system
         entry: bash -c 'if [ -f pixi.lock ]; then pixi install; elif [ -f poetry.lock ]; then poetry install --sync; else uv sync; fi'
         files: ^(uv\.lock|pixi\.lock|poetry\.lock|pyproject\.toml)$
+{% endif %}
 
 {% if strictness in ['recommended', 'full'] %}
   - repo: https://github.com/crate-ci/typos

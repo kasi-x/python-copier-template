@@ -1,0 +1,47 @@
+# Local development stack for the {{ repo_name }} web API.
+#
+# Usage:
+#   docker compose -f compose.local.yml up --build
+#
+# The API container builds from the repository Dockerfile (the `runtime`
+# target), and postgres is provided for local development. The stack is
+# driven by .env (see .env.example) — copy it to .env first.
+
+name: {{ repo_name | replace('-', '_') }}
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: ghcr.io/{{ github_org | lower }}/{{ repo_name }}:local
+    command: ["--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/{{ repo_name | replace('-', '_') }}
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: {{ repo_name | replace('-', '_') }}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

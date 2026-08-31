@@ -1,0 +1,46 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# CI / tooling
+.github
+.task
+.cache
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+cov.xml
+htmlcov
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv
+venv
+.pixi
+build
+dist
+
+# Docs build output
+site
+docs/_build
+docs/_api
+
+# Local environment & secrets
+.env
+.envs
+*.pem
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Data science artifacts (large / regenerable)
+data/raw
+data/interim
+data/processed
+models
+notebooks/.ipynb_checkpoints

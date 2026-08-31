@@ -5,6 +5,8 @@
     - template/{% if task_runner_effective == 'task' %}Taskfile.yml{% endif %}.jinja
     - template/{% if task_runner_effective == 'just' %}justfile{% endif %}.jinja
     - template/{% if task_runner_effective == 'make' %}Makefile{% endif %}.jinja
+    - template/{% if task_runner_effective == 'invoke' %}tasks.py{% endif %}.jinja
+    - template/{% if task_runner_effective == 'duty' %}duties.py{% endif %}.jinja
     - the `[tool.poe.tasks]` table in template/pyproject.toml.jinja
       (task_runner_effective == 'poe')
     - the `[tool.pixi.feature.dev.tasks]` table in template/pyproject.toml.jinja
@@ -16,8 +18,36 @@
   `cmd` entries already include the right package-manager run-prefix, EXCEPT
   when task_runner_effective == 'pixi': pixi's own tasks already run inside
   the activated environment, so no `pixi run` prefix is needed there.
+  For ros2 projects the commands source the ROS environment and use colcon.
 #}
-{% set run = '' if task_runner_effective == 'pixi' else (
+{% if ros2_pkg %}{% if ros2_package_manager == 'pixi' %}{% set run = '' %}
+{% set ros_source = '' %}
+{% else %}{% set run = 'uv run --locked ' if package_manager == 'uv' else ('poetry run ' if package_manager == 'poetry' else '') %}
+{% set ros_source = '. /opt/ros/$ROS_DISTRO/setup.bash && ' %}
+{% endif %}
+{% set tasks = [
+    {
+        'name': 'lint',
+        'desc': 'Run pre-commit on all files',
+        'cmd': [run ~ 'pre-commit run --all-files --show-diff-on-failure'],
+    },
+    {
+        'name': 'build',
+        'desc': 'Build the package with colcon',
+        'cmd': [ros_source ~ 'colcon build --symlink-install --packages-select ' ~ package_name],
+    },
+    {
+        'name': 'test',
+        'desc': 'Run the ament test suite with colcon',
+        'cmd': [ros_source ~ 'colcon test --packages-select ' ~ package_name ~ ' && ' ~ ros_source ~ 'colcon test-result --verbose'],
+    },
+    {
+        'name': 'check',
+        'desc': 'Run all quality checks',
+        'deps': ['lint', 'build', 'test'],
+    },
+] %}
+{% else %}{% set run = '' if task_runner_effective == 'pixi' else (
     'uv run --locked ' if package_manager == 'uv' else (
     'pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ')) %}
 {% set run_x = '' if task_runner_effective == 'pixi' else (
@@ -83,3 +113,4 @@
     'desc': 'Run all quality checks',
     'deps': ['lint'] + (['type-check'] if strictness in ['recommended', 'full'] else []) + ['test'],
 }] %}
+{% endif %}

@@ -1,0 +1,23 @@
+#ifndef {{ package_name | upper }}__TALKER_HPP_
+#define {{ package_name | upper }}__TALKER_HPP_
+
+#include <memory>
+
+#include "rclcpp/rclcpp.hpp"
+#include "std_msgs/msg/string.hpp"
+
+/// Publishes a message on a timer.
+class Talker : public rclcpp::Node
+{
+public:
+  Talker();
+
+private:
+  void timer_callback();
+
+  rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  size_t count_;
+};
+
+#endif  // {{ package_name | upper }}__TALKER_HPP_
