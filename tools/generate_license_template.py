@@ -18,11 +18,8 @@ own "how to apply these terms" appendix, which uses angle brackets like
 Run this script (`python tools/generate_license_template.py`) after updating
 the files in `tools/licenses/` to refresh:
 
-- `template/{% if detail_level == 'detailed' %}LICENSE{% endif %}.jinja`
-  (the full if/elif chain, one branch per license choice)
-- `template/{% if detail_level == 'simple' %}LICENSE{% endif %}.jinja`
-  (just the MIT text, used when detail_level == 'simple' so that mode never
-  has to evaluate the full chain above)
+- `template/LICENSE.jinja` (the full if/elif chain, one branch per license
+  choice)
 
 It also prints the `license:` question's `choices:` mapping to paste into
 `copier.yml` if the license set has changed.
@@ -87,17 +84,6 @@ def render_chain(licenses: list[tuple[str, str, str]]) -> str:
     return "".join(parts)
 
 
-def render_simple(licenses: list[tuple[str, str, str]]) -> str:
-    """MIT, Confidential or Proprietary — simple mode's `license_simple` choices."""
-    mit_body = next(body for spdx, _title, body in licenses if spdx == "MIT")
-    return (
-        f'{{% if license_effective == "MIT" -%}}\n{mit_body}'
-        f'{{% elif license_effective == "Confidential" -%}}\n{CONFIDENTIAL_BODY}'
-        f'{{% elif license_effective == "Proprietary" -%}}\n{PROPRIETARY_BODY}'
-        "{% endif %}"
-    )
-
-
 def main() -> None:
     licenses = load_licenses()
 
@@ -105,13 +91,9 @@ def main() -> None:
     # sets `keep_trailing_newline`, so one here would be appended, literally,
     # after every rendered branch (each branch's own body already ends in
     # exactly one "\n").
-    detailed_path = TEMPLATE_DIR / "{% if detail_level == 'detailed' %}LICENSE{% endif %}.jinja"
-    detailed_path.write_text(render_chain(licenses), encoding="utf-8")
-    print(f"wrote {detailed_path}")
-
-    simple_path = TEMPLATE_DIR / "{% if detail_level == 'simple' %}LICENSE{% endif %}.jinja"
-    simple_path.write_text(render_simple(licenses), encoding="utf-8")
-    print(f"wrote {simple_path}")
+    license_path = TEMPLATE_DIR / "LICENSE.jinja"
+    license_path.write_text(render_chain(licenses), encoding="utf-8")
+    print(f"wrote {license_path}")
 
     print("\n# Paste into copier.yml's `license:` question if the set changed:")
     print("    choices:")

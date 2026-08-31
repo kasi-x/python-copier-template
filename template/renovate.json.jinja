@@ -40,7 +40,8 @@
         "docker/build-push-action",
         "docker/metadata-action"{% endif %}{% if pypi %},
         "pypa/gh-action-pypi-publish"{% endif %}{% if docs %},
-        "peaceiris/actions-gh-pages"{% endif %}
+        "peaceiris/actions-gh-pages"{% endif %}{% if fair %},
+        "fair-software/howfairis-github-action"{% endif %}
       ],
       "matchManagers": [
         "github-actions"

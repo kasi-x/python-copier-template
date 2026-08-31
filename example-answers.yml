@@ -1,5 +1,15 @@
 # Template Options
-detail_level: detailed
+#
+# use_recommended_* are all false so every detailed question below is asked
+# (the point of this file is to exercise every option, not the fast path).
+use_recommended_toolchain: false
+use_recommended_data_science: false
+use_recommended_polish: false
+use_recommended_docs: false
+use_recommended_quality: false
+use_recommended_license: false
+use_recommended_integrations: false
+use_recommended_specialty: false
 author_email: kashimiya.exe@gmail.com
 author_name: kashi-x
 description: An expanded https://github.com/kasi-x/python-copier-template to illustrate how it looks with all the options enabled.

@@ -30,6 +30,38 @@ def copy_project(project_path: Path, **kwargs: object):
     run_pipe("git add .", cwd=str(project_path))
 
 
+def copy_project_recommended(project_path: Path, **kwargs: object):
+    """Like copy_project, but without example-answers.yml's explicit overrides.
+
+    example-answers.yml sets every option (docker, license, fair, ...) sets
+    an explicit value so it never exercises the `use_recommended_*` gates'
+    own defaults -- copier uses a `data`-supplied value even for a question
+    whose `when` is false. This starts from only the required "Project
+    Details" answers, so `use_recommended_*` (true by default) actually
+    drives the rest of the answer set via each question's own `default:`.
+    """
+    answers: dict[str, object] = {
+        "package_name": "recommended_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "library",
+    }
+    answers.update(kwargs)
+    run_pipe(f"git init {project_path}")
+    run_copy(
+        src_path=str(TOP),
+        dst_path=project_path,
+        data=answers,
+        vcs_ref="HEAD",
+        unsafe=True,
+        defaults=True,
+    )
+    run_pipe("git add .", cwd=str(project_path))
+
+
 def run_pipe(cmd: str, cwd: str | Path | None = None, venv: str | Path = "") -> str:
     sp = subprocess.run(
         shlex.split(cmd),
@@ -281,13 +313,14 @@ def test_template_no_ci(tmp_path: Path):
     assert (tmp_path / ".github" / "actionlint.yaml").exists()
 
 
-def test_template_simple_mode(tmp_path: Path):
-    copy_project(tmp_path, detail_level="simple")
-    # Simple mode still generates a working project with defaults
+def test_template_recommended_settings(tmp_path: Path):
+    copy_project_recommended(tmp_path, project_type="data_science")
+    # Accepting every "use the recommended ...?" gate still generates a
+    # working project, using only the template's built-in defaults.
     assert (tmp_path / "pyproject.toml").exists()
-    # use_gpu_effective defaults to data_science -> Dockerfile.gpu present
+    # use_gpu defaults to true for data_science -> Dockerfile.gpu present
     assert (tmp_path / "Dockerfile.gpu").exists()
-    # simple mode never asks the license question: always MIT
+    # the recommended license is MIT
     assert "MIT License" in (tmp_path / "LICENSE").read_text()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert pyproject_toml["project"]["license"] == "MIT"
@@ -312,7 +345,13 @@ def test_template_license_proprietary(tmp_path: Path):
 
 
 def test_template_fair_metadata(tmp_path: Path):
-    copy_project(tmp_path, fair=True, author_orcid="0000-0002-1825-0099", data_governance="both")
+    copy_project(
+        tmp_path,
+        fair=True,
+        author_orcid="0000-0002-1825-0099",
+        data_reusable=True,
+        data_ethics=True,
+    )
     cff = (tmp_path / "CITATION.cff").read_text()
     assert "cff-version: 1.2.0" in cff
     assert 'title: "python-copier-template-example"' in cff
@@ -327,16 +366,37 @@ def test_template_fair_metadata(tmp_path: Path):
     assert (tmp_path / "data" / "DUO.md").exists()
     assert (tmp_path / "data" / "CARE.md").exists()
     assert "Traceability & provenance" in (tmp_path / "data" / "CARE.md").read_text()
+    fair_software_workflow = tmp_path / ".github" / "workflows" / "fair-software.yml"
+    assert fair_software_workflow.exists()
+    assert "fair-software/howfairis-github-action@0.2.1" in fair_software_workflow.read_text()
+    assert "fair-software/howfairis-github-action" in (tmp_path / "renovate.json").read_text()
 
 
 def test_template_fair_off(tmp_path: Path):
     copy_project(tmp_path, fair=False)
     assert not (tmp_path / "CITATION.cff").exists()
     assert not (tmp_path / "REUSE.toml").exists()
-    assert not (tmp_path / "data" / "DUO.md").exists()
+    assert not (tmp_path / ".github" / "workflows" / "fair-software.yml").exists()
+    assert "howfairis" not in (tmp_path / "renovate.json").read_text()
     pre_commit = (tmp_path / ".pre-commit-config.yaml").read_text()
     assert "cff-converter-python" not in pre_commit
     assert "reuse-tool" not in pre_commit
+
+
+def test_template_data_governance_off_by_default(tmp_path: Path):
+    # DUO/CARE are independent of fair -- a data_science project gets
+    # neither sheet unless data_reusable/data_ethics are explicitly asked
+    # for (example-answers.yml leaves both at their default: false).
+    copy_project(tmp_path, fair=True)
+    assert not (tmp_path / "data" / "DUO.md").exists()
+    assert not (tmp_path / "data" / "CARE.md").exists()
+
+
+def test_template_data_governance_skipped_for_competition(tmp_path: Path):
+    # Competition projects never get the DUO/CARE sheets, even when asked.
+    copy_project(tmp_path, competition=True, data_reusable=True, data_ethics=True)
+    assert not (tmp_path / "data" / "DUO.md").exists()
+    assert not (tmp_path / "data" / "CARE.md").exists()
 
 
 @pytest.mark.parametrize("restricted_license", ["Proprietary", "Confidential"])
@@ -362,8 +422,16 @@ def test_template_license_confidential(tmp_path: Path):
     assert "license" not in pyproject_toml["project"]
 
 
-def test_template_license_confidential_simple(tmp_path: Path):
-    copy_project(tmp_path, detail_level="simple", license_simple="Confidential", fair=False)
+def test_template_license_confidential_recommended_elsewhere(tmp_path: Path):
+    # Opting out of just the license/FAIR gate should still leave every
+    # other section (docs, quality, integrations, ...) on its recommended
+    # default.
+    copy_project_recommended(
+        tmp_path,
+        use_recommended_license=False,
+        license="Confidential",
+        fair=False,
+    )
     license_text = (tmp_path / "LICENSE").read_text()
     assert "CONFIDENTIAL AND PROPRIETARY INFORMATION" in license_text
     assert not (tmp_path / "CITATION.cff").exists()

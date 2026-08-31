@@ -4,21 +4,23 @@ _jinja_extensions:
     - extensions.py:CurrentYearExtension
 
 # Template Options
-detail_level:
-    type: str
+#
+# Each customisable area asks a single "use the recommended settings?"
+# question first (default: yes). Answering No to that question reveals the
+# detailed question(s) for that area; answering Yes accepts the recommended
+# defaults listed in its help text without asking anything further.
+
+use_recommended_toolchain:
+    type: bool
+    default: true
     help: |
-        How much would you like to customise?
-        - simple: ask only the essential questions, use defaults for the rest.
-        - detailed: ask about every option (CI provider, package manager,
-          GPU, docs tool, integrations, ...).
-    choices:
-        - simple
-        - detailed
-    default: detailed
+        Use the recommended package manager & task runner?
+        Recommended: uv (package manager) + just (task runner).
+        Answer No to pick pixi/poetry, or a different task runner.
 
 package_manager:
     type: str
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_toolchain }}"
     help: |
         Which package manager would you like to use?
         - uv: Fast, pure Python package manager with a pip-like workflow.
@@ -33,7 +35,7 @@ package_manager:
 
 task_runner:
     type: str
-    when: "{{ detail_level == 'detailed' and package_manager != 'pixi' }}"
+    when: "{{ not use_recommended_toolchain and package_manager != 'pixi' }}"
     help: |
         Which task runner would you like to use to drive lint / type-check /
         test / docs (and, for data_science's competition sub-option, the ML
@@ -52,7 +54,7 @@ task_runner:
 
 task_runner_pixi:
     type: str
-    when: "{{ detail_level == 'detailed' and package_manager == 'pixi' }}"
+    when: "{{ not use_recommended_toolchain and package_manager == 'pixi' }}"
     help: |
         Which task runner would you like to use? (poethepoet doesn't work
         with pixi, so pixi's own native tasks take its place here.)
@@ -86,9 +88,20 @@ project_type:
         - script
     default: library
 
+use_recommended_data_science:
+    type: bool
+    when: "{{ project_type == 'data_science' }}"
+    default: true
+    help: |
+        Use the recommended data_science options?
+        Recommended: not a Kaggle-style competition, GPU workloads enabled
+        (NVIDIA CUDA Dockerfile + devcontainer), and — for non-competition
+        projects — no DUO data-use sheet or CARE governance statement.
+        Answer No to change any of these.
+
 competition:
     type: bool
-    when: "{{ detail_level == 'detailed' and project_type == 'data_science' }}"
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science }}"
     help: |
         Is this a Kaggle-style competition project?
         If yes, input/ and exp/ directories are added for competition data
@@ -97,16 +110,47 @@ competition:
 
 use_gpu:
     type: bool
-    when: "{{ detail_level == 'detailed' and project_type == 'data_science' }}"
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science }}"
     help: |
         Will you run GPU workloads?
         If yes, an NVIDIA CUDA Dockerfile and devcontainer are prepared.
-        In simple mode, this is enabled for data_science projects.
+        Recommended (and the default) for data_science projects.
     default: true
+
+data_reusable:
+    type: bool
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science and not competition }}"
+    help: |
+        Will this data be shared or reused outside the team (e.g.
+        published, or handed to collaborators/another organisation)?
+        If yes, a DUO (Data Use Ontology) data-use conditions sheet is
+        added to data/ so the reuse conditions are documented up front.
+    default: false
+
+data_ethics:
+    type: bool
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science and not competition }}"
+    help: |
+        Does this data need ethical / data-governance consideration (e.g.
+        human subjects, indigenous data, other sensitive personal data)?
+        If yes, a CARE principles data-governance statement is added to
+        data/ so those considerations are documented and tracked.
+    default: false
+
+use_recommended_polish:
+    type: bool
+    default: true
+    help: |
+        Use the recommended layout & repo polish?
+        Recommended: src/ layout (library/web_api/cli), no Japanese
+        (multibyte) characters in comments/docstrings, an ASCII-art repo-name
+        banner at the top of the README.
+        Answer No to change the layout, allow Japanese text, or skip the
+        banner.
 
 layout:
     type: str
-    when: "{{ detail_level == 'detailed' and project_type != 'data_science' }}"
+    when: "{{ project_type != 'data_science' and not use_recommended_polish }}"
     help: |
         Which layout would you like to use for the package?
         - src: package in a src/ directory (recommended, prevents accidental
@@ -119,7 +163,7 @@ layout:
 
 allow_japanese:
     type: bool
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_polish }}"
     help: |
         Allow Japanese (multibyte) characters in comments and docstrings?
         If true, ruff's line-length and max-doc-length are relaxed so that
@@ -128,23 +172,24 @@ allow_japanese:
 
 ascii_banner:
     type: bool
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_polish }}"
     help: |
         Add an ASCII-art banner of the repo name to the top of the README?
         This bundles a small MIT-licensed copy of pyfiglet (with the slant
         font) so the banner can be regenerated without extra dependencies.
     default: true
 
-docker:
+use_recommended_docs:
     type: bool
-    when: "{{ detail_level == 'detailed' }}"
+    default: true
     help: |
-        Would you like to publish your project in a Docker container?
-        You should select this if you are making a service.
+        Use the recommended documentation tool?
+        Recommended: zensical (Zensical, an MkDocs fork with mkdocstrings).
+        Answer No to pick README-only, Sphinx or Great Docs instead.
 
 docs_type:
     type: str
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_docs }}"
     help: |
         Which documentation tool would you like to use?
         - README: just a README, no dedicated docs site.
@@ -158,9 +203,18 @@ docs_type:
         - great-docs
     default: zensical
 
+use_recommended_quality:
+    type: bool
+    default: true
+    help: |
+        Use the recommended type checker & strictness level?
+        Recommended: basedpyright, strictness "recommended" (ruff ALL rules,
+        basedpyright + pyrefly, typos/vulture/deptry/pip-audit).
+        Answer No to pick pyrefly instead, or a different strictness level.
+
 type_checker:
     type: str
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_quality }}"
     help: |
         What type checker would you like to use?
         Basedpyright (pyright の fork) is recommended: 実バグ検出を重視しつつ、
@@ -168,10 +222,11 @@ type_checker:
     choices:
         - basedpyright
         - pyrefly
+    default: basedpyright
 
 strictness:
     type: str
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_quality }}"
     help: |
         How strict should the toolchain be? One axis controls both the
         type-annotation requirements and the static-analysis toolchain.
@@ -189,48 +244,18 @@ strictness:
         - full
     default: recommended
 
-fair:
+use_recommended_license:
     type: bool
-    when: "{{ detail_level == 'detailed' }}"
+    default: true
     help: |
-        Add FAIR research-software metadata?
-        - CITATION.cff for software citation, validated by a pre-commit hook
-          (an optional ORCID iD is asked below when enabled)
-        - REUSE.toml with SPDX annotations, checked by the reuse hook — but
-          only when an open-source license is selected; Proprietary projects
-          skip REUSE
-    default: false
-
-data_governance:
-    type: str
-    when: "{{ detail_level == 'detailed' and fair and data_science and not competition }}"
-    help: |
-        Which research-data governance frameworks should be documented for
-        the data/ directory?
-        - duo: a DUO (Data Use Ontology) data-use conditions sheet
-        - care: a CARE principles data-governance statement
-        - both: both sheets
-        - none: skip
-    choices:
-        none: none
-        DUO only: duo
-        CARE only: care
-        DUO + CARE: both
-    default: none
-
-license_simple:
-    type: str
-    when: "{{ detail_level == 'simple' }}"
-    help: Which license would you like to use?
-    choices:
-        MIT License: MIT
-        Proprietary / all rights reserved: Proprietary
-        Confidential / trade secrets: Confidential
-    default: MIT
+        Use the recommended license & metadata settings?
+        Recommended: MIT license, no FAIR research-software metadata
+        (CITATION.cff / REUSE).
+        Answer No to pick a different license or opt into FAIR metadata.
 
 license:
     type: str
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_license }}"
     help: |
         Which license would you like to use?
         The full list from https://choosealicense.com, generated by
@@ -287,22 +312,54 @@ license:
         Confidential / trade secrets: Confidential
     default: MIT
 
+fair:
+    type: bool
+    when: "{{ not use_recommended_license }}"
+    help: |
+        Add FAIR research-software metadata?
+        - CITATION.cff for software citation, validated by a pre-commit hook
+          (an optional ORCID iD is asked below when enabled)
+        - REUSE.toml with SPDX annotations, checked by the reuse hook — but
+          only when an open-source license is selected; Proprietary projects
+          skip REUSE
+        (data_science's DUO/CARE data-governance sheets are asked separately,
+        alongside the competition question above — they don't depend on this.)
+    default: false
+
 author_orcid:
     type: str
     default: ""
-    when: "{{ detail_level == 'detailed' and fair }}"
+    when: "{{ not use_recommended_license and fair }}"
     help: |
         Your ORCID iD (e.g. 0000-0002-1825-0099), recorded in CITATION.cff
         so citation systems can attribute you correctly. Leave empty to skip.
 
+use_recommended_integrations:
+    type: bool
+    default: true
+    help: |
+        Use the recommended deployment & integration settings?
+        Recommended: no Docker container, no PyPI auto-publish, no cloud
+        provider, no Sentry, no MCP support, GitHub Actions for CI.
+        Answer No to turn any of these on, or switch the CI provider.
+
+docker:
+    type: bool
+    when: "{{ not use_recommended_integrations }}"
+    help: |
+        Would you like to publish your project in a Docker container?
+        You should select this if you are making a service.
+    default: false
+
 pypi:
     type: bool
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_integrations }}"
     help: Would you like the wheel and source distribution to be automatically uploaded to PyPI when a release is made?
+    default: false
 
 cloud_provider:
     type: str
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_integrations }}"
     help: |
         Which cloud provider will this project deploy to?
         - none: no cloud-specific code or dependencies.
@@ -318,7 +375,7 @@ cloud_provider:
 
 aws_services:
     type: str
-    when: "{{ detail_level == 'detailed' and cloud_provider == 'aws' }}"
+    when: "{{ not use_recommended_integrations and cloud_provider == 'aws' }}"
     help: |
         Which AWS services will you use?
         - essential: core services (S3, SQS, DynamoDB, Lambda types).
@@ -336,7 +393,7 @@ aws_services:
 
 include_sentry:
     type: bool
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_integrations }}"
     help: |
         Would you like to include Sentry for error tracking?
         If yes, sentry-sdk is added and initialised from SENTRY_DSN.
@@ -344,7 +401,7 @@ include_sentry:
 
 include_mcp:
     type: bool
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_integrations }}"
     help: |
         Would you like to include MCP (Model Context Protocol) support?
         If yes, the mcp SDK is added with stdio and SSE transports.
@@ -352,7 +409,7 @@ include_mcp:
 
 ci_provider:
     type: str
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_integrations }}"
     help: |
         Which CI provider would you like to use?
         - github_actions: GitHub Actions workflows for lint, type-checking,
@@ -363,9 +420,19 @@ ci_provider:
         - none
     default: github_actions
 
+use_recommended_specialty:
+    type: bool
+    default: true
+    help: |
+        Skip domain specialisation?
+        Recommended: none — a plain project with no extra domain-specific
+        structure on top of the base toolchain.
+        Answer No to add mcp_server / ai_agent / data_polars /
+        rust_extension / pure_python_web scaffolding.
+
 specialty:
     type: str
-    when: "{{ detail_level == 'detailed' }}"
+    when: "{{ not use_recommended_specialty }}"
     help: |
         Is this project specialised for a particular domain? This adds
         domain-specific structure on top of the base toolchain.
@@ -466,7 +533,7 @@ data_science:
 
 use_gpu_effective:
     type: bool
-    default: "{{ use_gpu if detail_level == 'detailed' else (project_type == 'data_science') }}"
+    default: "{{ use_gpu and project_type == 'data_science' }}"
     when: false
 
 repo_url:
@@ -506,7 +573,7 @@ task_runner_effective:
 
 license_effective:
     type: str
-    default: "{{ license if detail_level == 'detailed' else license_simple }}"
+    default: "{{ license }}"
     when: false
 
 proprietary:
@@ -521,12 +588,12 @@ reuse_effective:
 
 duo:
     type: bool
-    default: "{{ fair and data_science and not competition and data_governance in ['duo', 'both'] }}"
+    default: "{{ data_reusable and data_science and not competition }}"
     when: false
 
 care:
     type: bool
-    default: "{{ fair and data_science and not competition and data_governance in ['care', 'both'] }}"
+    default: "{{ data_ethics and data_science and not competition }}"
     when: false
 
 license_year:
