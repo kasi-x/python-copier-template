@@ -203,7 +203,6 @@ def test_template_data_science_layout(tmp_path: Path):
         assert (tmp_path / "src" / d).is_dir(), f"missing src/{d}"
     # Data governance & restricted-data sharing kit, always present
     for name in [
-        "DATA_CLASSIFICATION.md",
         "DEIDENTIFICATION.md",
         "sharing/DATA_TRANSFER_AGREEMENT.md",
         "sharing/TRANSFER_LOG.csv",
@@ -327,6 +326,7 @@ def test_template_fair_metadata(tmp_path: Path):
     assert "reuse-tool" in pre_commit
     assert (tmp_path / "data" / "DUO.md").exists()
     assert (tmp_path / "data" / "CARE.md").exists()
+    assert "Traceability & provenance" in (tmp_path / "data" / "CARE.md").read_text()
 
 
 def test_template_fair_off(tmp_path: Path):

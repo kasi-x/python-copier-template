@@ -95,10 +95,13 @@ The template asks a few questions and generates a project tailored to your answe
   the `fair` option adds a `CITATION.cff` (validated by a pre-commit hook,
   optional `author_orcid`); the `reuse` hook additionally covers `REUSE.toml`
   with SPDX annotations — only for open-source licenses, Proprietary
-  projects skip it. Data-science projects always ship a data-governance kit
-  for non-public extracts: **DUO** data-use conditions, **CARE** governance
-  statements, a classification sheet, a de-identification protocol, a
-  data-transfer-agreement template and a traceable transfer log.
+  projects skip it. Data-science projects always ship a traceable-sharing
+  kit grounded in **CARE** data governance — provenance & custody records
+  in the CARE statement, **DUO** use conditions, a one-page
+  de-identification protocol (ISO/IEC 20889), a data-transfer-agreement
+  template and a transfer log — so every non-public extract that leaves
+  for another organisation can be traced back to an agreement and an
+  approver.
 
 **Tooling**
 - [setuptools](https://setuptools.pypa.io) + [setuptools-scm](https://setuptools-scm.readthedocs.io) packaging

@@ -1,58 +1,23 @@
-# De-identification Protocol
+# De-identification (anonymisation) — one page
 
-How data leaves this project without exposing the people behind it, and how
-every outgoing extract stays traceable.
+Before a restricted extract leaves for another organisation, the people
+behind the data must not be recoverable from it. Techniques and
+terminology follow **ISO/IEC 20889** and **NIST IR 8053**; the anonymised
+bar follows **GDPR Recital 26** (no singling out, no linkability, no
+inference — WP29 Opinion 05/2014).
 
-## Pseudonymised is not anonymous
+1. **Suppress** direct identifiers (names, IDs, addresses, contact
+   details, full dates).
+2. **Generalise** quasi-identifiers (bin dates and ages, coarsen
+   geographies) and **pseudonymise** residual stable identifiers with
+   `HMAC-SHA256(secret_salt, id)` — the salt never enters this
+   repository and mapping tables are held separately.
+3. **Guardrail**: every combination of quasi-identifiers occurs at least
+   **k ≥ 5** times; suppress cells below k.
+4. **Review** with a motivated-intruder pass by someone who did not build
+   the extract, then record the transfer in `sharing/TRANSFER_LOG.csv`
+   with the SHA-256 fingerprint of the shipped files.
 
-- **Pseudonymised** data (IDs replaced by tokens, names removed) is still
-  personal data under GDPR: re-identification may be possible with
-  additional information. Sharing it always requires a signed data
-  transfer agreement.
-- **Anonymous** data (no reasonable path back to any individual, judged by
-  the motivated-intruder test) may be shared, but the de-identification
-  checklist below must still be signed off and logged.
-
-## Protocol
-
-1. **Drop direct identifiers** listed in `DATA_CLASSIFICATION.md`
-   (names, IDs, addresses, e-mails, phone numbers, full dates).
-2. **Generalise quasi-identifiers**: bin dates and ages, coarsen
-   geographies, cap rare categories. Target: **k >= 5** — every
-   combination of quasi-identifiers occurs at least five times.
-3. **Suppress or merge** cells that stay below the k target.
-4. **Pseudonymise** any residual stable identifier with
-   `HMAC-SHA256(secret_salt, identifier)`; the salt lives in the
-   organisation's secret manager, never in this repository, and the
-   mapping table is stored separately from the data with restricted
-   access.
-5. **Review** the extract against `DATA_CLASSIFICATION.md`, then run the
-   pre-transfer checklist.
-
-## Pre-transfer checklist
-
-- [ ] Direct identifiers dropped, pseudonymisation salt not in the extract
-- [ ] k-anonymity target verified on the quasi-identifier combinations
-- [ ] Small cells (counts < k) suppressed or merged
-- [ ] Motivated-intruder review done by someone who did not build the extract
-- [ ] Recipient named in a signed data transfer agreement
-      (`sharing/DATA_TRANSFER_AGREEMENT.md`)
-- [ ] Transfer recorded in `sharing/TRANSFER_LOG.csv` with the SHA-256
-      fingerprint of the exact files shipped
-
-## Fingerprinting an extract
-
-Record the hash of the exact artefact in the transfer log, so any copy in
-the wild can be traced back to one agreement:
-
-```sh
-sha256sum extract/*.csv          # Linux/macOS
-certutil -hashfile extract\out.csv SHA256   # Windows
-```
-
-## References
-
-- Article 29 WP, Opinion 05/2014 on Anonymisation Techniques
-- HIPAA Safe Harbor de-identification (18 identifiers)
-- Sweeney, *k*-anonymity: a model for protecting privacy
-- GA4GH DUO codes in `DUO.md` for the use conditions the recipient accepts
+Pseudonymised data is still personal data: if the extract does not meet
+the anonymisation bar, it moves only under a signed data transfer
+agreement.
