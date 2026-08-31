@@ -5,7 +5,7 @@ message: If you use this software, please cite it using this metadata.
 title: "{{ repo_name }}"
 abstract: {{ description | tojson }}
 repository-code: "{{ repo_url }}"
-{% if license_effective != 'Proprietary' %}license: "{{ license_effective }}"
+{% if not proprietary %}license: "{{ license_effective }}"
 {% endif %}authors:
   - family-names: "{{ parts[-1] }}"{% if given %}
     given-names: "{{ given }}"{% endif %}

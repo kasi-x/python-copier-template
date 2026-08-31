@@ -9359,12 +9359,22 @@ freely, subject to the following restrictions:
 2. Altered source versions must be plainly marked as such, and must not be
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
+{% elif license_effective == "Confidential" -%}
+Copyright (c) {{ license_year }} {{ author_name }}. All Rights Reserved.
+
+CONFIDENTIAL AND PROPRIETARY INFORMATION.
+
+This repository contains trade secrets and confidential information
+belonging to {{ author_name }}.
+Access to this source code is strictly limited to authorized personnel.
+Unauthorized copying, disclosure, or distribution of this software, in
+whole or in part, via any medium, is strictly prohibited without prior
+written permission.
 {% elif license_effective == "Proprietary" -%}
-Copyright (c) {{ license_year }} {{ author_name }}
+Copyright (c) {{ license_year }} {{ author_name }}. All Rights Reserved.
 
-All rights reserved.
-
-No part of this software may be reproduced, distributed, or transmitted in
-any form or by any means without the prior written permission of the
-copyright holder.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ALL CONTENTS OF THIS REPOSITORY ARE PROPRIETARY AND CONFIDENTIAL.
+UNAUTHORIZED COPYING, REPRODUCTION, OR DISTRIBUTION OF THIS SOFTWARE,
+VIA ANY MEDIUM, IS STRICTLY PROHIBITED.
 {% endif %}

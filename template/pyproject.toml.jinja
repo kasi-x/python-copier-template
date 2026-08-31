@@ -14,7 +14,7 @@ classifiers = [
 description = "{{ description }}"
 dependencies = ["structlog"{% if sphinx %}, "requests"{% endif %}{% if competition %}, "hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "polars>=0.20.15", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15.0.0,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15.0,<1.0", "xgboost>=2.0"{% endif %}{% if cloud_provider == 'aws' %}, "boto3>=1.34.0", "botocore>=1.34.0"{% endif %}{% if cloud_provider == 'gcp' %}, "google-cloud-storage>=2.14.0"{% endif %}{% if cloud_provider == 'azure' %}, "azure-identity>=1.15.0"{% endif %}{% if include_sentry %}, "sentry-sdk"{% endif %}{% if include_mcp or specialty == 'mcp_server' %}, "mcp"{% endif %}{% if specialty == 'ai_agent' %}, "pydantic-ai", "pydantic-settings>=2.2.1"{% endif %}{% if specialty == 'data_polars' %}, "polars>=0.20.15", "duckdb", "pyarrow"{% endif %}{% if specialty == 'pure_python_web' %}, "python-fasthtml"{% endif %}] # Add project dependencies here, e.g. ["click", "numpy"]
 dynamic = ["version"]
-{% if license_effective != 'Proprietary' -%}
+{% if not proprietary -%}
 license = "{{ license_effective }}"
 {% endif -%}
 license-files = ["LICENSE"]

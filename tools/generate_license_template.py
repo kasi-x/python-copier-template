@@ -38,13 +38,25 @@ LICENSES_DIR = TOOLS_DIR / "licenses"
 TEMPLATE_DIR = TOOLS_DIR.parent / "template"
 
 PROPRIETARY_BODY = """\
-Copyright (c) {{ license_year }} {{ author_name }}
+Copyright (c) {{ license_year }} {{ author_name }}. All Rights Reserved.
 
-All rights reserved.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+ALL CONTENTS OF THIS REPOSITORY ARE PROPRIETARY AND CONFIDENTIAL.
+UNAUTHORIZED COPYING, REPRODUCTION, OR DISTRIBUTION OF THIS SOFTWARE,
+VIA ANY MEDIUM, IS STRICTLY PROHIBITED.
+"""
 
-No part of this software may be reproduced, distributed, or transmitted in
-any form or by any means without the prior written permission of the
-copyright holder.
+CONFIDENTIAL_BODY = """\
+Copyright (c) {{ license_year }} {{ author_name }}. All Rights Reserved.
+
+CONFIDENTIAL AND PROPRIETARY INFORMATION.
+
+This repository contains trade secrets and confidential information
+belonging to {{ author_name }}.
+Access to this source code is strictly limited to authorized personnel.
+Unauthorized copying, disclosure, or distribution of this software, in
+whole or in part, via any medium, is strictly prohibited without prior
+written permission.
 """
 
 
@@ -64,6 +76,7 @@ def render_chain(licenses: list[tuple[str, str, str]]) -> str:
     for i, (spdx, _title, body) in enumerate(licenses):
         tag = "if" if i == 0 else "elif"
         parts.append(f'{{% {tag} license_effective == "{spdx}" -%}}\n{body}')
+    parts.append(f'{{% elif license_effective == "Confidential" -%}}\n{CONFIDENTIAL_BODY}')
     parts.append(f'{{% elif license_effective == "Proprietary" -%}}\n{PROPRIETARY_BODY}')
     # No separator: each body already ends in exactly one "\n", so whichever
     # branch Jinja picks renders with exactly one trailing newline too. And no
@@ -75,10 +88,11 @@ def render_chain(licenses: list[tuple[str, str, str]]) -> str:
 
 
 def render_simple(licenses: list[tuple[str, str, str]]) -> str:
-    """MIT or Proprietary only — simple mode's `license_simple` choices."""
+    """MIT, Confidential or Proprietary — simple mode's `license_simple` choices."""
     mit_body = next(body for spdx, _title, body in licenses if spdx == "MIT")
     return (
         f'{{% if license_effective == "MIT" -%}}\n{mit_body}'
+        f'{{% elif license_effective == "Confidential" -%}}\n{CONFIDENTIAL_BODY}'
         f'{{% elif license_effective == "Proprietary" -%}}\n{PROPRIETARY_BODY}'
         "{% endif %}"
     )
@@ -104,6 +118,7 @@ def main() -> None:
     for spdx, title, _body in licenses:
         print(f"        {title}: {spdx}")
     print("        Proprietary / all rights reserved: Proprietary")
+    print("        Confidential / trade secrets: Confidential")
 
 
 if __name__ == "__main__":

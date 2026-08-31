@@ -225,6 +225,7 @@ license_simple:
     choices:
         MIT License: MIT
         Proprietary / all rights reserved: Proprietary
+        Confidential / trade secrets: Confidential
     default: MIT
 
 license:
@@ -283,6 +284,7 @@ license:
         Vim License: Vim
         zlib License: Zlib
         Proprietary / all rights reserved: Proprietary
+        Confidential / trade secrets: Confidential
     default: MIT
 
 author_orcid:
@@ -507,9 +509,14 @@ license_effective:
     default: "{{ license if detail_level == 'detailed' else license_simple }}"
     when: false
 
+proprietary:
+    type: bool
+    default: "{{ license_effective in ['Proprietary', 'Confidential'] }}"
+    when: false
+
 reuse_effective:
     type: bool
-    default: "{{ fair and license_effective != 'Proprietary' }}"
+    default: "{{ fair and not proprietary }}"
     when: false
 
 duo:

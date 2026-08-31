@@ -294,7 +294,9 @@ def test_template_license_choice(tmp_path: Path):
 
 def test_template_license_proprietary(tmp_path: Path):
     copy_project(tmp_path, license="Proprietary")
-    assert "All rights reserved" in (tmp_path / "LICENSE").read_text()
+    license_text = (tmp_path / "LICENSE").read_text()
+    assert "All Rights Reserved" in license_text
+    assert "UNAUTHORIZED COPYING" in license_text
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     # PEP 639 has no SPDX expression for "no license": omit the field entirely
     assert "license" not in pyproject_toml["project"]
@@ -327,8 +329,9 @@ def test_template_fair_off(tmp_path: Path):
     assert "reuse-tool" not in pre_commit
 
 
-def test_template_fair_proprietary(tmp_path: Path):
-    copy_project(tmp_path, fair=True, license="Proprietary")
+@pytest.mark.parametrize("restricted_license", ["Proprietary", "Confidential"])
+def test_template_fair_restricted_license(tmp_path: Path, restricted_license: str):
+    copy_project(tmp_path, fair=True, license=restricted_license)
     cff = (tmp_path / "CITATION.cff").read_text()
     assert "cff-version: 1.2.0" in cff
     # CFF has no SPDX expression for "all rights reserved": omit the field
@@ -338,6 +341,22 @@ def test_template_fair_proprietary(tmp_path: Path):
     pre_commit = (tmp_path / ".pre-commit-config.yaml").read_text()
     assert "cff-converter-python" in pre_commit
     assert "reuse-tool" not in pre_commit
+
+
+def test_template_license_confidential(tmp_path: Path):
+    copy_project(tmp_path, license="Confidential")
+    license_text = (tmp_path / "LICENSE").read_text()
+    assert "CONFIDENTIAL AND PROPRIETARY INFORMATION" in license_text
+    assert "trade secrets" in license_text
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert "license" not in pyproject_toml["project"]
+
+
+def test_template_license_confidential_simple(tmp_path: Path):
+    copy_project(tmp_path, detail_level="simple", license_simple="Confidential", fair=False)
+    license_text = (tmp_path / "LICENSE").read_text()
+    assert "CONFIDENTIAL AND PROPRIETARY INFORMATION" in license_text
+    assert not (tmp_path / "CITATION.cff").exists()
 
 
 def test_template_changelog(tmp_path: Path):

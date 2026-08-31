@@ -103,6 +103,8 @@ shows a **Cite this repository** button on the repo page.
 
 {% if license_effective == 'Proprietary' -%}
 Proprietary — all rights reserved, see [LICENSE](LICENSE).
+{%- elif license_effective == 'Confidential' -%}
+Confidential — trade secrets, all rights reserved, see [LICENSE](LICENSE).
 {%- else -%}
 [{{ license_effective }}](LICENSE)
 {%- endif %}
