@@ -83,11 +83,21 @@ python -m {{package_name}} --version
 {% endif %}{% if docker %}Docker          | `docker run ghcr.io/{{github_org | lower}}/{{repo_name}}:latest`
 {% endif %}{% if docs %}Documentation   | <{{docs_url}}>
 {% endif                %}Releases        | <{{repo_url}}/releases>
+{% if fair              %}Citation        | [CITATION.cff](CITATION.cff)
+{% endif %}
 
 ## 🤝 Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](.github/CONTRIBUTING.md) and the
 [issue tracker]({{repo_url}}/issues).
+{% if fair %}
+
+## 📝 How to Cite
+
+If this project contributes to academic work, please cite it via
+[CITATION.cff](CITATION.cff). GitHub picks this file up automatically and
+shows a **Cite this repository** button on the repo page.
+{% endif %}
 
 ## 📄 License
 

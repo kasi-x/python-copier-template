@@ -26,3 +26,4 @@ include_mcp: false
 ci_provider: github_actions
 pypi: true
 license: Apache-2.0
+fair: true

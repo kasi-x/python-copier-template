@@ -189,6 +189,35 @@ strictness:
         - full
     default: recommended
 
+fair:
+    type: bool
+    when: "{{ detail_level == 'detailed' }}"
+    help: |
+        Add FAIR research-software metadata?
+        - CITATION.cff for software citation, validated by a pre-commit hook
+          (an optional ORCID iD is asked below when enabled)
+        - REUSE.toml with SPDX annotations, checked by the reuse hook — but
+          only when an open-source license is selected; Proprietary projects
+          skip REUSE
+    default: false
+
+data_governance:
+    type: str
+    when: "{{ detail_level == 'detailed' and fair and data_science and not competition }}"
+    help: |
+        Which research-data governance frameworks should be documented for
+        the data/ directory?
+        - duo: a DUO (Data Use Ontology) data-use conditions sheet
+        - care: a CARE principles data-governance statement
+        - both: both sheets
+        - none: skip
+    choices:
+        none: none
+        DUO only: duo
+        CARE only: care
+        DUO + CARE: both
+    default: none
+
 license_simple:
     type: str
     when: "{{ detail_level == 'simple' }}"
@@ -255,6 +284,14 @@ license:
         zlib License: Zlib
         Proprietary / all rights reserved: Proprietary
     default: MIT
+
+author_orcid:
+    type: str
+    default: ""
+    when: "{{ detail_level == 'detailed' and fair }}"
+    help: |
+        Your ORCID iD (e.g. 0000-0002-1825-0099), recorded in CITATION.cff
+        so citation systems can attribute you correctly. Leave empty to skip.
 
 pypi:
     type: bool
@@ -470,6 +507,21 @@ license_effective:
     default: "{{ license if detail_level == 'detailed' else license_simple }}"
     when: false
 
+reuse_effective:
+    type: bool
+    default: "{{ fair and license_effective != 'Proprietary' }}"
+    when: false
+
+duo:
+    type: bool
+    default: "{{ fair and data_science and not competition and data_governance in ['duo', 'both'] }}"
+    when: false
+
+care:
+    type: bool
+    default: "{{ fair and data_science and not competition and data_governance in ['care', 'both'] }}"
+    when: false
+
 license_year:
     type: str
     default: "{{ current_year() }}"
@@ -489,6 +541,10 @@ _tasks:
     - >-
         {% if ascii_banner %}
         python -B tools/ascii_banner.py {{ repo_name }} README.md
+        {% endif %}
+    - >-
+        {% if reuse_effective %}
+        python -c "import pathlib, shutil; pathlib.Path('LICENSES').mkdir(exist_ok=True); shutil.copy('LICENSE', 'LICENSES/{{ license_effective }}.txt')"
         {% endif %}
 
 _migrations:

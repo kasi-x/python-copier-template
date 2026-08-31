@@ -1,0 +1,13 @@
+{% set parts = author_name.split(' ') -%}
+{% set given = parts[:-1] | join(' ') -%}
+cff-version: 1.2.0
+message: If you use this software, please cite it using this metadata.
+title: "{{ repo_name }}"
+abstract: {{ description | tojson }}
+repository-code: "{{ repo_url }}"
+{% if license_effective != 'Proprietary' %}license: "{{ license_effective }}"
+{% endif %}authors:
+  - family-names: "{{ parts[-1] }}"{% if given %}
+    given-names: "{{ given }}"{% endif %}
+    email: "{{ author_email }}"{% if author_orcid %}
+    orcid: "https://orcid.org/{{ author_orcid | replace('https://orcid.org/', '') }}"{% endif %}

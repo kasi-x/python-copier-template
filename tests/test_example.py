@@ -300,6 +300,46 @@ def test_template_license_proprietary(tmp_path: Path):
     assert "license" not in pyproject_toml["project"]
 
 
+def test_template_fair_metadata(tmp_path: Path):
+    copy_project(tmp_path, fair=True, author_orcid="0000-0002-1825-0099", data_governance="both")
+    cff = (tmp_path / "CITATION.cff").read_text()
+    assert "cff-version: 1.2.0" in cff
+    assert 'title: "python-copier-template-example"' in cff
+    assert 'repository-code: "https://github.com/kasi-x/python-copier-template-example"' in cff
+    assert 'license: "Apache-2.0"' in cff
+    assert 'orcid: "https://orcid.org/0000-0002-1825-0099"' in cff
+    reuse_toml = (tmp_path / "REUSE.toml").read_text()
+    assert 'SPDX-License-Identifier = "Apache-2.0"' in reuse_toml
+    pre_commit = (tmp_path / ".pre-commit-config.yaml").read_text()
+    assert "cff-converter-python" in pre_commit
+    assert "reuse-tool" in pre_commit
+    assert (tmp_path / "data" / "DUO.md").exists()
+    assert (tmp_path / "data" / "CARE.md").exists()
+
+
+def test_template_fair_off(tmp_path: Path):
+    copy_project(tmp_path, fair=False)
+    assert not (tmp_path / "CITATION.cff").exists()
+    assert not (tmp_path / "REUSE.toml").exists()
+    assert not (tmp_path / "data" / "DUO.md").exists()
+    pre_commit = (tmp_path / ".pre-commit-config.yaml").read_text()
+    assert "cff-converter-python" not in pre_commit
+    assert "reuse-tool" not in pre_commit
+
+
+def test_template_fair_proprietary(tmp_path: Path):
+    copy_project(tmp_path, fair=True, license="Proprietary")
+    cff = (tmp_path / "CITATION.cff").read_text()
+    assert "cff-version: 1.2.0" in cff
+    # CFF has no SPDX expression for "all rights reserved": omit the field
+    assert "license:" not in cff
+    # reuse only applies to open-source licenses
+    assert not (tmp_path / "REUSE.toml").exists()
+    pre_commit = (tmp_path / ".pre-commit-config.yaml").read_text()
+    assert "cff-converter-python" in pre_commit
+    assert "reuse-tool" not in pre_commit
+
+
 def test_template_changelog(tmp_path: Path):
     copy_project(tmp_path)
     assert (tmp_path / "CHANGELOG.md").exists()

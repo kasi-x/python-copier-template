@@ -1,0 +1,13 @@
+version = 1
+
+SPDX-PackageName = "{{ repo_name }}"
+SPDX-PackageSupplier = "{{ author_name }} <{{ author_email }}>"
+SPDX-PackageDownloadLocation = "{{ repo_url }}"
+
+# Project-wide default: every file inherits the project license and
+# copyright.
+[[annotations]]
+path = ["**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "{{ license_year }} {{ author_name }}"
+SPDX-License-Identifier = "{{ license_effective }}"
