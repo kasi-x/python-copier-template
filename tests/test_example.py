@@ -201,6 +201,16 @@ def test_template_data_science_layout(tmp_path: Path):
     assert (tmp_path / "reports" / "figures").is_dir()
     for d in ["data", "features", "models", "visualization"]:
         assert (tmp_path / "src" / d).is_dir(), f"missing src/{d}"
+    # Data governance & restricted-data sharing kit, always present
+    for name in [
+        "DATA_CLASSIFICATION.md",
+        "DEIDENTIFICATION.md",
+        "sharing/DATA_TRANSFER_AGREEMENT.md",
+        "sharing/TRANSFER_LOG.csv",
+    ]:
+        assert (tmp_path / "data" / name).exists(), f"data/{name}"
+    log = (tmp_path / "data" / "sharing" / "TRANSFER_LOG.csv").read_text()
+    assert log.startswith("date,recipient")
     # Package is src/<package_name>
     assert (tmp_path / "src" / "python_copier_template_example" / "__init__.py").exists()
     # GPU + Quarto always included for data_science
