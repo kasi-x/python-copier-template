@@ -24,10 +24,19 @@ from __future__ import annotations
 import logging
 import os
 import sys
+{%- if cloud_provider == 'gcp' %}
+from typing import cast
+{%- endif %}
 
 import structlog
 
 _configured = False
+{%- if cloud_provider == 'gcp' %}
+# Field names/values Cloud Logging's structured-log parser recognises:
+# https://cloud.google.com/logging/docs/structured-logging
+# https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
+_GCP_SEVERITY = {"debug": "DEBUG", "info": "INFO", "warning": "WARNING", "error": "ERROR", "exception": "ERROR"}
+{%- endif %}
 
 
 def setup_logging(format_: str | None = None, level: str = "INFO") -> None:
@@ -43,6 +52,9 @@ def setup_logging(format_: str | None = None, level: str = "INFO") -> None:
         structlog.processors.TimeStamper(fmt="iso", utc=True),
     ]
     if fmt == "json":
+        {%- if cloud_provider == 'gcp' %}
+        processors.append(_gcp_fields)
+        {%- endif %}
         processors.append(structlog.processors.JSONRenderer(ensure_ascii=False))
     else:
         processors.append(structlog.processors.StackInfoRenderer())
@@ -63,6 +75,22 @@ def _stdout_is_tty() -> bool:
     except Exception:  # noqa: BLE001
         return False
 
+{% if cloud_provider == 'gcp' %}
+
+def _gcp_fields(_: object, __: str, event_dict: structlog.typing.EventDict) -> structlog.typing.EventDict:
+    """{% if allow_japanese %}Cloud Logging が特別扱いする severity/message/time フィールド名にリネームする。
+    https://cloud.google.com/logging/docs/structured-logging
+    {% else %}Rename fields to what Cloud Logging's structured-log parser
+    recognises (severity/message/time).
+    https://cloud.google.com/logging/docs/structured-logging
+    {% endif %}"""
+    level_name = cast("str", event_dict.pop("level", "info"))
+    event_dict["severity"] = _GCP_SEVERITY.get(level_name, level_name.upper())
+    event_dict["message"] = event_dict.pop("event", "")
+    if "timestamp" in event_dict:
+        event_dict["time"] = event_dict.pop("timestamp")
+    return event_dict
+{% endif %}
 
 def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
     """{% if allow_japanese %}設定を行い、bound logger を返す。{% else %}Configure logging and return a bound logger.{% endif %}"""
@@ -73,6 +101,9 @@ def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
 # Module-level logger: `from {{ package_name }}.logging_setup import logger`
 logger = get_logger()
 {% elif log_library == 'loguru' %}
+{%- if cloud_provider == 'gcp' %}
+import json
+{%- endif %}
 import os
 import sys
 from typing import TYPE_CHECKING
@@ -81,6 +112,9 @@ from loguru import logger as _logger
 
 if TYPE_CHECKING:
     from loguru import Logger
+    {%- if cloud_provider == 'gcp' %}
+    from loguru import Message
+    {%- endif %}
 
 _configured = False
 
@@ -94,7 +128,11 @@ def setup_logging(format_: str | None = None, level: str = "INFO") -> None:
     fmt = (format_ or os.environ.get("LOG_FORMAT") or "console").lower()
     _logger.remove()
     if fmt == "json":
+        {%- if cloud_provider == 'gcp' %}
+        _logger.add(_gcp_sink, level=level)
+        {%- else %}
         _logger.add(sys.stderr, level=level, serialize=True)
+        {%- endif %}
     else:
         _logger.add(
             sys.stderr,
@@ -111,6 +149,24 @@ def _stdout_is_tty() -> bool:
     except Exception:  # noqa: BLE001
         return False
 
+{% if cloud_provider == 'gcp' %}
+
+def _gcp_sink(message: Message) -> None:
+    """{% if allow_japanese %}Cloud Logging が特別扱いする severity/message/time フィールド名で1行JSONを書く。
+    https://cloud.google.com/logging/docs/structured-logging
+    {% else %}Write one JSON line using the field names Cloud Logging's
+    structured-log parser recognises (severity/message/time).
+    https://cloud.google.com/logging/docs/structured-logging
+    {% endif %}"""
+    record = message.record
+    payload = {
+        "time": record["time"].isoformat(),
+        "severity": record["level"].name,
+        "message": record["message"],
+        **record["extra"],
+    }
+    sys.stderr.write(json.dumps(payload, default=str, ensure_ascii=False) + "\n")
+{% endif %}
 
 class BoundLogger:
     """{% if allow_japanese %}structlog 風の `event, **kv` 呼び出しを loguru の bind API にアダプトする薄いラッパー。{% else %}Thin wrapper adapting loguru's bind API to a structlog-style `event, **kv` call shape.{% endif %}"""
@@ -167,6 +223,12 @@ import picologging as logging
 _std_logger = logging.getLogger("{{ package_name }}")
 _fmt = "console"
 _configured = False
+{%- if cloud_provider == 'gcp' %}
+# Field names/values Cloud Logging's structured-log parser recognises:
+# https://cloud.google.com/logging/docs/structured-logging
+# https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
+_GCP_SEVERITY = {"debug": "DEBUG", "info": "INFO", "warning": "WARNING", "error": "ERROR", "exception": "ERROR"}
+{%- endif %}
 
 
 def setup_logging(format_: str | None = None, level: str = "INFO") -> None:
@@ -196,7 +258,16 @@ class BoundLogger:
     def _emit(self, level: str, event: str, kv: dict[str, object]) -> None:
         fields = {**self._bound, **kv}
         if _fmt == "json":
+            {%- if cloud_provider == 'gcp' %}
+            payload = {
+                "time": datetime.now(UTC).isoformat(),
+                "severity": _GCP_SEVERITY.get(level, level.upper()),
+                "message": event,
+                **fields,
+            }
+            {%- else %}
             payload = {"timestamp": datetime.now(UTC).isoformat(), "level": level, "event": event, **fields}
+            {%- endif %}
             message = json.dumps(payload, default=str, ensure_ascii=False)
         else:
             extra = "" if not fields else " " + " ".join(f"{k}={v!r}" for k, v in fields.items())

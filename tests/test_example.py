@@ -384,6 +384,31 @@ def test_template_log_library_skipped_for_ros2(tmp_path: Path):
     assert not list(tmp_path.rglob("logging_setup.py"))
 
 
+@pytest.mark.parametrize("log_library", ["structlog", "loguru", "picologging", "logging"])
+def test_template_log_library_gcp_json_fields(tmp_path: Path, log_library: str, monkeypatch: pytest.MonkeyPatch):
+    """With cloud_provider=gcp, LOG_FORMAT=json should use the field names
+    Cloud Logging's structured-log parser recognises (severity/message/time)
+    instead of each library's own default (level/event/timestamp), so the
+    generated project's logs get severity colouring/filtering for free.
+    """
+    copy_project(tmp_path, log_library=log_library, cloud_provider="gcp")
+    run = make_venv(tmp_path)
+    run("uvx --from go-task-bin task check")
+    monkeypatch.setenv("LOG_FORMAT", "json")
+    output = run(
+        "uv run --locked python -c "
+        '"from python_copier_template_example.logging_setup import logger; '
+        "logger.bind(task_id='T-123').info('job_done', chunks=3)\""
+    )
+    payload = json.loads(output)
+    assert payload["severity"] == "INFO"
+    assert payload["message"] == "job_done"
+    assert "time" in payload
+    assert "level" not in payload
+    assert "event" not in payload
+    assert "timestamp" not in payload
+
+
 def test_template_recommended_settings(tmp_path: Path):
     copy_project_recommended(tmp_path, project_type="data_science")
     # Accepting every "use the recommended ...?" gate still generates a

@@ -272,7 +272,7 @@ min_confidence = 80
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=click|fastapi|httpx|pydantic|pydantic-settings|pendulum|rich|structlog|loguru|picologging|typer|uvicorn{% if data_science %}|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %},DEP003={{ package_name }}|requests"
+per_rule_ignores = "DEP002=click|fastapi|httpx|pydantic|pydantic-settings|pendulum|rich|structlog|loguru|picologging|typer|uvicorn{% if data_science %}|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %}{% if cloud_provider == 'gcp' %}|google-cloud-storage{% endif %}{% if cloud_provider == 'azure' %}|azure-identity{% endif %},DEP003={{ package_name }}|requests"
 # Vendored pyfiglet (tools/) はローカルインポートを依存と誤認するので除外
 # tasks.py/duties.py: root-level dev script, not project source -- deptry
 # would otherwise flag invoke/duty as DEP004 (dev-only dep imported by "source")
