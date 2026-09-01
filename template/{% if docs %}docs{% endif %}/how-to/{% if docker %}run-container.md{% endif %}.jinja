@@ -12,3 +12,14 @@ $ docker run ghcr.io/{{github_org | lower}}/{{repo_name}}:latest --version
 ```
 
 To get a released version, use a numbered release instead of `latest`.
+
+## Logging in the cloud
+
+Logs go to stderr as human-readable console text by default; set the
+`LOG_FORMAT=json` environment variable to switch to one-JSON-object-per-line
+instead, which log aggregators (CloudWatch Logs, Cloud Logging, Azure
+Monitor, journald, ...) can parse. This is independent of which (if any)
+cloud SDK dependencies were added, and of which platform runs the
+container — the same image works locally (console) and in any cloud
+(JSON), so there's nothing extra to build per target: just set the
+environment variable wherever the container runs.
