@@ -410,8 +410,10 @@ use_recommended_integrations:
     help: |
         Use the recommended deployment & integration settings?
         Recommended: no Docker container, no PyPI auto-publish, no cloud
-        provider, no Sentry, no MCP support, GitHub Actions for CI.
-        Answer No to turn any of these on, or switch the CI provider.
+        provider, no Sentry, no MCP support, GitHub Actions for CI,
+        structlog for logging.
+        Answer No to turn any of these on, switch the CI provider, or pick a
+        different logging library.
 
 docker:
     type: bool
@@ -489,6 +491,25 @@ ci_provider:
         - github_actions
         - none
     default: github_actions
+
+log_library:
+    type: str
+    when: "{{ not use_recommended_integrations and project_type != 'ros2' }}"
+    help: |
+        Which logging library should logging_setup.py use?
+        - structlog: structured, contextvars-aware logging with console/JSON
+          renderers. Recommended default.
+        - loguru: batteries-included logger — no boilerplate configuration,
+          built-in colours, exception-catching decorator.
+        - picologging: a C-accelerated, drop-in-compatible reimplementation
+          of the standard library logging module. Faster, same API.
+        - logging: the standard library logging module. No extra dependency.
+    choices:
+        - structlog
+        - loguru
+        - picologging
+        - logging
+    default: structlog
 
 use_recommended_specialty:
     type: bool

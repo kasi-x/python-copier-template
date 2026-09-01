@@ -34,6 +34,7 @@ cloud_provider: none
 include_sentry: false
 include_mcp: false
 ci_provider: github_actions
+log_library: structlog
 pypi: true
 license: Apache-2.0
 fair: true

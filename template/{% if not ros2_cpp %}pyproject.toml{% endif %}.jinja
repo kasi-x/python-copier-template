@@ -14,7 +14,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     {% endif %}]
 description = "{{ description }}"
-dependencies = ["structlog"{% if sphinx %}, "requests"{% endif %}{% if competition %}, "hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "polars>=0.20.15", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15.0.0,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15.0,<1.0", "xgboost>=2.0"{% endif %}{% if cloud_provider == 'aws' %}, "boto3>=1.34.0", "botocore>=1.34.0"{% endif %}{% if cloud_provider == 'gcp' %}, "google-cloud-storage>=2.14.0"{% endif %}{% if cloud_provider == 'azure' %}, "azure-identity>=1.15.0"{% endif %}{% if include_sentry %}, "sentry-sdk"{% endif %}{% if include_mcp or specialty == 'mcp_server' %}, "mcp"{% endif %}{% if specialty == 'ai_agent' %}, "pydantic-ai", "pydantic-settings>=2.2.1"{% endif %}{% if specialty == 'data_polars' %}, "polars>=0.20.15", "duckdb", "pyarrow"{% endif %}{% if specialty == 'pure_python_web' %}, "python-fasthtml"{% endif %}] # Add project dependencies here, e.g. ["click", "numpy"]
+dependencies = [{% if competition or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if competition %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "polars>=0.20.15", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15.0.0,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15.0,<1.0", "xgboost>=2.0", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34.0", "botocore>=1.34.0", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14.0", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15.0", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if include_mcp or specialty == 'mcp_server' %}"mcp", {% endif %}{% if specialty == 'ai_agent' %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if specialty == 'data_polars' %}"polars>=0.20.15", "duckdb", "pyarrow", {% endif %}{% if specialty == 'pure_python_web' %}"python-fasthtml", {% endif %}] # Add project dependencies here, e.g. ["click", "numpy"]
 {% if ros2_pkg %}version = "0.1.0"
 # ros2 ament_python: version comes from setup.py / package.xml, not git tags
 {% else %}dynamic = ["version"]
@@ -272,7 +272,7 @@ min_confidence = 80
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=click|fastapi|httpx|pydantic|pydantic-settings|pendulum|rich|structlog|typer|uvicorn{% if data_science %}|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %},DEP003={{ package_name }}|requests"
+per_rule_ignores = "DEP002=click|fastapi|httpx|pydantic|pydantic-settings|pendulum|rich|structlog|loguru|picologging|typer|uvicorn{% if data_science %}|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %},DEP003={{ package_name }}|requests"
 # Vendored pyfiglet (tools/) はローカルインポートを依存と誤認するので除外
 # tasks.py/duties.py: root-level dev script, not project source -- deptry
 # would otherwise flag invoke/duty as DEP004 (dev-only dep imported by "source")
@@ -486,9 +486,9 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-format = true
-# logging_setup.py has long structlog calls that format differently at
-# line-length 88 vs 120 (allow_japanese), so exclude it from formatting
-# (E501 is already ignored for it).
+# logging_setup.py has long logging-library setup calls that format
+# differently at line-length 88 vs 120 (allow_japanese), so exclude it from
+# formatting (E501 is already ignored for it).
 exclude = ["{{ pkg_dir }}/logging_setup.py"]
 
 [tool.ruff.lint.pydocstyle]
@@ -549,8 +549,9 @@ suppress-none-returning = false
     "PT015",  # pytest-assertion-in-raisable-block  CONTEXT: raises 内の assert は意図的
     "B011",   # assert-false  CONTEXT: 到達しないことを明示する assert はテストで正当
 ]
-# structlog の長い呼び出し（ConsoleRenderer / make_filtering_bound_logger）は
-# line-length 設定により ruff format が折り返しを変えるため、E501 は免除する。
+# logging_setup.py の長い呼び出し（structlog の ConsoleRenderer /
+# make_filtering_bound_logger、loguru の add() など）は line-length 設定により
+# ruff format が折り返しを変えるため、E501 は免除する。
 # 日本語 docstring の終端句読点（D415）とシングルトン設定の global（PLW0603）も免除。
 "{{ pkg_dir }}/logging_setup.py" = ["E501", "D", "PLW0603"]
 {% if package_manager == "poetry" %}

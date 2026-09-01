@@ -30,9 +30,9 @@ The template asks a few questions and generates a project tailored to your answe
   customisable area of the template — toolchain, data-science options
   (competition, GPU, DUO/CARE data governance), layout & style, docs,
   type-checking & strictness, license & FAIR metadata, deployment &
-  integrations, specialisation — asks a single "use the recommended
-  settings?" question first (default: yes), with the recommendation spelled
-  out in its help text.
+  integrations (including the logging library), specialisation — asks a
+  single "use the recommended settings?" question first (default: yes),
+  with the recommendation spelled out in its help text.
 - Answer **yes** and the area is configured from its defaults without
   asking anything else; answer **no** and the detailed question(s) for that
   area are asked (package manager choice, CI provider, GPU, cloud provider,
@@ -85,8 +85,8 @@ flowchart TD
     D6 --> G7{use_recommended_integrations?}
     A6 --> G7
 
-    G7 -->|Yes| D7["no Docker/PyPI/cloud/Sentry/MCP · CI: GitHub Actions"]
-    G7 -->|No| A7["ask: docker, pypi, cloud_provider, include_sentry, include_mcp, ci_provider"]
+    G7 -->|Yes| D7["no Docker/PyPI/cloud/Sentry/MCP · CI: GitHub Actions · structlog"]
+    G7 -->|No| A7["ask: docker, pypi, cloud_provider, include_sentry,<br/>include_mcp, ci_provider, log_library"]
     D7 --> G8{use_recommended_specialty?}
     A7 --> G8
 
@@ -160,6 +160,12 @@ flowchart TD
   `SENTRY_DSN` at CLI startup.
 - **MCP** (`include_mcp`): adds the `mcp` SDK and scaffolds an
   `mcp_server.py` with stdio and SSE transports.
+- **Logging library** (`log_library`): `structlog` (default) / `loguru` /
+  `picologging` / `logging` (standard library, no extra dependency).
+  `logging_setup.py` exposes the same `logger.bind(...)` / `logger.info(event,
+  **fields)` call shape regardless of which one is chosen, plus a
+  `LOG_FORMAT=json` console/JSON switch. Not asked for `ros2` packages, which
+  use rclpy's own node logger instead.
 
 **Experimentation** (`[project.optional-dependencies] experiment` / pixi `experiment` feature)
 - marimo notebooks, matplotlib / seaborn / plotly for debugging, plus LLM API deps

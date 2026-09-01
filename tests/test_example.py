@@ -1,6 +1,7 @@
 import functools
 import json
 import os
+import re
 import shlex
 import subprocess
 import tomllib
@@ -260,12 +261,21 @@ def test_template_data_science_layout(tmp_path: Path):
 def test_template_script_type(tmp_path: Path):
     copy_project(tmp_path, project_type="script")
     # Minimal: flat package at repo root (no src/), no notebooks
-    assert (tmp_path / "python_copier_template_example" / "__init__.py").exists()
+    pkg = tmp_path / "python_copier_template_example"
+    assert (pkg / "__init__.py").exists()
     assert not (tmp_path / "src").exists()
     assert not (tmp_path / "notebooks").exists()
     # No DS extras
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert "optional-dependencies" not in pyproject_toml.get("project", {})
+    # Regression: the flat-layout copies of __main__.py/logging_setup.py used
+    # to wrap their .jinja suffix *inside* the `{% if %}` filename condition
+    # (`...py.jinja{% endif %}` instead of `...py{% endif %}.jinja`), so
+    # copier never recognised them as templates -- they were copied verbatim,
+    # keeping a literal .jinja suffix and unrendered `{{ }}`/`{% %}` content.
+    assert not list(pkg.glob("*.jinja"))
+    assert "{% if" not in (pkg / "__main__.py").read_text()
+    assert "{% if" not in (pkg / "logging_setup.py").read_text()
 
 
 def test_template_cloud_provider_aws(tmp_path: Path):
@@ -312,6 +322,66 @@ def test_template_no_ci(tmp_path: Path):
     assert not (tmp_path / ".github" / "workflows").exists()
     # GitHub-specific files are still generated
     assert (tmp_path / ".github" / "actionlint.yaml").exists()
+
+
+def test_template_log_library_default_is_structlog(tmp_path: Path):
+    copy_project_recommended(tmp_path, project_type="cli")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert "structlog" in deps
+    assert "loguru" not in deps
+    assert "picologging" not in deps
+    logging_setup = (tmp_path / "src" / "recommended_example" / "logging_setup.py").read_text()
+    assert "import structlog" in logging_setup
+
+
+def test_template_log_library_loguru(tmp_path: Path):
+    copy_project(tmp_path, log_library="loguru")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert "loguru" in pyproject_toml["project"]["dependencies"]
+    logging_setup = (tmp_path / "src" / "python_copier_template_example" / "logging_setup.py").read_text()
+    assert "from loguru import logger" in logging_setup
+    run = make_venv(tmp_path)
+    run("uvx --from go-task-bin task check")
+    # logger.bind(...).info(event, **kv) works the same as the structlog default
+    run(
+        "uv run --locked python -c "
+        '"from python_copier_template_example.logging_setup import logger; '
+        "logger.bind(task_id='T-123').info('job_done', chunks=3)\""
+    )
+
+
+def test_template_log_library_picologging(tmp_path: Path):
+    copy_project(tmp_path, log_library="picologging")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert "picologging" in pyproject_toml["project"]["dependencies"]
+    logging_setup = (tmp_path / "src" / "python_copier_template_example" / "logging_setup.py").read_text()
+    assert "import picologging as logging" in logging_setup
+    run = make_venv(tmp_path)
+    run("uvx --from go-task-bin task check")
+
+
+def test_template_log_library_stdlib(tmp_path: Path):
+    copy_project(tmp_path, log_library="logging")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert not {"structlog", "loguru", "picologging"} & set(deps)
+    logging_setup = (tmp_path / "src" / "python_copier_template_example" / "logging_setup.py").read_text()
+    assert "import logging" in logging_setup
+    run = make_venv(tmp_path)
+    run("uvx --from go-task-bin task check")
+
+
+def test_template_log_library_skipped_for_ros2(tmp_path: Path):
+    copy_project_recommended(
+        tmp_path,
+        project_type="ros2",
+        pkg_language="python",
+        ros_distro="humble",
+        ros2_package_manager="apt",
+    )
+    # ros2 packages use rclpy's own node logger; logging_setup.py isn't generated
+    assert not list(tmp_path.rglob("logging_setup.py"))
 
 
 def test_template_recommended_settings(tmp_path: Path):
@@ -850,9 +920,12 @@ def test_basedpyright_works_in_basic_mode(tmp_path: Path):
 
 def test_basedpyright_works_with_external_deps(tmp_path: Path):
     copy_project(tmp_path)
-    # Add an external dependency
+    # Add an external dependency (regex insert -- log_library picks which
+    # logging package, if any, already opens the `dependencies = [...]` array)
     pyproject_toml = tmp_path / "pyproject.toml"
-    text = pyproject_toml.read_text().replace('dependencies = ["structlog"]', 'dependencies = ["structlog", "numpy"]')
+    text = pyproject_toml.read_text()
+    text, n = re.subn(r"dependencies = \[", 'dependencies = ["numpy", ', text, count=1)
+    assert n == 1, "could not find dependencies array in generated pyproject.toml"
     pyproject_toml.write_text(text)
     # And some code that uses it
     src_file = tmp_path / "src" / "python_copier_template_example" / "example.py"
