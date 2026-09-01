@@ -15,6 +15,7 @@ dev = [
     "coverage>=7.15.4,<8",
     "deptry>=0.25.1,<0.26",
     "hypothesis>=6.130.0,<7.0",
+    "jinja2>=3.1.6,<4",
     "mkdocstrings[python]",
     "pip-audit>=2.9.0,<3.0",
     "pre-commit>=4.6.1,<5",
@@ -252,7 +253,7 @@ extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
 
 [tool.typos.files]
 # template/ は生成コード（_figlet.py 等 vendored 含む）。生成先プロジェクト側でチェックされる。
-extend-exclude = ["template", "docs", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS"]
+extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS"]
 
 [tool.vulture]
 paths = ["tests"]
@@ -260,7 +261,7 @@ min_confidence = 60
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template"
+per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template,DEP004=jinja2"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
 # tests/ は pytest の暗黙パッケージ import (test_example) があり依存検査と相性が悪い。
 exclude = ["template", "tests", "docs", ".venv", ".pixi", ".tox", "build", "dist"]
