@@ -43,14 +43,18 @@ The branches below follow the order the questions are actually asked in
 
 ```mermaid
 flowchart TD
-    Start([Start]) --> G1{use_recommended_toolchain?}
-    G1 -->|Yes| D1["uv + just"]
-    G1 -->|No| A1["ask: package_manager, task_runner"]
-    D1 --> PT[project_type]
-    A1 --> PT
+    Start([Start]) --> PT[project_type]
+    PT -->|ros2| RQ["ask: pkg_language, ros_distro,<br/>ros2_package_manager"]
+    PT -->|other| G1
+    RQ --> G1{use_recommended_toolchain?}
 
-    PT -->|data_science| G2{use_recommended_data_science?}
-    PT -->|other| M1((•))
+    G1 -->|Yes| D1["uv + just<br/>(pixi if ros2+pixi)"]
+    G1 -->|No| A1["ask: package_manager, task_runner"]
+    D1 --> DS{project_type == data_science?}
+    A1 --> DS
+
+    DS -->|Yes| G2{use_recommended_data_science?}
+    DS -->|No| M1((•))
     G2 -->|Yes| D2["competition: no · GPU: yes · no DUO/CARE"]
     G2 -->|No| A2["ask: competition, use_gpu"]
     A2 --> G2b{competition?}

@@ -9,6 +9,74 @@ _jinja_extensions:
 # question first (default: yes). Answering No to that question reveals the
 # detailed question(s) for that area; answering Yes accepts the recommended
 # defaults listed in its help text without asking anything further.
+#
+# project_type (and its ros2 follow-ups) is asked first, ahead of every
+# area, because use_recommended_toolchain/package_manager's own `when` and
+# `default` need to know whether this is a ros2+pixi project.
+
+project_type:
+    type: str
+    help: |
+        What kind of project is this?
+        - library: a Python library/package.
+        - web_api: a web API service (Docker included).
+        - cli: a command-line tool.
+        - data_science: a data science project with notebooks, data/,
+          models/, reports/ and experiment extras. GPU Dockerfile and
+          Quarto paper are included.
+        - script: a minimal script, no package layout.
+        - web_django: NOT supported. Selecting this aborts generation —
+          Django is not maintained by this template; use FastAPI /
+          Litestar / Flask, or the upstream cookiecutter-django instead.
+        - ros2: a ROS 2 package (ament_python or ament_cmake). Built with
+          colcon + rosdep; not a uv/pixi/poetry project.
+    choices:
+        - library
+        - web_api
+        - cli
+        - data_science
+        - script
+        - web_django
+        - ros2
+    default: library
+
+pkg_language:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        Which language for the ROS 2 package?
+        - python: ament_python (rclpy) — setup.py + package.xml + resource/.
+        - cpp: ament_cmake — CMakeLists.txt + src/*.cpp + include/.
+    choices:
+        Python (rclpy): python
+        C++ (ament_cmake): cpp
+    default: python
+
+ros_distro:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        ROS 2 distribution. Humble (Ubuntu 22.04, Python 3.10) is the most
+        widely deployed; Jazzy (Ubuntu 24.04, Python 3.12) is the current LTS.
+    choices:
+        Humble (22.04 / Python 3.10): humble
+        Jazzy (24.04 / Python 3.12): jazzy
+    default: humble
+
+ros2_package_manager:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        How should the ROS 2 environment be provisioned?
+        - apt: the classic ROS 2 way — Ubuntu + apt (ros-{{ ros_distro }}-*)
+          + colcon + rosdep. Docker base image ros:{{ ros_distro }}-ros-base.
+        - pixi: RoboStack conda-forge packages via pixi, using the distro
+          channel (https://prefix.dev/robostack-{{ ros_distro }}). No
+          sudo/apt needed. See https://pixi.prefix.dev/latest/robotics/.
+    choices:
+        apt (colcon + rosdep): apt
+        pixi (RoboStack conda): pixi
+    default: apt
 
 use_recommended_toolchain:
     type: bool
@@ -87,70 +155,6 @@ task_runner_pixi:
         Just: just
         Make: make
     default: pixi
-
-project_type:
-    type: str
-    help: |
-        What kind of project is this?
-        - library: a Python library/package.
-        - web_api: a web API service (Docker included).
-        - cli: a command-line tool.
-        - data_science: a data science project with notebooks, data/,
-          models/, reports/ and experiment extras. GPU Dockerfile and
-          Quarto paper are included.
-        - script: a minimal script, no package layout.
-        - web_django: NOT supported. Selecting this aborts generation —
-          Django is not maintained by this template; use FastAPI /
-          Litestar / Flask, or the upstream cookiecutter-django instead.
-        - ros2: a ROS 2 package (ament_python or ament_cmake). Built with
-          colcon + rosdep; not a uv/pixi/poetry project.
-    choices:
-        - library
-        - web_api
-        - cli
-        - data_science
-        - script
-        - web_django
-        - ros2
-    default: library
-
-pkg_language:
-    type: str
-    when: "{{ project_type == 'ros2' }}"
-    help: |
-        Which language for the ROS 2 package?
-        - python: ament_python (rclpy) — setup.py + package.xml + resource/.
-        - cpp: ament_cmake — CMakeLists.txt + src/*.cpp + include/.
-    choices:
-        Python (rclpy): python
-        C++ (ament_cmake): cpp
-    default: python
-
-ros_distro:
-    type: str
-    when: "{{ project_type == 'ros2' }}"
-    help: |
-        ROS 2 distribution. Humble (Ubuntu 22.04, Python 3.10) is the most
-        widely deployed; Jazzy (Ubuntu 24.04, Python 3.12) is the current LTS.
-    choices:
-        Humble (22.04 / Python 3.10): humble
-        Jazzy (24.04 / Python 3.12): jazzy
-    default: humble
-
-ros2_package_manager:
-    type: str
-    when: "{{ project_type == 'ros2' }}"
-    help: |
-        How should the ROS 2 environment be provisioned?
-        - apt: the classic ROS 2 way — Ubuntu + apt (ros-{{ ros_distro }}-*)
-          + colcon + rosdep. Docker base image ros:{{ ros_distro }}-ros-base.
-        - pixi: RoboStack conda-forge packages via pixi, using the distro
-          channel (https://prefix.dev/robostack-{{ ros_distro }}). No
-          sudo/apt needed. See https://pixi.prefix.dev/latest/robotics/.
-    choices:
-        apt (colcon + rosdep): apt
-        pixi (RoboStack conda): pixi
-    default: apt
 
 use_recommended_data_science:
     type: bool
@@ -597,6 +601,16 @@ data_science:
     default: "{{ project_type == 'data_science' }}"
     when: false
 
+data_science_layout:
+    type: bool
+    default: "{{ data_science and not competition }}"
+    when: false
+
+use_src_layout:
+    type: bool
+    default: "{{ layout == 'src' and project_type not in ['script', 'ros2'] }}"
+    when: false
+
 use_gpu_effective:
     type: bool
     default: "{{ use_gpu and project_type == 'data_science' }}"
@@ -637,6 +651,16 @@ ros2_pkg:
     default: "{{ project_type == 'ros2' }}"
     when: false
 
+ros2_cpp:
+    type: bool
+    default: "{{ ros2_pkg and pkg_language == 'cpp' }}"
+    when: false
+
+ros2_python:
+    type: bool
+    default: "{{ ros2_pkg and pkg_language == 'python' }}"
+    when: false
+
 task_runner_effective:
     type: str
     default: "{{ task_runner_pixi if package_manager == 'pixi' else task_runner }}"
@@ -659,12 +683,12 @@ reuse_effective:
 
 duo:
     type: bool
-    default: "{{ data_reusable and data_science and not competition }}"
+    default: "{{ data_reusable and data_science_layout }}"
     when: false
 
 care:
     type: bool
-    default: "{{ data_ethics and data_science and not competition }}"
+    default: "{{ data_ethics and data_science_layout }}"
     when: false
 
 license_year:
@@ -674,7 +698,7 @@ license_year:
 
 pkg_dir:
     type: str
-    default: "{{ 'src/utils' if competition else (('src/' if layout == 'src' and project_type not in ['script', 'ros2'] else '') + package_name) }}"
+    default: "{{ 'src/utils' if competition else (('src/' if use_src_layout else '') + package_name) }}"
     when: false
 
 _subdirectory: "template"
