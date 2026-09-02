@@ -96,6 +96,24 @@ ros2 run {{ repo_name }} talker
 ```
 {% endif %}
 
+{% elif micropython_pkg %}The firmware runs on a {{ micropython_port }} MicroPython device; there is
+nothing to pip-install. Connect the device over USB and deploy with
+[mpremote](https://docs.micropython.org/en/latest/reference/mpremote.html):
+
+```sh
+# Install the dev tooling (ruff, pytest, basedpyright, mpremote, ...)
+{% if package_manager == "uv" %}uv sync
+{% elif package_manager == "poetry" %}poetry install
+{% else %}pixi install
+{% endif %}
+# Install the MicroPython type stubs into typings/ (for type-checking)
+uv run pip install -r requirements-dev.txt --target typings
+
+# Copy firmware/ to the device root and run it (MicroPython auto-runs /main.py)
+{% if package_manager == "uv" %}{% set _run = 'uv run --locked ' %}{% elif package_manager == "poetry" %}{% set _run = 'poetry run ' %}{% else %}{% set _run = 'pixi run -e dev --locked ' %}{% endif %}
+{% for f in ['boot.py', 'main.py', 'board_config.py', 'core'] %}{{ _run }}mpremote connect auto fs cp -r firmware/{{ f }} :
+{% endfor %}{{ _run }}mpremote connect auto reset
+```
 {% else %}```sh
 {% if package_manager == "uv" %}pip install {{distribution_name}}
 {% elif package_manager == "poetry" %}poetry add {{distribution_name}}
@@ -132,6 +150,16 @@ ros2 topic echo /chatter
 
 Replace the sample node in `{{ package_name }}/main.py`{% if pkg_language == 'cpp' %} / `src/talker.cpp`{% endif %}
 with your own ROS 2 logic.
+{% elif micropython_pkg %}The firmware blinks the on-board LED. With a device connected:
+
+```sh
+{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}mpremote connect auto run firmware/main.py
+```
+
+The device-independent logic lives in `firmware/core/` (unit-tested under
+CPython with `pytest`); board pins live in `firmware/board_config.py`; the
+wire-up that MicroPython runs on boot is `firmware/main.py`. Replace the
+sample blink with your own firmware logic.
 {% else %}```python
 from {{package_name}} import __version__
 
@@ -279,6 +307,45 @@ pixi run -e dev test
 pixi run -e dev check
 {% endif %}
 ```
+
+{% if micropython_pkg %}
+For a MicroPython project the same runner also drives the device workflow:
+
+```sh
+{% if task_runner_effective == 'task' %}task stubs           # install micropython-{{ micropython_port }}-stubs into typings/
+task deploy         # copy firmware/ to the device root and reset it
+task run            # run firmware/main.py on the device without copying
+task repl           # open a REPL on the connected device
+{% elif task_runner_effective == 'just' %}just stubs
+just deploy
+just run
+just repl
+{% elif task_runner_effective == 'make' %}make stubs
+make deploy
+make run
+make repl
+{% elif task_runner_effective == 'poe' %}poe stubs
+poe deploy
+poe run
+poe repl
+{% elif task_runner_effective == 'invoke' %}invoke stubs
+invoke deploy
+invoke run
+invoke repl
+{% elif task_runner_effective == 'duty' %}duty stubs
+duty deploy
+duty run
+duty repl
+{% else %}pixi run -e dev stubs
+pixi run -e dev deploy
+pixi run -e dev run
+pixi run -e dev repl
+{% endif %}
+```
+
+Type-checking the firmware needs the stubs installed first (`stubs` above);
+`tests/` (the CPython core tests) and `firmware/core/` are checked without them.
+{% endif %}
 
 See the [how-to guides]({% if docs %}{{docs_url}}/how-to){% else %}.github/CONTRIBUTING.md){% endif %} for details on contributing,
 running tests and making a release.

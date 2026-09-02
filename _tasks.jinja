@@ -64,21 +64,23 @@
     },
 ] %}
 {% if strictness in ['recommended', 'full'] %}
+{% set type_check_cmds = [
+    run ~ ('pyrefly check' if type_checker == 'pyrefly' else 'basedpyright'),
+] + ([run ~ 'basedpyright -p firmware/pyrightconfig.json'] if micropython_pkg else []) + [
+    run ~ 'vulture ' ~ ('firmware' if micropython_pkg else pkg_dir) ~ ' --min-confidence 80',
+    run ~ 'deptry .',
+    run ~ 'typos .',
+] %}
 {% set tasks = tasks + [{
     'name': 'type-check',
     'desc': 'Run ' ~ type_checker ~ ' + static analysis',
-    'cmd': [
-        run ~ ('pyrefly check' if type_checker == 'pyrefly' else 'basedpyright'),
-        run ~ 'vulture ' ~ pkg_dir ~ ' --min-confidence 80',
-        run ~ 'deptry .',
-        run ~ 'typos .',
-    ],
+    'cmd': type_check_cmds,
 }] %}
 {% endif %}
 {% set tasks = tasks + [{
     'name': 'test',
     'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] else ''),
-    'cmd': [run ~ 'pytest' ~ (' --cov=' ~ package_name ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] else '')],
+    'cmd': [run ~ 'pytest' ~ (' --cov=' ~ ('firmware' if micropython_pkg else package_name) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] else '')],
 }] %}
 {% if docs %}
 {% set tasks = tasks + [
@@ -106,6 +108,14 @@
     {'name': 'paper', 'desc': 'Render the paper to arxiv-pdf and html', 'cmd': ['quarto render paper/paper.qmd']},
     {'name': 'slides', 'desc': 'Render the slides to reveal.js html', 'cmd': ['quarto render slides/slides.qmd']},
     {'name': 'paper-api', 'desc': 'Build the quartodoc API reference', 'cmd': [run ~ 'quartodoc build --config _quarto.yml']},
+] %}
+{% endif %}
+{% if micropython_pkg %}
+{% set tasks = tasks + [
+    {'name': 'stubs', 'desc': 'Install MicroPython type stubs into typings/', 'cmd': [run ~ 'pip install -r requirements-dev.txt --target typings']},
+    {'name': 'deploy', 'desc': 'Copy firmware/ to the device root and reset it', 'cmd': ['for f in firmware/*; do ' ~ run ~ 'mpremote connect auto fs cp -r "$f" :; done && ' ~ run ~ 'mpremote connect auto reset']},
+    {'name': 'run', 'desc': 'Run firmware/main.py on the device without copying', 'cmd': [run ~ 'mpremote connect auto run firmware/main.py']},
+    {'name': 'repl', 'desc': 'Open a REPL on the connected device', 'cmd': [run ~ 'mpremote connect auto repl']},
 ] %}
 {% endif %}
 {% set tasks = tasks + [{

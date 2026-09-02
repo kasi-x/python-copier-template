@@ -7,15 +7,22 @@ how it does it, and why people should use it.
 
 ## Installation
 
-```console
+{% if micropython_pkg %}This is MicroPython firmware — there is nothing to pip-install.
+Connect a device and deploy with `mpremote` (see the README).
+{% else %}```console
 $ pip install {{ distribution_name }}
 ```
+{% endif %}
 
 ## Usage
 
-```python
+{% if micropython_pkg %}```python
+from firmware.core.app import BlinkConfig, run
+```
+{% else %}```python
 from {{ package_name }} import __version__
 
 print(f"Hello {{ package_name }} {__version__}")
 ```
+{% endif -%}
 {% endif -%}

@@ -137,3 +137,5 @@ lockfiles/
 {% if ros2_pkg %}install/
 log/
 {% endif %}
+# MicroPython type stubs — installed into typings/, not committed
+typings/

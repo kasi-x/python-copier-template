@@ -51,7 +51,7 @@ toggle.icon = "material/brightness-4"
 toggle.name = "Switch to light mode"
 
 [project.plugins]
-mkdocstrings = { default_handler = "python", handlers = { python = { paths = ["src"] } } }
+mkdocstrings = { default_handler = "python", handlers = { python = { paths = [{{ '"."' if micropython_pkg else '"src"' }}] } } }
 search = {}
 
 [project.markdown_extensions]

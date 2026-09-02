@@ -43,6 +43,10 @@ jobs:
         if: inputs.task_runner == 'just'
         uses: extractions/setup-just@v2
 
+      - name: Install MicroPython stubs
+        if: hashFiles('requirements-dev.txt') != '' && hashFiles('pixi.lock', 'poetry.lock') == ''
+        run: uv run --locked pip install -r requirements-dev.txt --target typings
+
       - name: Run tasks
         env:
           TASK_RUNNER: ${{ inputs.task_runner }}

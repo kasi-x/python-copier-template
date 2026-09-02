@@ -14,6 +14,7 @@ Practical step-by-step guides for the more experienced user.
 - [Make Release](how-to/make-release.md)
 - [Publishing to PyPI](how-to/pypi.md)
 - [ROS 2 Package Integration](how-to/ros2.md)
+- [MicroPython Firmware](how-to/micropython.md)
 - [Web API Service Scaffolding](how-to/web-api.md)
 - [Code Coverage](how-to/coverage.md)
 - [Check Docs Style](how-to/check-docs-style.md)

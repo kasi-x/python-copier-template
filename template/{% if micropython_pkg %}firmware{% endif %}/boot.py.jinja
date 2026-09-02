@@ -1,0 +1,13 @@
+"""MicroPython runs ``boot.py`` before ``main.py`` on every boot.
+
+Use it for early hardware setup that must happen before the application
+starts — e.g. enabling a USB/UART, connecting to WiFi in station mode, or
+mounting an SD card. Keep it side-effect-light so the device boots quickly.
+
+To connect to WiFi before main.py runs, add something like:
+
+    import network
+    wlan = network.WLAN(network.WLAN.IF_STA)
+    wlan.active(True)
+    wlan.connect("SSID", "password")
+"""

@@ -832,6 +832,49 @@ def test_template_ros2_coexists_with_standard_tooling(tmp_path: Path):
     assert "{%" not in devcontainer
 
 
+def test_template_micropython_default(tmp_path: Path):
+    copy_project_recommended(tmp_path, project_type="micropython", micropython_port="esp32")
+    # firmware tree
+    assert (tmp_path / "firmware" / "boot.py").exists()
+    assert (tmp_path / "firmware" / "main.py").exists()
+    assert (tmp_path / "firmware" / "board_config.py").exists()
+    assert (tmp_path / "firmware" / "core" / "app.py").exists()
+    # stub requirement matches the port
+    reqs = (tmp_path / "requirements-dev.txt").read_text()
+    assert "micropython-esp32-stubs" in reqs
+    # CPython dev toolchain coexists, but there is no installable package
+    pyproject = (tmp_path / "pyproject.toml").read_text()
+    assert "[project]" in pyproject
+    assert "mpremote" in pyproject
+    # The standard CPython package / logging / CLI test is not generated
+    assert not list(tmp_path.rglob("logging_setup.py"))
+    assert not list(tmp_path.rglob("__main__.py"))
+    assert not list(tmp_path.rglob("test_cli.py"))
+    # But a CPython core test is
+    assert (tmp_path / "tests" / "test_core.py").exists()
+    # firmware has its own type-check config pointing at the port stubs
+    fw_pyright = (tmp_path / "firmware" / "pyrightconfig.json").read_text()
+    assert "../typings" in fw_pyright
+    # CI keeps lint+test and adds no dist job for a firmware project
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "required-checks-passed" in ci
+    assert "Install MicroPython stubs" in (tmp_path / ".github" / "workflows" / "_tasks.yml").read_text()
+
+
+def test_template_micropython_rp2_stub(tmp_path: Path):
+    copy_project_recommended(tmp_path, project_type="micropython", micropython_port="rp2")
+    reqs = (tmp_path / "requirements-dev.txt").read_text()
+    assert "micropython-rp2-stubs" in reqs
+    assert "micropython-esp32-stubs" not in reqs
+
+
+def test_template_micropython_core_test_runs(tmp_path: Path):
+    """The device-independent core must be importable and testable under CPython."""
+    copy_project_recommended(tmp_path, project_type="micropython", micropython_port="unix")
+    run = make_venv(tmp_path)
+    run("uv run pytest -q")
+
+
 def test_dots_in_package_name(tmp_path: Path):
     copy_project(tmp_path, repo_name="dots.in.name")
 

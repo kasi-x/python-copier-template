@@ -1,0 +1,49 @@
+"""Device-independent application logic.
+
+Nothing in this module may import ``machine`` or any other MicroPython-only
+module — the whole point is that CPython's pytest can import and exercise it.
+"""
+
+from dataclasses import dataclass
+from typing import Protocol
+
+
+class DigitalOut(Protocol):
+    """A single digital output (e.g. an LED or a GPIO pin)."""
+
+    def on(self) -> None: ...
+
+    def off(self) -> None: ...
+
+
+class Clock(Protocol):
+    """A ``time``-like object with a ``sleep`` that takes seconds."""
+
+    def sleep(self, seconds: float) -> None: ...
+
+
+@dataclass(frozen=True)
+class BlinkConfig:
+    """Timing configuration for the example blink loop."""
+
+    period_s: float = 1.0
+    duty_on_s: float = 0.5
+
+
+def run(
+    led: DigitalOut,
+    clock: Clock,
+    config: BlinkConfig | None = None,
+) -> None:
+    """Blink ``led`` forever using ``clock.sleep`` for the timing.
+
+    ``clock`` is duck-typed as ``time`` (i.e. it needs a ``sleep`` that takes
+    seconds). Passing it in keeps this function free of any import, so the
+    same code runs under MicroPython and under CPython pytest.
+    """
+    blink = config or BlinkConfig()
+    while True:
+        led.on()
+        clock.sleep(blink.duty_on_s)
+        led.off()
+        clock.sleep(blink.period_s - blink.duty_on_s)

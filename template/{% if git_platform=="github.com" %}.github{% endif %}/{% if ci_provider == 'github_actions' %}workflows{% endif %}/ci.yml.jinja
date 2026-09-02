@@ -113,6 +113,7 @@ jobs:
     permissions:
       contents: write
 {% endif %}
+{% if not micropython_pkg %}
   dist:
     uses: ./.github/workflows/_dist.yml
   {% if pypi %}
@@ -129,9 +130,10 @@ jobs:
     uses: ./.github/workflows/_release.yml
     permissions:
       contents: write
+{% endif %}
   required-checks-passed:
     name: all required checks passed
-    needs: [lint, test{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}, dist]
+    needs: [lint, test{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}{% if not micropython_pkg %}, dist{% endif %}]
 {% raw %}
     if: always()
     runs-on: ubuntu-latest

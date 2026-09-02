@@ -45,8 +45,10 @@ The branches below follow the order the questions are actually asked in
 flowchart TD
     Start([Start]) --> PT[project_type]
     PT -->|ros2| RQ["ask: pkg_language, ros_distro,<br/>ros2_package_manager"]
+    PT -->|micropython| MQ["ask: micropython_port"]
     PT -->|other| G1
     RQ --> G1{use_recommended_toolchain?}
+    MQ --> G1
 
     G1 -->|Yes| D1["uv + just<br/>(pixi if ros2+pixi)"]
     G1 -->|No| A1["ask: package_manager, task_runner"]
@@ -136,12 +138,21 @@ flowchart TD
   tests, `Dockerfile.ros2`, and a ROS-aware devcontainer. CI runs
   industrial_ci (apt) or setup-pixi + colcon (pixi). See the
   [ros2 how-to](https://kasi-x.github.io/python-copier-template/main/how-to/ros2.html)
+- **micropython** — MicroPython firmware for a microcontroller (ESP32 / RP2 /
+  STM32 / ...). Choose the target **port** (`micropython_port`); the firmware
+  lives in `firmware/` (`boot.py`, `main.py`, `board_config.py` + a
+  device-independent `core/`), is deployed with **mpremote**, and is
+  type-checked against `micropython-<port>-stubs` (installed into a git-ignored
+  `typings/` folder). The CPython dev toolchain (uv/ruff/pytest/basedpyright)
+  coexists to unit-test `core/`. See the
+  [MicroPython how-to](https://kasi-x.github.io/python-copier-template/main/how-to/micropython.html)
 
 **Layout** (`layout`, for `library` / `web_api` / `cli`)
 - **src** — package in a `src/` directory (**default**; prevents accidental
   imports of an uninstalled package)
 - **flat** — package at the repository root
-- `data_science` always uses `src/`; `script` always uses flat
+- `data_science` always uses `src/`; `script` always uses flat; `micropython`
+  and `ros2` don't ask (firmware/ament layouts instead)
 
 **Specialisation** (`specialty`)
 - **none** — no specialisation (default)
@@ -164,8 +175,9 @@ flowchart TD
   `picologging` / `logging` (standard library, no extra dependency).
   `logging_setup.py` exposes the same `logger.bind(...)` / `logger.info(event,
   **fields)` call shape regardless of which one is chosen, plus a
-  `LOG_FORMAT=json` console/JSON switch. Not asked for `ros2` packages, which
-  use rclpy's own node logger instead.
+  `LOG_FORMAT=json` console/JSON switch. Not asked for `ros2` packages (they
+  use rclpy's own node logger) or `micropython` firmware (logging runs on the
+  device, not through CPython's logging stack).
 
 **Experimentation** (`[project.optional-dependencies] experiment` / pixi `experiment` feature)
 - marimo notebooks, matplotlib / seaborn / plotly for debugging, plus LLM API deps

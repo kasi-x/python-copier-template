@@ -1,0 +1,17 @@
+{
+  // MicroPython firmware type-check config. Used by the type-check task as a
+  // second basedpyright pass (the root pyproject.toml checks tests/ and
+  // firmware/core against CPython). Points at the port stubs in ../typings
+  // and at "." so `import board_config` / `from core.app import ...` resolve
+  // the way MicroPython resolves them at the device filesystem root.
+  "include": ["."],
+  "exclude": ["core"],
+  "typeshedPath": "../typings",
+  "stubPath": "../typings",
+  "extraPaths": ["."],
+  "pythonVersion": "3.11",
+  "pythonPlatform": "Linux",
+  "reportMissingModuleSource": "none",
+  "reportMissingTypeStubs": "none",
+  "reportImplicitRelativeImport": "none"
+}

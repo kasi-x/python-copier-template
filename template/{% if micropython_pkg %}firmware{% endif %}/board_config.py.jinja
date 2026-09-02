@@ -1,0 +1,15 @@
+"""Board-specific constants for the {{ repo_name }} firmware.
+
+MicroPython's ``machine`` API is per-port; a port's generic board is what the
+``micropython-{{ micropython_port }}-stubs`` package describes. When you move
+to a different board, edit the pin assignments here rather than in the
+application code.
+"""
+
+# On-board LED. Defaults per port (adjust to your board):
+#   ESP32 / ESP8266: usually GPIO2, or an external LED on a GPIO
+#   RP2 (Pico):      "LED" (Pico W) — or a GPIO such as 25 / 0
+#   STM32:           typically "LED_BLUE" / a board-specific alias
+#   SAMD:            "LED" or a GPIO
+#   Unix / Windows:  no hardware — set to a dummy value
+LED_PIN = {{ '2' if micropython_port in ['esp32', 'esp8266'] else ('"LED"' if micropython_port in ['rp2', 'samd'] else ('"LED_BLUE"' if micropython_port == 'stm32' else 'None')) }}

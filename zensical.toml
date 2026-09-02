@@ -30,6 +30,7 @@ nav = [
       { "Make Release" = "how-to/make-release.md" },
       { "PyPI" = "how-to/pypi.md" },
       { "ROS 2" = "how-to/ros2.md" },
+      { "MicroPython" = "how-to/micropython.md" },
       { "Web API" = "how-to/web-api.md" },
   ]},
   { "Explanations" = [

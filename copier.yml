@@ -30,6 +30,10 @@ project_type:
           Litestar / Flask, or the upstream cookiecutter-django instead.
         - ros2: a ROS 2 package (ament_python or ament_cmake). Built with
           colcon + rosdep; not a uv/pixi/poetry project.
+        - micropython: MicroPython firmware for a microcontroller (esp32,
+          rp2, ...). Deployed with mpremote; the CPython dev toolchain
+          (uv/ruff/pytest/basedpyright) coexists for testing and type-checking
+          against micropython-<port>-stubs.
     choices:
         - library
         - web_api
@@ -38,6 +42,7 @@ project_type:
         - script
         - web_django
         - ros2
+        - micropython
     default: library
 
 pkg_language:
@@ -77,6 +82,33 @@ ros2_package_manager:
         apt (colcon + rosdep): apt
         pixi (RoboStack conda): pixi
     default: apt
+
+micropython_port:
+    type: str
+    when: "{{ project_type == 'micropython' }}"
+    help: |
+        Which MicroPython port are you targeting? This picks the
+        micropython-<port>-stubs package used for type-checking.
+        - esp32: ESP32 family (most common; default)
+        - esp8266: ESP8266 (legacy, low memory)
+        - rp2: Raspberry Pi Pico / RP2040 / RP2350
+        - stm32: STM32 family (Pyboard etc.)
+        - samd: Microchip SAMD21 / SAMD51
+        - unix: Unix port (runs on your computer — handy for testing)
+        - windows: Windows port
+        - mimxrt: NXP i.MX RT family (Teensy 4.x etc.)
+        Stubs are per-port (generic board); board-specific pins and hardware
+        live in firmware/board_config.py so switching boards is a one-file edit.
+    choices:
+        ESP32: esp32
+        ESP8266: esp8266
+        RP2 (Pico): rp2
+        STM32: stm32
+        SAMD: samd
+        Unix: unix
+        Windows: windows
+        MIMXRT: mimxrt
+    default: esp32
 
 use_recommended_toolchain:
     type: bool
@@ -218,7 +250,7 @@ use_recommended_polish:
 
 layout:
     type: str
-    when: "{{ project_type not in ['data_science', 'ros2'] and not use_recommended_polish }}"
+    when: "{{ project_type not in ['data_science', 'ros2', 'micropython'] and not use_recommended_polish }}"
     help: |
         Which layout would you like to use for the package?
         - src: package in a src/ directory (recommended, prevents accidental
@@ -266,11 +298,19 @@ docs_type:
         - zensical: Zensical, an MkDocs fork with mkdocstrings. Fast to set up.
         - sphinx: Sphinx with the pydata theme. More powerful, more config.
         - great-docs: Great Docs, a Quarto-based tool. Requires Quarto installed.
-    choices:
+        (For micropython projects, Sphinx is not offered: the firmware is not
+        a CPython-importable package, and zensical can document firmware/core.)
+    choices: |
+        {%- if micropython_pkg %}
+        - README
+        - zensical
+        - great-docs
+        {%- else %}
         - README
         - zensical
         - sphinx
         - great-docs
+        {%- endif %}
     default: zensical
 
 use_recommended_quality:
@@ -417,7 +457,7 @@ use_recommended_integrations:
 
 docker:
     type: bool
-    when: "{{ not use_recommended_integrations }}"
+    when: "{{ not use_recommended_integrations and project_type != 'micropython' }}"
     help: |
         Would you like to publish your project in a Docker container?
         You should select this if you are making a service.
@@ -494,7 +534,7 @@ ci_provider:
 
 log_library:
     type: str
-    when: "{{ not use_recommended_integrations and project_type != 'ros2' }}"
+    when: "{{ not use_recommended_integrations and project_type not in ['ros2', 'micropython'] }}"
     help: |
         Which logging library should logging_setup.py use?
         - structlog: structured, contextvars-aware logging with console/JSON
@@ -629,7 +669,7 @@ data_science_layout:
 
 use_src_layout:
     type: bool
-    default: "{{ layout == 'src' and project_type not in ['script', 'ros2'] }}"
+    default: "{{ layout == 'src' and project_type not in ['script', 'ros2', 'micropython'] }}"
     when: false
 
 use_gpu_effective:
@@ -680,6 +720,11 @@ ros2_cpp:
 ros2_python:
     type: bool
     default: "{{ ros2_pkg and pkg_language == 'python' }}"
+    when: false
+
+micropython_pkg:
+    type: bool
+    default: "{{ project_type == 'micropython' }}"
     when: false
 
 task_runner_effective:

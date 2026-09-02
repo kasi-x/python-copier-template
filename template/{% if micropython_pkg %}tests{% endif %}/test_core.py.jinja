@@ -1,0 +1,54 @@
+"""Tests for the device-independent firmware core.
+
+These run under CPython (``pytest``), not on the device. The ``core`` package
+must never import ``machine`` so it stays importable here.
+"""
+
+import contextlib
+
+from firmware.core import BlinkConfig
+from firmware.core.app import DigitalOut
+from firmware.core.app import run
+
+
+class FakeLed(DigitalOut):
+    """DigitalOut stub that records on/off calls."""
+
+    def __init__(self) -> None:
+        self.on_calls = 0
+        self.off_calls = 0
+
+    def on(self) -> None:
+        self.on_calls += 1
+
+    def off(self) -> None:
+        self.off_calls += 1
+
+
+class FakeClock:
+    """time-like clock that interrupts the blink loop after a few cycles."""
+
+    def __init__(self, led: FakeLed) -> None:
+        self._led: FakeLed = led
+
+    def sleep(self, seconds: float) -> None:  # noqa: ARG002 - protocol requires the arg name
+        if self._led.on_calls >= 3:
+            raise KeyboardInterrupt  # break the infinite loop
+
+
+def test_run_blinks_until_clock_raises() -> None:
+    """run() is an infinite loop; exercise a few cycles then break out."""
+    led = FakeLed()
+
+    with contextlib.suppress(KeyboardInterrupt):
+        run(led=led, clock=FakeClock(led))
+
+    # Two full on/off cycles completed before the interrupt landed mid-cycle.
+    assert led.on_calls == 3
+    assert led.off_calls == 2
+
+
+def test_blink_config_defaults() -> None:
+    config = BlinkConfig()
+    assert config.period_s == 1.0
+    assert config.duty_on_s == 0.5
