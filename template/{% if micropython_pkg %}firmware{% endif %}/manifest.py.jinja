@@ -1,0 +1,8 @@
+# Freeze the {{ repo_name }} application into the MicroPython firmware image.
+#
+# This manifest is consumed by ports/<port>'s build (via FROZEN_MANIFEST) when
+# building a distributable image with `{{ task_runner_effective }} freeze`.
+# MicroPython runs the frozen /boot.py and /main.py at startup just like files
+# copied to the device, so the same firmware/ tree drives both the mpremote
+# development flow and the frozen release image.
+freeze(".")  # noqa: F821 - `freeze` is a manifest-runner builtin, not a Python name

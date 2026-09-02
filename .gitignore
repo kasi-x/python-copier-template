@@ -139,3 +139,6 @@ log/
 {% endif %}
 # MicroPython type stubs — installed into typings/, not committed
 typings/
+# MicroPython source tree cloned by the freeze task, and its output
+build/micropython-src/
+dist/

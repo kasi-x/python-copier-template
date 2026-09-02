@@ -4,40 +4,47 @@ MicroPython executes ``/main.py`` on boot, so this file must live at the
 device root. Keep it as a thin hardware wiring layer: the device-independent
 logic lives in ``core/`` (importable and unit-testable under CPython), and
 the board-specific pins live in ``board_config.py``.
+
+``machine`` is imported lazily so the same file also runs on ports without
+hardware (unix/windows), where the frozen firmware prints instead of
+blinking.
 """
 
 import time
 
-from machine import Pin
-
 from board_config import LED_PIN
-from core.app import BlinkConfig
-from core.app import Clock
-from core.app import run
 
 
-class Led:
-    """DigitalOut backed by a ``machine.Pin`` in output mode."""
+def run_hardware_blink() -> None:
+    """Blink the on-board LED on a real device port."""
+    from machine import Pin  # noqa: PLC0415 - lazy so unix/windows ports run too
+    from core.app import BlinkConfig  # noqa: PLC0415
+    from core.app import Clock  # noqa: PLC0415
+    from core.app import run  # noqa: PLC0415
 
-    def __init__(self, pin: int | str) -> None:
-        self._pin = Pin(pin, Pin.OUT)
+    class Led:
+        """DigitalOut backed by a ``machine.Pin`` in output mode."""
 
-    def on(self) -> None:
-        self._pin.on()
+        def __init__(self, pin: int | str) -> None:
+            self._pin = Pin(pin, Pin.OUT)
 
-    def off(self) -> None:
-        self._pin.off()
+        def on(self) -> None:
+            self._pin.on()
 
+        def off(self) -> None:
+            self._pin.off()
 
-class SysClock:
-    """Clock adapter around the MicroPython ``time`` module.
+    class SysClock:
+        """Clock adapter around the MicroPython ``time`` module.
 
-    MicroPython's ``time.sleep`` takes a positional-only argument, which does
-    not satisfy the ``Clock`` protocol directly, so wrap it.
-    """
+        MicroPython's ``time.sleep`` takes a positional-only argument, which
+        does not satisfy the ``Clock`` protocol directly, so wrap it.
+        """
 
-    def sleep(self, seconds: float) -> None:
-        time.sleep(seconds)
+        def sleep(self, seconds: float) -> None:
+            time.sleep(seconds)
+
+    run(led=Led(LED_PIN), clock=SysClock(), config=BlinkConfig())
 
 
 def main() -> None:
@@ -48,7 +55,7 @@ def main() -> None:
             print("{{ repo_name }} running (no LED on this port)")
             time.sleep(1.0)
     else:
-        run(led=Led(LED_PIN), clock=SysClock(), config=BlinkConfig())
+        run_hardware_blink()
 
 
 main()

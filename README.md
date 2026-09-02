@@ -77,7 +77,7 @@ flowchart TD
     D4 --> G5{use_recommended_quality?}
     A4 --> G5
 
-    G5 -->|Yes| D5["basedpyright · strictness: recommended"]
+    G5 -->|Yes| D5["basedpyright + pyrefly · strictness: recommended"]
     G5 -->|No| A5["ask: type_checker, strictness"]
     D5 --> G6{use_recommended_license?}
     A5 --> G6
@@ -220,7 +220,7 @@ flowchart TD
 - [pytest](https://docs.pytest.org), coverage, hypothesis
 - [ruff](https://docs.astral.sh/ruff), [vulture](https://github.com/jendrikseipp/vulture),
   [deptry](https://deptry.com), [typos](https://github.com/crate-ci/typos)
-- [basedpyright](https://docs.basedpyright.com) or [pyrefly](https://github.com/facebook/pyrefly)
+- [basedpyright](https://docs.basedpyright.com) plus [pyrefly](https://github.com/facebook/pyrefly) or [ty](https://docs.astral.sh/ty/) as the secondary checker
 - [pre-commit](https://pre-commit.com) with actionlint + zizmor for CI linting
 - [editorconfig](https://editorconfig.org) (`.editorconfig`) for consistent
   editor indentation and line endings

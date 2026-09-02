@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+"""Build a distributable MicroPython firmware image with firmware/ frozen in.
+
+Runs the whole build inside a Docker container, so no cross toolchain is
+needed on the host — only Docker. The MicroPython source tree is cloned
+(pinned to a tag) into build/micropython-src/ on first use.
+
+Usage:
+    python tools/micropython/freeze.py                 # build for the configured port
+    python tools/micropython/freeze.py --port rp2      # build a specific port
+    python tools/micropython/freeze.py --board X       # override the board
+    python tools/micropython/freeze.py --tag vX.Y.Z    # pin the MicroPython version
+
+Output lands in dist/ (e.g. dist/<repo>-<port>.<ext>).
+"""
+
+from __future__ import annotations
+
+import argparse
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+FIRMWARE_DIR = REPO_ROOT / "firmware"
+BUILD_DIR = REPO_ROOT / "build" / "micropython-src"
+DIST_DIR = REPO_ROOT / "dist"
+MANIFEST = FIRMWARE_DIR / "manifest.py"
+
+# Default MicroPython tag frozen builds track. Override with --tag.
+DEFAULT_TAG = "{{ micropython_version }}"
+
+# Port -> toolchain image, default board (None for ports without boards).
+PORT_INFO: dict[str, dict[str, object]] = {
+    "esp32": {"image": "espressif/idf:v5.4.2", "board": "ESP32_GENERIC"},
+    "esp8266": {"image": "larsks/esp-open-sdk", "board": "ESP8266_GENERIC"},
+    "rp2": {
+        "image": "micropython/build-micropython-arm:bookworm",
+        "board": "RPI_PICO",
+    },
+    "stm32": {
+        "image": "micropython/build-micropython-arm:bookworm",
+        "board": "PYBV11",
+    },
+    "samd": {
+        "image": "micropython/build-micropython-arm:bookworm",
+        "board": "ADAFRUIT_ITSYBITSY_M0_EXPRESS",
+    },
+    "mimxrt": {
+        "image": "micropython/build-micropython-arm:bookworm",
+        "board": "MIMXRT1020_EVK",
+    },
+    "unix": {"image": "gcc:12-bookworm", "board": None},
+    "windows": {
+        "image": "micropython/build-micropython-win-mingw:latest",
+        "board": None,
+    },
+}
+
+# Port -> name of the built firmware file inside the port's build-<BOARD>/ dir.
+FIRMWARE_FILE: dict[str, str] = {
+    "esp32": "firmware.bin",
+    "esp8266": "firmware.bin",
+    "rp2": "firmware.uf2",
+    "stm32": "firmware.dfu",
+    "samd": "firmware.uf2",
+    "mimxrt": "firmware.hex",
+}
+
+
+def run(cmd: list[str]) -> None:
+    print("+", " ".join(cmd), flush=True)
+    subprocess.run(cmd, cwd=REPO_ROOT, check=True)
+
+
+def ensure_micropython(tag: str) -> Path:
+    """Clone (or refresh) the pinned MicroPython source tree."""
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    src = BUILD_DIR / "micropython"
+    if not (src / ".git").exists():
+        run(
+            [
+                "git", "clone", "--depth", "1", "--branch", tag,
+                "https://github.com/micropython/micropython.git", str(src),
+            ],
+        )
+    # Pull the port's lib/ submodules with the host git (inside the container
+    # git refuses to touch a repo owned by a different uid).
+    subprocess.run(
+        ["git", "-C", str(src), "submodule", "update", "--init", "--depth", "1"],
+        check=True,
+    )
+    return src
+
+
+def docker_run(
+    image: str,
+    workdir: str,
+    cmd: list[str],
+    env: dict[str, str] | None = None,
+) -> None:
+    """Run a command inside the toolchain container with the repo mounted."""
+    # Run as the invoking user so files created by the build (and git
+    # submodule updates) are owned by the host user, not root.
+    uid = subprocess.run(
+        ["id", "-u"], check=True, capture_output=True, text=True
+    ).stdout.strip()
+    gid = subprocess.run(
+        ["id", "-g"], check=True, capture_output=True, text=True
+    ).stdout.strip()
+    docker_cmd = [
+        "docker", "run", "--rm",
+        "--user", f"{uid}:{gid}",
+        "-v", f"{REPO_ROOT}:{REPO_ROOT}",
+        "-w", workdir,
+        "-e", "HOME=/tmp",
+    ]
+    for key, value in (env or {}).items():
+        docker_cmd += ["-e", f"{key}={value}"]
+    docker_cmd += [image, *cmd]
+    subprocess.run(docker_cmd, check=True)
+
+
+def resolve_image(src: Path, port: str, fallback: str) -> str:
+    """esp32 tracks the ESP-IDF version its lockfile pins; other ports are fixed."""
+    if port != "esp32":
+        return fallback
+    lockfile = src / "ports" / "esp32" / "lockfiles" / "dependencies.lock.esp32"
+    if not lockfile.exists():
+        return fallback
+    for line in lockfile.read_text().splitlines():
+        if "idf" in line and "version" in line:
+            idf = line.strip().split()[-1]
+            return f"espressif/idf:v{idf}"
+    return fallback
+
+
+def freeze_port(port: str, board: str | None, tag: str) -> None:
+    """Build one port with firmware/ frozen in, then copy the artifact."""
+    info = PORT_INFO[port]
+    src = ensure_micropython(tag)
+    port_dir = src / "ports" / port
+    image = resolve_image(src, port, str(info["image"]))
+
+    make_args = ["make", "-C", str(port_dir)]
+    if board:
+        make_args += [f"BOARD={board}"]
+    make_args += [f"FROZEN_MANIFEST={MANIFEST}"]
+
+    # Build mpy-cross first, WITHOUT the frozen manifest, then export its path
+    # so the port's cmake/make uses it instead of rebuilding its own copy (a
+    # sub-make would inherit FROZEN_MANIFEST and fail to link mpy-cross).
+    docker_run(image, str(src), ["make", "-C", str(src / "mpy-cross")])
+    mpy_cross = str(src / "mpy-cross" / "build" / "mpy-cross")
+    env = {"MICROPY_MPYCROSS": mpy_cross}
+
+    # Submodules were already fetched on the host by ensure_micropython, so
+    # the container only needs to run the actual compile/link.
+    if board:
+        docker_run(image, str(src), make_args, env=env)
+    else:
+        # unix / windows
+        extra = ["VARIANT=standard"] if port == "unix" else []
+        docker_run(image, str(src), make_args + extra, env=env)
+
+    # Locate the built artifact.
+    DIST_DIR.mkdir(exist_ok=True)
+    if board:
+        build_dir = port_dir / f"build-{board}"
+        artifact = build_dir / FIRMWARE_FILE[port]
+        ext = FIRMWARE_FILE[port].split(".")[-1]
+        out_name = f"{REPO_ROOT.name}-{port}-{board.lower()}.{ext}"
+    elif port == "unix":
+        artifact = port_dir / "build-standard" / "micropython"
+        out_name = f"{REPO_ROOT.name}-unix"
+    else:  # windows
+        artifact = port_dir / "build-standard-w64" / "micropython.exe"
+        out_name = f"{REPO_ROOT.name}-windows.exe"
+
+    if not artifact.exists():
+        sys.exit(f"Build finished but artifact not found: {artifact}")
+
+    dest = DIST_DIR / out_name
+    shutil.copy2(artifact, dest)
+    print(f"\nFrozen firmware: {dest}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--port",
+        default="{{ micropython_port }}",
+        choices=sorted(PORT_INFO),
+        help="MicroPython port to build",
+    )
+    parser.add_argument(
+        "--board", default=None, help="Override the default board for the port",
+    )
+    parser.add_argument(
+        "--tag",
+        default=DEFAULT_TAG,
+        help=f"MicroPython tag to build (default: {DEFAULT_TAG})",
+    )
+    args = parser.parse_args()
+
+    if not shutil.which("docker"):
+        sys.exit("Docker is required to freeze firmware. Install Docker and try again.")
+
+    if not MANIFEST.exists():
+        sys.exit(f"Frozen manifest not found: {MANIFEST}")
+
+    info = PORT_INFO[args.port]
+    board = args.board or str(info["board"])
+    freeze_port(args.port, board if info["board"] else None, args.tag)
+
+
+if __name__ == "__main__":
+    main()

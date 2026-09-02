@@ -8,7 +8,14 @@ on:
 
 jobs:
   linkcheck:
-    uses: ./.github/workflows/_tasks.yml
-    with:
-      task_runner: task
-      task: docs-linkcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@v2.6.0
+        with:
+          # Docs + README; exclude the mkdocs build output and the vendored
+          # .github/pages helper (not user-facing links).
+          args: --no-progress --exclude-path site README.md docs
+          fail: true

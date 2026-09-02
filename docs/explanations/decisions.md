@@ -18,7 +18,7 @@ Architectural decisions are made throughout a project's lifetime. As a way of ke
 - [0014: Split CI YAML](decisions/0014-split-ci-yaml.md)
 - [0015: Use Ruff](decisions/0015-use-ruff.md)
 - [0016: Convert to MkDocs](decisions/0016-convert-to-mkdocs.md)
-- [0017: Use Basedpyright](decisions/0017-use-basedpyright.md)
+- [0017: Use Basedpyright Plus a Secondary Checker](decisions/0017-use-basedpyright.md)
 - [0018: Forbid Private Member Access in Prod](decisions/0018-forbid-private-member-access-in-prod.md)
 - [0019: Autosummary API Docs](decisions/0019-autosummary-api-docs.md)
 - [0020: Support Devcontainers](decisions/0020-support-devcontainers.md)

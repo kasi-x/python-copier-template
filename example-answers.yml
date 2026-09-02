@@ -28,7 +28,7 @@ project_type: data_science
 competition: false
 ascii_banner: true
 repo_name: python-copier-template-example
-type_checker: basedpyright
+type_checker: pyrefly
 strictness: recommended
 cloud_provider: none
 include_sentry: false

@@ -316,35 +316,45 @@ For a MicroPython project the same runner also drives the device workflow:
 task deploy         # copy firmware/ to the device root and reset it
 task run            # run firmware/main.py on the device without copying
 task repl           # open a REPL on the connected device
+task freeze         # build a distributable firmware image (Docker)
 {% elif task_runner_effective == 'just' %}just stubs
 just deploy
 just run
 just repl
+just freeze
 {% elif task_runner_effective == 'make' %}make stubs
 make deploy
 make run
 make repl
+make freeze
 {% elif task_runner_effective == 'poe' %}poe stubs
 poe deploy
 poe run
 poe repl
+poe freeze
 {% elif task_runner_effective == 'invoke' %}invoke stubs
 invoke deploy
 invoke run
 invoke repl
+invoke freeze
 {% elif task_runner_effective == 'duty' %}duty stubs
 duty deploy
 duty run
 duty repl
+duty freeze
 {% else %}pixi run -e dev stubs
 pixi run -e dev deploy
 pixi run -e dev run
 pixi run -e dev repl
+pixi run -e dev freeze
 {% endif %}
 ```
 
-Type-checking the firmware needs the stubs installed first (`stubs` above);
-`tests/` (the CPython core tests) and `firmware/core/` are checked without them.
+`freeze` (Docker required) builds a distributable firmware image with
+`firmware/` frozen in — the artifact lands in `dist/` and is attached to
+GitHub Releases by CI. Type-checking the firmware needs the stubs installed
+first (`stubs` above); `tests/` (the CPython core tests) and `firmware/core/`
+are checked without them.
 {% endif %}
 
 See the [how-to guides]({% if docs %}{{docs_url}}/how-to){% else %}.github/CONTRIBUTING.md){% endif %} for details on contributing,

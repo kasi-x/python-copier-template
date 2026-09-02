@@ -318,21 +318,25 @@ use_recommended_quality:
     default: true
     help: |
         Use the recommended type checker & strictness level?
-        Recommended: basedpyright, strictness "recommended" (ruff ALL rules,
-        basedpyright + pyrefly, typos/vulture/deptry/pip-audit).
-        Answer No to pick pyrefly instead, or a different strictness level.
+        Recommended: basedpyright (primary) + pyrefly (additional static
+        analysis), strictness "recommended" (ruff ALL rules,
+        typos/vulture/deptry/pip-audit).
+        Answer No to pick a different secondary checker or strictness level.
 
 type_checker:
     type: str
     when: "{{ not use_recommended_quality }}"
     help: |
-        What type checker would you like to use?
-        Basedpyright (pyright の fork) is recommended: 実バグ検出を重視しつつ、
-        警告レベルを制御しやすい。Pyrefly (Meta) は軽量で補助に使える。
+        Which additional static-analysis checker should run alongside
+        basedpyright? (basedpyright is always the primary type checker.)
+        - pyrefly: Meta's lightweight type checker. Recommended: it has been
+          used by this template longest and is stable in production.
+        - ty: Astral's fast Rust type checker (complements basedpyright with
+          a second, independent analysis pass; currently in beta).
     choices:
-        - basedpyright
         - pyrefly
-    default: basedpyright
+        - ty
+    default: pyrefly
 
 strictness:
     type: str
@@ -342,9 +346,9 @@ strictness:
         type-annotation requirements and the static-analysis toolchain.
         - none: pytest + ruff (minimal rules), no type checking.
         - basic: pytest + ruff, no type checking.
-        - recommended: ruff (ALL rules), basedpyright + pyrefly,
-          typos/vulture/deptry/pip-audit, driven by your chosen task runner.
-          Recommended default.
+        - recommended: ruff (ALL rules), basedpyright + the secondary checker
+          (pyrefly by default), typos/vulture/deptry/pip-audit, driven by your
+          chosen task runner. Recommended default.
         - full: recommended + strict type checking (Any forbidden),
           minimized ruff ignores, full annotations required.
     choices:
@@ -725,6 +729,17 @@ ros2_python:
 micropython_pkg:
     type: bool
     default: "{{ project_type == 'micropython' }}"
+    when: false
+
+# MicroPython release the frozen-firmware build tracks (freeze.py clones this
+# tag). The micropython-<port>-stubs type stubs (from the community
+# josverl/micropython-stubs project, NOT official) are pinned to the same
+# version so the stubs match the firmware. Bump all three together, and run
+# tools/check_micropython_upstream.py to confirm against the official
+# micropython/micropython releases.
+micropython_version:
+    type: str
+    default: "v1.29.0"
     when: false
 
 task_runner_effective:

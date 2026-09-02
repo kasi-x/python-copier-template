@@ -75,13 +75,14 @@ dev = [
     {% endif %}{% if task_runner_effective == 'poe' %}"poethepoet",
     {% elif task_runner_effective == 'invoke' %}"invoke",
     {% elif task_runner_effective == 'duty' %}"duty",
-    {% endif %}{% else %}{% if type_checker=="basedpyright" %}"basedpyright",
-    {% endif %}{% if zensical %}"zensical",
+    {% endif %}{% else %}"basedpyright",
+    {% if zensical %}"zensical",
     "mkdocstrings[python]",
     {% endif %}"pre-commit",
     {% if micropython_pkg %}"mpremote",
     {% endif %}{% if sphinx %}"pydata-sphinx-theme>=0.12",
     {% endif %}{% if type_checker=="pyrefly" %}"pyrefly",
+    {% endif %}{% if type_checker=="ty" %}"ty",
     {% endif %}    "pytest",
     "pytest-cov",
     "ruff",
@@ -209,7 +210,7 @@ version_file = "{{ pkg_dir }}/_version.py"
 # ros2 ament_python: no git-tag versioning; setup.py / package.xml own the version.
 {% endif %}
 {% endif %}
-{% if type_checker=="basedpyright" and strictness in ['recommended', 'full'] %}
+{% if strictness in ['recommended', 'full'] %}
 [tool.basedpyright]
 typeCheckingMode = "{{ 'strict' if strictness == 'full' else 'recommended' }}"
 include = ["{{ pkg_dir }}", "tests"{% if micropython_pkg %}, "firmware/core"{% endif %}]
@@ -239,12 +240,31 @@ reportUnusedImport = false
 reportCallInDefaultInitializer = false # typer のデフォルト引数は正当
 reportUnusedCallResult = false # argparse add_argument 等の副作用目的の呼び出しは正当
 enableTypeIgnoreComments = true # # type: ignore も受け付ける（mypy 互換）
-{% endif %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] and not micropython_pkg %}
+{% endif %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
 [tool.pyrefly]
 python-version = "3.12"
-project-includes = ["{{ pkg_dir }}"]
+{% if micropython_pkg %}project-includes = ["tests", "firmware/core"]
+project-excludes = ["venv", ".venv", "firmware/main.py", "firmware/boot.py", "firmware/board_config.py", "firmware/manifest.py"]
+{% else %}project-includes = ["{{ pkg_dir }}"]
 project-excludes = ["venv", ".venv"{% if include_mcp %}, "{{ pkg_dir }}/mcp_server.py"{% endif %}]
+{% endif %}
 preset = "{{ 'strict' if strictness == 'full' else 'default' }}"
+{% endif %}{% if type_checker=="ty" and strictness in ['recommended', 'full'] %}
+[tool.ty]
+# ty complements basedpyright with a second, independent analysis pass.
+# CPython-side code only; the MicroPython firmware (firmware/) is checked by
+# the dedicated firmware/pyrightconfig.json pass instead.
+[tool.ty.src]
+{% if micropython_pkg %}include = ["tests", "firmware/core"]
+exclude = ["tools", ".venv", "firmware/main.py", "firmware/boot.py", "firmware/board_config.py", "firmware/manifest.py"]
+{% else %}include = ["{{ pkg_dir }}", "tests"]
+exclude = ["tools", ".venv"]
+{% endif %}
+{% if strictness == 'full' %}
+[tool.ty.rules]
+# full: treat unresolved references as errors.
+possibly-unresolved-reference = "error"
+{% endif %}
 {% endif %}
 [tool.pytest.ini_options]
 # Run pytest with all our checkers, and don't spam us with massive tracebacks on error

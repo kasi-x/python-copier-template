@@ -7,7 +7,7 @@ This document defines the code and documentation standards used in this reposito
 The code in this repository conforms to standards set by the following tools:
 
 - [ruff](https://github.com/astral-sh/ruff) for code formatting and linting
-- [basedpyright](https://github.com/detachhead/basedpyright) for static type checking
+- [basedpyright](https://github.com/detachhead/basedpyright) for static type checking (with [pyrefly](https://github.com/facebook/pyrefly) as a secondary pass)
 
 See also: How-to guides [lint](../how-to/lint.md) and [static-analysis](../how-to/static-analysis.md).
 
