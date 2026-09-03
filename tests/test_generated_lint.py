@@ -85,3 +85,82 @@ def test_generated_project_is_ruff_clean(tmp_path: Path, answers: dict[str, obje
     assert proc.returncode == 0, (
         f"generated project is not clean under its own [tool.ruff]:\n{proc.stdout}{proc.stderr}"
     )
+
+
+# Text file extensions whose content copier renders from .jinja sources.
+# Binary-ish or machine-owned files (images, lockfiles, .copier-answers.yml)
+# are excluded: the end-of-file convention applies to authored text.
+_TEXT_SUFFIXES = {
+    ".cff",
+    ".css",
+    ".csv",
+    ".env",
+    ".gitignore",
+    ".ini",
+    ".jinja",
+    ".json",
+    ".lua",
+    ".md",
+    ".py",
+    ".rst",
+    ".sql",
+    ".toml",
+    ".txt",
+    ".tex",
+    ".yaml",
+    ".yml",
+}
+_TEXT_EXCLUDES = {
+    ".copier-answers.yml",
+    ".git/",
+    ".pixi/",
+    ".venv/",
+    "uv.lock",
+    "poetry.lock",
+    "pixi.lock",
+}
+
+
+def _iter_text_files(root: Path):
+    """Yield generated text files that should follow the end-of-file rule."""
+    for path in root.rglob("*"):
+        rel = path.relative_to(root).as_posix()
+        if not path.is_file():
+            continue
+        if any(rel == ex or rel.startswith(ex) for ex in _TEXT_EXCLUDES):
+            continue
+        if path.suffix in _TEXT_SUFFIXES or path.name in _TEXT_SUFFIXES:
+            yield path
+
+
+@pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
+def test_generated_files_end_with_single_newline(tmp_path: Path, answers: dict[str, object]):
+    """Rendered text files must end with exactly one newline.
+
+    Jinja sources that end with `{% include %}` / `{% if %}` tags silently
+    add a trailing blank line (the tag's own newline), which the generated
+    project's own end-of-file-fixer would then rewrite on first commit. This
+    is a recurring class of bug, so every rendered path is checked: each text
+    file must end in exactly one ``\\n`` (no trailing blank line, no missing
+    final newline).
+    """
+    run_copy(
+        src_path=str(TOP),
+        dst_path=tmp_path,
+        data={**BASE, **answers},
+        vcs_ref="HEAD",
+        defaults=True,
+        unsafe=True,
+        overwrite=True,
+        skip_tasks=True,
+    )
+    offenders: list[str] = []
+    for path in _iter_text_files(tmp_path):
+        data = path.read_bytes()
+        if not data:
+            continue  # empty file: nothing to end with a newline
+        if not data.endswith(b"\n"):
+            offenders.append(f"{path.relative_to(tmp_path)}: missing final newline")
+        elif data.endswith(b"\n\n"):
+            offenders.append(f"{path.relative_to(tmp_path)}: trailing blank line(s)")
+    assert not offenders, "generated text files must end with exactly one newline:\n" + "\n".join(offenders)

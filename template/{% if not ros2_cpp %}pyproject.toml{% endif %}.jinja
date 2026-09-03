@@ -665,7 +665,7 @@ suppress-none-returning = false
 # ruff format が折り返しを変えるため、E501 は免除する。
 # 日本語 docstring の終端句読点（D415）とシングルトン設定の global（PLW0603）も免除。
 "{{ pkg_dir }}/logging_setup.py" = ["E501", "D", "PLW0603", "I001"]
-{% endif %}
+{% endif -%}
 {% if package_manager == "poetry" %}
 [tool.poetry]
 # Poetry reads the PEP 621 [project] table and [dependency-groups] above.

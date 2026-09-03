@@ -101,4 +101,4 @@ async def test_metrics_endpoint(client: AsyncClient) -> None:
     assert response.status_code == 200
     # prometheus-client's default request counter
     assert "http_requests_total" in response.text
-{% endif %}
+{% endif -%}
