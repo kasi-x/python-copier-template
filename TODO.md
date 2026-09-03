@@ -44,10 +44,11 @@
   Kaggle は「競技」であり、AI 利用 OK という点で online_judge の一種。
   data_science（分析）と competition（競技）は実行のされ方が違い、GPU 前提の
   競技特化レイアウト（src/utils, submission）が data_science に混在している。
-- `web_api` は scaffold として未完成: FastAPI/uvicorn の依存・app コードが無く、
-  Dockerfile の ENTRYPOINT が `{{ repo_name }}`（CLI）のまま。compose は Postgres を
-  立てるが、起動する HTTP サーバが存在しない。DB はあるのに ORM/マイグレが無い。
-- 生成物が「動く」ことを検証するテストが無い（ディレクトリ存在 + 依存の有無のみ）。
+
+（web_api が scaffold として未完成だった問題と「生成物が動く検証テストが無い」問題は
+2026-09 に解消済み。web_api はトップレベル app/ の動く scaffold になり、
+test_example / test_generated_lint / test_recommended_path が生成物を実走・lint 検証する。
+履歴は項目6 と「このセッションで解決した項目」に残してある）
 
 ## 1. AI コーディングエージェント向け指示（AGENTS.md）の生成
 
@@ -149,9 +150,11 @@
         違う）と違い、実行環境軸で project_type を増やす根拠が無い
       - 「cli / web_api の上に bot 実行モジュールを置く」レイヤーとして扱う
         （bot / MCP server は「ホストやイベントループに起動される実行可能物」であり、
-        import される側の library には載せない。2026-09 に include_mcp を cli/web_api へ絞った）。
-        既存の `include_mcp`（cli/web_api 上に mcp_server.py + `mcp-server-<name>` console
-        script を生成して常駐起動する）が既にこのレイヤーの実装例
+        import される側の library には載せない）。**2026-09 に include_mcp を cli 限定へ
+        変更**（web_api は top-level app/ 化で <pkg> を無くし、mcp_server.py の置き場が
+        消えたため。常駐レイヤーの実装例は cli + include_mcp のみになった）。
+        既存の `include_mcp`（cli 上に mcp_server.py + `mcp-server-<name>` console
+        script を生成して常駐起動する）がこのレイヤーの実装例
 - [x] `__main__.py` を「常駐起動（トークン必須、環境変数チェック）」に置き換える分岐を
       設計する（CLI と衝突させない） → **独立起動モジュール方式** に決定
       - `__main__.py`（CLI: `python -m <pkg>` / `scripts.<name>`）は即終了コマンドの
@@ -208,14 +211,15 @@
       - **Docker でのリモート運用**（compose service 化・HEALTHCHECK・認証）と
         **配布前提スタンドアロンサーバ**（reference servers 型: PyPI 公開 + `uvx` + `.mcp.json`
         でのホスト登録レシピ）は将来TODOとして明記する（下記6の web_api Docker 拡充と一体で検討）
-- [x] **include_mcp の対象を cli / web_api に絞る**（library は対象外に）
+- [x] **include_mcp の対象を cli に絞る**（library / web_api は対象外に）
       - 理由: library は「import される側」であり、実行可能サーバを載せる動機が薄い。
-        cli = stdio ローカルサーバ、web_api = streamable-http 配信に正直に割り当てる
+        **web_api は 2026-09 の top-level app/ 化で <pkg> を無くしたため対象外に**。
+        cli = stdio ローカルサーバ（+ streamable-http は cli でも起動可能）
       - **console script `mcp-server-<name>` を追加**（`[project.scripts]`）。ローカルでは
         MCP ホストが `uv run mcp-server-<name>` で起動、公開後は `uvx mcp-server-<name>` で利用
-      - data_science / script / online_judge / ros2 / micropython / library では質問を出さず、
-        data 強制でも orphan 依存が付かないよう内部変数 `mcp_effective` で render を一元化
-        （既存 `security_policy_effective` 方式）
+      - data_science / script / online_judge / ros2 / micropython / library / web_api では
+        質問を出さず、data 強制でも orphan 依存が付かないよう内部変数 `mcp_effective` で
+        render を一元化（既存 `security_policy_effective` 方式）
 - [x] **MCP scaffold へのセキュリティ実装**（2026-09。「実際にしこむ」対応）
       - docs の指針をコードに反映: `mcp_server.py` に **`--host` / `--port`** フラグを追加し、
         **非ローカルバインド（--host 0.0.0.0 等）には `MCP_ALLOWED_HOSTS` を必須化**
@@ -297,13 +301,25 @@
       gunicorn（uvicorn で足りる）、self-hosted swagger（FastAPI 内蔵で足りる）、
       traefik ラベル、piccolo ORM、SQLAdmin / FastCRUD、taskiq/arq。docs/how-to/web-api.md に
       「後で足せる」と理由付きで明記
-- [ ] **将来拡張: app 構造を選べるようにする**（2026-09 相談で保留）
-      - 現状はレイヤード構造（`app/models.py` + `app/schemas.py` + `app/routers/`）固定。
-        benavlabs/FastAPI-boilerplate のような **vertical-slice**（機能ごとの
-        `modules/<feature>/{model,schema,router}.py`）を詳細質問の選択肢として追加するか検討
-      - コスト: import パス・alembic env.py・test_qa・テストが構造で変わるため、app/ 一式の
-        二重実装 + 全組み合わせの検証が必要。デモ Item 1つでは両構造の差がほぼ出ないので、
-        機能が複数に育つ見込みが立ってから再検討する
+- [x] **web_api をトップレベル app/ パッケージへ再設計**（2026-09）
+      - FastAPI アプリを src/<pkg>/app から **top-level `app/`** へ（`uvicorn app.main:app`）。
+        ライブラリ <pkg> を廃止し、src/flat で2重化していた app/（byte-identical）を1本化
+      - CLI（`__main__.py`）/ test_cli / test_qa を web_api では生成しない
+        （uvicorn 起動が本流。テストは tests/test_app.py のみ）
+      - MCP は cli 限定へ（web_api に <pkg>/mcp_server.py の置き場が無くなった。項目5）
+      - layout 質問から web_api を除外し、`pkg_dir` / `import_pkg` 内部変数で
+        「import ルート = app」を一元化。logging_setup は _shared/ の共通 partial にし
+        <pkg> と app の両方から include（詳しくは docs/explanations/template-dev.md）
+      - **「複雑な web_api が欲しい場合は upstream full-stack-fastapi-template を案内」**
+        と help / docs に明記（web_django 方式。フロント・認証等はスコープ外）
+- [ ] **将来拡張: app 構造を選べるようにする**（2026-09 相談で保留 → 結論: 追加しない）
+      - 現状は top-level `app/` のレイヤード構造（`app/models.py` + `app/schemas.py` +
+        `app/routers/`）固定。benavlabs/FastAPI-boilerplate のような **vertical-slice**
+        （機能ごとの `modules/<feature>/{model,schema,router}.py`）は**詳細質問に追加しない**
+        と決定（2026-09）。web_api は「シンプルな API のみ」に限定し、複雑な要求は
+        upstream full-stack-fastapi-template を案内する。vertical-slice が欲しい場合は
+        その案内先で実現する
+      - デモ Item 1つでは両構造の差がほぼ出ない、という理由付けも残る
 - [ ] **将来拡張: SQLAdmin（管理画面）/ FastCRUD を詳細質問に追加**（2026-09 相談で保留）
       - benavlabs は SQLAdmin ベースの admin + FastCRUD を採用。用途が違う
         （SQLAdmin = 人間がブラウザで CRUD、FastCRUD = API コードのボイラープレート削減）ため
@@ -441,3 +457,42 @@ Scorecard workflow / zizmor SAST / Aqua.jl 風 test_qa.py）を実装した。
 - [ ] リポジトリ公開後に Scorecard のスコア・バッジを確認（private では機能しない）
 - [ ] ブランチ保護/ルールセット（署名コミット・線形履歴・必須チェック・レビュー）は
       GitHub 設定で有効化（コードでは強制不可）
+
+## 14. 質問票・テンプレートソースの保守性向上（2026-09）
+
+肥大化した copier.yml（940行）と、jinja の頻出バグ（末尾改行）への対処。
+
+- [x] **copier.yml を questions/ フラグメントへ !include 分割**（2026-09）
+      - copier.yml は project_type + include 連鎖 + underscore 設定のみ（~110行）。
+        questions/{ros2,micropython,online_judge,data_science,web_api}.yml（ジャンル）と
+        _common_{a,b,c}.yml（横断ゲート）、_internal.yml（when:false 派生変数）
+      - 各 `!include` は独立した YAML ドキュメント（同一ドキュメント内で2つ置くと
+        同名キー衝突で後勝ちになる）
+      - **後方参照バグ修正**: 質問が参照する内部変数（micropython_pkg / online_judge /
+        kaggle）を、参照する質問より前のジャンルフラグメントに配置
+        （docs_type の micropython 分岐が常に sphinx 側に落ちるバグ。テストは data 全指定の
+        ため隠れていた）
+      - 分割後も生成結果は byte-identical（全8タイプで HEAD と比較検証）
+- [x] **質問票の完備性を機械検証するテスト群**（2026-09）
+      - フラグメント union 整合（重複なし・漏れなし）
+      - 質問参照の前方 DAG 性（後方参照を検出）
+      - **Z3 充足検査**: 全 when 条件の充足可能性を z3-solver で検査（死んだ質問・タイポ検出）。
+        z3-solver を dev 依存に追加
+      - test_copier_structure.py は copier の load_template_config で !include を解決
+- [x] **生成物の末尾改行を検証するテスト**（2026-09）
+      - test_generated_files_end_with_single_newline: 全レンダーパスのテキストファイルが
+        「末尾ちょうど1改行」であることを強制（jinja の include / 条件タグが末尾空行を
+        生む頻出バグへの対処）
+      - 検出・修正: pyproject.toml.jinja（poetry ブロック後の空行）、web_api の
+        test_app.py.jinja（末尾 endif 後）
+- [x] **テンプレートソース作成規約を docs に蓄積**（2026-09）
+      - docs/explanations/template-dev.md を新設: 末尾改行制御 / _shared/ include 共有 /
+        questions/ 順序・前方参照 / Z3 充足維持。各規約に強制テストをリンク
+- [ ] **将来拡張: ジャンル別サブディレクトリ（_subdirectory 切替）は不採用**
+      - template/ をジャンル別ツリーに分け `_subdirectory: template/{{ project_type }}` で
+        切替える案は調査・実験の結果**不採用**（2026-09）。全8ジャンル共通ファイルが64あり、
+        各ツリーへの symlink 共有が過大。質問票の !include 分割（上記）で主目的
+        （肥大化解消）は達成済み
+- [ ] **将来拡張: AGENTS.md / oj_allow_ai の設計と実装**（項目1・2 の残り。AGENTS.md は
+      library / cli / web_api / data_science / script / kaggle に常時生成し、AI NG の
+      online_judge 種に置かない。項目1 のチェックリストを参照）
