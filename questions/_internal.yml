@@ -21,47 +21,53 @@ scorecard_effective:
     default: "{{ scorecard and git_platform == 'github.com' }}"
     when: false
 
-# MCP effective settings. include_mcp keeps its default (false) when unasked
-# (gate on); the project_type guard here is what keeps the mcp dependency,
-# mcp_server.py and its test out of project types that render no package
-# module (online_judge / ros2 / micropython), no mcp_server.py variant
-# (data_science / script) or no runnable-server reason to ship one (library)
-# — include_mcp is only asked for the types below, but data can force it in
-# render-time tests, so the guard must live here.
-mcp_effective:
-    type: bool
-    default: "{{ include_mcp and project_type == 'cli' }}"
-    when: false
-
-# web_api effective settings. prometheus / rate_limit / cors keep their
-# defaults (true) when unasked by use_recommended_web_api; the project_type
-# guard here is what keeps FastAPI-only deps and app/ code out of other
-# project types when render tests force the detail answers on them.
-prometheus_effective:
-    type: bool
-    default: "{{ project_type == 'web_api' and (use_recommended_web_api or prometheus) }}"
-    when: false
-
-rate_limit_effective:
-    type: bool
-    default: "{{ project_type == 'web_api' and (use_recommended_web_api or rate_limit) }}"
-    when: false
-
-cors_effective:
-    type: bool
-    default: "{{ project_type == 'web_api' and (use_recommended_web_api or cors) }}"
-    when: false
-
 # Project-type derived booleans (render-time only; the ones questions
-# reference live in their genre fragments).
+# reference live in their genre fragments). web_api / data_science are the
+# effective booleans: the matching base project_type, or the corresponding
+# combo opt-in from questions/_combo.yml. They come FIRST in this file:
+# copier evaluates `when: false` defaults in definition order, so every
+# consumer below (mcp_effective, prometheus/rate_limit/cors_effective,
+# use_src_layout, pkg_dir, ...) must see them resolved.
 web_api:
     type: bool
-    default: "{{ project_type == 'web_api' }}"
+    default: "{{ has_web_api }}"
     when: false
 
 data_science:
     type: bool
-    default: "{{ project_type == 'data_science' }}"
+    default: "{{ has_data_science }}"
+    when: false
+
+# MCP effective settings. include_mcp keeps its default (false) when unasked
+# (gate on); the base guard here is what keeps the mcp dependency,
+# mcp_server.py and its test out of project types that render no package
+# module (online_judge / ros2 / micropython) or no runnable-server reason to
+# ship one (library) — include_mcp is only asked for the types below, but
+# data can force it in render-time tests, so the guard must live here.
+# (web_api is the effective boolean: the web_api base or the include_web_api
+# combo opt-in.)
+mcp_effective:
+    type: bool
+    default: "{{ include_mcp and (project_type == 'cli' or web_api) }}"
+    when: false
+
+# web_api effective settings. prometheus / rate_limit / cors keep their
+# defaults (true) when unasked by use_recommended_web_api; the web_api
+# guard here is what keeps FastAPI-only deps and app/ code out of other
+# project types when render tests force the detail answers on them.
+prometheus_effective:
+    type: bool
+    default: "{{ web_api and (use_recommended_web_api or prometheus) }}"
+    when: false
+
+rate_limit_effective:
+    type: bool
+    default: "{{ web_api and (use_recommended_web_api or rate_limit) }}"
+    when: false
+
+cors_effective:
+    type: bool
+    default: "{{ web_api and (use_recommended_web_api or cors) }}"
     when: false
 
 data_science_layout:
@@ -71,12 +77,12 @@ data_science_layout:
 
 use_src_layout:
     type: bool
-    default: "{{ layout == 'src' and project_type not in ['script', 'online_judge', 'ros2', 'micropython', 'web_api'] }}"
+    default: "{{ layout == 'src' and project_type not in ['script', 'online_judge', 'ros2', 'micropython'] and not web_api }}"
     when: false
 
 use_gpu_effective:
     type: bool
-    default: "{{ (use_gpu and project_type == 'data_science') or kaggle }}"
+    default: "{{ (use_gpu and data_science) or kaggle }}"
     when: false
 
 repo_url:

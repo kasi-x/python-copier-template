@@ -470,7 +470,7 @@ The repository ships a multi-stage `Dockerfile` and, for web services, a
 local compose stack. To build and run the containerised service:
 
 ```sh
-{% if project_type == 'web_api' %}docker compose -f compose.local.yml up --build   # API on http://localhost:8000 (+ postgres)
+{% if web_api %}docker compose -f compose.local.yml up --build   # API on http://localhost:8000 (+ postgres)
 {% else %}docker build -t {{repo_name}} .
 docker run --rm {{repo_name}} --version
 {% if mcp_effective %}

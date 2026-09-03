@@ -273,7 +273,7 @@ include_sentry:
 
 include_mcp:
     type: bool
-    when: "{{ not use_recommended_integrations and project_type == 'cli' }}"
+    when: "{{ not use_recommended_integrations and (project_type == 'cli' or project_type == 'web_api' or include_web_api) }}"
     help: |
         Publish this project as an MCP (Model Context Protocol) server?
         If yes, the mcp SDK (with its CLI) is added and an mcp_server.py
@@ -281,6 +281,8 @@ include_mcp:
         plus an in-process client test as a worked example of how to call
         it. A mcp-server-<name> console script is added too, so an MCP host
         can launch it (and, once published, users can run it with uvx).
+        (For web_api projects the server lives in app/mcp_server.py;
+        otherwise in <pkg>/mcp_server.py.)
     default: false
 
 ci_provider:

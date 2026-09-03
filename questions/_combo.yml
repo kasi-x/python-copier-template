@@ -1,0 +1,42 @@
+# Combo follow-ups: opt-in layers on top of the single-choice base
+# project_type (base + layer booleans, same idea as include_mcp).
+#
+# Ask order matters (enforced by
+# tests/test_copier_structure.py::test_question_references_are_forward_only):
+# this fragment sits after questions/online_judge.yml (it references kaggle)
+# and before questions/data_science.yml and questions/web_api.yml (their gates
+# reference has_data_science / has_web_api defined here).
+
+include_data_science:
+    type: bool
+    when: "{{ project_type in ['library', 'cli', 'web_api'] }}"
+    default: false
+    help: |
+        Add the data_science analysis layout (notebooks/, data/, models/,
+        reports/, Quarto paper) on top of this project?
+        The data_science detail questions follow when answered Yes.
+
+include_web_api:
+    type: bool
+    when: "{{ project_type in ['library', 'cli', 'data_science'] or kaggle }}"
+    default: false
+    help: |
+        Add the FastAPI scaffold (top-level app/ package) on top of this
+        project? The web_api detail questions follow when answered Yes.
+        (For full-stack needs use the upstream full-stack-fastapi-template —
+        this stays a minimal, API-only scaffold.)
+
+combinable:
+    type: bool
+    default: "{{ project_type in ['library', 'cli', 'web_api', 'data_science'] or kaggle }}"
+    when: false
+
+has_web_api:
+    type: bool
+    default: "{{ project_type == 'web_api' or (include_web_api and combinable) }}"
+    when: false
+
+has_data_science:
+    type: bool
+    default: "{{ project_type == 'data_science' or (include_data_science and combinable) }}"
+    when: false

@@ -38,35 +38,64 @@ BASE = {
 # gate at its default (true): accept the recommendation, answer only the
 # required Project Details. data_science/ros2/micropython are reachable too but
 # test_example.py's copy_project_recommended already renders those exact paths,
-# so they are not repeated here.
+# so they are not repeated here. The combo cases prove the two supported
+# simultaneous layouts render on the fast path as well.
 FAST_PATHS: list[dict[str, object]] = [
     {"project_type": "library"},
     {"project_type": "web_api"},
     {"project_type": "script"},
+    {"project_type": "data_science", "include_web_api": True},
+    {"project_type": "cli", "include_data_science": True},
 ]
 
-# Artifacts unique to each project_type, to prove the fast path took the right
+# Artifacts unique to each case, to prove the fast path took the right
 # layout branch instead of silently copying another one.
 MARKERS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "library": (("src/smoke_example/__init__.py",), ("compose.local.yml", "smoke_example/__init__.py")),
     # docker is off on the fast path, so no compose file -- the web_api-only
     # tell is the postgres service in ci.yml (test_library_no_web_api_extras
-    # asserts the library side of the same distinction).
-    "web_api": (("src/smoke_example/__init__.py",), ("compose.local.yml", "smoke_example/__init__.py")),
+    # asserts the library side of the same distinction). web_api ships no
+    # <pkg> library: the app lives in top-level app/ (fixed stale
+    # src/<pkg> expectation here).
+    "web_api": (("app/main.py",), ("compose.local.yml", "src")),
     "script": (("smoke_example/__init__.py",), ("src", "compose.local.yml")),
+    # combo: the FastAPI app and the data_science layout coexist.
+    "data_science+web_api": (
+        ("app/main.py", "notebooks/.gitkeep", "data/DEIDENTIFICATION.md"),
+        ("compose.local.yml",),
+    ),
+    # combo: the analysis layout on top of a cli base.
+    "cli+data_science": (
+        ("src/smoke_example/__init__.py", "notebooks/.gitkeep"),
+        ("compose.local.yml", "app/main.py"),
+    ),
 }
 
-# Content that must appear for each project_type (proves the branch, not just
+# Content that must appear for each case (proves the branch, not just
 # the shared layout). web_api's CI gets a postgres service; the others do not.
 CONTENT: dict[str, tuple[tuple[str, str], ...]] = {
     "library": (),
     "web_api": ((".github/workflows/ci.yml", "postgres"),),
     "script": (),
+    "data_science+web_api": (
+        (".github/workflows/ci.yml", "postgres"),
+        ("pyproject.toml", "fastapi"),
+        ("pyproject.toml", "polars"),
+    ),
+    "cli+data_science": (("pyproject.toml", "polars"),),
 }
 
 
 def _id(answers: dict[str, object]) -> str:
     return "-".join(f"{k}={v}" for k, v in answers.items())
+
+
+def _key(answers: dict[str, object]) -> str:
+    if answers.get("include_web_api") is True:
+        return "data_science+web_api"
+    if answers.get("include_data_science") is True:
+        return "cli+data_science"
+    return str(answers["project_type"])
 
 
 @pytest.mark.parametrize("answers", FAST_PATHS, ids=[_id(a) for a in FAST_PATHS])
@@ -81,13 +110,13 @@ def test_recommended_path_renders(tmp_path: Path, answers: dict[str, object]):
         overwrite=True,
         skip_tasks=True,  # REUSE-copy tasks need a checkout; jinja is what we test
     )
-    project_type = str(answers["project_type"])
-    expect, not_expect = MARKERS[project_type]
+    key = _key(answers)
+    expect, not_expect = MARKERS[key]
     for rel in expect:
         assert (tmp_path / rel).exists(), f"expected {rel} to be generated"
     for rel in not_expect:
         assert not (tmp_path / rel).exists(), f"expected {rel} NOT to be generated"
-    for rel, needle in CONTENT[project_type]:
+    for rel, needle in CONTENT[key]:
         assert needle in (tmp_path / rel).read_text(), f"expected {needle!r} in {rel}"
     # Copier strips the .jinja suffix when rendering a template, so any
     # leftover .jinja file means a branch was copied verbatim, unrendered

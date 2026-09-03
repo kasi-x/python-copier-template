@@ -16,8 +16,13 @@ _jinja_extensions:
 #   CANONICAL_GATES in the test) — each asks "use the recommended settings?"
 #   first (default: yes); answering No reveals that area's detail questions.
 # - Genre-derived internal variables (when: false) that a question references
-#   (micropython_pkg, online_judge, kaggle) live in their genre fragment
+#   (micropython_pkg, online_judge, kaggle, oj_code) live in their genre fragment
 #   BEFORE that question, so the reference resolves.
+# - questions/_combo.yml (include_data_science / include_web_api plus the
+#   has_* effective booleans) sits after questions/online_judge.yml (it
+#   references kaggle) and before questions/data_science.yml and
+#   questions/web_api.yml (their gates reference has_data_science /
+#   has_web_api).
 
 project_type:
     type: str
@@ -65,9 +70,13 @@ project_type:
 !include questions/_common_a.yml
 ---
 # Genre gates that keep their canonical position mid-sequence.
-!include questions/data_science.yml
----
 !include questions/online_judge.yml
+---
+# Combo opt-ins (base + layer; see questions/_combo.yml). No
+# use_recommended_* gates in here, so the canonical gate order is untouched.
+!include questions/_combo.yml
+---
+!include questions/data_science.yml
 ---
 # Cross-cutting gates, block B: polish, docs, quality, license, integrations.
 !include questions/_common_b.yml

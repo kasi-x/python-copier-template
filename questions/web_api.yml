@@ -1,10 +1,11 @@
-# Web API questions (asked when project_type == 'web_api').
-# use_recommended_web_api is one of the canonical area gates; the effective
-# derived variables live in questions/_internal.yml.
+# Web API questions (asked when has_web_api: project_type == 'web_api', or
+# the include_web_api combo opt-in). use_recommended_web_api is one of the
+# canonical area gates; the effective derived variables live in
+# questions/_internal.yml.
 
 use_recommended_web_api:
     type: bool
-    when: "{{ project_type == 'web_api' }}"
+    when: "{{ has_web_api }}"
     default: true
     help: |
         Use the recommended web API stack?
@@ -22,7 +23,7 @@ use_recommended_web_api:
 
 prometheus:
     type: bool
-    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    when: "{{ has_web_api and not use_recommended_web_api }}"
     help: |
         Expose Prometheus metrics at /metrics?
         Recommended: yes — prometheus-fastapi-instrumentator adds a /metrics
@@ -31,7 +32,7 @@ prometheus:
 
 rate_limit:
     type: bool
-    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    when: "{{ has_web_api and not use_recommended_web_api }}"
     help: |
         Apply rate limiting to the API?
         Recommended: yes — slowapi protects endpoints (e.g. 5 requests per
@@ -40,7 +41,7 @@ rate_limit:
 
 cors:
     type: bool
-    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    when: "{{ has_web_api and not use_recommended_web_api }}"
     help: |
         Enable CORS for browser clients?
         Recommended: yes — CORSMiddleware allows the origins listed in the

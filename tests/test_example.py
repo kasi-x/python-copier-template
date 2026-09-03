@@ -475,8 +475,9 @@ def test_template_mcp_runs_in_process(tmp_path: Path):
 
 
 def test_template_mcp_not_offered_to_library(tmp_path: Path):
-    """include_mcp is only for cli / web_api: a library must not ship a
-    server module, and forcing the answer must not add an orphan mcp dep."""
+    """A plain library must not ship a server module, and forcing the answer
+    must not add an orphan mcp dep. (Adding the web_api layer opts back in:
+    see test_template_mcp_on_web_api.)"""
     copy_project(tmp_path, project_type="library", include_mcp=True)
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
@@ -510,15 +511,39 @@ def test_template_mcp_not_offered_to_data_science(tmp_path: Path):
         assert not (project_path / "tests" / "test_mcp_server.py").exists()
 
 
-def test_template_mcp_not_offered_to_web_api(tmp_path: Path):
-    """web_api no longer offers the MCP scaffold: its package is the
-    top-level app/ (uvicorn-served), not a <pkg> with an mcp_server module.
-    Forcing include_mcp must not add an orphan mcp dependency."""
-    copy_project(tmp_path, project_type="web_api", include_mcp=True)
+def test_template_mcp_on_web_api(tmp_path: Path):
+    """web_api offers the MCP scaffold in app/: the server module, its
+    in-process client test, the mcp dependency and the console script all
+    point at the app import root."""
+    copy_project(
+        tmp_path,
+        project_type="web_api",
+        use_recommended_integrations=False,
+        include_mcp=True,
+    )
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
-    assert not (tmp_path / "app" / "mcp_server.py").exists()
-    assert not (tmp_path / "tests" / "test_mcp_server.py").exists()
+    assert any(d.startswith("mcp[cli]") for d in pyproject_toml["project"]["dependencies"])
+    assert (tmp_path / "app" / "mcp_server.py").exists()
+    assert (tmp_path / "tests" / "test_mcp_server.py").exists()
+    test_body = (tmp_path / "tests" / "test_mcp_server.py").read_text()
+    assert "from app import mcp_server" in test_body
+    assert "app.mcp_server:main" in (tmp_path / "pyproject.toml").read_text()
+    # no <pkg>-side duplicate
+    assert not list(tmp_path.rglob("src/*/mcp_server.py"))
+
+
+def test_template_mcp_runs_on_web_api_in_process(tmp_path: Path):
+    """The app/-hosted MCP server must actually work: sync the web_api+MCP
+    project and run its in-process client test plus the API tests."""
+    copy_project(
+        tmp_path,
+        project_type="web_api",
+        use_recommended_integrations=False,
+        include_mcp=True,
+    )
+    run = make_venv(tmp_path)
+    run("uv run --locked pytest -q")
+    run("uv run --locked ruff check app tests")
 
 
 def test_template_mcp_flat_layout(tmp_path: Path):
@@ -1016,7 +1041,7 @@ def test_web_api_detail_options_off(tmp_path: Path):
 def test_web_api_not_offered_to_other_types(tmp_path: Path):
     """FastAPI deps and app/ code must not leak into other project types.
 
-    Force the detail answers on a library — the project_type guard in the
+    Force the detail answers on a library without the combo opt-in — the
     *_effective variables must keep them out.
     """
     copy_project(
@@ -1036,6 +1061,36 @@ def test_web_api_not_offered_to_other_types(tmp_path: Path):
     assert not (tmp_path / "src" / "python_copier_template_example" / "app").exists()
     assert not (tmp_path / "alembic").exists()
     assert not (tmp_path / "tests" / "test_app.py").exists()
+
+
+def test_combo_data_science_with_web_api(tmp_path: Path):
+    """The include_web_api opt-in adds the FastAPI scaffold on top of a
+    data_science base: app/ + alembic + FastAPI deps coexist with the
+    analysis layout (notebooks/, data/, ...)."""
+    copy_project(
+        tmp_path,
+        project_type="data_science",
+        include_web_api=True,
+    )
+    assert (tmp_path / "app" / "main.py").exists()
+    assert (tmp_path / "alembic").exists()
+    assert (tmp_path / "notebooks").exists()
+    assert (tmp_path / "data" / "DEIDENTIFICATION.md").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert any("fastapi" in d for d in deps)
+    assert any("polars" in d for d in deps)
+    assert (tmp_path / "tests" / "test_app.py").exists()
+
+
+def test_combo_guards_reject_incompatible_bases(tmp_path: Path):
+    """Forcing a combo opt-in on a non-combinable base (ros2 / script / ...)
+    must not leak the layered artifacts: the combinable guard keeps them out."""
+    copy_project(tmp_path, project_type="script", include_web_api=True)
+    assert not (tmp_path / "app").exists()
+    assert not (tmp_path / "alembic").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert not any("fastapi" in d for d in pyproject_toml["project"]["dependencies"])
 
 
 def test_template_web_api_runs_in_process(tmp_path: Path):

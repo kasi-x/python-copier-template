@@ -26,6 +26,9 @@ host. The security sections are split accordingly.
     turns into an `is_error=True` result whose message the calling model can
     read (any other exception is sanitised);
   - one **resource** (`project://about`) to show the resources side.
+  (The module lives in `app/mcp_server.py` when the web_api layer is present,
+  otherwise in `<pkg>/mcp_server.py` — one body shared via `_shared/`, so the
+  two locations never drift.)
 - A **console script** `mcp-server-<name>` so an MCP host can launch the
   server, and users can run it with `uvx` once published.
 - An in-process client test `tests/test_mcp_server.py` that calls the tools

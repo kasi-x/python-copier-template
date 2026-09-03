@@ -173,6 +173,29 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
 - [x] 既存の `include_mcp` をこの常駐レイヤーへ統合する（下記5と一体で整理）
       → 既存 include_mcp（mcp_server.py 生成）を常駐レイヤーの最初の実装例と位置づけ、
       docs（how-to / explanations）にその位置づけを文書化した
+- [x] **複数要素の同時展開（base + layer）**（2026-09。data_science + web_api、
+      web_api + MCP 等の要望に対応）
+      - `project_type`（単一）は **base** のまま残し、追加要素は `include_*` bool
+        質問で opt-in する（既存 `include_mcp` と同じ発想）。`project_type` 自体の
+        multiselect 化はしない（`.copier-answers.yml` 非互換・Z3/list 対応等の
+        コストに見合う恩恵が無い）
+      - 新設 `questions/_combo.yml`（`include_data_science` / `include_web_api` +
+        `combinable` ガード + `has_*` effective）。デフォルト全 false で単体
+        render は byte-identical（全単体ケースで HEAD と比較検証済み）
+      - `web_api` / `data_science` は `questions/_internal.yml` の同名 internal を
+        effective 化（template 側の参照はそのまま効く）。`mcp_effective` も
+        `web_api` 含有時に効くよう拡張
+      - MCP 本体は `_shared/mcp_server.py.jinja` に集約し 3 wrapper
+        （src / flat / `app/`）から include。web_api 含有時は
+        `app/mcp_server.py` + `from app import mcp_server`（console script も
+        `app.` 起点）。`test_mcp_server.py` / console script は `import_pkg` 化
+      - 教訓2件を `docs/explanations/template-dev.md` に規約化:
+        wrapper 単行化（2行 wrapper は先頭空行を生む）、`_internal.yml` 内の
+        定義順（`when: false` も定義順に評価される。後方 internal 参照は
+        Undefined/falsy になる）+ 後者を検出する
+        `test_internal_variable_references_are_forward_only` を新設
+      - ros2 / micropython / oj_code / script は単独のまま（ビルド・実行形態が
+        根本的に違うため）。`combinable` ガードで強制 data の leak も防ぐ
 
 ## 5. MCP の整理（include_mcp と mcp_server の分裂解消）
 
@@ -220,6 +243,9 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       - data_science / script / online_judge / ros2 / micropython / library / web_api では
         質問を出さず、data 強制でも orphan 依存が付かないよう内部変数 `mcp_effective` で
         render を一元化（既存 `security_policy_effective` 方式）
+      - **2026-09 の同時展開対応で web_api が復帰**: `include_mcp` は
+        cli / web_api base と `include_web_api` layer で質問され、`app/` 配置で
+        生成される（上記項目4 の同時展開メモを参照）
 - [x] **MCP scaffold へのセキュリティ実装**（2026-09。「実際にしこむ」対応）
       - docs の指針をコードに反映: `mcp_server.py` に **`--host` / `--port`** フラグを追加し、
         **非ローカルバインド（--host 0.0.0.0 等）には `MCP_ALLOWED_HOSTS` を必須化**
@@ -496,3 +522,9 @@ Scorecard workflow / zizmor SAST / Aqua.jl 風 test_qa.py）を実装した。
 - [ ] **将来拡張: AGENTS.md / oj_allow_ai の設計と実装**（項目1・2 の残り。AGENTS.md は
       library / cli / web_api / data_science / script / kaggle に常時生成し、AI NG の
       online_judge 種に置かない。項目1 のチェックリストを参照）
+- [ ] **残存するテスト失敗2件の解消**（2026-09 combo 対応時に発覚。いずれも HEAD でも
+      失敗する既存の問題で、combo の退行ではない）
+      - `test_template_with_extra_code_and_api_docs`: 生成物の sphinx docs ビルドが
+        失敗する。原因切り分けから着手
+      - `test_example_repo_updates`: example リポジトリとの parity 不一致。main push で
+        _example.yml が example repo を再生成した後に通す（項目13 の外部依存と同型）

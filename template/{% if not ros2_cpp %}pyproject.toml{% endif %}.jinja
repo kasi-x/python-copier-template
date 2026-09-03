@@ -33,8 +33,8 @@ classifiers = [
 dependencies = [{% if micropython_pkg or oj_code %}{% elif kaggle or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if web_api %}"alembic>=1.13,<2", "asgi-correlation-id>=4.3,<6", "asyncpg>=0.29,<1", "fastapi>=0.115,<1", "pydantic-settings>=2.2.1", "sqlalchemy[asyncio]>=2.0,<3", "uvicorn[standard]>=0.30,<1", {% endif %}{% if prometheus_effective %}"prometheus-client>=0.20,<1", {% endif %}{% if rate_limit_effective %}"slowapi>=0.1.9,<1", {% endif %}{% if kaggle %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15,<1", "xgboost>=2", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34", "botocore>=1.34", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if mcp_effective %}"mcp[cli]>=2.0,<3", {% endif %}{% if not use_recommended_agent and project_type in ['library', 'cli'] %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if data_science or kaggle %}"duckdb", "pyarrow", "polars>=0.20.15", {% endif %}]  # Add project dependencies here, e.g. ["click", "numpy"]
 urls.GitHub = "{{ repo_url }}"
 {% if not web_api and not online_judge and not ros2_pkg and not micropython_pkg %}scripts.{{ repo_name }} = "{{ package_name }}.__main__:main"
-{% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ package_name }}.mcp_server:main"
-{% endif %}{% endif %}
+{% endif %}{% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ import_pkg }}.mcp_server:main"
+{% endif %}
 {# The MicroPython firmware is not a pip-installable Python package: it is
    deployed to the device with mpremote. The [project] table above exists so
    the CPython dev toolchain (ruff/pytest/basedpyright) has a home, but there

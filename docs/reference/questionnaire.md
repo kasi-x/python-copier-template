@@ -34,19 +34,36 @@ questions depend on it.
 - **micropython** — MicroPython firmware, with a follow-up question for the
   target port
 
+## Combining bases and layers
+
+`project_type` picks the **base**; two opt-in questions can layer another
+element on top of it (same idea as the MCP layer on `cli`):
+
+- **include_data_science** (asked for the `library` / `cli` / `web_api`
+  bases) — adds the data_science analysis layout (`notebooks/`, `data/`,
+  `models/`, `reports/`, Quarto paper) alongside the base
+- **include_web_api** (asked for the `library` / `cli` / `data_science`
+  bases and for Kaggle) — adds the FastAPI scaffold (top-level `app/`)
+  alongside the base
+
+`ros2` / `micropython` / code-submission judges / `script` stay single-type:
+their build or execution shape cannot be combined. The `data_science` and
+`web_api` detail questions below are asked whenever the matching layer is
+present — whether from the base or from the opt-in.
+
 ## Areas and their recommended defaults
 
 | Area gate | Recommended default | Asked when |
 |---|---|---|
 | `use_recommended_agent` | no agent scaffold | library / cli |
 | `use_recommended_toolchain` | uv + just | not ros2+pixi |
-| `use_recommended_data_science` | GPU yes, no DUO/CARE | data_science |
+| `use_recommended_data_science` | GPU yes, no DUO/CARE | data_science layer present |
 | `use_recommended_polish` | src layout, English docstrings | all |
 | `use_recommended_docs` | zensical | all |
 | `use_recommended_quality` | basedpyright + pyrefly, strictness "recommended" | all |
 | `use_recommended_license` | MIT, no FAIR metadata | all |
 | `use_recommended_integrations` | no Docker/PyPI/cloud/Sentry/MCP, GitHub Actions, structlog | all |
-| `use_recommended_web_api` | FastAPI + async SQLAlchemy + Alembic + Postgres, Prometheus, rate limit, CORS | web_api |
+| `use_recommended_web_api` | FastAPI + async SQLAlchemy + Alembic + Postgres, Prometheus, rate limit, CORS | web_api layer present |
 | `use_recommended_security` | minimal CI permissions, SHA-pinned actions, zizmor, SECURITY.md, test_qa.py | all |
 
 ## The detailed questions
@@ -67,13 +84,15 @@ Answering **No** to an area gate reveals its detailed questions:
 - **License**: the full choosealicense.com list plus Proprietary/Confidential,
   FAIR metadata (CITATION.cff / REUSE), author ORCID
 - **Integrations**: Docker, PyPI publishing, cloud provider (aws / gcp /
-  azure), Sentry, MCP (cli only — scaffolds an MCP server module
-  with typed tools, a `mcp-server-<name>` console script and an in-process
-  client test; see [the MCP how-to](../how-to/mcp.md) and
+  azure), Sentry, MCP (cli and web_api bases, plus the include_web_api layer —
+  scaffolds an MCP server module with typed tools, a `mcp-server-<name>`
+  console script and an in-process client test; the module lives in
+  `app/mcp_server.py` when the web_api layer is present, otherwise in
+  `<pkg>/mcp_server.py`; see [the MCP how-to](../how-to/mcp.md) and
   [the layer model](../explanations/long-running.md)), CI provider, logging
   library
-- **Web API** (web_api only): Prometheus metrics at `/metrics`, slowapi rate
-  limiting, and CORS — all three default to on; the recommended stack itself
+- **Web API** (web_api layer present — base or opt-in): Prometheus metrics at
+  `/metrics`, slowapi rate limiting, and CORS — all three default to on; the recommended stack itself
   (FastAPI + async SQLAlchemy 2.0 + Alembic + Postgres in a top-level `app/`
   package, demo CRUD, request-id logging, BackgroundTasks example) is not
   optional. Deliberately an API-only scaffold: full-stack needs (frontend,

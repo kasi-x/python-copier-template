@@ -70,7 +70,7 @@ jobs:
 {% raw %}
       fail-fast: false
 {% endraw %}
-{% if project_type == 'web_api' and not docker %}
+{% if web_api and not docker %}
     services:
       postgres:
         image: postgres:17-alpine
@@ -92,7 +92,7 @@ jobs:
       runs-on: ${{ matrix.runs-on }}
       python-version: ${{ matrix.python-version }}
 {% endraw %}      task_runner: {{ task_runner_effective }}
-{% if project_type == 'web_api' and not docker %}
+{% if web_api and not docker %}
       postgres-host: localhost
       postgres-port: 5432
       postgres-user: postgres
@@ -106,7 +106,7 @@ jobs:
     uses: ./.github/workflows/_container.yml
     with:
       publish: ${{ needs.test.result == 'success' }}
-{% endraw %}      smoke-command: {{ '--help' if project_type == 'web_api' else '--version' }}
+{% endraw %}      smoke-command: {{ '--help' if web_api else '--version' }}
     permissions:
       contents: read
       packages: write

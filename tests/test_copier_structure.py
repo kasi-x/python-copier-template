@@ -368,6 +368,40 @@ def test_question_references_are_forward_only():
                     )
 
 
+def test_internal_variable_references_are_forward_only():
+    """A `when: false` internal variable must only reference internals defined
+    earlier in the chain.
+
+    Copier evaluates internal defaults in definition order, so an internal
+    referencing a later internal renders as Undefined (falsy) — the
+    mcp_effective -> web_api ordering bug, where web_api+MCP silently
+    generated no server file. Asked questions are excluded here (covered by
+    test_question_references_are_forward_only); only internal-to-internal
+    edges are checked.
+    """
+    questions, order = _load_questions()
+    position = {name: i for i, name in enumerate(order)}
+    for name in order:
+        q = questions[name]
+        if q.get("when") is not False:
+            continue
+        for field in ("default", "choices"):
+            value = q.get(field)
+            if not isinstance(value, str):
+                continue
+            for ident in _jinja_identifiers(value):
+                if ident not in position:
+                    continue
+                target = questions[ident]
+                if target.get("when") is not False:
+                    continue  # asked answer: always resolved before render
+                if position[ident] > position[name]:
+                    raise AssertionError(
+                        f"internal variable {name!r} {field} references {ident!r} defined later — "
+                        "move the referenced internal earlier (see mcp_effective ordering fix)"
+                    )
+
+
 def _tokenize_when(text: str) -> list[str]:
     """Tokenize the Jinja subset used in when expressions.
 

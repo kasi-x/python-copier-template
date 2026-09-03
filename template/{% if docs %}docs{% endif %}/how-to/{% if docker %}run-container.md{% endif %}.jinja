@@ -6,7 +6,7 @@ installed are available on [Github Container Registry](https://ghcr.io/{{github_
 ## Starting the container
 
 Pre-built images are published to the container registry on every release.
-{% if project_type == 'web_api' %}
+{% if web_api %}
 The image runs the FastAPI app with uvicorn; the simplest way to start it
 with the local Postgres is the compose stack:
 

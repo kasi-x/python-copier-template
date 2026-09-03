@@ -65,9 +65,10 @@ flowchart TD
     A1 --> OJ
 
     OJ -->|Yes| OQ["ask: oj_kind (kaggle / atcoder / leetcode / yukicoder / aoj)"]
-    OJ -->|No| DS{project_type == data_science?}
-    OQ --> DS
+    OJ -->|No| CB["ask: include_data_science, include_web_api<br/>(combinable bases only)"]
+    OQ --> CB
 
+    CB --> DS{data_science layer?}
     DS -->|Yes| G2{use_recommended_data_science?}
     DS -->|No| M1((•))
     G2 -->|Yes| D2["GPU: yes · no DUO/CARE"]
@@ -97,8 +98,8 @@ flowchart TD
     A6 --> G7
 
     G7 -->|Yes| D7["no Docker/PyPI/cloud/Sentry/MCP · CI: GitHub Actions · structlog"]
-    G7 -->|No| A7["ask: docker, pypi, cloud_provider, include_sentry,<br/>include_mcp, ci_provider, log_library"]
-    D7 --> WA{project_type == web_api?}
+    G7 -->|No| A7["ask: docker, pypi, cloud_provider, include_sentry,<br/>include_mcp (cli / web_api / +API layer), ci_provider, log_library"]
+    D7 --> WA{web_api layer?}
     A7 --> WA
 
     WA -->|Yes| G8{use_recommended_web_api?}
@@ -177,6 +178,17 @@ flowchart TD
   coexists to unit-test `core/`. See the
   [MicroPython how-to](https://kasi-x.github.io/python-copier-template/main/how-to/micropython.html)
 
+**Combining bases and layers** (`include_data_science`, `include_web_api`)
+- `project_type` picks the **base**; two opt-in questions can layer another
+  element on top: `include_data_science` (asked for `library` / `cli` /
+  `web_api`) adds the analysis layout (`notebooks/`, `data/`, `models/`,
+  `reports/`, Quarto paper), and `include_web_api` (asked for `library` /
+  `cli` / `data_science` and Kaggle) adds the FastAPI scaffold (top-level
+  `app/`). So a data_science base can ship an API, and an API base can ship
+  analysis directories and MCP — in one repo.
+- `ros2` / `micropython` / code-submission judges / `script` stay
+  single-type: their build or execution shape cannot be combined.
+
 **Layout** (`layout`, for `library` / `cli`)
 - **src** — package in a `src/` directory (**default**; prevents accidental
   imports of an uninstalled package)
@@ -202,14 +214,16 @@ flowchart TD
   (`essential` / `s3` / `dynamodb` / `sqs` / `lambda`).
 - **Sentry** (`include_sentry`): adds `sentry-sdk` and initialises it from
   `SENTRY_DSN` at CLI startup.
-- **MCP** (`include_mcp`, cli): adds the `mcp[cli]` SDK and
-  scaffolds an `mcp_server.py` with typed example tools, a `ToolError`
+- **MCP** (`include_mcp`, cli / web_api / the API layer): adds the `mcp[cli]`
+  SDK and scaffolds an `mcp_server.py` with typed example tools, a `ToolError`
   sample and a resource, plus a `mcp-server-<name>` console script and an
   in-process client test — the template's first *long-running executable*
   layer (see
   [the layer model](https://kasi-x.github.io/python-copier-template/main/explanations/long-running.html)
   and the
   [MCP how-to](https://kasi-x.github.io/python-copier-template/main/how-to/mcp.html)).
+  The module lives in `app/mcp_server.py` when the web_api layer is present,
+  otherwise in `<pkg>/mcp_server.py`.
   Run it with stdio (an MCP host launches `uv run mcp-server-<name>`) or
   streamable-http (`--transport streamable-http`), and debug it with the
   MCP Inspector (`uv run mcp dev src/<package>/mcp_server.py`).
@@ -336,10 +350,12 @@ The option set has been consolidated over time. The key moves:
   `library` / `cli` / `web_api`, so adding a `daemon` type would violate the
   "project_type = fundamentally different execution environment" rule.
   Instead they are opt-in modules with their own entry point (the first
-  instance is `include_mcp` → `mcp_server.py` on `cli`, with a
+  instance is `include_mcp` → `mcp_server.py` on `cli` / `web_api`, with a
   `mcp-server-<name>` console script), started by an MCP host or via
   `python -m <package>.mcp_server` — never through `__main__.py`, which the
-  Docker `ENTRYPOINT` and CLI tests own. See
+  Docker `ENTRYPOINT` and CLI tests own. The same base+layer idea now covers
+  `include_data_science` / `include_web_api`: one generated repo can hold a
+  base plus another element (data_science + web_api, web_api + MCP, ...). See
   [the layer model](https://kasi-x.github.io/python-copier-template/main/explanations/long-running.html).
 - **`web_api` is now a working FastAPI scaffold, not a shell**: it used to
   generate Docker/compose/Postgres wiring and tell you to "add fastapi +

@@ -54,6 +54,14 @@ partial and include it from thin per-location wrappers:
   hard-coded per wrapper.
 - Remember the newline rule above: the wrapper file must end *immediately
   after* the `{% include %}` tag, or the render gains a trailing blank line.
+- When a direct template file is replaced by a shared partial, keep the render
+  byte-identical: put the wrapper on a *single line* —
+  `{# ... #}{% include "_shared/....jinja" %}` with no trailing newline. A
+  two-line wrapper (comment line, then the include) emits the comment's
+  newline as a leading blank line in the output. (`logging_setup.py`'s
+  two-line wrappers predate this rule and carry that leading blank line as
+  their accepted baseline; new shared partials must not add another one.)
+  Verify with a baseline-vs-current render diff (see below).
 
 Enforced by `_template_files()` walking `_shared/` in
 `tests/test_copier_structure.py` (variables inside shared partials must be
@@ -73,6 +81,15 @@ settings. Rules:
   that a question references (e.g. `micropython_pkg`, `online_judge`) must
   live in their genre fragment *before* that question — a back-reference
   renders as Undefined (falsy) and silently picks the wrong branch.
+- The same ordering trap applies *inside* `questions/_internal.yml`: copier
+  evaluates `when: false` defaults in definition order, so an internal
+  variable must be defined *before* any internal variable that references it
+  (e.g. `web_api` / `data_science` come first, ahead of `mcp_effective`,
+  `prometheus_effective` / `rate_limit_effective` / `cors_effective`,
+  `use_src_layout`, `pkg_dir`, ...). Referencing a later internal renders as
+  Undefined (falsy) — the questionnaire structure test does *not* catch this
+  (it skips `when: false` in the forward-only check), so verify with an
+  actual render.
 - Internal variables that only feed template rendering (the `*_effective`
   family, `pkg_dir`, `import_pkg`, ...) stay in `questions/_internal.yml`
   at the end of the chain.
