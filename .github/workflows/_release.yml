@@ -1,6 +1,9 @@
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   artifacts:
     runs-on: ubuntu-latest
@@ -13,6 +16,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           path: _checkout
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Download artifacts
@@ -23,11 +27,20 @@ jobs:
       - name: Zip up docs
         run: |
           set -vxeuo pipefail
+          # docs/_docs.yml uploads the built site: Sphinx as build/html
+          # contents (so the artifact holds an `html/` dir), zensical/mkdocs
+          # as the `site/` dir. Rename whichever exists so the release zip is
+          # named after the tag either way.
           if [ -d html ]; then
             mv html "$GITHUB_REF_NAME"
-            zip -r docs.zip "$GITHUB_REF_NAME"
-            rm -rf "$GITHUB_REF_NAME"
+          elif [ -d site ]; then
+            mv site "$GITHUB_REF_NAME"
+          else
+            echo "No docs output found (html/ or site/)" >&2
+            exit 1
           fi
+          zip -r docs.zip "$GITHUB_REF_NAME"
+          rm -rf "$GITHUB_REF_NAME"
 
       - name: Generate release notes with git-cliff
         # Only this tag's conventional-commit history, categorised by type.

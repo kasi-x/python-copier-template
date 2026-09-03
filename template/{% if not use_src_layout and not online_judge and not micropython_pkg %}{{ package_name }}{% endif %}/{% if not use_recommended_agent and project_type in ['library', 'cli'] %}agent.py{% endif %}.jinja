@@ -1,0 +1,82 @@
+"""Example pydantic-ai agent for {{ package_name }}.
+
+The agent loads its system prompt from ``prompts/agent.md`` and registers the
+tools in ``{{ package_name }}.tools``. Run the offline demo (no API key
+needed, uses pydantic-ai's TestModel):
+
+    uv run python -m {{ package_name }}.agent "What year is it?"
+
+To use a real model instead, set ``OPENAI_API_KEY`` (or
+``ANTHROPIC_API_KEY``) and pass ``--model openai:gpt-4o-mini``:
+
+    uv run python -m {{ package_name }}.agent --model openai:gpt-4o-mini "What year is it?"
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+from collections.abc import Sequence
+from pathlib import Path
+
+from pydantic_ai import Agent
+from pydantic_ai.models.test import TestModel
+
+from {{ package_name }}.tools import example
+
+__all__ = ["agent", "main", "run"]
+
+DEFAULT_MODEL = "openai:gpt-4o-mini"
+# agent.py lives in <package>/ (flat layout); prompts/agent.md sits one
+# directory above it.
+_PROMPT_PARENTS = 1
+PROMPT_FILE = Path(__file__).resolve().parents[_PROMPT_PARENTS] / "prompts" / "agent.md"
+
+
+# defer_model_check keeps module import free of API-key lookups; the model is
+# only resolved when the agent actually runs.
+agent = Agent(DEFAULT_MODEL, defer_model_check=True)
+
+
+@agent.system_prompt
+def _system_prompt() -> str:
+    """Load the system prompt from prompts/agent.md at run time."""
+    return PROMPT_FILE.read_text(encoding="utf-8")
+
+
+@agent.tool_plain
+def current_year() -> int:
+    """Return the current calendar year."""
+    return example.current_year()
+
+
+async def run(prompt: str, model: str | None = None) -> str:
+    """Run the agent against *prompt* and return its text output.
+
+    Pass *model* to use a real model (requires the matching API key in the
+    environment); the default is pydantic-ai's offline TestModel.
+    """
+    if model is None:
+        test_model = TestModel(custom_output_text="pong (offline test model)")
+        with agent.override(model=test_model):
+            result = await agent.run(prompt)
+    else:
+        result = await agent.run(prompt, model=model)
+    return result.output
+
+
+def main(args: Sequence[str] | None = None) -> None:
+    """CLI entry point: run the agent on a prompt and print the reply."""
+    parser = argparse.ArgumentParser(description="Run the {{ repo_name }} agent")
+    parser.add_argument("prompt", help="What to ask the agent")
+    parser.add_argument(
+        "--model",
+        default=None,
+        help=f"Real model to use (default: offline via TestModel, model {DEFAULT_MODEL!r})",
+    )
+    parsed = parser.parse_args(args)
+    print(asyncio.run(run(parsed.prompt, model=parsed.model)))
+
+
+if __name__ == "__main__":
+    main()

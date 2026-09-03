@@ -7,6 +7,9 @@ on:
     # frozen-build tag still tracks the latest release.
     - cron: "0 6 * * MON"
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -16,6 +19,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          # Need this to get version number from last tag
+          fetch-depth: 0
 
       - name: Check MicroPython pins against upstream
         id: check

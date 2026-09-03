@@ -16,7 +16,10 @@ repos:
       - id: check-merge-conflict
       - id: end-of-file-fixer
         # uv/pixi lockfiles are machine-generated and may not end in a newline
-        exclude: ^(uv|pixi)\.lock$
+        # pyproject.toml is assembled from conditional Jinja blocks whose
+        # false branches can leave trailing blank lines; pyproject-fmt (a
+        # separate hook) normalises the file, so end-of-file is not applied.
+        exclude: ^(uv|pixi)\.lock$|^pyproject\.toml$
 
   - repo: local
     hooks:

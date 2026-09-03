@@ -1,12 +1,12 @@
 [project]
 site_name = "python-copier-template"
 site_description = "A Copier template for Python projects"
-site_author = "Diamond Light Source"
-repo_url = "https://github.com/DiamondLightSource/python-copier-template"
-repo_name = "DiamondLightSource/python-copier-template"
+site_author = "kasi-x"
+repo_url = "https://github.com/kasi-x/python-copier-template"
+repo_name = "kasi-x/python-copier-template"
 edit_uri = "edit/main/docs/"
 
-copyright = 'Maintained by <a href="https://github.com/DiamondLightSource/python-copier-template">Diamond Light Source</a>.'
+copyright = 'Maintained by <a href="https://github.com/kasi-x/python-copier-template">kasi-x</a>.'
 
 nav = [
   { "Home" = "index.md" },
@@ -37,10 +37,11 @@ nav = [
       { "Overview" = "explanations.md" },
       { "Structure" = "explanations/structure.md" },
       { "Why Use Template" = "explanations/why-use-template.md" },
-      { "Architecture Decisions" = "explanations/decisions.md" },
+      { "Security & Compliance" = "explanations/security.md" },
   ]},
   { "Reference" = [
       { "Overview" = "reference.md" },
+      { "Questionnaire" = "reference/questionnaire.md" },
       { "Standards" = "reference/standards.md" },
   ]},
 ]

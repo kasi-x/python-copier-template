@@ -1,0 +1,28 @@
+{
+  "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+  "@type": "SoftwareSourceCode",
+  "name": "python-copier-template",
+  "description": "An opinionated Copier template for Python projects, with recommended settings for tooling, CI, and research-software metadata.",
+  "codeRepository": "https://github.com/kasi-x/python-copier-template",
+  "license": "https://spdx.org/licenses/Apache-2.0",
+  "version": "0.0.0",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "Python",
+    "url": "https://www.python.org/"
+  },
+  "keywords": [
+    "copier",
+    "template",
+    "python",
+    "scaffolding"
+  ],
+  "author": [
+    {
+      "@type": "Person",
+      "name": "kasi-x",
+      "email": "kashimiya.exe@gmail.com"
+    }
+  ],
+  "funder": []
+}

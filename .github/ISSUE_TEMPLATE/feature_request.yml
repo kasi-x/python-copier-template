@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest an idea for this template
+title: "[FEAT]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to suggest a feature! Please check the
+        [design principles](https://github.com/kasi-x/python-copier-template/blob/main/docs/reference/questionnaire.md)
+        before proposing a new option — not every idea should become a
+        project type or a questionnaire toggle.
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What problem does this feature solve? Why is it useful?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How should this feature work? Include any API, question, or file sketches.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: What alternatives have you considered?
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Specific criteria that will be used to judge if this feature is complete.
+    validations:
+      required: false

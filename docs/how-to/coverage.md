@@ -3,7 +3,6 @@
 
 Code coverage is reported to the command line and to a `cov.xml` file by the command `task test` (in generated projects; the test CI job uploads it). The file is uploaded to the Codecov service in CI.
 
-(installing-codecov-github-app)=
 ## Installing Codecov GitHub app
 
 If your repo is hosted in an org where the codecov GitHub app is already

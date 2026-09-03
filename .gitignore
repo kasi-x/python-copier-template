@@ -128,6 +128,11 @@ lockfiles/
 # ruff cache
 .ruff_cache/
 
+# Local AI/editor tool caches
+.codegraph/
+.commandcode/
+.omo/
+
 # Local environment variables (see .env.example)
 .env
 .envs/
@@ -140,5 +145,5 @@ log/
 # MicroPython type stubs — installed into typings/, not committed
 typings/
 # MicroPython source tree cloned by the freeze task, and its output
+# (dist/ is already ignored above under Distribution/packaging)
 build/micropython-src/
-dist/

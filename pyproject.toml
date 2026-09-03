@@ -32,19 +32,28 @@ dev = [
     "zensical",
 ]
 
+[tool.setuptools]
+# This repo is the copier template itself, not a library: the only importable
+# Python at the root is the copier extension loader (extensions.py) and the
+# empty package marker (__init__.py). Explicitly list them so setuptools does
+# not try flat-layout auto-discovery and trip over site/ (docs build output)
+# or template/ (the copier source tree) when editable-installing under xdist.
+py-modules = ["extensions"]
+packages = []
+
 [tool.setuptools_scm]
 
 [tool.pytest.ini_options]
 # Run pytest with all our checkers, and don't spam us with massive tracebacks on error
 addopts = """
-    --tb=native -vv
+    --tb=native -vv -n auto
     """
 # Doctest python code in docs, python code in src docstrings, test functions in tests
 testpaths = "tests"
 
 [tool.basedpyright]
 pythonVersion = "3.11"
-include = ["tests"]
+include = ["tests", "tools", "extensions.py"]
 exclude = [
     "**/node_modules",
     "**/__pycache__",
@@ -54,6 +63,7 @@ exclude = [
     "dist",
     ".venv",
     "template",
+    ".github/pages",  # zensical 移行でこのリポでは実行されない共有 CI ヘルパー
 ]
 typeCheckingMode = "recommended"
 reportMissingTypeStubs = false
@@ -74,9 +84,9 @@ reportImplicitStringConcatenation = false # コメントを挟んだ意図的な
 
 [tool.pyrefly]
 python-version = "3.11"
-search-path = ["tests"]
-project-includes = ["tests"]
-project-excludes = [".venv", "template"]
+search-path = ["tests", "tools", "."]
+project-includes = ["tests", "tools", "extensions.py"]
+project-excludes = [".venv", "template", ".github/pages"]  # .github/pages はこのリポでは未実行の共有 CI ヘルパー
 preset = "default"
 
 [tool.ruff]
@@ -84,8 +94,9 @@ line-length = 120
 fix = true
 unsafe-fixes = false
 src = ["tests"]
-# template/ は生成コード（_figlet.py 等 vendored 含む）。生成先プロジェクト側でチェックされる。
-# .github/pages は共有の CI ヘルパー。docs/conf.py は Sphinx 生成支援コード。
+# template/ は生成コード。生成先プロジェクト側でチェックされる。
+# .github/pages は共有の CI ヘルパー（zensical 移行後このリポでは未実行）。
+# docs/ は zensical / MkDocs の散文ドキュメント（コードではない）。
 extend-exclude = ["template", ".github/pages", "docs"]
 
 [tool.ruff.lint]
@@ -108,6 +119,7 @@ extend-ignore = [
     "SIM401",  # if-else-block-instead-of-dict-get  WHYNOT: unsafe-fix が dict 前提で .get() に変換し、
     "S101",    # assert-used  WHYNOT: 型絞り込み assert。python -O で消えても実害なし。
     "PT018",   # pytest-composite-assertion  WHYNOT: 型絞り込みの隣接 assert を分割したくない。
+    "RUF100",  # unused-noqa  WHYNOT: S310 のように式をまたぐ検出は noqa を unused と誤判定し、--fix が必要な noqa まで消す。
     "RUF105",  # noqa-comments  WHYNOT: noqa is shared with pyright.
     "RUF106",  # rule-codes-in-suppression  WHYNOT: same as RUF105.
     "RUF201",  # rule-codes-in-selectors  WHYNOT: config should be terse.
@@ -252,11 +264,13 @@ extend-ignore-words-re = ['\b[A-Z]{3}\b']
 extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
 
 [tool.typos.files]
-# template/ は生成コード（_figlet.py 等 vendored 含む）。生成先プロジェクト側でチェックされる。
+# template/ は生成コード。生成先プロジェクト側でチェックされる。
 extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS"]
 
 [tool.vulture]
-paths = ["tests"]
+paths = ["tests", "tools", "extensions.py"]
+# copier.yml の _jinja_extensions から文字列で参照される Jinja Extension クラス。
+ignore_names = ["GitExtension", "CurrentYearExtension"]
 min_confidence = 60
 
 [tool.deptry]
@@ -269,3 +283,20 @@ exclude = ["template", "tests", "docs", ".venv", ".pixi", ".tox", "build", "dist
 [tool.pyproject_fmt]
 keep-full-version = true
 no-generate-python-version-classifiers = true
+
+[tool.coverage.run]
+# extensions.py は copier の run_copy 内で in-process 実行され、tools/* は
+# subprocess 実行される。template/ の生成コードは生成先プロジェクト側で
+# 計測されるので source には含めない。
+patch = ["subprocess"]
+source = ["extensions.py", "tools"]
+# プロジェクトローカルのデータファイル（生成物へ出している設定と同じ）。
+# pytest-xdist (-n auto) の各 worker が共有 /tmp で競合しないよう parallel 化し、
+# pytest-cov が最後にマージする。
+data_file = ".coverage"
+parallel = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+skip_empty = true

@@ -1,0 +1,10 @@
+# This repository is maintained by kasi-x.
+* @kasi-x
+
+# Security-sensitive paths: changes require review by the maintainer.
+/.github/workflows/ @kasi-x
+/.github/zizmor.yml @kasi-x
+/.github/actionlint.yaml @kasi-x
+/renovate.json @kasi-x
+SECURITY.md @kasi-x
+copier.yml @kasi-x

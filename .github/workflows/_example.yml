@@ -3,6 +3,10 @@ on:
     secrets:
       EXAMPLE_DEPLOY_KEY:
         required: true
+
+permissions:
+  contents: read
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -11,20 +15,30 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          # Need this to get version number from last tag
+          # This workflow pushes the regenerated example to the example repo
+          # via a deploy key, so credentials are intentionally kept here
+          # (unlike the other reusable workflows).
           fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v10.0.1
 
       - name: Regenerate example
+        env:
+          # Derive the template source URL and example-repo owner from the
+          # current repo so a rename does not leave a stale org hard-coded.
+          TEMPLATE_URL: https://github.com/${{ github.repository }}.git
+          EXAMPLE_OWNER: ${{ github.repository_owner }}
         run: |
           git init /tmp/example
-          uvx copier copy --data-file example-answers.yml --vcs-ref=HEAD . /tmp/example
-          sed -i 's|_src_path: .|_src_path: https://github.com/kasi-x/python-copier-template.git|' /tmp/example/.copier-answers.yml
+          uvx copier copy \
+            --data-file example-answers.yml \
+            --data github_org="$EXAMPLE_OWNER" \
+            --vcs-ref=HEAD . /tmp/example
+          sed -i "s|_src_path: .*|_src_path: ${TEMPLATE_URL}|" /tmp/example/.copier-answers.yml
           uv lock --directory /tmp/example
           rm -rf /tmp/example/.git
-          
+
       - name: Publish example
         # We pin to the SHA, not the tag, for security reasons.
         # https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions#using-third-party-actions
@@ -32,7 +46,7 @@ jobs:
         with:
           deploy_key: ${{ secrets.EXAMPLE_DEPLOY_KEY }}
           publish_dir: /tmp/example
-          external_repository: kasi-x/python-copier-template-example
+          external_repository: ${{ github.repository_owner }}/python-copier-template-example
           publish_branch: main
           enable_jekyll: true  # don't put a .nojekyll
           exclude_assets: ''  # default would exclude .github

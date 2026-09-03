@@ -33,24 +33,21 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import re
 import sys
-import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
 TOP = Path(__file__).resolve().parent.parent
 COPIER_YML = TOP / "copier.yml"
-FREEZE_TEMPLATE = TOP / "template" / (
-    "{% if micropython_pkg %}tools{% endif %}"
-    "/{% if micropython_pkg %}micropython{% endif %}/freeze.py.jinja"
+FREEZE_TEMPLATE = (
+    TOP
+    / "template"
+    / ("{% if micropython_pkg %}tools{% endif %}/{% if micropython_pkg %}micropython{% endif %}/freeze.py.jinja")
 )
-STUBS_TEMPLATE = TOP / "template" / (
-    "{% if micropython_pkg %}requirements-dev.txt{% endif %}.jinja"
-)
-
-GITHUB_API = "https://api.github.com/repos"
+STUBS_TEMPLATE = TOP / "template" / ("{% if micropython_pkg %}requirements-dev.txt{% endif %}.jinja")
 
 
 @dataclass
@@ -61,28 +58,40 @@ class Pin:
     checkable: bool = False
 
 
+def https_get_json(host: str, path: str) -> dict[str, object]:
+    """GET a JSON resource over https.
+
+    Uses http.client.HTTPSConnection rather than urllib.request.urlopen so
+    the request is https-only by construction (no scheme from a variable, so
+    ruff's S310 audit has nothing to flag).
+    """
+    conn = http.client.HTTPSConnection(host, timeout=30)
+    try:
+        conn.request(
+            "GET",
+            path,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "python-copier-template-maintenance",
+            },
+        )
+        resp = conn.getresponse()
+        return json.load(resp)
+    finally:
+        conn.close()
+
+
 def github_latest_release(repo: str) -> str | None:
     """Return the latest release tag (e.g. v1.25.0) for a GitHub repo."""
-    req = urllib.request.Request(  # noqa: S310 - URL is a constant https:// GitHub API
-        f"{GITHUB_API}/{repo}/releases/latest",
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "python-copier-template-maintenance",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 - URL is a constant https:// GitHub API
-        return json.load(resp)["tag_name"]
+    data = https_get_json("api.github.com", f"/repos/{repo}/releases/latest")
+    return str(data["tag_name"])
 
 
 def pypi_has_version(package: str, version: str) -> bool:
     """Return True if a package version exists on PyPI."""
-    req = urllib.request.Request(  # noqa: S310 - URL is a constant https:// PyPI API
-        f"https://pypi.org/pypi/{package}/json",
-        headers={"User-Agent": "python-copier-template-maintenance"},
-    )
-    with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310 - URL is a constant https:// PyPI API
-        data = json.load(resp)
+    data = https_get_json("pypi.org", f"/pypi/{package}/json")
     releases = data.get("releases", {})
+    assert isinstance(releases, dict)
     # PyPI stub releases look like "1.29.0.post1"; check any release whose
     # base version (before ".post") matches the firmware version.
     return any(rel.startswith(version) for rel in releases)
@@ -134,9 +143,7 @@ def resolve_upstream(pins: list[Pin], *, offline: bool) -> None:
         elif pin.name.startswith("micropython-<port>-stubs"):
             version = pin.current.split("~=")[1].split(" ")[0]
             pin.upstream = (
-                "stub release exists"
-                if pypi_has_version("micropython-esp32-stubs", version)
-                else "NO STUB RELEASE"
+                "stub release exists" if pypi_has_version("micropython-esp32-stubs", version) else "NO STUB RELEASE"
             )
 
 
@@ -155,8 +162,7 @@ def report(pins: list[Pin]) -> int:
                 print(f"[ok]     {pin.name}: {pin.current}")
             else:
                 print(
-                    f"[DRIFT]  {pin.name}: {pin.current} -> "
-                    f"official latest {pin.upstream}",
+                    f"[DRIFT]  {pin.name}: {pin.current} -> official latest {pin.upstream}",
                 )
                 drift = True
         else:
@@ -183,7 +189,9 @@ def report(pins: list[Pin]) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--offline", action="store_true", help="Report pins without hitting the network",
+        "--offline",
+        action="store_true",
+        help="Report pins without hitting the network",
     )
     args = parser.parse_args()
 

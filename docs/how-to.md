@@ -19,4 +19,6 @@ Practical step-by-step guides for the more experienced user.
 - [Code Coverage](how-to/coverage.md)
 - [Check Docs Style](how-to/check-docs-style.md)
 - [Renovate Dependency Updates](how-to/renovate.md)
+- [Add Images to the README](how-to/readme-images.md)
+- [Excalidraw Diagrams](how-to/excalidraw.md)
 - [Contribute](how-to/contribute.md)

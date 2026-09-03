@@ -64,7 +64,7 @@ dev dependencies and `[tasks]` for lint/build/test/check. CI uses
 - The standard toolchain coexists: `pyproject.toml` keeps its
   `[build-system]`/`[project]` (with `requires-python` pinned to the distro
   and no `rclpy` in `dependencies` — package.xml owns the ROS deps),
-  `uv.lock`/`pixi.lock`, the standard `Dockerfile`, docs, ASCII banner and
+  `uv.lock`/`pixi.lock`, the standard `Dockerfile`, docs and
   pre-commit all work as usual. C++ packages skip `pyproject.toml`/`setup.py`
   (the build is CMake).
 - `Dockerfile.ros2` (apt or pixi flavour) and a ROS-aware devcontainer

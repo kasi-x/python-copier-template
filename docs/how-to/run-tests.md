@@ -1,5 +1,3 @@
-(using-pytest)=
-
 # Run the tests using pytest
 
 Testing is done with [pytest]. It will find functions in the project that [look like tests][look like tests], and run them to check for errors. You can run it with:

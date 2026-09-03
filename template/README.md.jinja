@@ -1,9 +1,4 @@
 <div align="center">
-{% if ascii_banner %}
-<!-- ASCII-BANNER-START -->
-<!-- ASCII-BANNER-END -->
-{% endif %}
-
 # {{ package_name }}
 
 *{{ description }}*
@@ -19,6 +14,7 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-black.json)](https://github.com/copier-org/copier)
 {% if docs %}[![Documentation](https://img.shields.io/badge/docs-{{docs_url}}-8A2BE2?logo=gitbook&logoColor=white)]({{docs_url}})
+{% endif %}{% if scorecard %}[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/{{github_org}}/{{repo_name}}/badge)](https://scorecard.dev/viewer/?uri=github.com/{{github_org}}/{{repo_name}})
 {% endif %}
 </div>
 
@@ -114,6 +110,45 @@ uv run pip install -r requirements-dev.txt --target typings
 {% for f in ['boot.py', 'main.py', 'board_config.py', 'core'] %}{{ _run }}mpremote connect auto fs cp -r firmware/{{ f }} :
 {% endfor %}{{ _run }}mpremote connect auto reset
 ```
+{% elif online_judge %}```sh
+{% if kaggle %}pip install -e ".[experiment]"   # install the project + experiment extras
+{% else %}# code-submission workspace: just the dev toolchain
+{% if package_manager == "uv" %}uv sync
+{% elif package_manager == "poetry" %}poetry install
+{% else %}pixi install
+{% endif %}
+{% endif %}
+```
+
+{% if kaggle %}
+The installable helpers live in `src/utils/` (`from utils.config import ...`);
+competition data goes in `src/input/` and predictions are written to
+`src/output/`. See the `dataset` / `features` / `train` / `predict` tasks
+below for the pipeline.
+{% else %}
+This repository is a bare workspace for code-submission judges (AtCoder /
+LeetCode / ...). Sample cases and per-problem folders are **not** generated —
+drive the workflow with [online-judge-tools](https://github.com/online-judge-tools/oj)
+(`oj`) or [atcoder-cli](https://github.com/Tatamo/atcoder-cli) (`acc`), which
+create the directories and `test/` sample files for you:
+
+```sh
+# online-judge-tools: download samples into ./test/, then test a solution
+oj download https://atcoder.jp/contests/abc086/tasks/abc086_a
+# ... write your answer in main.py (or anywhere) ...
+oj test -c "python3 main.py"
+
+# atcoder-cli: create <contest>/<task>/main.py folders from a template
+acc new abc086
+cd abc086/a
+# ... edit main.py ...
+oj test -c "python3 main.py"
+```
+
+`oj download` writes samples to a `test/` directory in the current folder —
+add `test/` to your `.gitignore` (or keep those folders out of git) so
+downloaded cases are not committed.
+{% endif %}
 {% else %}```sh
 {% if package_manager == "uv" %}pip install {{distribution_name}}
 {% elif package_manager == "poetry" %}poetry add {{distribution_name}}
@@ -160,6 +195,43 @@ The device-independent logic lives in `firmware/core/` (unit-tested under
 CPython with `pytest`); board pins live in `firmware/board_config.py`; the
 wire-up that MicroPython runs on boot is `firmware/main.py`. Replace the
 sample blink with your own firmware logic.
+{% elif online_judge %}{% if kaggle %}The `utils` package (`src/utils/`) provides the shared helpers for the
+competition. The pipeline is driven by the task runner:
+
+```sh
+{% if task_runner_effective == 'task' %}task dataset      # build features from src/input
+task train        # train a model (src/models)
+task predict      # write a submission to src/output
+{% elif task_runner_effective == 'just' %}just dataset
+just train
+just predict
+{% elif task_runner_effective == 'make' %}make dataset
+make train
+make predict
+{% elif task_runner_effective == 'poe' %}poe dataset
+poe train
+poe predict
+{% else %}pixi run -e dev dataset
+pixi run -e dev train
+pixi run -e dev predict
+{% endif %}
+```
+
+Marimo notebooks live in `src/notebook/` (open with the `marimo` task).
+{% else %}Grab the samples for a problem, write a single-file solution, and
+test it against the downloaded cases:
+
+```sh
+oj download https://atcoder.jp/contests/abc086/tasks/abc086_a   # creates test/
+# write main.py ...
+oj test -c "python3 main.py"          # run the sample cases
+# oj submit https://atcoder.jp/contests/abc086/tasks/abc086_a main.py
+```
+
+The repo is linted and type-checked as a whole (the relaxed rules are aimed
+at contest code), so `task check` / `just check` keep your workspace tidy
+before you submit.
+{% endif %}
 {% else %}```python
 from {{package_name}} import __version__
 
@@ -188,6 +260,7 @@ python -m {{package_name}} --version
 {% endif %}{% if docs %}Documentation   | <{{docs_url}}>
 {% endif                %}Releases        | <{{repo_url}}/releases>
 {% if fair              %}Citation        | [CITATION.cff](CITATION.cff)
+{% endif %}{% if security_policy %}Security        | [SECURITY.md](SECURITY.md) — how to report a vulnerability
 {% endif %}
 
 ## 🛠️ Development setup

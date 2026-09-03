@@ -2,7 +2,7 @@
 
 To make a new release, please follow this checklist:
 
-- Ensure that you have previously followed [](./pypi)
+- Ensure that you have previously followed [PyPI uploading](./pypi.md)
 - Regenerate `CHANGELOG.md` from [Conventional Commits](https://www.conventionalcommits.org)
   with [git-cliff](https://git-cliff.org): `uvx --from git-cliff git-cliff -o CHANGELOG.md`,
   then commit it

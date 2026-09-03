@@ -1,0 +1,73 @@
+# The questionnaire
+
+When you run `copier copy` (or `copier update`), the template asks a small
+number of questions and generates a project tailored to your answers.
+
+Each customisable area asks a single **"use the recommended settings?"**
+question first (default: yes), with the recommendation spelled out in its help
+text. Answer **yes** and that area is configured from its recommended defaults
+without asking anything else; answer **no** and the detailed question(s) for
+that area are asked.
+
+## Project type (`project_type`)
+
+Asked first, ahead of every area, because the toolchain and several later
+questions depend on it.
+
+- **library** — a Python library/package
+- **web_api** — a web API service (Docker included)
+- **cli** — a command-line tool
+- **data_science** — notebooks, `data/`, `models/`, `reports/` and a `src/`
+  pipeline layout; GPU Dockerfile and Quarto paper always included
+- **online_judge** — a competitive-programming / Kaggle project, with a
+  follow-up question for the judge (`oj_kind`: Kaggle / AtCoder / LeetCode).
+  Kaggle gets the competition layout (`src/{configs,data,input,output,...}`
+  with `src/utils` as the installable package); AtCoder / LeetCode get a
+  `solutions/` directory of standalone scripts
+- **script** — a minimal script, flat package at the repo root
+- **web_django** — *not supported*: selecting it aborts generation
+- **ros2** — a ROS 2 package (ament_python or ament_cmake), with follow-up
+  questions for language, distro and environment provisioning
+- **micropython** — MicroPython firmware, with a follow-up question for the
+  target port
+
+## Areas and their recommended defaults
+
+| Area gate | Recommended default | Asked when |
+|---|---|---|
+| `use_recommended_agent` | no agent scaffold | library / cli |
+| `use_recommended_toolchain` | uv + just | not ros2+pixi |
+| `use_recommended_data_science` | GPU yes, no DUO/CARE | data_science |
+| `use_recommended_polish` | src layout, English docstrings | all |
+| `use_recommended_docs` | zensical | all |
+| `use_recommended_quality` | basedpyright + pyrefly, strictness "recommended" | all |
+| `use_recommended_license` | MIT, no FAIR metadata | all |
+| `use_recommended_integrations` | no Docker/PyPI/cloud/Sentry/MCP, GitHub Actions, structlog | all |
+| `use_recommended_security` | minimal CI permissions, SHA-pinned actions, zizmor, SECURITY.md, test_qa.py | all |
+
+## The detailed questions
+
+Answering **No** to an area gate reveals its detailed questions:
+
+- **AI agent** (library / cli): scaffold a runnable pydantic-ai example —
+  `prompts/agent.md`, a typed `tools/` package, and an `agent` module wired
+  with `@agent.tool`, tested offline with `TestModel`
+- **Toolchain**: package manager (uv / pixi / poetry) and task runner
+  (just / task / poe / make / invoke / duty, or pixi's native tasks)
+- **Data science**: GPU, data reuse (DUO sheet), data ethics (CARE statement)
+- **Online judge** (`oj_kind`): kaggle / atcoder / leetcode
+- **Polish**: layout (src / flat), Japanese text allowed
+- **Docs**: README-only / zensical / sphinx / great-docs
+- **Quality**: secondary checker (pyrefly / ty) and strictness
+  (none / basic / recommended / full)
+- **License**: the full choosealicense.com list plus Proprietary/Confidential,
+  FAIR metadata (CITATION.cff / REUSE), author ORCID
+- **Integrations**: Docker, PyPI publishing, cloud provider (aws / gcp /
+  azure), Sentry, MCP, CI provider, logging library
+- **Security**: SECURITY.md vulnerability policy, OpenSSF Scorecard workflow
+
+## Project details
+
+Finally the project details are asked: package name, description, git
+platform, and author. The author name/email and GitHub org default from your
+local `git config` / `gh` where available, and can be overridden at any prompt.

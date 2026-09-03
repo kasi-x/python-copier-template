@@ -7,9 +7,7 @@ to create new projects from the template, update existing projects in line with 
 
 We recommend that you invoke copier via `uvx`, which will download, install, and run it in its own isolated `venv`. 
 
-At Diamond you can `module load uv` to get `uvx` on the path.
-
-Otherwise please follow the [uv installation instructions](https://docs.astral.sh/uv/getting-started/installation).
+Please follow the [uv installation instructions](https://docs.astral.sh/uv/getting-started/installation).
 
 
 ## Try it out
@@ -18,4 +16,4 @@ If you run `uvx copier --version` then `copier` will be downloaded, installed, a
 
 ## Conclusion
 
-You now have the pre-requisites to allow you to [](./create-new) and [](./adopt-existing).
+You now have the pre-requisites to allow you to [create a new project](./create-new.md) and [adopt an existing one](./adopt-existing.md).

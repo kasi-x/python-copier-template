@@ -1,0 +1,15 @@
+import subprocess
+import sys
+
+
+def test_agent_cli_offline() -> None:
+    # TestModel needs no API key; this also exercises the runtime prompt load
+    # from prompts/agent.md.
+    result = subprocess.run(
+        [sys.executable, "-m", "{{ package_name }}.agent", "What year is it?"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.stdout.strip() == "pong (offline test model)"

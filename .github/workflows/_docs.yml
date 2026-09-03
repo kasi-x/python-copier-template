@@ -6,6 +6,8 @@ on:
         description: Which task runner drives the docs task (task, just, poe, make, pixi)
         required: true
 
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -72,17 +74,25 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: docs
-          path: build
+          # _release.yml zips this up. Sphinx writes build/html; zensical /
+          # mkdocs (no docs/conf.py) writes site/ by default. Upload whichever
+          # exists so the artifact always carries the built site.
+          path: |
+            build/html
+            site
+          if-no-files-found: error
 
       - name: Sanitize ref name for docs version
         run: echo "DOCS_VERSION=${GITHUB_REF_NAME//[^A-Za-z0-9._-]/_}" >> "$GITHUB_ENV"
 
       - name: Move to versioned directory
         run: |
+          # Sphinx builds to build/html; zensical/mkdocs (no docs/conf.py)
+          # builds to site/ per its default site_dir.
           if [ -f docs/conf.py ]; then
             mv build/html ".github/pages/$DOCS_VERSION"
           else
-            mv build/site ".github/pages/$DOCS_VERSION"
+            mv site ".github/pages/$DOCS_VERSION"
           fi
 
       - name: Write switcher.json

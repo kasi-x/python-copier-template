@@ -24,6 +24,9 @@ project_type:
         - data_science: a data science project with notebooks, data/,
           models/, reports/ and experiment extras. GPU Dockerfile and
           Quarto paper are included.
+        - online_judge: a competitive-programming / Kaggle project. The
+          rules for AI coding agents differ per judge, which decides
+          whether an AGENTS.md file is generated.
         - script: a minimal script, no package layout.
         - web_django: NOT supported. Selecting this aborts generation —
           Django is not maintained by this template; use FastAPI /
@@ -39,6 +42,7 @@ project_type:
         - web_api
         - cli
         - data_science
+        - online_judge
         - script
         - web_django
         - ros2
@@ -110,6 +114,17 @@ micropython_port:
         MIMXRT: mimxrt
     default: esp32
 
+use_recommended_agent:
+    type: bool
+    when: "{{ project_type in ['library', 'cli'] }}"
+    default: true
+    help: |
+        Add an LLM agent (pydantic-ai) scaffold?
+        Recommended: no — a plain library / CLI without agent tooling.
+        Answer No to add a runnable pydantic-ai example: a prompts/
+        directory, a typed tools/ package and an agent module wired with
+        @agent.tool, tested offline with pydantic-ai's TestModel.
+
 use_recommended_toolchain:
     type: bool
     when: "{{ not (project_type == 'ros2' and ros2_package_manager == 'pixi') }}"
@@ -151,8 +166,7 @@ task_runner:
     when: "{{ not use_recommended_toolchain and package_manager != 'pixi' }}"
     help: |
         Which task runner would you like to use to drive lint / type-check /
-        test / docs (and, for data_science's competition sub-option, the ML
-        pipeline shortcuts)?
+        test / docs (and, for kaggle's pipeline, the ML shortcuts)?
         - just: Just. Simple justfile, external binary.
         - task: Task (go-task). YAML, external binary, used by CI too.
         - poe: poethepoet. Pure Python, lives in pyproject.toml, no extra
@@ -194,19 +208,12 @@ use_recommended_data_science:
     default: true
     help: |
         Use the recommended data_science options?
-        Recommended: not a Kaggle-style competition, GPU workloads enabled
-        (NVIDIA CUDA Dockerfile + devcontainer), and — for non-competition
-        projects — no DUO data-use sheet or CARE governance statement.
+        Recommended: GPU workloads enabled (NVIDIA CUDA Dockerfile +
+        devcontainer), and no DUO data-use sheet or CARE governance
+        statement.
         Answer No to change any of these.
-
-competition:
-    type: bool
-    when: "{{ project_type == 'data_science' and not use_recommended_data_science }}"
-    help: |
-        Is this a Kaggle-style competition project?
-        If yes, input/ and exp/ directories are added for competition data
-        and experiments.
-    default: false
+        (For Kaggle-style competition projects, pick project_type
+        online_judge instead — that is where the Kaggle layout lives.)
 
 use_gpu:
     type: bool
@@ -219,7 +226,7 @@ use_gpu:
 
 data_reusable:
     type: bool
-    when: "{{ project_type == 'data_science' and not use_recommended_data_science and not competition }}"
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science }}"
     help: |
         Will this data be shared or reused outside the team (e.g.
         published, or handed to collaborators/another organisation)?
@@ -229,7 +236,7 @@ data_reusable:
 
 data_ethics:
     type: bool
-    when: "{{ project_type == 'data_science' and not use_recommended_data_science and not competition }}"
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science }}"
     help: |
         Does this data need ethical / data-governance consideration (e.g.
         human subjects, indigenous data, other sensitive personal data)?
@@ -237,20 +244,37 @@ data_ethics:
         data/ so those considerations are documented and tracked.
     default: false
 
+oj_kind:
+    type: str
+    when: "{{ project_type == 'online_judge' }}"
+    help: |
+        Which online judge is this project for?
+        - kaggle: Kaggle competitions. GPU work is the norm and the
+          competition layout (src/utils, src/input, src/output) is generated.
+        - atcoder: AtCoder (Japanese competitive programming), solutions/
+          layout.
+        - leetcode: LeetCode-style problems, solutions/ layout.
+        (Whether AI coding agents are allowed — and therefore whether an
+        AGENTS.md file is generated — differs per judge; that is decided
+        when the AGENTS.md feature lands.)
+    choices:
+        Kaggle: kaggle
+        AtCoder: atcoder
+        LeetCode: leetcode
+    default: kaggle
+
 use_recommended_polish:
     type: bool
     default: true
     help: |
         Use the recommended layout & repo polish?
         Recommended: src/ layout (library/web_api/cli), no Japanese
-        (multibyte) characters in comments/docstrings, an ASCII-art repo-name
-        banner at the top of the README.
-        Answer No to change the layout, allow Japanese text, or skip the
-        banner.
+        (multibyte) characters in comments/docstrings.
+        Answer No to change the layout or allow Japanese text.
 
 layout:
     type: str
-    when: "{{ project_type not in ['data_science', 'ros2', 'micropython'] and not use_recommended_polish }}"
+    when: "{{ project_type not in ['data_science', 'online_judge', 'ros2', 'micropython'] and not use_recommended_polish }}"
     help: |
         Which layout would you like to use for the package?
         - src: package in a src/ directory (recommended, prevents accidental
@@ -269,15 +293,6 @@ allow_japanese:
         If true, ruff's line-length and max-doc-length are relaxed so that
         wide multibyte characters do not trigger E501/D rules.
     default: false
-
-ascii_banner:
-    type: bool
-    when: "{{ not use_recommended_polish }}"
-    help: |
-        Add an ASCII-art banner of the repo name to the top of the README?
-        This bundles a small MIT-licensed copy of pyfiglet (with the slant
-        font) so the banner can be regenerated without extra dependencies.
-    default: true
 
 use_recommended_docs:
     type: bool
@@ -437,7 +452,7 @@ fair:
           only when an open-source license is selected; Proprietary projects
           skip REUSE
         (data_science's DUO/CARE data-governance sheets are asked separately,
-        alongside the competition question above — they don't depend on this.)
+        under use_recommended_data_science — they don't depend on this.)
     default: false
 
 author_orcid:
@@ -461,7 +476,7 @@ use_recommended_integrations:
 
 docker:
     type: bool
-    when: "{{ not use_recommended_integrations and project_type != 'micropython' }}"
+    when: "{{ not use_recommended_integrations and project_type != 'micropython' and not (online_judge and not kaggle) }}"
     help: |
         Would you like to publish your project in a Docker container?
         You should select this if you are making a service.
@@ -469,7 +484,7 @@ docker:
 
 pypi:
     type: bool
-    when: "{{ not use_recommended_integrations }}"
+    when: "{{ not use_recommended_integrations and not online_judge }}"
     help: Would you like the wheel and source distribution to be automatically uploaded to PyPI when a release is made?
     default: false
 
@@ -538,7 +553,7 @@ ci_provider:
 
 log_library:
     type: str
-    when: "{{ not use_recommended_integrations and project_type not in ['ros2', 'micropython'] }}"
+    when: "{{ not use_recommended_integrations and project_type not in ['ros2', 'micropython', 'online_judge'] }}"
     help: |
         Which logging library should logging_setup.py use?
         - structlog: structured, contextvars-aware logging with console/JSON
@@ -555,40 +570,34 @@ log_library:
         - logging
     default: structlog
 
-use_recommended_specialty:
+use_recommended_security:
     type: bool
     default: true
     help: |
-        Skip domain specialisation?
-        Recommended: none — a plain project with no extra domain-specific
-        structure on top of the base toolchain.
-        Answer No to add mcp_server / ai_agent / data_polars /
-        rust_extension / pure_python_web scaffolding.
+        Use the recommended security & compliance settings?
+        Recommended: minimal CI permissions, GitHub Actions pinned to commit
+        SHAs (renovate keeps them up to date), zizmor + actionlint checks,
+        a SECURITY.md vulnerability-reporting policy, and a test_qa.py that
+        verifies dependency integrity and the public API at runtime.
+        Answer No to drop SECURITY.md, or opt into the OpenSSF Scorecard
+        workflow (only meaningful for public repositories).
 
-specialty:
-    type: str
-    when: "{{ not use_recommended_specialty }}"
+security_policy:
+    type: bool
+    when: "{{ not use_recommended_security }}"
     help: |
-        Is this project specialised for a particular domain? This adds
-        domain-specific structure on top of the base toolchain.
-        - none: no specialisation.
-        - mcp_server: an MCP (Model Context Protocol) server with stdio/SSE
-          transports and an inspector script.
-        - ai_agent: an LLM agent / RAG app with a tools/ folder, prompts/
-          directory and pydantic-settings.
-        - data_polars: a Polars + DuckDB data pipeline with zero-copy Arrow
-          sharing and a data boundary layout.
-        - rust_extension: a PyO3 / maturin Rust extension with Cargo.toml and
-          cross-compilation CI.
-        - pure_python_web: a FastHTML full-stack web app with hot reload.
-    choices:
-        - none
-        - mcp_server
-        - ai_agent
-        - data_polars
-        - rust_extension
-        - pure_python_web
-    default: none
+        Include a SECURITY.md vulnerability-reporting policy (GitHub
+        Security Advisory workflow + response expectations)?
+    default: true
+
+scorecard:
+    type: bool
+    when: "{{ not use_recommended_security }}"
+    help: |
+        Add the OpenSSF Scorecard workflow to measure supply-chain security
+        and publish a badge? Only meaningful for public repositories (the
+        badge and published results require a public repo).
+    default: false
 
 # Project Details
 package_name:
@@ -658,7 +667,7 @@ author_email:
     type: str
     help: Your email address
     default: "{{ git_user_email() }}"
-    placeholder: email@diamond.ac.uk
+    placeholder: email@example.com
 
 # Internal variables
 data_science:
@@ -668,17 +677,36 @@ data_science:
 
 data_science_layout:
     type: bool
-    default: "{{ data_science and not competition }}"
+    default: "{{ data_science }}"
+    when: false
+
+online_judge:
+    type: bool
+    default: "{{ project_type == 'online_judge' }}"
+    when: false
+
+kaggle:
+    type: bool
+    default: "{{ online_judge and oj_kind == 'kaggle' }}"
+    when: false
+
+# Code-submission judges (AtCoder / LeetCode / ...): single-file solutions
+# submitted to the judge's sandbox. No installable package, no src/ layout,
+# no logging_setup — the repo is a bare workspace the user drives with
+# oj / atcoder-cli.
+oj_code:
+    type: bool
+    default: "{{ online_judge and oj_kind != 'kaggle' }}"
     when: false
 
 use_src_layout:
     type: bool
-    default: "{{ layout == 'src' and project_type not in ['script', 'ros2', 'micropython'] }}"
+    default: "{{ layout == 'src' and project_type not in ['script', 'online_judge', 'ros2', 'micropython'] }}"
     when: false
 
 use_gpu_effective:
     type: bool
-    default: "{{ use_gpu and project_type == 'data_science' }}"
+    default: "{{ (use_gpu and project_type == 'data_science') or kaggle }}"
     when: false
 
 repo_url:
@@ -779,7 +807,7 @@ license_year:
 
 pkg_dir:
     type: str
-    default: "{{ 'src/utils' if competition else (('src/' if use_src_layout else '') + package_name) }}"
+    default: "{{ 'src/utils' if kaggle else ('.' if online_judge else (('src/' if use_src_layout else '') + package_name)) }}"
     when: false
 
 _subdirectory: "template"
@@ -792,10 +820,6 @@ _tasks:
         python -c "import sys; print('Django is not supported by this template. Use FastAPI / Litestar / Flask instead, or the upstream cookiecutter-django template: https://github.com/cookiecutter/cookiecutter-django'); sys.exit(1)"
       when: "{{ project_type == 'web_django' }}"
     - >-
-        {% if ascii_banner %}
-        python -B tools/ascii_banner.py {{ repo_name }} README.md
-        {% endif %}
-    - >-
         {% if reuse_effective %}
         python -c "import pathlib, shutil; pathlib.Path('LICENSES').mkdir(exist_ok=True); shutil.copy('LICENSE', 'LICENSES/{{ license_effective }}.txt')"
         {% endif %}
@@ -805,4 +829,4 @@ _migrations:
       before:
           - echo This update will require you to login to pypi.org and make changes before you can make a new release to PyPI. If you do not have time to do this now, press CTRL+C to abort this update.
       after:
-          - echo Visit https://diamondlightsource.github.io/python-copier-template/main/how-to/pypi.html to find out how to set up PyPI trusted publishing
+          - echo Visit https://kasi-x.github.io/python-copier-template/main/how-to/pypi.html to find out how to set up PyPI trusted publishing

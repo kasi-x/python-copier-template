@@ -68,8 +68,9 @@
 {% set type_check_cmds = [
     run ~ 'basedpyright',
     run ~ secondary,
-] + ([run ~ 'basedpyright -p firmware/pyrightconfig.json'] if micropython_pkg else []) + [
+] + ([run ~ 'basedpyright -p firmware/pyrightconfig.json'] if micropython_pkg else []) + ([
     run ~ 'vulture ' ~ ('firmware' if micropython_pkg else pkg_dir) ~ ' --min-confidence 80',
+] if not (online_judge and not kaggle) else []) + [
     run ~ 'deptry .',
     run ~ 'typos .',
 ] %}
@@ -81,8 +82,8 @@
 {% endif %}
 {% set tasks = tasks + [{
     'name': 'test',
-    'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] else ''),
-    'cmd': [run ~ 'pytest' ~ (' --cov=' ~ ('firmware' if micropython_pkg else package_name) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] else '')],
+    'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] and not oj_code else ''),
+    'cmd': [run ~ 'pytest' ~ (' --cov=' ~ ('firmware' if micropython_pkg else ('utils' if kaggle else ('solutions' if oj_code else package_name))) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] and not oj_code else '')],
 }] %}
 {% if docs %}
 {% set tasks = tasks + [
@@ -93,7 +94,7 @@
 {% set tasks = tasks + [{'name': 'docs-linkcheck', 'desc': 'Check documentation links', 'cmd': [run ~ 'sphinx-build -b linkcheck docs build/linkcheck']}] %}
 {% endif %}
 {% endif %}
-{% if competition %}
+{% if kaggle %}
 {% set tasks = tasks + [
     {'name': 'dataset', 'desc': 'Build the dataset from raw inputs', 'cmd': [run ~ 'python -m utils.dataset']},
     {'name': 'features', 'desc': 'Build engineered features', 'cmd': [run ~ 'python -m utils.features']},
@@ -101,11 +102,12 @@
     {'name': 'tune', 'desc': 'Run Optuna hyperparameter search', 'cmd': [run ~ 'python -m utils.modeling.train optuna.trials=50']},
     {'name': 'predict', 'desc': 'Run inference and write predictions', 'cmd': [run ~ 'python -m utils.modeling.predict']},
     {'name': 'plots', 'desc': 'Generate exploratory plots', 'cmd': [run ~ 'python -m utils.plots']},
+    {'name': 'marimo', 'desc': 'Launch the marimo notebook editor on src/notebook', 'cmd': [run_x ~ 'marimo edit src/notebook']},
 ] %}
 {% endif %}
 {% if data_science %}
 {% set tasks = tasks + [
-    {'name': 'marimo', 'desc': 'Launch marimo notebook editor', 'cmd': [run_x ~ 'marimo edit ' ~ ('src/notebook' if competition else 'notebooks')]},
+    {'name': 'marimo', 'desc': 'Launch marimo notebook editor', 'cmd': [run_x ~ 'marimo edit notebooks']},
     {'name': 'notebook', 'desc': 'Launch Jupyter on notebooks/', 'cmd': [run_x ~ 'jupyter lab notebooks/ --allow-root']},
     {'name': 'paper', 'desc': 'Render the paper to arxiv-pdf and html', 'cmd': ['quarto render paper/paper.qmd']},
     {'name': 'slides', 'desc': 'Render the slides to reveal.js html', 'cmd': ['quarto render slides/slides.qmd']},

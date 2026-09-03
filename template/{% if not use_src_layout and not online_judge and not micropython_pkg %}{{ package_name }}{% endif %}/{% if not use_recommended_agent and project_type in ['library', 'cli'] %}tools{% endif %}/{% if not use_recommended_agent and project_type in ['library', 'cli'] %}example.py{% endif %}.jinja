@@ -1,0 +1,17 @@
+"""Example tools for the {{ repo_name }} agent.
+
+A tool is a plain typed function; pydantic-ai derives its JSON schema from
+the signature and docstring, so keep both precise.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC
+from datetime import datetime
+
+__all__ = ["current_year"]
+
+
+def current_year() -> int:
+    """Return the current calendar year."""
+    return datetime.now(UTC).year

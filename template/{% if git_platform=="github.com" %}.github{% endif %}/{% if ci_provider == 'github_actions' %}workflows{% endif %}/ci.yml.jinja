@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Install pixi
         uses: prefix-dev/setup-pixi@v0.10.1
         with:
@@ -46,6 +48,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Run industrial_ci
         uses: ros-industrial/industrial_ci@master
 {% raw %}        env:
@@ -119,6 +123,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Build frozen firmware
         run: python3 tools/micropython/freeze.py
       - name: Upload firmware
@@ -142,6 +148,17 @@ jobs:
         with:
           files: dist/**
           generate_release_notes: true
+{% elif online_judge %}
+  release:
+    needs: [test{% if docs %}, docs{% endif %}]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          generate_release_notes: true
 {% elif not micropython_pkg %}
   dist:
     uses: ./.github/workflows/_dist.yml
@@ -162,7 +179,7 @@ jobs:
 {% endif %}
   required-checks-passed:
     name: all required checks passed
-    needs: [lint, test{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}{% if micropython_pkg %}, firmware{% elif not micropython_pkg %}, dist{% endif %}]
+    needs: [lint, test{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}{% if micropython_pkg %}, firmware{% elif online_judge %}{% elif not micropython_pkg %}, dist{% endif %}]
 {% raw %}
     if: always()
     runs-on: ubuntu-latest

@@ -166,8 +166,9 @@ class Thing:
 
 def test_template_pyrefly(tmp_path: Path):
     copy_project(tmp_path, type_checker="pyrefly")
-    run = make_venv(tmp_path)
-    run("uvx --from go-task-bin task check")
+    pyproject = (tmp_path / "pyproject.toml").read_text()
+    assert "[tool.basedpyright]" in pyproject
+    assert "[tool.pyrefly]" in pyproject
 
 
 def test_template_ty(tmp_path: Path):
@@ -176,14 +177,14 @@ def test_template_ty(tmp_path: Path):
     # basedpyright is always present; ty is the secondary checker.
     assert "[tool.basedpyright]" in pyproject
     assert "[tool.ty]" in pyproject
-    run = make_venv(tmp_path)
-    run("uvx --from go-task-bin task check")
 
 
 def test_template_no_docs(tmp_path: Path):
     copy_project(tmp_path, docs_type="README")
-    run = make_venv(tmp_path)
-    run("uvx --from go-task-bin task check")
+    # README-only: no docs site config, no docs/ tree, no docs build task
+    assert not (tmp_path / "zensical.toml").exists()
+    assert not (tmp_path / "docs").exists()
+    assert "task docs" not in (tmp_path / "Taskfile.yml").read_text()
 
 
 def test_template_zensical_docs(tmp_path: Path):
@@ -191,8 +192,7 @@ def test_template_zensical_docs(tmp_path: Path):
     pyproject_toml = tmp_path / "pyproject.toml"
     assert '"zensical"' in pyproject_toml.read_text()
     assert (tmp_path / "zensical.toml").exists()
-    run = make_venv(tmp_path)
-    run("uvx --from go-task-bin task check")
+    assert (tmp_path / "docs").exists()
 
 
 def test_template_great_docs(tmp_path: Path):
@@ -202,12 +202,13 @@ def test_template_great_docs(tmp_path: Path):
 
 
 def test_template_kaggle_competition(tmp_path: Path):
-    copy_project(tmp_path, project_type="data_science", competition=True)
-    # Top level has notebooks/ and src/, no standard DS dirs
-    assert (tmp_path / "notebooks").is_dir()
+    copy_project(tmp_path, project_type="online_judge", oj_kind="kaggle")
+    # src/ with the Kaggle dirs; the analysis-only DS dirs are not generated
     assert (tmp_path / "src").is_dir()
     assert not (tmp_path / "data").exists()
     assert not (tmp_path / "models").exists()
+    assert not (tmp_path / "notebooks").exists()
+    assert not (tmp_path / "paper").exists()
     # Kaggle dirs inside src/
     for d in ["configs", "data", "input", "output", "features", "logs", "models", "notebook", "scripts", "utils"]:
         assert (tmp_path / "src" / d).is_dir(), f"missing src/{d}"
@@ -215,24 +216,30 @@ def test_template_kaggle_competition(tmp_path: Path):
     assert (tmp_path / "src" / "utils" / "__init__.py").exists()
     assert (tmp_path / "src" / "utils" / "config.py").exists()
     assert (tmp_path / "src" / "utils" / "modeling" / "train.py").exists()
-    # GPU artifacts (always included for data_science)
+    # GPU artifacts (kaggle implies the GPU Dockerfile)
     assert (tmp_path / "Dockerfile.gpu").exists()
+    assert (tmp_path / ".devcontainer" / "devcontainer.gpu.json").exists()
     # no standard package dir
     assert not (tmp_path / "src" / "python_copier_template_example").exists()
     # Taskfile exists
     assert (tmp_path / "Taskfile.yml").exists()
-    # pyproject references utils and lifelog-style deps
+    # pyproject references utils and the competition deps
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("typer") for d in pyproject_toml["project"]["dependencies"])
     assert any(d.startswith("structlog") for d in pyproject_toml["project"]["dependencies"])
     # ML tools and experiment extras
     assert any(d.startswith("optuna") for d in pyproject_toml["project"]["dependencies"])
     assert any(d.startswith("torch") for d in pyproject_toml["project"]["dependencies"])
+    # duckdb/polars base deps apply to kaggle too (inherited from competition)
+    assert any(d.startswith("polars") for d in pyproject_toml["project"]["dependencies"])
+    assert any(d.startswith("duckdb") for d in pyproject_toml["project"]["dependencies"])
     experiment = pyproject_toml["project"]["optional-dependencies"]["experiment"]
     assert any(d.startswith("marimo") for d in experiment)
     assert any(d.startswith("matplotlib") for d in experiment)
     # marimo notebook exists
     assert (tmp_path / "src" / "notebook" / "explore.py").exists()
+    # no solutions/ tree (that is for the other online_judge kinds)
+    assert not (tmp_path / "solutions").exists()
 
 
 def test_template_data_science_layout(tmp_path: Path):
@@ -250,6 +257,8 @@ def test_template_data_science_layout(tmp_path: Path):
         "DEIDENTIFICATION.md",
         "sharing/DATA_TRANSFER_AGREEMENT.md",
         "sharing/TRANSFER_LOG.csv",
+        "queries/README.md",
+        "queries/example.sql",
     ]:
         assert (tmp_path / "data" / name).exists(), f"data/{name}"
     log = (tmp_path / "data" / "sharing" / "TRANSFER_LOG.csv").read_text()
@@ -260,12 +269,63 @@ def test_template_data_science_layout(tmp_path: Path):
     assert (tmp_path / "Dockerfile.gpu").exists()
     assert (tmp_path / "paper" / "paper.qmd").exists()
     assert (tmp_path / "slides" / "slides.qmd").exists()
-    # experiment extras
+    # experiment extras + the duckdb/polars base deps
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     experiment = pyproject_toml["project"]["optional-dependencies"]["experiment"]
     assert any(d.startswith("marimo") for d in experiment)
+    deps = pyproject_toml["project"]["dependencies"]
+    assert any(d.startswith("duckdb") for d in deps)
+    assert any(d.startswith("pyarrow") for d in deps)
+    assert any(d.startswith("polars") for d in deps)
     # No competition artifacts
     assert not (tmp_path / "src" / "utils").exists()
+
+
+def test_template_atcoder_workspace(tmp_path: Path):
+    # code-submission judge: a bare workspace, no solutions/ scaffold — the
+    # user drives oj/atcoder-cli which create their own dirs and test/ files
+    copy_project(tmp_path, project_type="online_judge", oj_kind="atcoder")
+    assert not (tmp_path / "solutions").exists()
+    assert not (tmp_path / "tests" / "test_samples.py").exists()
+    # No package layout at all: no src/, no flat package, no CLI/logging files
+    assert not (tmp_path / "src").exists()
+    assert not list(tmp_path.glob("*.py"))
+    assert not list(tmp_path.rglob("__main__.py"))
+    assert not list(tmp_path.rglob("logging_setup.py"))
+    assert not (tmp_path / "tests" / "test_cli.py").exists()
+    # stdlib only: no structlog or other runtime deps
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["dependencies"] == []
+    # no dist/pypi CI jobs for a submission repo
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "dist:" not in ci
+    # ruff is relaxed for contest code (project-wide, not per solutions/)
+    ruff = (tmp_path / "pyproject.toml").read_text()
+    assert "A001" in ruff  # builtin shadowing relaxed
+    assert "solutions" not in ruff
+    # README points at the oj / acc workflow
+    readme = (tmp_path / "README.md").read_text()
+    assert "oj download" in readme
+
+
+def test_template_leetcode_workspace_like_atcoder(tmp_path: Path):
+    copy_project(tmp_path, project_type="online_judge", oj_kind="leetcode")
+    assert not (tmp_path / "solutions").exists()
+    assert not (tmp_path / "src").exists()
+    assert not (tmp_path / "tests" / "test_samples.py").exists()
+
+
+def test_template_online_judge_repo_lints_clean(tmp_path: Path):
+    """The empty workspace renders a ruff/type-check-clean repo (no sources)."""
+    copy_project_recommended(tmp_path, project_type="online_judge", oj_kind="atcoder")
+    run = make_venv(tmp_path)
+    run("uvx --from rust-just just check")
+
+
+def test_template_online_judge_no_solutions_for_kaggle(tmp_path: Path):
+    # kaggle is a result competition: no solutions/ scripts tree either
+    copy_project(tmp_path, project_type="online_judge", oj_kind="kaggle")
+    assert not (tmp_path / "solutions").exists()
 
 
 def test_template_script_type(tmp_path: Path):
@@ -498,9 +558,10 @@ def test_template_data_governance_off_by_default(tmp_path: Path):
     assert not (tmp_path / "data" / "CARE.md").exists()
 
 
-def test_template_data_governance_skipped_for_competition(tmp_path: Path):
-    # Competition projects never get the DUO/CARE sheets, even when asked.
-    copy_project(tmp_path, competition=True, data_reusable=True, data_ethics=True)
+def test_template_data_governance_skipped_for_online_judge(tmp_path: Path):
+    # online_judge projects have no data/ tree, so the DUO/CARE sheets never
+    # apply -- they are a data_science-only concern.
+    copy_project(tmp_path, project_type="online_judge", oj_kind="kaggle", data_reusable=True, data_ethics=True)
     assert not (tmp_path / "data" / "DUO.md").exists()
     assert not (tmp_path / "data" / "CARE.md").exists()
 
@@ -622,41 +683,40 @@ def test_template_task_runner_just_works(tmp_path: Path):
     run("uvx --from rust-just just lint")
 
 
-def test_template_specialty_mcp_server(tmp_path: Path):
-    copy_project(tmp_path, specialty="mcp_server")
-    assert (tmp_path / "scripts" / "mcp_inspector.sh").exists()
-    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
+def test_template_agent_off_by_default(tmp_path: Path):
+    # use_recommended_agent defaults to true: no agent scaffold on a library
+    copy_project_recommended(tmp_path, project_type="library")
+    assert not (tmp_path / "prompts").exists()
+    assert not (tmp_path / "src" / "recommended_example" / "tools").exists()
+    assert not (tmp_path / "src" / "recommended_example" / "agent.py").exists()
+    assert not (tmp_path / "tests" / "test_agent.py").exists()
 
 
-def test_template_specialty_ai_agent(tmp_path: Path):
-    copy_project(tmp_path, specialty="ai_agent")
-    assert (tmp_path / "prompts" / "README.md").exists()
+def test_template_agent_scaffold(tmp_path: Path):
+    copy_project(tmp_path, project_type="library", use_recommended_agent=False)
+    # prompt, typed tools package and the runnable agent module
+    assert (tmp_path / "prompts" / "agent.md").exists()
     assert (tmp_path / "src" / "python_copier_template_example" / "tools" / "__init__.py").exists()
+    assert (tmp_path / "src" / "python_copier_template_example" / "tools" / "example.py").exists()
+    assert (tmp_path / "src" / "python_copier_template_example" / "agent.py").exists()
+    assert (tmp_path / "tests" / "test_agent.py").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("pydantic-ai") for d in pyproject_toml["project"]["dependencies"])
 
 
-def test_template_specialty_data_polars(tmp_path: Path):
-    copy_project(tmp_path, specialty="data_polars")
-    assert (tmp_path / "queries" / "README.md").exists()
-    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    deps = pyproject_toml["project"]["dependencies"]
-    assert any(d.startswith("polars") for d in deps)
-    assert any(d.startswith("duckdb") for d in deps)
+def test_template_agent_cli_only(tmp_path: Path):
+    # cli also offers the agent gate
+    copy_project(tmp_path, project_type="cli", use_recommended_agent=False)
+    assert (tmp_path / "prompts" / "agent.md").exists()
+    assert (tmp_path / "src" / "python_copier_template_example" / "agent.py").exists()
 
 
-def test_template_specialty_rust_extension(tmp_path: Path):
-    copy_project(tmp_path, specialty="rust_extension")
-    assert (tmp_path / "rust" / "Cargo.toml").exists()
-    assert (tmp_path / "rust" / "src" / "lib.rs").exists()
-
-
-def test_template_specialty_pure_python_web(tmp_path: Path):
-    copy_project(tmp_path, specialty="pure_python_web")
-    assert (tmp_path / "app" / "app.py").exists()
-    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert any(d.startswith("python-fasthtml") for d in pyproject_toml["project"]["dependencies"])
+def test_template_agent_not_offered_for_web_api(tmp_path: Path):
+    # The agent gate only exists for library/cli; web_api never scaffolds it,
+    # even when the answer is forced.
+    copy_project(tmp_path, project_type="web_api", use_recommended_agent=False)
+    assert not (tmp_path / "prompts").exists()
+    assert not (tmp_path / "src" / "python_copier_template_example" / "agent.py").exists()
 
 
 def test_template_github_org_reflected(tmp_path: Path):
@@ -669,10 +729,14 @@ def test_template_github_org_reflected(tmp_path: Path):
 
 def test_template_no_docker_has_no_docs_and_works(tmp_path: Path):
     copy_project(tmp_path, docker=False)
+    # The devcontainer-only Dockerfile is always shipped, but with docker off
+    # it has no build/runtime stages and no container how-to in the docs.
     container_doc = tmp_path / "docs" / "how-to" / "run-container.md"
     assert not container_doc.exists()
-    run = make_venv(tmp_path)
-    run("uvx --from go-task-bin task check")
+    dockerfile = (tmp_path / "Dockerfile").read_text()
+    assert "AS build" not in dockerfile
+    assert "AS runtime" not in dockerfile
+    assert "docker run" not in (tmp_path / "README.md").read_text()
 
 
 def test_bad_repo_name(tmp_path: Path):
@@ -829,10 +893,11 @@ def test_template_ros2_coexists_with_standard_tooling(tmp_path: Path):
         ros_distro="humble",
         ros2_package_manager="apt",
     )
-    # Docs, ASCII banner and dev tooling all coexist with the ament layout
+    # Docs and dev tooling all coexist with the ament layout; the ASCII
+    # banner was removed template-wide, so no banner tooling is generated.
     assert (tmp_path / "docs").exists()
-    assert (tmp_path / "tools" / "ascii_banner.py").exists()
-    assert (tmp_path / "NOTICE").exists()
+    assert not (tmp_path / "tools" / "ascii_banner.py").exists()
+    assert not (tmp_path / "NOTICE").exists()
     # The ros2 package __init__ exports __version__ (docs import it)
     init = (tmp_path / "recommended_example" / "__init__.py").read_text()
     assert "__version__" in init
@@ -902,7 +967,7 @@ def test_dots_in_package_name(tmp_path: Path):
 
 def test_example_repo_updates(tmp_path: Path):
     generated_path = tmp_path / "generated"
-    example_url = "https://github.com/DiamondLightSource/python-copier-template-example.git"
+    example_url = "https://github.com/kasi-x/python-copier-template-example.git"
     example_path = tmp_path / "example"
     copy_project(generated_path)
     run_pipe(f"git clone {example_url} {example_path}")

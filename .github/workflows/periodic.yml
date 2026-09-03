@@ -6,16 +6,22 @@ on:
     # Run weekly to check URL links still resolve
     - cron: "0 8 * * WED"
 
+permissions:
+  contents: read
+
 jobs:
   linkcheck:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Link Checker
         uses: lycheeverse/lychee-action@v2.6.0
         with:
-          # Docs + README; exclude the mkdocs build output and the vendored
-          # .github/pages helper (not user-facing links).
-          args: --no-progress --exclude-path site README.md docs
+          # Docs + README; exclude the docs build output (site/ for
+          # zensical/mkdocs, build/ for the local Sphinx-era leftovers) and
+          # the vendored .github/pages helper (not user-facing links).
+          args: --no-progress --exclude-path site --exclude-path build README.md docs
           fail: true

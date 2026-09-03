@@ -9,7 +9,9 @@ use_recommended_docs: false
 use_recommended_quality: false
 use_recommended_license: false
 use_recommended_integrations: false
-use_recommended_specialty: false
+use_recommended_security: false
+security_policy: true
+scorecard: false
 author_email: kashimiya.exe@gmail.com
 author_name: kashi-x
 description: An expanded https://github.com/kasi-x/python-copier-template to illustrate how it looks with all the options enabled.
@@ -25,8 +27,6 @@ task_runner: task
 allow_japanese: true
 layout: src
 project_type: data_science
-competition: false
-ascii_banner: true
 repo_name: python-copier-template-example
 type_checker: pyrefly
 strictness: recommended

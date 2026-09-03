@@ -13,14 +13,15 @@ blinking.
 import time
 
 from board_config import LED_PIN
+from core.app import BlinkConfig
+from core.app import run
 
 
 def run_hardware_blink() -> None:
     """Blink the on-board LED on a real device port."""
-    from machine import Pin  # noqa: PLC0415 - lazy so unix/windows ports run too
-    from core.app import BlinkConfig  # noqa: PLC0415
-    from core.app import Clock  # noqa: PLC0415
-    from core.app import run  # noqa: PLC0415
+    # Imported here, not at the top: the unix/windows ports have no `machine`
+    # module, and this function only runs when hardware (an LED) exists.
+    from machine import Pin
 
     class Led:
         """DigitalOut backed by a ``machine.Pin`` in output mode."""
@@ -38,7 +39,8 @@ def run_hardware_blink() -> None:
         """Clock adapter around the MicroPython ``time`` module.
 
         MicroPython's ``time.sleep`` takes a positional-only argument, which
-        does not satisfy the ``Clock`` protocol directly, so wrap it.
+        does not satisfy ``core.app.Clock`` (a ``sleep(seconds)`` protocol)
+        directly, so wrap it.
         """
 
         def sleep(self, seconds: float) -> None:

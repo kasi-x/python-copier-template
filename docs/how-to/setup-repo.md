@@ -16,8 +16,6 @@ The contributing guide for the template recommends that new users start a discus
 
 GitHub will prompt you that your `main` branch is not protected. It is recommended that a [branch protection rule](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/managing-a-branch-protection-rule) is setup for `main` to require pull requests.
 
-If the repository is in the `DiamondLightSource` org, then follow [the dev guide](https://dev-guide.diamond.ac.uk/version-control/how-tos/github-setup-prs/) to see the recommended settings.
-
 ## Code Coverage
 
 To ensure that code coverage is correctly uploaded to codecov.io follow [Code Coverage](./coverage.md).

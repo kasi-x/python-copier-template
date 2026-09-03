@@ -5,6 +5,9 @@ on:
         type: boolean
         description: If true, pushes image to container registry
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

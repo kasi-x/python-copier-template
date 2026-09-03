@@ -8,13 +8,12 @@ from pathlib import Path
 TOP = Path(__file__).absolute().parent.parent
 
 COPIER_YML = TOP / "copier.yml"
-FREEZE_TEMPLATE = TOP / "template" / (
-    "{% if micropython_pkg %}tools{% endif %}"
-    "/{% if micropython_pkg %}micropython{% endif %}/freeze.py.jinja"
+FREEZE_TEMPLATE = (
+    TOP
+    / "template"
+    / ("{% if micropython_pkg %}tools{% endif %}/{% if micropython_pkg %}micropython{% endif %}/freeze.py.jinja")
 )
-STUBS_TEMPLATE = TOP / "template" / (
-    "{% if micropython_pkg %}requirements-dev.txt{% endif %}.jinja"
-)
+STUBS_TEMPLATE = TOP / "template" / ("{% if micropython_pkg %}requirements-dev.txt{% endif %}.jinja")
 MICROPYTHON_DOC = TOP / "docs" / "how-to" / "micropython.md"
 
 

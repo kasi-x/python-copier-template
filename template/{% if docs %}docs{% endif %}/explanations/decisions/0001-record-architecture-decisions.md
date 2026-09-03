@@ -1,1 +1,0 @@
-../../../../docs/explanations/decisions/0001-record-architecture-decisions.md

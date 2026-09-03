@@ -2,9 +2,10 @@
 # See https://woodruffw.github.io/zizmor for the full reference.
 
 rules:
-  # Actions are referenced by tag (e.g. @v7) and pinned via renovate, which
-  # also bumps the exact commit. zizmor's SHA pinning audit is therefore
-  # disabled for this template.
+  # Actions are referenced by tag (e.g. @v7) and pinned via renovate
+  # (`helpers:pinGitHubActionDigests`), which converts them to full commit
+  # SHAs in its pinning PR. Until that PR lands, zizmor's SHA pinning audit
+  # is disabled; re-enable `unpinned-uses` once every `uses:` carries a SHA.
   unpinned-uses:
     disable: true
   # The generated workflows use `${{ }}` in `run:` steps only for safe

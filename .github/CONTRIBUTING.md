@@ -1,6 +1,11 @@
 # Contribute to the template
 Contributions and issues are most welcome! All issues and pull requests are handled through [GitHub](https://github.com/kasi-x/python-copier-template/issues). Also, please check for any existing issues before filing a new one. If you have a great idea but it involves big changes, please file a ticket before making a pull request! We want to make sure you don't spend your time coding something that might not fit the scope of the project.
 
+## Security
+
+Please do not open a public issue for security vulnerabilities. Report them
+privately via the [Security Advisory workflow](https://github.com/kasi-x/python-copier-template/security/advisories/new) — see [SECURITY.md](../SECURITY.md) for details.
+
 ## Issue or Discussion?
 
 Github also offers [discussions](https://github.com/kasi-x/python-copier-template/discussions) as a place to ask questions and share ideas. If your issue is open ended and it is not obvious when it can be "closed", please raise it as a discussion instead.
@@ -27,8 +32,4 @@ However, this does not test whether processes like CI and docs work correctly. Y
 
 It is recommended that developers use a [vscode devcontainer](https://code.visualstudio.com/docs/devcontainers/containers). This repository contains configuration to set up a containerized development environment that suits its own needs.
 
-For more information on common tasks like setting up a developer environment, running the tests, and setting a pre-commit hook, see the [How-to guides](https://diamondlightsource.github.io/python-copier-template/main/how-to.html)
-
-## Making a Tagged GitHub Release
-
-When making changes to the `catalog-info.yaml` file, a release **must** be made. The Backstage Developer Portal produces its UI for the template using this file from the `main` branch whereas copier takes the template from the latest tag. Therefore, any differences between the copier variables could cause a breaking change so a release should be made as soon as possible.
+For more information on common tasks like setting up a developer environment, running the tests, and setting a pre-commit hook, see the [How-to guides](https://kasi-x.github.io/python-copier-template/main/how-to.html)

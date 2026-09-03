@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using this metadata.
+title: "python-copier-template"
+abstract: A Copier template for Python projects, with recommended settings for tooling, CI, and research-software metadata.
+repository-code: "https://github.com/kasi-x/python-copier-template"
+license: "Apache-2.0"
+keywords:
+  - copier
+  - template
+  - python
+authors:
+  - family-names: "kasi-x"
+    email: "kashimiya.exe@gmail.com"
