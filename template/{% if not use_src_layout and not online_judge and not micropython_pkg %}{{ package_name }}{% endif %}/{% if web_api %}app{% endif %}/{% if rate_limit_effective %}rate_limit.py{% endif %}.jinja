@@ -1,0 +1,16 @@
+"""Slowapi rate limiter, shared by the routers and the app.
+
+Kept in its own module (imported by both main.py and routers/items.py) so
+the limiter instance is a singleton and the app registers its state + error
+handler exactly once.
+"""
+
+from __future__ import annotations
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+"""Rate limiter keyed on the client IP (behind a proxy, set X-Forwarded-For)."""
+
+__all__ = ["limiter"]

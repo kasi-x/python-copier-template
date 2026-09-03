@@ -4,6 +4,10 @@ on:
       publish:
         type: boolean
         description: If true, pushes image to container registry
+      smoke-command:
+        type: string
+        description: Command to run in the image to prove it starts (e.g. "--version")
+        default: "--version"
 
 permissions:
   contents: read
@@ -42,8 +46,8 @@ jobs:
           load: true
           tags: tag_for_testing
 
-      - name: Test cli works in cached runtime image
-        run: docker run --rm tag_for_testing --version
+      - name: Smoke-test the runtime image
+        run: docker run --rm tag_for_testing ${{ inputs.smoke-command }}
 
       - name: Create tags for publishing image
         id: meta

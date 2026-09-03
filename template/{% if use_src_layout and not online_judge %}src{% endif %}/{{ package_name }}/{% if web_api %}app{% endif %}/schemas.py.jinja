@@ -1,0 +1,25 @@
+"""Pydantic v2 request/response schemas for the demo API."""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import ClassVar
+
+from pydantic import BaseModel
+from pydantic import ConfigDict
+
+
+class ItemCreate(BaseModel):
+    """Payload for creating an item."""
+
+    name: str
+
+
+class ItemRead(BaseModel):
+    """An item as returned by the API."""
+
+    model_config: ClassVar[ConfigDict] = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    created_at: datetime

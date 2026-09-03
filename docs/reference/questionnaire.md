@@ -20,10 +20,12 @@ questions depend on it.
 - **data_science** — notebooks, `data/`, `models/`, `reports/` and a `src/`
   pipeline layout; GPU Dockerfile and Quarto paper always included
 - **online_judge** — a competitive-programming / Kaggle project, with a
-  follow-up question for the judge (`oj_kind`: Kaggle / AtCoder / LeetCode).
-  Kaggle gets the competition layout (`src/{configs,data,input,output,...}`
-  with `src/utils` as the installable package); AtCoder / LeetCode get a
-  `solutions/` directory of standalone scripts
+  follow-up question for the judge (`oj_kind`: Kaggle / AtCoder / LeetCode /
+  yukicoder / AOJ). Kaggle gets the competition layout
+  (`src/{configs,data,input,output,...}` with `src/utils` as the installable
+  package); AtCoder / LeetCode / yukicoder / AOJ get a bare code-submission
+  workspace whose per-problem folders and `test/` samples are created by a
+  CLI tool (`oj` / `acc` / `aoj-cli`)
 - **script** — a minimal script, flat package at the repo root
 - **web_django** — *not supported*: selecting it aborts generation
 - **ros2** — a ROS 2 package (ament_python or ament_cmake), with follow-up
@@ -43,6 +45,7 @@ questions depend on it.
 | `use_recommended_quality` | basedpyright + pyrefly, strictness "recommended" | all |
 | `use_recommended_license` | MIT, no FAIR metadata | all |
 | `use_recommended_integrations` | no Docker/PyPI/cloud/Sentry/MCP, GitHub Actions, structlog | all |
+| `use_recommended_web_api` | FastAPI + async SQLAlchemy + Alembic + Postgres, Prometheus, rate limit, CORS | web_api |
 | `use_recommended_security` | minimal CI permissions, SHA-pinned actions, zizmor, SECURITY.md, test_qa.py | all |
 
 ## The detailed questions
@@ -55,7 +58,7 @@ Answering **No** to an area gate reveals its detailed questions:
 - **Toolchain**: package manager (uv / pixi / poetry) and task runner
   (just / task / poe / make / invoke / duty, or pixi's native tasks)
 - **Data science**: GPU, data reuse (DUO sheet), data ethics (CARE statement)
-- **Online judge** (`oj_kind`): kaggle / atcoder / leetcode
+- **Online judge** (`oj_kind`): kaggle / atcoder / leetcode / yukicoder / aoj
 - **Polish**: layout (src / flat), Japanese text allowed
 - **Docs**: README-only / zensical / sphinx / great-docs
 - **Quality**: secondary checker (pyrefly / ty) and strictness
@@ -68,6 +71,10 @@ Answering **No** to an area gate reveals its detailed questions:
   client test; see [the MCP how-to](../how-to/mcp.md) and
   [the layer model](../explanations/long-running.md)), CI provider, logging
   library
+- **Web API** (web_api only): Prometheus metrics at `/metrics`, slowapi rate
+  limiting, and CORS — all three default to on; the recommended stack itself
+  (FastAPI + async SQLAlchemy 2.0 + Alembic + Postgres, demo CRUD, request-id
+  logging, BackgroundTasks example) is not optional
 - **Security** (GitHub projects): SECURITY.md vulnerability policy, OpenSSF
   Scorecard workflow. GitLab projects skip both (no private-advisory /
   Scorecard-badge support there)

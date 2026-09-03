@@ -36,6 +36,7 @@ CANONICAL_GATES = [
     "use_recommended_quality",
     "use_recommended_license",
     "use_recommended_integrations",
+    "use_recommended_web_api",
     "use_recommended_security",
 ]
 

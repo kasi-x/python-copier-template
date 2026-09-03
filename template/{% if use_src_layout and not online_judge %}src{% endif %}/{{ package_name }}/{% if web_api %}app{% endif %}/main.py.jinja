@@ -1,0 +1,75 @@
+"""FastAPI application factory.
+
+Run it with uvicorn (the module-level `app` is what uvicorn imports):
+
+    uv run uvicorn {{ package_name }}.app.main:app --reload
+
+Swagger UI is served at /docs, the OpenAPI schema at /openapi.json.
+"""
+
+from __future__ import annotations
+
+from asgi_correlation_id import CorrelationIdMiddleware
+from fastapi import FastAPI
+{% if cors_effective %}from fastapi.middleware.cors import CORSMiddleware
+{% endif %}{% if rate_limit_effective %}from fastapi import Request
+from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
+{% endif %}{% if prometheus_effective %}from starlette.middleware.base import BaseHTTPMiddleware
+{% endif %}
+from {{ package_name }} import __version__
+{% if rate_limit_effective %}from {{ package_name }}.app.rate_limit import limiter
+{% endif %}from {{ package_name }}.app.router import api_router
+{% if cors_effective %}from {{ package_name }}.app.settings import get_settings
+{% endif %}{% if prometheus_effective %}from {{ package_name }}.app.metrics import metrics_endpoint
+from {{ package_name }}.app.metrics import prometheus_middleware
+{% endif %}
+__all__ = ["app", "create_app"]
+
+
+def create_app() -> FastAPI:
+    """Build the FastAPI application with all middleware and routers."""
+    app = FastAPI(
+        title="{{ repo_name }}",
+        version=__version__,
+    )
+    # CorrelationIdMiddleware reads or generates the X-Request-ID header for
+    # every request and exposes it via asgi_correlation_id.correlation_id;
+    # logging_setup.py attaches it to log records. Added first so it wraps all
+    # other middleware.
+    app.add_middleware(CorrelationIdMiddleware)
+{% if cors_effective %}
+    origins = get_settings().cors_origins
+    if origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*", "X-Request-ID"],
+            expose_headers=["X-Request-ID"],
+        )
+{% endif %}
+{% if rate_limit_effective %}
+    app.state.limiter = limiter
+
+    @app.exception_handler(RateLimitExceeded)
+    async def _rate_limit_handler(
+        request: Request,  # noqa: ARG001 - FastAPI exception-handler signature
+        exc: RateLimitExceeded,  # noqa: ARG001 - the 429 body is fixed
+    ) -> JSONResponse:
+        """Translate slowapi's exception into a 429 JSON response."""
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded"},
+        )
+{% endif %}
+    app.include_router(api_router)
+{% if prometheus_effective %}
+    app.add_middleware(BaseHTTPMiddleware, dispatch=prometheus_middleware)
+    app.add_api_route("/metrics", metrics_endpoint, include_in_schema=False)
+{% endif %}
+    return app
+
+
+app = create_app()

@@ -106,10 +106,11 @@ jobs:
     uses: ./.github/workflows/_container.yml
     with:
       publish: ${{ needs.test.result == 'success' }}
+{% endraw %}      smoke-command: {{ '--help' if project_type == 'web_api' else '--version' }}
     permissions:
       contents: read
       packages: write
-{% endraw %}{% endif %}{% if docs %}
+{% endif %}{% if docs %}
   docs:
     uses: ./.github/workflows/_docs.yml
     with:

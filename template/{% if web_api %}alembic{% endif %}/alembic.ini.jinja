@@ -1,0 +1,47 @@
+# Alembic configuration for {{ repo_name }}.
+#
+# The database URL is NOT set here: alembic/env.py reads it from the
+# application settings (DATABASE_URL / .env), so the same config works in
+# local dev, the compose stack and CI.
+#
+# First migration (after adding your own models, or to stamp the demo one):
+#   uv run alembic revision --autogenerate -m "initial"
+#   uv run alembic upgrade head
+
+[alembic]
+script_location = alembic
+prepend_sys_path = .
+
+[loggers]
+keys = root,sqlalchemy,alembic
+
+[handlers]
+keys = console
+
+[formatters]
+keys = generic
+
+[logger_root]
+level = WARNING
+handlers = console
+qualname =
+
+[logger_sqlalchemy]
+level = WARNING
+handlers =
+qualname = sqlalchemy.engine
+
+[logger_alembic]
+level = INFO
+handlers =
+qualname = alembic
+
+[handler_console]
+class = StreamHandler
+args = (sys.stderr,)
+level = NOTSET
+formatter = generic
+
+[formatter_generic]
+format = %(levelname)-5.5s [%(name)s] %(message)s
+datefmt = %H:%M:%S

@@ -27,14 +27,14 @@ The template asks a few questions and generates a project tailored to your answe
 `use_recommended_toolchain`, `use_recommended_data_science`,
 `use_recommended_polish`, `use_recommended_docs`, `use_recommended_quality`,
 `use_recommended_license`, `use_recommended_integrations`,
-`use_recommended_security`)
+`use_recommended_web_api`, `use_recommended_security`)
 - Besides the essentials (project type, package name, author, ...), each
   customisable area of the template — AI-agent scaffolding, toolchain,
-  data-science options (GPU, DUO/CARE data governance), online-judge kind, layout &
-  style, docs, type-checking & strictness, license & FAIR metadata, deployment
-  & integrations (including the logging library), security & compliance
-  (SHA-pinned CI, SECURITY.md, zizmor) — asks a single "use the
-  recommended settings?" question first (default: yes), with the
+  data-science options (GPU, DUO/CARE data governance), online-judge kind,
+  web-API stack, layout & style, docs, type-checking & strictness, license &
+  FAIR metadata, deployment & integrations (including the logging library),
+  security & compliance (SHA-pinned CI, SECURITY.md, zizmor) — asks a single
+  "use the recommended settings?" question first (default: yes), with the
   recommendation spelled out in its help text.
 - Answer **yes** and the area is configured from its defaults without
   asking anything else; answer **no** and the detailed question(s) for that
@@ -64,7 +64,7 @@ flowchart TD
     D1 --> OJ{project_type == online_judge?}
     A1 --> OJ
 
-    OJ -->|Yes| OQ["ask: oj_kind (kaggle / atcoder / leetcode)"]
+    OJ -->|Yes| OQ["ask: oj_kind (kaggle / atcoder / leetcode / yukicoder / aoj)"]
     OJ -->|No| DS{project_type == data_science?}
     OQ --> DS
 
@@ -98,13 +98,20 @@ flowchart TD
 
     G7 -->|Yes| D7["no Docker/PyPI/cloud/Sentry/MCP · CI: GitHub Actions · structlog"]
     G7 -->|No| A7["ask: docker, pypi, cloud_provider, include_sentry,<br/>include_mcp, ci_provider, log_library"]
-    D7 --> G8{use_recommended_security?}
-    A7 --> G8
+    D7 --> WA{project_type == web_api?}
+    A7 --> WA
 
-    G8 -->|Yes| D8["SHA-pinned actions · zizmor · SECURITY.md · test_qa.py"]
-    G8 -->|No| A8["ask: security_policy, scorecard"]
-    D8 --> PD["Project details: package_name · description · git platform · author"]
-    A8 --> PD
+    WA -->|Yes| G8{use_recommended_web_api?}
+    WA -->|No| G9{use_recommended_security?}
+    G8 -->|Yes| D8["FastAPI + async SQLAlchemy + Alembic + Postgres<br/>demo CRUD · request-id · /health + /docs"]
+    G8 -->|No| A8["ask: prometheus, rate_limit, cors"]
+    D8 --> G9
+    A8 --> G9
+
+    G9 -->|Yes| D9["SHA-pinned actions · zizmor · SECURITY.md · test_qa.py"]
+    G9 -->|No| A9["ask: security_policy, scorecard"]
+    D9 --> PD["Project details: package_name · description · git platform · author"]
+    A9 --> PD
     PD --> End([Generate project])
 ```
 
@@ -124,9 +131,11 @@ flowchart TD
 
 **Project type** (`project_type`)
 - **library** — a Python library/package
-- **web_api** — a web API service (Docker included). Ships `compose.local.yml`
-  (API + Postgres), a `.env.example`, and a CI test job backed by a Postgres
-  service container
+- **web_api** — a working FastAPI scaffold (async SQLAlchemy 2.0 + Alembic +
+  Postgres, demo CRUD router, request-id logging, `/health` + `/docs`).
+  Ships `compose.local.yml` (API + Postgres) and a CI test job backed by a
+  Postgres service container. Optional: Prometheus `/metrics`, slowapi rate
+  limiting, CORS (see the [web-api how-to](https://kasi-x.github.io/python-copier-template/main/how-to/web-api.html))
 - **cli** — a command-line tool
 - **data_science**: `data/`, `models/`, `reports/`, `notebooks/` and a `src/`
   pipeline (`src/data`, `src/features`, ...) layout. GPU Dockerfile and a
@@ -136,7 +145,11 @@ flowchart TD
 - **online_judge**: a competitive-programming / Kaggle project. The follow-up
   `oj_kind` question picks the judge:
   - **kaggle**: the competition layout `src/{configs,data,input,output,features,logs,models,notebook,scripts,utils}` where `src/utils` is the installable package, plus the GPU Dockerfile
-  - **atcoder / leetcode**: a `solutions/` directory of standalone stdin/stdout scripts (stdlib only), verified by sample-case tests in `tests/test_samples.py`
+  - **atcoder / leetcode / yukicoder / aoj**: a bare code-submission workspace
+    (stdlib only) — no package or `solutions/` tree is generated, and the
+    repo stays empty until a CLI tool creates the per-problem folders and
+    `test/` sample files (`oj` for AtCoder / yukicoder, `acc` for AtCoder
+    contests, `aoj-cli` for AOJ; LeetCode is solved in its own editor)
 - **script** — a minimal script, flat package at the repo root
 - **web_django** — *not supported*: selecting it aborts generation with a
   pointer to FastAPI / Litestar / Flask and the upstream
@@ -305,8 +318,9 @@ The option set has been consolidated over time. The key moves:
   analysis project — the AI-use rules and the GPU/submission layout differ
   from plain data science. It now lives under the `online_judge` project
   type, so `data_science` is purely the analysis layout and
-  `online_judge` can also express AtCoder / LeetCode (stdlib `solutions/`
-  scripts).
+  `online_judge` can also express code-submission judges (AtCoder / LeetCode
+  / yukicoder / AOJ — a bare workspace the user drives with `oj` / `acc` /
+  `aoj-cli`).
 - **`detail_level` → one "use recommended settings?" gate per area**: a
   single upfront simple/detailed toggle controlled ~20 questions at once, so
   going off the beaten path for one option (say, the license) meant opting
@@ -323,6 +337,17 @@ The option set has been consolidated over time. The key moves:
   `python -m <package>.mcp_server` — never through `__main__.py`, which the
   Docker `ENTRYPOINT` and CLI tests own. See
   [the layer model](https://kasi-x.github.io/python-copier-template/main/explanations/long-running.html).
+- **`web_api` is now a working FastAPI scaffold, not a shell**: it used to
+  generate Docker/compose/Postgres wiring and tell you to "add fastapi +
+  uvicorn yourself". It now ships the full recommended stack — async
+  SQLAlchemy 2.0 + Alembic + Postgres, a demo CRUD router, request-id logging
+  (asgi-correlation-id), `BackgroundTasks`, and `/health` + `/docs` — with
+  tests that run against SQLite locally and Postgres in CI. The web-API
+  detail gate (`use_recommended_web_api`) offers exactly three switches
+  (Prometheus /metrics via prometheus-client, slowapi rate limiting, CORS),
+  deliberately not a catalogue; auth, other ORMs, admin UIs and task queues
+  are documented as "add later" (fastapi-users is in maintenance mode, which
+  is why no auth is baked in).
 
 ```mermaid
 flowchart LR
@@ -338,7 +363,7 @@ flowchart LR
     subgraph after["After"]
         B1[strictness<br/>none / basic / recommended / full]
         B2[project_type<br/>library / web_api / cli / data_science /<br/>online_judge / script]
-        B3["online_judge + oj_kind<br/>kaggle (ex-competition) / atcoder / leetcode"]
+        B3["online_judge + oj_kind<br/>kaggle (ex-competition) / atcoder /<br/>leetcode / yukicoder / aoj"]
         B4["use_recommended_* gates<br/>one per area, asked in place"]
     end
 

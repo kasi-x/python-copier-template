@@ -64,6 +64,15 @@ COPY --from=build /app/.pixi /app/.pixi
 ENV PATH=/app/.pixi/envs/default/bin:$PATH
 {% endif %}
 
+{% if web_api %}
+# Run the FastAPI app with uvicorn (the module-level `app` object).
+EXPOSE 8000
+ENV HOST=0.0.0.0
+ENV PORT=8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+ENTRYPOINT ["uvicorn", "{{ package_name }}.app.main:app"]
+CMD ["--host", "0.0.0.0", "--port", "8000"]{% endif %}{% if not web_api %}
 # change this entrypoint if it is not the same as the repo
 ENTRYPOINT ["{{ repo_name }}"]
 CMD ["--version"]{% if mcp_effective %}
@@ -74,4 +83,4 @@ CMD ["--version"]{% if mcp_effective %}
 #     --entrypoint mcp-server-{{ repo_name }} {{ repo_name }} \
 #     --transport streamable-http --host 0.0.0.0
 # Health check (unauthenticated): GET http://localhost:8000/health
-EXPOSE 8000{% endif %}{% endif %}
+EXPOSE 8000{% endif %}{% endif %}{% endif %}

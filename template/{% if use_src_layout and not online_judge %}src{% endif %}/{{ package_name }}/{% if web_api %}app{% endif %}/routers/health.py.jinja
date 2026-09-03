@@ -1,0 +1,18 @@
+"""Liveness probe.
+
+`GET /health` is what the Docker HEALTHCHECK and compose healthcheck hit; it
+must not depend on the database so an overloaded DB cannot take the
+orchestrator's health signal down with it.
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+router = APIRouter(tags=["health"])
+
+
+@router.get("/health")
+def health() -> dict[str, str]:
+    """Return the service status."""
+    return {"status": "ok"}

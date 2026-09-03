@@ -27,8 +27,8 @@ import sys
 {%- if cloud_provider == 'gcp' %}
 from typing import cast
 {%- endif %}
-
-import structlog
+{% if web_api %}from asgi_correlation_id import correlation_id
+{% endif %}import structlog
 
 _configured = False
 {%- if cloud_provider == 'gcp' %}
@@ -37,6 +37,18 @@ _configured = False
 # https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity
 _GCP_SEVERITY = {"debug": "DEBUG", "info": "INFO", "warning": "WARNING", "error": "ERROR", "exception": "ERROR"}
 {%- endif %}
+{% if web_api %}
+
+def _add_request_id(
+    _logger: object,
+    _method: str,
+    event_dict: structlog.typing.EventDict,
+) -> structlog.typing.EventDict:
+    """Attach the request's correlation id (set by the ASGI middleware)."""
+    if request_id := correlation_id.get():
+        event_dict["request_id"] = request_id
+    return event_dict
+{% endif %}
 
 
 def setup_logging(format_: str | None = None, level: str = "INFO") -> None:
@@ -48,6 +60,9 @@ def setup_logging(format_: str | None = None, level: str = "INFO") -> None:
     fmt = (format_ or os.environ.get("LOG_FORMAT") or "console").lower()
     processors: list[structlog.typing.Processor] = [
         structlog.contextvars.merge_contextvars,
+{% if web_api %}
+        _add_request_id,
+{% endif %}
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
     ]

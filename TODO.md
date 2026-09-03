@@ -75,7 +75,12 @@
       - 実装メモ: AI 可否と AGENTS.md 有無の配線は項目1（AGENTS.md）着手時に
         oj_allow_ai 質問として追加する（今回は質問・変数とも未導入）
 - [x] `oj_kind` 質問を新設する（online_judge 選択時のみ）
-      - kaggle / atcoder / leetcode の3種
+      - kaggle / atcoder / leetcode の3種で開始し、**2026-09 に yukicoder / aoj を
+        追加して5種**に拡張（oj 対応サイト + 教育的OJ優先の方針。ユーザー指示）
+      - yukicoder / aoj は既存の oj_code（コード提出型・空ワークスペース）側に載せ、
+        生成物の分岐変更なし。README の導入手順だけサイト別に切替:
+        atcoder = oj + acc / yukicoder = oj（submit まで対応）/ aoj = aoj-cli 主軸
+        （oj は AOJ に submit 不可）/ leetcode = LeetCode エディタ（oj 非対応）
       - atcoder / leetcode では AI 可否をさらに質問する（項目1 で追加予定）
 - [ ] `oj_allow_ai` 質問を新設する（atcoder / leetcode 選択時のみ）
       - AI 利用 OK → AGENTS.md を生成（+ README に AI 向け言及）
@@ -95,9 +100,15 @@
 - [x] online_judge のテスト: 生成物の有無（src 無し・deps 空・CI に dist 無し）+
       空ワークスペースで task check が通ること + kaggle に solutions が無いこと
 - [ ] **将来拡張**: oj_kind を世界基準の主要 OJ 9種 + 「その他」（選ぶと更に
-      選択肢が出る2段階方式）へ拡張する。今回は kaggle / atcoder / leetcode の
-      3種で骨格を作る（ユーザー指摘: competitive coder / result competition の
-      2系統 + サイト列挙の2段階 UI を想定）
+      選択肢が出る2段階方式）へ拡張する。**2026-09 に yukicoder / aoj を追加して
+      5種**（kaggle / atcoder / leetcode / yukicoder / aoj）。残り候補は
+      Codeforces / CodeChef 等（oj 対応だが教育的OJを優先して今回見送り）。
+      サイト数が増えたら2段階 UI（competitive coder / result competition の
+      2系統 + サイト列挙）へ移行する
+      - 対象外の整理（調査済み）: Project Euler（oj 非対応・数値回答のみ）、
+        ML コンペ系（DrivenData / AIcrowd / 天池 / Analytics Vidhya。kaggle の
+        コンペレイアウトに載せられるが日本話者の実利用は低く見送り）、
+        CTF（pwntools の pwn template 等は下記項目8 の「亜種レイヤー検討」と統合）
 
 ## 3. kaggle の data_science 分離 → online_judge の内部タイプへ統合
 
@@ -245,36 +256,60 @@
 
 ## 6. web_api を「動く FastAPI scaffold」へ拡充する（s3rius/FastAPI-template 参考）
 
-- [ ] まず現状の欠落を解消する（どのオプションを選んでも効く土台）
-      - FastAPI + uvicorn の依存追加と、動く `app` オブジェクト（app factory + router）
-      - Dockerfile ENTRYPOINT / compose command を CLI（--version）から uvicorn での
-        サーバ起動に変える（HEALTHCHECK も追加）
+- [x] まず現状の欠落を解消する（どのオプションを選んでも効く土台）
+      - FastAPI + uvicorn[standard] + pydantic-settings の依存追加と、動く `app` オブジェクト
+        （`app/main.py` の create_app factory + module-level `app`、`app/settings.py`、
+        `app/db.py`（async engine/session/Base）、`app/routers/{health,items}.py`、
+        `app/schemas.py`、`app/models.py`（デモ Item））
+      - Dockerfile ENTRYPOINT / compose command を CLI（--version）から
+        `uvicorn {{ package_name }}.app.main:app` に変更（HEALTHCHECK は python urllib で
+        /health を叩く）。compose api にも healthcheck + postgres の service_healthy 依存
       - pydantic-settings で .env.example の DATABASE_URL / HOST / PORT を読む
       - docs の「Add fastapi + uvicorn yourself」を廃止し、生成物に含める
-- [ ] `use_recommended_web_api` ゲートを新設する（既存の use_recommended_* 方式に乗せる。
+- [x] `use_recommended_web_api` ゲートを新設する（既存の use_recommended_* 方式に乗せる。
       設計原則5）
-      - 推奨: FastAPI + SQLAlchemy 2.0 + alembic + Postgres + demo router/model +
-        pytest/httpx テスト。これで「動く scaffold」として完成させる
+      - 推奨: FastAPI + async SQLAlchemy 2.0 + alembic + asyncpg + Postgres + demo router/model +
+        httpx(ASGITransport) テスト + asgi-correlation-id（リクエストID常時）+
+        BackgroundTasks デモ（常時・依存追加なし）
       - No を選ぶと下記の詳細質問が出る
-- [ ] 詳細質問の候補（s3rius の機能一覧から、このテンプレートで採用するものを絞る）
-      - **認証**: none（推奨）/ JWT（fastapi-users）。web_api の主要な欠落なので真剣に検討。
-        include_sentry と同様の独立オプションにするか直交ゲートにするか決める
-      - **Redis**: 入れない（推奨）/ 入れる（キャッシュ・セッション。compose に service 追加）
-      - **バックグラウンドタスク**: FastAPI 標準 BackgroundTasks（常に有効）の上で、
-        分散タスク（taskiq / arq）を入れるか。まず taskiq を推奨候補として試作
-      - **オブザーバビリティ**: prometheus エンドポイント / OpenTelemetry。
-        上記9の SRE（web_api 運用強化）と統合して検討する
-      - **demo 生成**: demo router + CRUD model の見本を生成する（推奨）/ しない
-      - **DB**: Postgres 固定のまま（compose が既に Postgres 前提）。sqlite は
-        テスト高速化用として追加する価値があるか判断して1-2個に絞る
+      - **DB 戦略**: CI は _test.yml が自動で DATABASE_URL を postgres サービス用に組み立てて
+        渡す（実 DB を検証）。ローカルは sqlite+aiosqlite フォールバック（.test.db は gitignore）。
+        テストは Base.metadata.create_all を使用（alembic はスキーマ進化専用）
+- [x] 詳細質問の候補（s3rius の機能一覧から、このテンプレートで採用するものを絞る）
+      - **認証**: **不採用**（docs に「後で足せる」+ 理由を明記）。fastapi-users は
+        メンテナンスモード（セキュリティ更新のみ・後継開発中）のため、模範として焼き込まない。
+        自作 JWT デモはセキュリティ責任が乗るため不採用。OIDC/SSO 連携や JWT ライブラリを
+        docs で案内
+      - **Redis**: 不採用（「後で足せる」に記載）
+      - **バックグラウンドタスク**: FastAPI 標準 BackgroundTasks を常時デモ。taskiq/arq は
+        docs の「後で足せる」に
+      - **オブザーバビリティ**: **prometheus-client 直接の薄いミドルウェア**（約20行）で
+        /metrics を実装。prometheus-fastapi-instrumentator は現行 fastapi/starlette
+        （0.137+ / 1.x）と非互換（_IncludedRouter 問題）が繰り返しているため不採用
+      - **demo 生成**: 常時生成（モデル + CRUD ルーター + テスト）
+      - **DB**: Postgres 固定。テスト用 sqlite+aiosqlite は dev 依存として採用
       - **ORM**: SQLAlchemy 2.0 の1本固定（s3rius の 5種選択は取らない）
-- [ ] 各オプションは「空ディレクトリ + 依存」で終わらせない（specialty 解体の教訓）:
-      採用する項目は必ず app 配線・テスト・compose/CI 連動まで含めて「動く」状態で生成し、
-      import / 起動 / エンドポイント応答をテストで検証する。動く見本を添えられない
-      オプションは採用しない
-- [ ] 取り込まない機能を明記する: GraphQL / REST 選択、Kafka / RabbitMQ、ORM 複数選択、
+      - **採用した詳細質問（No 後）**: prometheus / rate_limit(slowapi) / cors — 3つのみ
+- [x] 各オプションは「空ディレクトリ + 依存」で終わらせない（specialty 解体の教訓）:
+      採用した項目（prometheus / rate_limit / cors / request-id / backgroundtasks）はすべて
+      app 配線・テスト付きで「動く」状態。uv sync + pytest + ruff + basedpyright で実動検証済み
+- [x] 取り込まない機能を明記する: GraphQL / REST 選択、Kafka / RabbitMQ、ORM 複数選択、
       gunicorn（uvicorn で足りる）、self-hosted swagger（FastAPI 内蔵で足りる）、
-      traefik ラベル。docs に「後で足せる」と明記して初期質問にしない
+      traefik ラベル、piccolo ORM、SQLAdmin / FastCRUD、taskiq/arq。docs/how-to/web-api.md に
+      「後で足せる」と理由付きで明記
+- [ ] **将来拡張: app 構造を選べるようにする**（2026-09 相談で保留）
+      - 現状はレイヤード構造（`app/models.py` + `app/schemas.py` + `app/routers/`）固定。
+        benavlabs/FastAPI-boilerplate のような **vertical-slice**（機能ごとの
+        `modules/<feature>/{model,schema,router}.py`）を詳細質問の選択肢として追加するか検討
+      - コスト: import パス・alembic env.py・test_qa・テストが構造で変わるため、app/ 一式の
+        二重実装 + 全組み合わせの検証が必要。デモ Item 1つでは両構造の差がほぼ出ないので、
+        機能が複数に育つ見込みが立ってから再検討する
+- [ ] **将来拡張: SQLAdmin（管理画面）/ FastCRUD を詳細質問に追加**（2026-09 相談で保留）
+      - benavlabs は SQLAdmin ベースの admin + FastCRUD を採用。用途が違う
+        （SQLAdmin = 人間がブラウザで CRUD、FastCRUD = API コードのボイラープレート削減）ため
+        両方載せる場合は独立質問になる
+      - 各オプションは「動く見本 + テスト」必須（デモ Item 前提）。現状は docs の
+        「後で足せる」に記載のみ
 
 ## 7. VFX 分野（マイクロPython型の特殊 project_type として検討）
 
@@ -296,6 +331,12 @@
       zizmor（CI 監査）、pip-audit（脆弱性スキャン）、Sentry（任意）
 - [ ] 本当に欲しいのが CTF のファイルレイアウト（challenges/、solvers/）や依存
       （pwntools / z3）なら、library/cli の「亜種」として最小レイヤーを別TODOで検討
+      - 参考（2026-09 調査）: pwntools の `pwn template`（exploit 雛形の自動生成。
+        参加者側）、mhtoribio/pwn-scaffold（Docker + socat + gdb + solve.py の単一
+        pwn 問題 scaffold。問題作成者側）、b01lers/rich-ctf-template と
+        CTFd/ctfcli（CTF コンペ全体の構成・運営。問題作成者側）。参加者側の
+        「問題別フォルダ + pwntools 初期化」は online_judge の空ワークスペースに
+        近いので、そちらへの載せ方も含めて検討する
 
 ## 9. SRE / Ansible / IaC の扱い
 

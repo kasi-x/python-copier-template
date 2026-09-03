@@ -30,7 +30,7 @@ classifiers = [
 {% elif online_judge %}version = "0.1.0"
 {% else %}dynamic = [ "version" ]
 {% endif %}
-dependencies = [{% if micropython_pkg or oj_code %}{% elif kaggle or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if kaggle %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15,<1", "xgboost>=2", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34", "botocore>=1.34", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if mcp_effective %}"mcp[cli]>=2.0,<3", {% endif %}{% if not use_recommended_agent and project_type in ['library', 'cli'] %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if data_science or kaggle %}"duckdb", "pyarrow", "polars>=0.20.15", {% endif %}]  # Add project dependencies here, e.g. ["click", "numpy"]
+dependencies = [{% if micropython_pkg or oj_code %}{% elif kaggle or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if web_api %}"alembic>=1.13,<2", "asgi-correlation-id>=4.3,<6", "asyncpg>=0.29,<1", "fastapi>=0.115,<1", "pydantic-settings>=2.2.1", "sqlalchemy[asyncio]>=2.0,<3", "uvicorn[standard]>=0.30,<1", {% endif %}{% if prometheus_effective %}"prometheus-client>=0.20,<1", {% endif %}{% if rate_limit_effective %}"slowapi>=0.1.9,<1", {% endif %}{% if kaggle %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15,<1", "xgboost>=2", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34", "botocore>=1.34", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if mcp_effective %}"mcp[cli]>=2.0,<3", {% endif %}{% if not use_recommended_agent and project_type in ['library', 'cli'] %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if data_science or kaggle %}"duckdb", "pyarrow", "polars>=0.20.15", {% endif %}]  # Add project dependencies here, e.g. ["click", "numpy"]
 urls.GitHub = "{{ repo_url }}"
 {% if not online_judge and not ros2_pkg and not micropython_pkg %}scripts.{{ repo_name }} = "{{ package_name }}.__main__:main"
 {% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ package_name }}.mcp_server:main"
@@ -43,8 +43,10 @@ urls.GitHub = "{{ repo_url }}"
 dev = [
     {% if strictness == 'none' %}"pre-commit",
     "pytest",
-    "ruff",{% if mcp_effective %}
-    "anyio",{% endif %}
+    "ruff",{% if mcp_effective or web_api %}
+    "anyio",{% endif %}{% if web_api %}
+    "aiosqlite>=0.20,<1",
+    "httpx>=0.27,<1",{% endif %}
     {% if micropython_pkg %}"mpremote",
     {% endif %}{% if zensical %}"zensical",
     "mkdocstrings[python]",
@@ -65,8 +67,10 @@ dev = [
     {% elif task_runner_effective == 'duty' %}"duty",
     {% endif %}{% elif strictness == 'basic' %}"pre-commit",
     "pytest",
-    "ruff",{% if mcp_effective %}
-    "anyio",{% endif %}
+    "ruff",{% if mcp_effective or web_api %}
+    "anyio",{% endif %}{% if web_api %}
+    "aiosqlite>=0.20,<1",
+    "httpx>=0.27,<1",{% endif %}
     {% if micropython_pkg %}"mpremote",
     {% endif %}{% if zensical %}"zensical",
     "mkdocstrings[python]",
@@ -95,8 +99,10 @@ dev = [
     {% endif %}{% if type_checker=="ty" %}"ty",
     {% endif %}    "pytest",
     "pytest-cov",
-    "ruff",{% if mcp_effective %}
-    "anyio",{% endif %}
+    "ruff",{% if mcp_effective or web_api %}
+    "anyio",{% endif %}{% if web_api %}
+    "aiosqlite>=0.20,<1",
+    "httpx>=0.27,<1",{% endif %}
     {% if sphinx %}"myst-parser",
     "sphinx-autobuild",
     "sphinx-copybutton",
@@ -206,7 +212,12 @@ packages = []
 # via oj/atcoder-cli — no pip-installable package is built here.
 [tool.setuptools]
 packages = []
-{% endif %}{% if not micropython_pkg and not online_judge and not use_src_layout and not use_recommended_agent and project_type in ['library', 'cli'] %}# Flat layout + agent scaffold: prompts/ at the repo root would otherwise be
+{% endif %}{% if web_api and not use_src_layout %}# Flat layout + web API: alembic/ at the repo root would otherwise be
+# picked up by setuptools' automatic flat-layout discovery, so list the real
+# packages explicitly.
+[tool.setuptools]
+packages = ["{{ package_name }}", "{{ package_name }}.app", "{{ package_name }}.app.routers"]
+{% elif not micropython_pkg and not online_judge and not use_src_layout and not use_recommended_agent and project_type in ['library', 'cli'] %}# Flat layout + agent scaffold: prompts/ at the repo root would otherwise be
 # picked up by setuptools' automatic flat-layout discovery, so list the real
 # packages explicitly.
 [tool.setuptools]
@@ -253,7 +264,11 @@ reportCallInDefaultInitializer = false # typer のデフォルト引数は正当
 reportUnusedCallResult = false # argparse add_argument 等の副作用目的の呼び出しは正当
 enableTypeIgnoreComments = true # # type: ignore も受け付ける（mypy 互換）
 reportImplicitStringConcatenation = false # ruff の ISC 系（暗黙連結を推奨）と整合させる
-{% endif %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
+{% if web_api %}
+# slowapi (and similar FastAPI-ecosystem decorators) ships no type stubs, so
+# @limiter.limit(...) would otherwise trip reportUntypedFunctionDecorator.
+reportUntypedFunctionDecorator = false
+{% endif %}{% endif %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
 [tool.pyrefly]
 # Match requires-python / .python-version: the interpreter the project
 # actually targets (ros2 humble -> 3.10, ros2 jazzy -> 3.12, else 3.11).
@@ -326,7 +341,7 @@ min_confidence = 80
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=click|fastapi|httpx|pydantic|pydantic-settings|pendulum|rich|structlog|loguru|picologging|typer|uvicorn{% if data_science or kaggle %}|duckdb|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|polars|pyarrow|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %}{% if cloud_provider == 'gcp' %}|google-cloud-storage{% endif %}{% if cloud_provider == 'azure' %}|azure-identity{% endif %},DEP003={{ package_name }}|requests{% if mcp_effective %}|starlette{% endif %}{% if micropython_pkg %},DEP001=mpremote|micropython|machine|board_config{% endif %}{% if mcp_effective %},DEP004=pytest{% endif %}"
+per_rule_ignores = "DEP002=alembic|asgi-correlation-id|asyncpg|click|fastapi|httpx|pydantic|pydantic-settings|pendulum|prometheus-client|rich|slowapi|sqlalchemy|structlog|loguru|picologging|typer|uvicorn{% if data_science or kaggle %}|duckdb|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|polars|pyarrow|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %}{% if cloud_provider == 'gcp' %}|google-cloud-storage{% endif %}{% if cloud_provider == 'azure' %}|azure-identity{% endif %},DEP003={{ package_name }}|requests{% if mcp_effective %}|starlette{% endif %}{% if micropython_pkg %},DEP001=mpremote|micropython|machine|board_config{% endif %}{% if mcp_effective or web_api %},DEP004={% if mcp_effective %}pytest{% endif %}{% if mcp_effective and web_api %}|{% endif %}{% if web_api %}aiosqlite|httpx{% endif %}{% endif %}"
 # MicroPython の tools/micropython/freeze.py はローカルインポートを依存と誤認するので除外
 # tasks.py/duties.py: root-level dev script, not project source -- deptry
 # would otherwise flag invoke/duty as DEP004 (dev-only dep imported by "source")
@@ -355,7 +370,7 @@ src = ["{{ 'firmware' if micropython_pkg else pkg_dir }}", "tests"]
 # tools/ は MicroPython の freeze.py（端末依存スクリプト）を、.github/pages は
 # 共有の CI ヘルパーを対象外とする。firmware エントリや ament の test/ は
 # ファイルごと除外せず、per-file-ignores で必要なルールだけ無効化する。
-extend-exclude = ["tools", ".github/pages"{% if sphinx %}, "docs"{% endif %}{% if oj_code %}, "**/test"{% endif %}]
+extend-exclude = ["tools", ".github/pages", "alembic"{% if sphinx %}, "docs"{% endif %}{% if oj_code %}, "**/test"{% endif %}]
 line-length = {{ 88 if not allow_japanese else 120 }}
 # 挙動を変える可能性があるため、自動修正は safe-fix に限定する。
 unsafe-fixes = false
@@ -625,6 +640,9 @@ suppress-none-returning = false
     "B011",   # assert-false  CONTEXT: 到達しないことを明示する assert はテストで正当
     "PLC0415",# import-outside-top-level  CONTEXT: test_qa.py は関数内 import で stdlib を遅延読込
     "C416",   # manual-list-comprehension  CONTEXT: test_qa.py の walk_packages 収集は append が明確
+    "E402",   # module-import-not-at-top-of-file  CONTEXT: test_app.py は
+               #   DATABASE_URL を import 前に設定するため env → import の順が必須
+    "I001",   # unsorted-imports  CONTEXT: test_app.py の env → import 構造で isort は満足できない
     "E501",   # line-too-long  CONTEXT: test_qa.py の assert メッセージ
     "PLR0912",# too-many-branches  CONTEXT: test_qa.py の依存宣言チェックは複数分岐が自然
 ]
@@ -638,11 +656,14 @@ suppress-none-returning = false
     "E501",   # line-too-long  CONTEXT: ament テストの長い assert 行。
 ]
 {% endif %}
-{% if not oj_code %}# logging_setup.py の長い呼び出し（structlog の ConsoleRenderer /
+{% if web_api %}# app/main.py は直交オプション（cors/rate_limit/prometheus）の条件付き
+# import を含む app factory のため、isort の自動整列は無効化する。
+"{{ pkg_dir }}/app/main.py" = ["I001"]
+{% endif %}{% if not oj_code %}# logging_setup.py の長い呼び出し（structlog の ConsoleRenderer /
 # make_filtering_bound_logger、loguru の add() など）は line-length 設定により
 # ruff format が折り返しを変えるため、E501 は免除する。
 # 日本語 docstring の終端句読点（D415）とシングルトン設定の global（PLW0603）も免除。
-"{{ pkg_dir }}/logging_setup.py" = ["E501", "D", "PLW0603"]
+"{{ pkg_dir }}/logging_setup.py" = ["E501", "D", "PLW0603", "I001"]
 {% endif %}
 {% if package_manager == "poetry" %}
 [tool.poetry]

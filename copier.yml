@@ -251,9 +251,15 @@ oj_kind:
         Which online judge is this project for?
         - kaggle: Kaggle competitions. GPU work is the norm and the
           competition layout (src/utils, src/input, src/output) is generated.
-        - atcoder: AtCoder (Japanese competitive programming), solutions/
-          layout.
-        - leetcode: LeetCode-style problems, solutions/ layout.
+        - atcoder: AtCoder (Japanese competitive programming). A bare
+          workspace driven with oj + acc (atcoder-cli).
+        - leetcode: LeetCode-style problems. A bare workspace (LeetCode's
+          editor is the judge; oj does not support it).
+        - yukicoder: yukicoder (Japanese practice site). A bare workspace
+          driven with oj (download / test / submit all work).
+        - aoj: Aizu Online Judge (Japanese beginner courses). A bare
+          workspace driven with aoj-cli (oj can download samples but not
+          submit).
         (Whether AI coding agents are allowed — and therefore whether an
         AGENTS.md file is generated — differs per judge; that is decided
         when the AGENTS.md feature lands.)
@@ -261,6 +267,8 @@ oj_kind:
         Kaggle: kaggle
         AtCoder: atcoder
         LeetCode: leetcode
+        yukicoder: yukicoder
+        AOJ: aoj
     default: kaggle
 
 use_recommended_polish:
@@ -575,6 +583,47 @@ log_library:
         - logging
     default: structlog
 
+use_recommended_web_api:
+    type: bool
+    when: "{{ project_type == 'web_api' }}"
+    default: true
+    help: |
+        Use the recommended web API stack?
+        Recommended: FastAPI + async SQLAlchemy 2.0 + Alembic + Postgres, a
+        demo CRUD router, request-id logging (asgi-correlation-id), a
+        BackgroundTasks example, and /health + /docs endpoints. Tests run
+        against Postgres in CI (or SQLite locally) via httpx.
+        Answer No to drop Prometheus metrics, rate limiting or CORS, or to
+        switch the database/ORM (SQLAlchemy 2.0 + Postgres stays fixed).
+
+prometheus:
+    type: bool
+    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    help: |
+        Expose Prometheus metrics at /metrics?
+        Recommended: yes — prometheus-fastapi-instrumentator adds a /metrics
+        endpoint for scraping (request counts, latencies, ...).
+    default: true
+
+rate_limit:
+    type: bool
+    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    help: |
+        Apply rate limiting to the API?
+        Recommended: yes — slowapi protects endpoints (e.g. 5 requests per
+        minute on the demo list endpoint) against abuse.
+    default: true
+
+cors:
+    type: bool
+    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    help: |
+        Enable CORS for browser clients?
+        Recommended: yes — CORSMiddleware allows the origins listed in the
+        CORS_ORIGINS environment variable (comma-separated) to call the API.
+        Leave CORS_ORIGINS empty to allow nothing.
+    default: true
+
 use_recommended_security:
     type: bool
     default: true
@@ -632,6 +681,25 @@ scorecard_effective:
 mcp_effective:
     type: bool
     default: "{{ include_mcp and project_type in ['cli', 'web_api'] }}"
+    when: false
+
+# web_api effective settings. prometheus / rate_limit / cors keep their
+# defaults (true) when unasked by use_recommended_web_api; the project_type
+# guard here is what keeps FastAPI-only deps and app/ code out of other
+# project types when render tests force the detail answers on them.
+prometheus_effective:
+    type: bool
+    default: "{{ project_type == 'web_api' and (use_recommended_web_api or prometheus) }}"
+    when: false
+
+rate_limit_effective:
+    type: bool
+    default: "{{ project_type == 'web_api' and (use_recommended_web_api or rate_limit) }}"
+    when: false
+
+cors_effective:
+    type: bool
+    default: "{{ project_type == 'web_api' and (use_recommended_web_api or cors) }}"
     when: false
 
 # Project Details
@@ -705,6 +773,11 @@ author_email:
     placeholder: email@example.com
 
 # Internal variables
+web_api:
+    type: bool
+    default: "{{ project_type == 'web_api' }}"
+    when: false
+
 data_science:
     type: bool
     default: "{{ project_type == 'data_science' }}"
@@ -725,10 +798,10 @@ kaggle:
     default: "{{ online_judge and oj_kind == 'kaggle' }}"
     when: false
 
-# Code-submission judges (AtCoder / LeetCode / ...): single-file solutions
-# submitted to the judge's sandbox. No installable package, no src/ layout,
-# no logging_setup — the repo is a bare workspace the user drives with
-# oj / atcoder-cli.
+# Code-submission judges (AtCoder / LeetCode / yukicoder / AOJ): single-file
+# solutions submitted to the judge's sandbox. No installable package, no
+# src/ layout, no logging_setup — the repo is a bare workspace the user
+# drives with oj / acc / aoj-cli.
 oj_code:
     type: bool
     default: "{{ online_judge and oj_kind != 'kaggle' }}"

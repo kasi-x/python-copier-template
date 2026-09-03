@@ -126,17 +126,21 @@ competition data goes in `src/input/` and predictions are written to
 `src/output/`. See the `dataset` / `features` / `train` / `predict` tasks
 below for the pipeline.
 {% else %}
-This repository is a bare workspace for code-submission judges (AtCoder /
-LeetCode / ...). Sample cases and per-problem folders are **not** generated —
-drive the workflow with [online-judge-tools](https://github.com/online-judge-tools/oj)
-(`oj`) or [atcoder-cli](https://github.com/Tatamo/atcoder-cli) (`acc`), which
-create the directories and `test/` sample files for you:
+This repository is a bare workspace for code-submission judges. Sample cases
+and per-problem folders are **not** generated — a CLI tool fetches them for
+you and stays out of git (see below). Write your solution as a single file
+(e.g. `main.py`), then test and submit it.
+{% if oj_kind == 'atcoder' %}
+Use [online-judge-tools](https://github.com/online-judge-tools/oj) (`oj`) for
+samples/testing, and optionally [atcoder-cli](https://github.com/Tatamo/atcoder-cli)
+(`acc`) for contest folders:
 
 ```sh
 # online-judge-tools: download samples into ./test/, then test a solution
 oj download https://atcoder.jp/contests/abc086/tasks/abc086_a
-# ... write your answer in main.py (or anywhere) ...
+# ... write your answer in main.py ...
 oj test -c "python3 main.py"
+oj submit https://atcoder.jp/contests/abc086/tasks/abc086_a main.py
 
 # atcoder-cli: create <contest>/<task>/main.py folders from a template
 acc new abc086
@@ -144,10 +148,45 @@ cd abc086/a
 # ... edit main.py ...
 oj test -c "python3 main.py"
 ```
+{% elif oj_kind == 'yukicoder' %}
+Use [online-judge-tools](https://github.com/online-judge-tools/oj) (`oj`) —
+it downloads samples, tests and submits for yukicoder:
 
+```sh
+# download samples into ./test/, then test a solution
+oj download https://yukicoder.me/problems/no/1234
+# ... write your answer in main.py ...
+oj test -c "python3 main.py"
+oj submit https://yukicoder.me/problems/no/1234 main.py
+```
+{% elif oj_kind == 'aoj' %}
+Use [aoj-cli](https://github.com/YuminosukeSato/AOJ-cli) for the contest
+workflow — it creates a problem folder with samples, tests locally and
+submits (AOJ problem IDs look like `ITP1_1_A`):
+
+```sh
+aoj login                      # once: store your AOJ session
+aoj init ITP1_1_A              # create ITP1_1_A/ with samples/
+# ... write your answer in main.py ...
+aoj test main.py
+aoj submit main.py --lang Python3
+```
+
+[online-judge-tools](https://github.com/online-judge-tools/oj) (`oj`) can also
+download AOJ samples into `./test/` (`oj download <problem-url>`), but cannot
+submit — use `aoj submit` for that.
+{% else %}
+LeetCode solutions are written and judged in LeetCode's own editor (a
+function body, not stdin/stdout), so there is no CLI to fetch samples here.
+Keep a `main.py` per problem in this repo as your working copy, and paste it
+into the LeetCode editor to run and submit.
+{% endif %}
+
+{% if oj_kind == 'atcoder' or oj_kind == 'yukicoder' %}
 `oj download` writes samples to a `test/` directory in the current folder —
 add `test/` to your `.gitignore` (or keep those folders out of git) so
 downloaded cases are not committed.
+{% endif %}
 {% endif %}
 {% else %}```sh
 {% if package_manager == "uv" %}pip install {{distribution_name}}
@@ -218,21 +257,81 @@ pixi run -e dev predict
 ```
 
 Marimo notebooks live in `src/notebook/` (open with the `marimo` task).
-{% else %}Grab the samples for a problem, write a single-file solution, and
+{% elif oj_kind == 'atcoder' or oj_kind == 'yukicoder' %}Grab the samples for a problem, write a single-file solution, and
 test it against the downloaded cases:
 
 ```sh
-oj download https://atcoder.jp/contests/abc086/tasks/abc086_a   # creates test/
-# write main.py ...
+{% if oj_kind == 'atcoder' %}oj download https://atcoder.jp/contests/abc086/tasks/abc086_a   # creates test/
+{% else %}oj download https://yukicoder.me/problems/no/1234   # creates test/
+{% endif %}# write main.py ...
 oj test -c "python3 main.py"          # run the sample cases
-# oj submit https://atcoder.jp/contests/abc086/tasks/abc086_a main.py
+# oj submit <problem-url> main.py
+```
+
+The repo is linted and type-checked as a whole (the relaxed rules are aimed
+at contest code), so `task check` / `just check` keep your workspace tidy
+before you submit.
+{% elif oj_kind == 'aoj' %}Download a problem's samples and a starter folder, write the solution, then
+test and submit it:
+
+```sh
+aoj login                   # once: store your AOJ session
+aoj init ITP1_1_A           # create ITP1_1_A/ with samples/
+# write main.py inside ITP1_1_A/ ...
+aoj test main.py            # run the sample cases
+aoj submit main.py --lang Python3
+```
+
+The repo is linted and type-checked as a whole (the relaxed rules are aimed
+at contest code), so `task check` / `just check` keep your workspace tidy
+before you submit.
+{% else %}Pick a LeetCode problem and keep your working copy here (LeetCode's own
+editor is the judge — the platform does not expose samples to CLI tools):
+
+```sh
+# main.py: your solution as a class/function (LeetCode signature)
+# paste it into the LeetCode editor to run and submit
 ```
 
 The repo is linted and type-checked as a whole (the relaxed rules are aimed
 at contest code), so `task check` / `just check` keep your workspace tidy
 before you submit.
 {% endif %}
-{% else %}```python
+{% elif web_api %}Start the API server (the app factory lives in
+`{{ package_name }}/app/`):
+
+```sh
+{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}uvicorn {{ package_name }}.app.main:app --reload
+```
+
+The API is then at:
+
+- Swagger UI: http://localhost:8000/docs
+- OpenAPI schema: http://localhost:8000/openapi.json
+- Health probe: http://localhost:8000/health{% if prometheus_effective %}
+- Prometheus metrics: http://localhost:8000/metrics{% endif %}
+
+The demo CRUD router (`/api/v1/items`) shows the patterns to build on: an
+async SQLAlchemy session, pydantic schemas, and a BackgroundTask that logs
+item creation after the response is sent. Apply the demo model to your
+database with alembic:
+
+```sh
+{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}alembic upgrade head
+```
+{% if mcp_effective %}
+The project also ships an [MCP](https://modelcontextprotocol.io) server with
+two typed example tools (`add`, `divide`) and a `project://about` resource:
+
+```sh
+# stdio transport (the default; how an MCP host launches the server)
+uv run mcp-server-{{ repo_name }}
+```
+
+`tests/test_mcp_server.py` calls the tools through the SDK's in-process
+client — read it to see how to call this server (or any MCP server) from
+your own code.
+{% endif %}{% else %}```python
 from {{package_name}} import __version__
 
 print(f"Hello {{package_name}} {__version__}")

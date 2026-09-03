@@ -315,6 +315,42 @@ def test_template_leetcode_workspace_like_atcoder(tmp_path: Path):
     assert not (tmp_path / "tests" / "test_samples.py").exists()
 
 
+def test_template_yukicoder_workspace(tmp_path: Path):
+    # yukicoder is a code-submission judge: same bare workspace as atcoder,
+    # driven with oj (download / test / submit all work for yukicoder)
+    copy_project(tmp_path, project_type="online_judge", oj_kind="yukicoder")
+    assert not (tmp_path / "solutions").exists()
+    assert not (tmp_path / "tests" / "test_samples.py").exists()
+    assert not (tmp_path / "src").exists()
+    assert not list(tmp_path.glob("*.py"))
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["dependencies"] == []
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "dist:" not in ci
+    # README drives the oj workflow with a yukicoder URL example
+    readme = (tmp_path / "README.md").read_text()
+    assert "oj download https://yukicoder.me/problems/no/1234" in readme
+    assert "oj submit https://yukicoder.me/problems/no/1234 main.py" in readme
+
+
+def test_template_aoj_workspace(tmp_path: Path):
+    # AOJ is a code-submission judge: same bare workspace, but oj cannot
+    # submit to AOJ — the README leads with aoj-cli
+    copy_project(tmp_path, project_type="online_judge", oj_kind="aoj")
+    assert not (tmp_path / "solutions").exists()
+    assert not (tmp_path / "tests" / "test_samples.py").exists()
+    assert not (tmp_path / "src").exists()
+    assert not list(tmp_path.glob("*.py"))
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["dependencies"] == []
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "dist:" not in ci
+    # README leads with aoj-cli (init / test / submit) for AOJ
+    readme = (tmp_path / "README.md").read_text()
+    assert "aoj init ITP1_1_A" in readme
+    assert "aoj submit main.py --lang Python3" in readme
+
+
 def test_template_online_judge_repo_lints_clean(tmp_path: Path):
     """The empty workspace renders a ruff/type-check-clean repo (no sources)."""
     copy_project_recommended(tmp_path, project_type="online_judge", oj_kind="atcoder")
@@ -896,6 +932,120 @@ def test_web_api_ships_env_and_compose(tmp_path: Path):
     # .env is git-ignored
     gitignore = (tmp_path / ".gitignore").read_text()
     assert ".env" in gitignore
+
+
+def test_web_api_recommended_fastapi_stack(tmp_path: Path):
+    """The recommended web_api path ships a working FastAPI scaffold.
+
+    example-answers.yml sets use_recommended_web_api=false, so the detailed
+    questions (prometheus / rate_limit / cors) all default to true — this is
+    the full-stack render.
+    """
+    copy_project(tmp_path, project_type="web_api", docker=True)
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    for expected in ("fastapi", "uvicorn", "sqlalchemy", "alembic", "asyncpg", "asgi-correlation-id"):
+        assert any(expected in d for d in deps), f"{expected} missing from {deps}"
+    # optional observability / protection deps (all default on)
+    assert any("prometheus-client" in d for d in deps)
+    assert any("slowapi" in d for d in deps)
+
+    pkg = tmp_path / "src" / "python_copier_template_example"
+    # app factory + settings + db + demo model/schemas/router
+    for rel in (
+        "app/main.py",
+        "app/settings.py",
+        "app/db.py",
+        "app/models.py",
+        "app/schemas.py",
+        "app/router.py",
+        "app/routers/health.py",
+        "app/routers/items.py",
+    ):
+        assert (pkg / rel).exists(), f"{rel} not generated"
+    main = (pkg / "app" / "main.py").read_text()
+    assert "create_app" in main
+    assert "CorrelationIdMiddleware" in main
+    assert "app = create_app()" in main
+    # uvicorn entrypoint + healthcheck in the Dockerfile
+    dockerfile = (tmp_path / "Dockerfile").read_text()
+    assert "uvicorn" in dockerfile
+    assert "HEALTHCHECK" in dockerfile
+    # alembic pre-wired at the repo root
+    assert (tmp_path / "alembic" / "env.py").exists()
+    assert (tmp_path / "alembic" / "alembic.ini").exists()
+    # generated HTTP tests exercise the endpoints
+    test_app = (tmp_path / "tests" / "test_app.py").read_text()
+    assert "ASGITransport" in test_app
+    assert "/health" in test_app
+
+
+def test_web_api_detail_options_off(tmp_path: Path):
+    """use_recommended_web_api=false + all three switches off: minimal stack.
+
+    FastAPI itself stays (it is the recommended base), but no /metrics,
+    no slowapi, no CORS middleware, and the conditional modules are absent.
+    """
+    copy_project(
+        tmp_path,
+        project_type="web_api",
+        docker=True,
+        use_recommended_web_api=False,
+        prometheus=False,
+        rate_limit=False,
+        cors=False,
+    )
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert any("fastapi" in d for d in deps)
+    assert not any("prometheus" in d for d in deps)
+    assert not any("slowapi" in d for d in deps)
+
+    pkg = tmp_path / "src" / "python_copier_template_example"
+    assert (pkg / "app" / "main.py").exists()
+    main = (pkg / "app" / "main.py").read_text()
+    assert "metrics" not in main
+    assert "slowapi" not in main
+    assert "CORS" not in main
+    # conditional modules are not generated
+    assert not (pkg / "app" / "metrics.py").exists()
+    assert not (pkg / "app" / "rate_limit.py").exists()
+
+
+def test_web_api_not_offered_to_other_types(tmp_path: Path):
+    """FastAPI deps and app/ code must not leak into other project types.
+
+    Force the detail answers on a library — the project_type guard in the
+    *_effective variables must keep them out.
+    """
+    copy_project(
+        tmp_path,
+        project_type="library",
+        docker=True,
+        use_recommended_web_api=False,
+        prometheus=True,
+        rate_limit=True,
+        cors=True,
+    )
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    deps = pyproject_toml["project"]["dependencies"]
+    assert not any("fastapi" in d for d in deps)
+    assert not any("slowapi" in d for d in deps)
+    assert not any("prometheus" in d for d in deps)
+    assert not (tmp_path / "src" / "python_copier_template_example" / "app").exists()
+    assert not (tmp_path / "alembic").exists()
+    assert not (tmp_path / "tests" / "test_app.py").exists()
+
+
+def test_template_web_api_runs_in_process(tmp_path: Path):
+    """The generated FastAPI scaffold must actually work: sync the project,
+    run the HTTP tests (SQLite fallback), and keep it ruff/basedpyright-clean
+    — the same gates the generated project's own CI applies."""
+    copy_project(tmp_path, project_type="web_api", docker=True)
+    run = make_venv(tmp_path)
+    run("uv run --locked pytest -q")
+    run("uv run --locked ruff check .")
+    run("uv run --locked basedpyright")
 
 
 def test_web_api_ci_postgres_service(tmp_path: Path):

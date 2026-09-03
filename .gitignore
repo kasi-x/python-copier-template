@@ -147,3 +147,6 @@ typings/
 # MicroPython source tree cloned by the freeze task, and its output
 # (dist/ is already ignored above under Distribution/packaging)
 build/micropython-src/
+
+# Local test database (web API tests fall back to SQLite when no DATABASE_URL)
+.test.db

@@ -1,0 +1,104 @@
+"""HTTP tests for the web API.
+
+The app's async engine is created at import time from DATABASE_URL. Locally
+(no DATABASE_URL set) the tests fall back to a throwaway SQLite file so
+`uv run pytest` needs no Postgres; CI sets DATABASE_URL to the Postgres
+service container and the same tests exercise the real database. Tables are
+created with Base.metadata.create_all in both cases — alembic migrations are
+for schema evolution, not for running the test suite.
+
+Requests go through httpx's ASGITransport directly (no starlette TestClient),
+which keeps the tests warning-free under `filterwarnings = error` across
+anyio 3/4 and starlette 0.4x/1.x. Response payloads are validated with the
+pydantic schemas (ItemRead) so the tests stay fully typed.
+"""
+
+import os
+from collections.abc import AsyncIterator
+from pathlib import Path
+
+# Must be set before the app package is imported (db.py builds the engine at
+# import time from get_settings()).
+_TEST_DB = Path(__file__).resolve().parent.parent / ".test.db"
+os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{_TEST_DB}")
+
+import pytest
+from httpx import ASGITransport
+from httpx import AsyncClient
+from pydantic import TypeAdapter
+
+from {{ package_name }}.app.db import Base
+from {{ package_name }}.app.db import engine
+from {{ package_name }}.app.main import app
+from {{ package_name }}.app.schemas import ItemRead
+
+_ItemList = TypeAdapter(list[ItemRead])
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+async def _fresh_tables() -> None:
+    """Recreate the schema before each test (sqlite file or Postgres)."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+
+@pytest.fixture
+async def client() -> AsyncIterator[AsyncClient]:
+    """An httpx client wired to the app over ASGITransport (no network)."""
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as c:
+        yield c
+
+
+@pytest.mark.anyio
+async def test_health(client: AsyncClient) -> None:
+    response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+@pytest.mark.anyio
+async def test_request_id_header_is_set(client: AsyncClient) -> None:
+    response = await client.get("/health")
+    assert response.headers["x-request-id"]
+
+
+@pytest.mark.anyio
+async def test_create_and_list_items(client: AsyncClient) -> None:
+    created = await client.post("/api/v1/items", json={"name": "widget"})
+    assert created.status_code == 201
+    item = ItemRead.model_validate_json(created.content)
+    assert item.name == "widget"
+    assert item.id > 0
+
+    listing = await client.get("/api/v1/items")
+    assert listing.status_code == 200
+    items = _ItemList.validate_json(listing.content)
+    assert any(entry.name == "widget" for entry in items)
+
+    fetched = await client.get(f"/api/v1/items/{item.id}")
+    assert fetched.status_code == 200
+    fetched_item = ItemRead.model_validate_json(fetched.content)
+    assert fetched_item.name == "widget"
+
+
+@pytest.mark.anyio
+async def test_get_missing_item_is_404(client: AsyncClient) -> None:
+    response = await client.get("/api/v1/items/999999")
+    assert response.status_code == 404
+{% if prometheus_effective %}
+
+
+@pytest.mark.anyio
+async def test_metrics_endpoint(client: AsyncClient) -> None:
+    response = await client.get("/metrics")
+    assert response.status_code == 200
+    # prometheus-client's default request counter
+    assert "http_requests_total" in response.text
+{% endif %}
