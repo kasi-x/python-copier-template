@@ -129,20 +129,36 @@
 
 ## 4. 「常駐する実行可能物」の実行形態を新設する（bot / MCP server の受け皿）
 
-- [ ] project_type に `daemon` / `service`（常駐実行物: bot、MCP server、長命 worker）を
+- [x] project_type に `daemon` / `service`（常駐実行物: bot、MCP server、長命 worker）を
       追加するか、既存 project_type の上に載るレイヤーとして独立起動モジュールを持つ
-      設計にするか決定する
+      設計にするか決定する → **既存の上に載るレイヤー方式** に決定
       - 判断基準は設計原則1（実行環境が根本から違うか）。bot/MCP は「イベントループ +
-        トークン/env で起動する長命プロセス」で、HTTP サーバとも即終了 CLI とも違う
-      - マイクロPython / VFX と違い「ビルド」は通常なので、project_type より
-        軽い枠の可能性が高い。まず最小プロトタイプで決める
-- [ ] `__main__.py` を「常駐起動（トークン必須、環境変数チェック）」に置き換える分岐を
-      設計する（CLI と衝突させない）
+        トークン/env で起動する長命プロセス」だが、library / cli / web_api と同じ
+        CPython + uv 実行環境に載る。マイクロPython / VFX（ビルド・実行対象が根本から
+        違う）と違い、実行環境軸で project_type を増やす根拠が無い
+      - 「cli / web_api の上に bot 実行モジュールを置く」レイヤーとして扱う
+        （bot / MCP server は「ホストやイベントループに起動される実行可能物」であり、
+        import される側の library には載せない。2026-09 に include_mcp を cli/web_api へ絞った）。
+        既存の `include_mcp`（cli/web_api 上に mcp_server.py + `mcp-server-<name>` console
+        script を生成して常駐起動する）が既にこのレイヤーの実装例
+- [x] `__main__.py` を「常駐起動（トークン必須、環境変数チェック）」に置き換える分岐を
+      設計する（CLI と衝突させない） → **独立起動モジュール方式** に決定
+      - `__main__.py`（CLI: `python -m <pkg>` / `scripts.<name>`）は即終了コマンドの
+        まま維持し、常駐物は別モジュール（例: mcp_server.py）の `main()` を
+        `python -m <pkg>.mcp_server` で起動する
+      - 理由: `__main__.py` にトークン必須・env チェックの分岐を足すと、Docker の
+        ENTRYPOINT（`scripts.<name>` = CLI）や既存テスト（`python -m <pkg> --version`）
+        と衝突する。常駐物ごとに独立モジュール + 専用 `[project.scripts]` を持つ方が
+        CLI / 常駐の二重起動を構造的に防げる
 - [ ] botter 向け（discord / slack）: 新設した常駐レイヤーの platform として
       discord / slack を実装する
       - discord.py / nextcord / py-cord と slack-sdk / bolt のどれを推奨1本にするか
       - .env.example のトークン管理、structlog 連携、Docker での常駐/再起動方針
-- [ ] 既存の `include_mcp` をこの常駐レイヤーへ統合する（下記5と一体で整理）
+      - （「常駐レイヤー」の設計と MCP の実装例は docs/explanations と docs/how-to に
+        文書化済み。discord/slack はこの受け皿に載せる platform の実装として将来着手）
+- [x] 既存の `include_mcp` をこの常駐レイヤーへ統合する（下記5と一体で整理）
+      → 既存 include_mcp（mcp_server.py 生成）を常駐レイヤーの最初の実装例と位置づけ、
+      docs（how-to / explanations）にその位置づけを文書化した
 
 ## 5. MCP の整理（include_mcp と mcp_server の分裂解消）
 
@@ -151,10 +167,81 @@
       - 旧 specialty='mcp_server' を撤去し、inspector 実行方法を include_mcp 生成の
         mcp_server.py docstring / README に移植した。これにより
         「片方だけ選ぶと exclude されない生成コードができる」不整合も構造的に消えた
-- [ ] mcp_server の実装例を「型付きツールの登録」まで拡充する（ツール定義・引数スキーマ・
+- [x] **MCP Python SDK v2 移行**（2026-09。`pip install mcp` が 2.x になったことに伴い、
+      生成物が import エラーで壊れていた問題を修正）
+      - `FastMCP`（`mcp.server.fastmcp`）→ `MCPServer`（`mcp.server`）。v1 の import パスは
+        v2 で消失しており、無指定の `"mcp"` 依存では新規生成プロジェクトが壊れる
+      - 依存を `mcp[cli]>=2.0,<3` に変更（cli extra は `mcp dev/run/install` を提供。
+        `<3` 上限は v1→v2 事故の再発防止）
+      - SSE transport を撤去し **streamable-http** に置き換え（`--transport streamable-http`。
+        SSE はプロトコル上 deprecated で「新規構築するな」の位置づけ）
+      - `run()` は `if __name__ == "__main__":` ガード内でのみ呼ぶ（v2 要件。import で起動しない）
+      - v2 SDK は完全な型スタブを同梱するため、mcp_server.py の basedpyright/pyrefly
+        exclude を**撤去**（v1 時代の「stubs が無い」理由は消滅。argparse 起因の reportAny は
+        `cast(Literal[...])` で回避）
+- [x] mcp_server の実装例を「型付きツールの登録」まで拡充する（ツール定義・引数スキーマ・
       エラー処理）。テストは in-process client でツール呼び出しを検証する
-- [ ] streamable HTTP（リモートMCP）と docker での運用まで含めるかは、
+      - `add(a: int, b: int)` / `divide(...)` の型付きツール（スキーマは型ヒントから自動生成）
+        + `ToolError`（0 除算）の例 + `project://about` resource の例
+      - `tests/test_mcp_server.py` を生成: SDK の `Client(mcp)` による **in-memory 接続**
+        （サブプロセス・ポート不要）。anyio（`@pytest.mark.anyio`）+ `anyio_backend` fixture。
+        dev 依存に anyio を追加（mcp SDK の推移的依存だが明示する）。このテストが
+        「client としての利用コード」の見本を兼ねる
+      - **「開発と利用は分けない」判断**: SDK は1パッケージで server/client 両対応。
+        ホスト登録や `uvx` での既製サーバ利用はコード生成の対象外（設定+コマンド）のため
+        how-to の1節でカバーし、質問は増やさない
+- [x] streamable HTTP（リモートMCP）と docker での運用まで含めるかは、
       常駐レイヤーの設計（4）に合わせて決める
+      - **streamable-http は scaffold の transport として採用**（`--transport streamable-http`、
+        起動は `python -m <pkg>.mcp_server`）
+      - **Docker でのリモート運用**（compose service 化・HEALTHCHECK・認証）と
+        **配布前提スタンドアロンサーバ**（reference servers 型: PyPI 公開 + `uvx` + `.mcp.json`
+        でのホスト登録レシピ）は将来TODOとして明記する（下記6の web_api Docker 拡充と一体で検討）
+- [x] **include_mcp の対象を cli / web_api に絞る**（library は対象外に）
+      - 理由: library は「import される側」であり、実行可能サーバを載せる動機が薄い。
+        cli = stdio ローカルサーバ、web_api = streamable-http 配信に正直に割り当てる
+      - **console script `mcp-server-<name>` を追加**（`[project.scripts]`）。ローカルでは
+        MCP ホストが `uv run mcp-server-<name>` で起動、公開後は `uvx mcp-server-<name>` で利用
+      - data_science / script / online_judge / ros2 / micropython / library では質問を出さず、
+        data 強制でも orphan 依存が付かないよう内部変数 `mcp_effective` で render を一元化
+        （既存 `security_policy_effective` 方式）
+- [x] **MCP scaffold へのセキュリティ実装**（2026-09。「実際にしこむ」対応）
+      - docs の指針をコードに反映: `mcp_server.py` に **`--host` / `--port`** フラグを追加し、
+        **非ローカルバインド（--host 0.0.0.0 等）には `MCP_ALLOWED_HOSTS` を必須化**
+        （SDK は localhost 以外で DNS-rebinding protection を自動無効化するため、allowlist 無しの
+        公開バインドは起動を拒否して構造的に防ぐ）。`MCP_ALLOWED_ORIGINS` も任意対応
+      - `GET /health` を `@server.custom_route` で登録（無認証・allowlist 対象外は SDK 仕様。
+        Docker / オーケストレータの liveness 用）
+      - docker=true && include_mcp の時だけ **`mcp-serve` タスク**（docker build + run）を
+        全タスクランナーに追加。Dockerfile に EXPOSE 8000 + 起動コメント
+      - README / run-container / .env.example / docs に MCP_ALLOWED_HOSTS と Docker 起動例を追記。
+        生成テストに health ルート・_allowed_hosts の in-process 検証を追加
+      - 生成物の文字列連結は **ruff デフォルト（複数行は暗黙連結が標準）を明示的に固定**:
+        `lint.flake8-implicit-str-concat.allow-multiline = true` を記載し、
+        ISC003（複数行 `+` 連結の禁止）を有効のままにする。basedpyright の
+        `reportImplicitStringConcatenation = false` で暗黙連結を許可
+      - スモーク検証済み: allowlist 無しの 0.0.0.0 バインドは拒否、allowlist 有りで起動し
+        悪意 Host は /mcp で 421、/health は 200。uv sync + pytest 9本 + ruff/basedpyright/
+        pyrefly/deptry/vulture 全クリーン
+- [ ] **将来拡張: 配布前提スタンドアロン MCP サーバのレシピ**（reference servers 型）
+      - cli + include_mcp は console script（`mcp-server-<name>`）まで生成済み。残りは
+        PyPI 公開（既存 `pypi` 質問 + CI release job）後の `uvx mcp-server-<name>` 利用案内と、
+        `.mcp.json` / `claude mcp add` でのホスト登録レシピの docs 拡充
+      - 「自作サーバを library として配る」要求は cli 形状の配布アプリとして扱う
+        （import される library ではなく、起動される console script が配布単位）
+- [ ] **将来拡張: MCP server の本番運用**（残作業）
+      - 調査メモ（2026-09）: MCP SDK 公式に Docker レシピは無い。SDK はプロセス管理を
+        提供せず（`mcp.run()` は単一 uvicorn）、デプロイで MCP が関与するのは
+        `TransportSecuritySettings`（Host allowlist。実装済み）のほか、
+        マルチワーカー時の `RequestStateSecurity` 共有鍵と `SubscriptionBus` の2点。
+        認証（OAuth 等）とプロセス管理は利用者側の仕事
+      - streamable-http を **compose service 化**し、HEALTHCHECK（`/health` は実装済み）・
+        認証（OAuth / reverse proxy）をどう載せるか。項目6（web_api の Docker 拡充）と一体で設計する
+      - 最小権限・外部入力（prompt injection / SSRF）・ToolError の意図・公開時の
+        transport_security 必須は docs/how-to/mcp.md の Security for server developers /
+        users and operators 節に文書化済み。OWASP Agentic Skills Top 10 はスキル配布レイヤー
+        （SKILL.md 等）向けで MCP server 開発の直接参照にはならない
+        （OWASP Agentic AI Top 10 / LLM Top 10 が対応する領域）
 
 ## 6. web_api を「動く FastAPI scaffold」へ拡充する（s3rius/FastAPI-template 参考）
 
@@ -253,3 +340,63 @@
 - [ ] 生成先 renovate.json（template/renovate.json.jinja）とテンプレート本体の同期確認
 - [ ] periodic.yml の linkcheck に加え、copier.yml の default / README 記載の固定バージョン
       が古くならないかの定期チェックを検討する
+
+## 13. セキュリティ / コンプライアンス基盤の整備（OpenSSF Scorecard / OSPS 準拠）
+
+ルート（テンプレ自体）と生成物の両層に、OpenSSF Scorecard の検証項目とリポジトリ配置
+（SECURITY.md / CODEOWNERS / ISSUE_TEMPLATE / REUSE / CITATION.cff / codemeta.json /
+Scorecard workflow / zizmor SAST / Aqua.jl 風 test_qa.py）を実装した。
+
+### 実施済み
+
+- [x] ルート workflow の権限最小化: 全 `.github/workflows/*.yml` に
+      `permissions: contents: read` と checkout `persist-credentials: false`
+      （例外は push 用 `_example.yml`）。生成物側はルートへの symlink のため自動反映
+- [x] ルートに SECURITY.md / LICENSE(Apache-2.0) / LICENSES/ / REUSE.toml /
+      CITATION.cff / codemeta.json / .github/CODEOWNERS / .github/ISSUE_TEMPLATE/ を新設
+- [x] `.github/workflows/scorecard.yml`（SHA固定・publish_results）と
+      `security.yml`（zizmor-action CI）を新設
+- [x] renovate に `helpers:pinGitHubActionDigests` を追加（ルートと生成物両方）
+- [x] copier.yml に `use_recommended_security` ゲート + `security_policy` / `scorecard`
+      詳細質問を追加。SECURITY.md / scorecard.yml は GitHub プロジェクト限定
+      （effective 変数で render 時に git_platform 判定）
+- [x] 生成物に SECURITY.md.jinja / security.yml.jinja / scorecard.yml.jinja /
+      test_qa.py.jinja を追加（online_judge では test_qa を生成しない）
+- [x] ルート tests/test_qa.py + 生成物 test_qa.py.jinja（Aqua.jl 風）
+- [x] tests/test_workflow_security.py（permissions / persist-credentials / 分岐参照の静的検査）
+- [x] docs/explanations/security.md + README バッジ（Scorecard）追加
+
+### 残タスク（今回のセッションで対応）
+
+- [x] **全アクションの SHA 固定**（ルート + 生成物）:
+      ルート `.github/workflows/*.yml` の全 `uses:` を手動で 40桁SHA + `# vX.Y.Z`
+      コメントに変換（renovate の pinning PR を待たず実施）。テンプレの実体ファイル
+      （ci.yml.jinja / fair-software.yml.jinja / security.yml.jinja / scorecard.yml.jinja）
+      も手動固定。生成物の reusable はルートへの symlink なのでルートの変換で反映。
+      例外: `pypa/gh-action-pypi-publish@release/v1` のみ upstream 推奨ブランチ運用のため
+      非固定（zizmor.yml に ignore で明記）。
+      なお、ルートが参照していた `actions/upload-artifact@v8` は実在しないタグで
+      （v8 は download-artifact のみ）、テンプレ ci.yml.jinja を v7.0.1 に修正
+- [x] zizmor の全ルール有効化 + 意図的例外を ignore で明記（ルートと生成物の両方）:
+      unpinned-uses（_pypi.yml の release/v1）/ artipacked（_example.yml の push 用
+      credentials）/ superfluous-actions（_release.yml と ci.yml の softprops）/
+      template-injection（ci.yml の toJSON(needs)）を ignore 化。disable は全廃
+- [x] tests/test_workflow_security.py を全 SHA 必須に強化:
+      `DELIBERATE_BRANCH_REFS`（pypi publish のみ）を例外として、それ以外の `uses:` は
+      40桁SHA を必須化
+- [x] 生成物 renovate.json.jinja の無効化 packageRules に新規アクションを追加:
+      zizmorcore/zizmor-action（常時）/ ossf/scorecard-action + github/codeql-action
+      （scorecard 有効時）をテンプレ管理対象として renovate の更新停止
+- [x] ルート .pre-commit-config.yaml に `validate-cff` / `reuse` フックを追加
+      （CITATION.cff / REUSE.toml の検証を本体でも実施。ともに Passed 確認）
+
+### 残タスク（外部・手動依存）
+
+- [ ] renovate の digest 更新を確認（SHA 固定済み参照の新バージョン追随は renovate の
+      digest PR が担う。初回実行で pinning/digest PR が開くのを確認する）
+- [ ] example リポジトリ（kasi-x/python-copier-template-example）を copier update で
+      再生成し、test_example_repo_updates のパリティを通す
+      （main push で _example.yml が自動実行）
+- [ ] リポジトリ公開後に Scorecard のスコア・バッジを確認（private では機能しない）
+- [ ] ブランチ保護/ルールセット（署名コミット・線形履歴・必須チェック・レビュー）は
+      GitHub 設定で有効化（コードでは強制不可）

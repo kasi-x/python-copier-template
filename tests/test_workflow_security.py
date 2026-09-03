@@ -106,9 +106,7 @@ def test_checkout_uses_persist_credentials_false():
                 if name in CREDENTIAL_KEEPERS:
                     # Intentionally keeps credentials to push (deploy key).
                     continue
-                assert persist is False, (
-                    f"{name}:{job_name} checkout should set persist-credentials: false"
-                )
+                assert persist is False, f"{name}:{job_name} checkout should set persist-credentials: false"
 
 
 def test_checkout_not_used_with_default_credentials_for_pushing_jobs():
@@ -127,28 +125,25 @@ def test_checkout_not_used_with_default_credentials_for_pushing_jobs():
                 # Credentials are kept. That is only acceptable for the
                 # dedicated push workflow (_example.yml, via deploy key).
                 assert name in CREDENTIAL_KEEPERS, (
-                    f"{name}:{job_name} keeps checkout credentials but is not "
-                    f"in {sorted(CREDENTIAL_KEEPERS)}"
+                    f"{name}:{job_name} keeps checkout credentials but is not in {sorted(CREDENTIAL_KEEPERS)}"
                 )
 
 
-# Mutable branch refs that predate renovate's pinDigests migration. Each is a
-# known upstream release line that renovate will convert to a full SHA in its
-# pinning PR; once that lands, delete this allowlist and require SHA everywhere.
-TRANSITIONAL_BRANCH_REFS = {
+# The single deliberate non-SHA reference: pypa/gh-action-pypi-publish is used
+# at its upstream-recommended release line @release/v1 (a branch ref renovate
+# cannot digest-pin). Mirrored in .github/zizmor.yml's unpinned-uses ignore.
+DELIBERATE_BRANCH_REFS = {
     "pypa/gh-action-pypi-publish@release/v1",
 }
 
 
-def test_uses_are_not_branch_refs_and_shas_are_full_length():
-    """Scorecard Pinned-Dependencies guard, in its pre-pinDigests form.
+def test_uses_are_pinned_to_full_sha():
+    """Scorecard Pinned-Dependencies: every third-party action is SHA-pinned.
 
-    renovate's `helpers:pinGitHubActionDigests` converts every `uses:` to a
-    40-char SHA (with the version tag kept as a comment). Until that pinning
-    PR lands, tag refs (`@v7`) are the transitional state and are allowed
-    here; what is never allowed is a mutable *branch* ref (`@main`,
-    `@master`, `@release/v1`) or a short SHA. Once pinning has landed, flip
-    this to require the full SHA everywhere.
+    renovate's `helpers:pinGitHubActionDigests` keeps these digests current.
+    The only exception is `pypa/gh-action-pypi-publish@release/v1` (see
+    DELIBERATE_BRANCH_REFS) — a deliberate, documented deviation mirrored in
+    .github/zizmor.yml.
     """
     workflows = _workflows()
     sha_re = re.compile(r"^[0-9a-f]{40}$")
@@ -159,15 +154,13 @@ def test_uses_are_not_branch_refs_and_shas_are_full_length():
                 if not uses:
                     continue
                 # Local reusable workflows (.github/workflows/*.yml) are not
-                # third-party; the actions/* namespace is first-party.
+                # third-party.
                 if uses.startswith("./"):
                     continue
                 _owner_repo, _, ref = uses.partition("@")
-                if sha_re.match(ref):
-                    continue  # fully pinned
-                if uses in TRANSITIONAL_BRANCH_REFS:
-                    continue  # renovate's pinning PR converts this
-                assert "/" not in ref, (
-                    f"{name}:{job_name} uses mutable branch ref {uses!r} -- "
-                    f"pin to a 40-char SHA or wait for renovate's pinning PR"
+                if uses in DELIBERATE_BRANCH_REFS:
+                    continue
+                assert sha_re.match(ref), (
+                    f"{name}:{job_name} uses {uses!r} -- pin to a 40-char SHA "
+                    f"with the version as a comment (e.g. @<sha> # vX.Y.Z)"
                 )

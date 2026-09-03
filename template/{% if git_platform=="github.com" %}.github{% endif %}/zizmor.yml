@@ -1,25 +1,33 @@
 # Configuration for zizmor (GitHub Actions security analysis), run via pre-commit.
 # See https://woodruffw.github.io/zizmor for the full reference.
+#
+# All audits are enabled. The exceptions below are deliberate:
+#   - unpinned-uses on _pypi.yml: pypa/gh-action-pypi-publish@release/v1 is
+#     the upstream-recommended release line (mutable branch ref, not a tag
+#     renovate can digest-pin). Only generated when PyPI publishing is on.
+#   - superfluous-actions on _release.yml and ci.yml: softprops/
+#     action-gh-release uploads release assets (docs zip / firmware / GitHub
+#     release notes) from downloaded artifacts.
+#   - template-injection on ci.yml: the `required-checks-passed` gate renders
+#     `${{ toJSON(needs) }}` — job *outcomes* from the workflow's own `needs`,
+#     not attacker-controllable input.
 
 rules:
-  # Actions are referenced by tag (e.g. @v7) and pinned via renovate
-  # (`helpers:pinGitHubActionDigests`), which converts them to full commit
-  # SHAs in its pinning PR. Until that PR lands, zizmor's SHA pinning audit
-  # is disabled; re-enable `unpinned-uses` once every `uses:` carries a SHA.
   unpinned-uses:
-    disable: true
-  # The generated workflows use `${{ }}` in `run:` steps only for safe
-  # variable expansion (e.g. matrix values), not untrusted user input.
-  template-injection:
-    disable: true
-  # Release/publish workflows explicitly need `contents: write` and
-  # `id-token: write`; the per-job `permissions` blocks are deliberate.
-  excessive-permissions:
-    disable: true
-  # `actions/checkout` is the standard, pinned upstream action.
+    ignore:
+      # _pypi.yml uses pypa/gh-action-pypi-publish@release/v1 (upstream's
+      # recommended release line; a branch ref, not a pinnable tag).
+      - _pypi.yml
   superfluous-actions:
-    disable: true
-  # `_example.yml` needs to push to the example repo, so its checkout keeps
-  # credentials; the template's generated projects don't ship this workflow.
-  artipacked:
-    disable: true
+    ignore:
+      # softprops/action-gh-release uploads multi-asset releases (docs zip)
+      # from downloaded artifacts.
+      - _release.yml
+      # online_judge / micropython ci.yml jobs use softprops/action-gh-release
+      # to publish release notes + firmware/assets on tag.
+      - ci.yml
+  template-injection:
+    ignore:
+      # required-checks-passed renders toJSON(needs) — the workflow's own job
+      # outcomes, not attacker-controlled context.
+      - ci.yml

@@ -32,11 +32,13 @@ nav = [
       { "ROS 2" = "how-to/ros2.md" },
       { "MicroPython" = "how-to/micropython.md" },
       { "Web API" = "how-to/web-api.md" },
+      { "MCP Server" = "how-to/mcp.md" },
   ]},
   { "Explanations" = [
       { "Overview" = "explanations.md" },
       { "Structure" = "explanations/structure.md" },
       { "Why Use Template" = "explanations/why-use-template.md" },
+      { "Long-Running Executables" = "explanations/long-running.md" },
       { "Security & Compliance" = "explanations/security.md" },
   ]},
   { "Reference" = [

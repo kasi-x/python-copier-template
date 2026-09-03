@@ -66,4 +66,12 @@ ENV PATH=/app/.pixi/envs/default/bin:$PATH
 
 # change this entrypoint if it is not the same as the repo
 ENTRYPOINT ["{{ repo_name }}"]
-CMD ["--version"]{% endif %}
+CMD ["--version"]{% if mcp_effective %}
+# The image also ships the MCP server console script. Serve it over Streamable
+# HTTP with (the allowlist is enforced by mcp_server.py for non-local binds):
+#   docker run --rm -p 8000:8000 \
+#     -e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 \
+#     --entrypoint mcp-server-{{ repo_name }} {{ repo_name }} \
+#     --transport streamable-http --host 0.0.0.0
+# Health check (unauthenticated): GET http://localhost:8000/health
+EXPOSE 8000{% endif %}{% endif %}

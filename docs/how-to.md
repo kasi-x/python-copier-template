@@ -16,6 +16,7 @@ Practical step-by-step guides for the more experienced user.
 - [ROS 2 Package Integration](how-to/ros2.md)
 - [MicroPython Firmware](how-to/micropython.md)
 - [Web API Service Scaffolding](how-to/web-api.md)
+- [MCP Server Scaffolding](how-to/mcp.md)
 - [Code Coverage](how-to/coverage.md)
 - [Check Docs Style](how-to/check-docs-style.md)
 - [Renovate Dependency Updates](how-to/renovate.md)

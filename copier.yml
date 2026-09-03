@@ -532,10 +532,15 @@ include_sentry:
 
 include_mcp:
     type: bool
-    when: "{{ not use_recommended_integrations }}"
+    when: "{{ not use_recommended_integrations and project_type in ['cli', 'web_api'] }}"
     help: |
-        Would you like to include MCP (Model Context Protocol) support?
-        If yes, the mcp SDK is added with stdio and SSE transports.
+        Publish this project as an MCP (Model Context Protocol) server?
+        If yes, the mcp SDK (with its CLI) is added and an mcp_server.py
+        is generated: a typed-tools example server you run over stdio or
+        Streamable HTTP, plus an in-process client test as a worked example
+        of how to call it. A mcp-server-<name> console script is added too,
+        so an MCP host can launch it (and, once published, users can run it
+        with uvx).
     default: false
 
 ci_provider:
@@ -579,15 +584,17 @@ use_recommended_security:
         SHAs (renovate keeps them up to date), zizmor + actionlint checks,
         a SECURITY.md vulnerability-reporting policy, and a test_qa.py that
         verifies dependency integrity and the public API at runtime.
-        Answer No to drop SECURITY.md, or opt into the OpenSSF Scorecard
-        workflow (only meaningful for public repositories).
+        Answer No to drop SECURITY.md or add an OpenSSF Scorecard workflow
+        (GitHub projects; public repos only for the badge).
 
 security_policy:
     type: bool
     when: "{{ not use_recommended_security }}"
     help: |
         Include a SECURITY.md vulnerability-reporting policy (GitHub
-        Security Advisory workflow + response expectations)?
+        Security Advisory workflow + response expectations)? GitHub projects
+        only — GitLab has no private-advisory workflow, so its generated
+        projects skip SECURITY.md regardless.
     default: true
 
 scorecard:
@@ -595,9 +602,37 @@ scorecard:
     when: "{{ not use_recommended_security }}"
     help: |
         Add the OpenSSF Scorecard workflow to measure supply-chain security
-        and publish a badge? Only meaningful for public repositories (the
-        badge and published results require a public repo).
+        and publish a badge? GitHub projects only, and only meaningful for
+        public repositories (the badge and published results require a
+        public repo).
     default: false
+
+# Security & compliance effective settings. security_policy / scorecard keep
+# their defaults when unasked (gate on); the git_platform guard here is what
+# keeps GitHub-only files (SECURITY.md / scorecard.yml) out of GitLab
+# projects — git_platform is asked later, in Project Details, so it can only
+# be applied at render time, not in the questions' `when`.
+security_policy_effective:
+    type: bool
+    default: "{{ security_policy and git_platform == 'github.com' }}"
+    when: false
+
+scorecard_effective:
+    type: bool
+    default: "{{ scorecard and git_platform == 'github.com' }}"
+    when: false
+
+# MCP effective settings. include_mcp keeps its default (false) when unasked
+# (gate on); the project_type guard here is what keeps the mcp dependency,
+# mcp_server.py and its test out of project types that render no package
+# module (online_judge / ros2 / micropython), no mcp_server.py variant
+# (data_science / script) or no runnable-server reason to ship one (library)
+# — include_mcp is only asked for the types below, but data can force it in
+# render-time tests, so the guard must live here.
+mcp_effective:
+    type: bool
+    default: "{{ include_mcp and project_type in ['cli', 'web_api'] }}"
+    when: false
 
 # Project Details
 package_name:

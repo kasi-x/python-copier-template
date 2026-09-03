@@ -63,8 +63,14 @@ Answering **No** to an area gate reveals its detailed questions:
 - **License**: the full choosealicense.com list plus Proprietary/Confidential,
   FAIR metadata (CITATION.cff / REUSE), author ORCID
 - **Integrations**: Docker, PyPI publishing, cloud provider (aws / gcp /
-  azure), Sentry, MCP, CI provider, logging library
-- **Security**: SECURITY.md vulnerability policy, OpenSSF Scorecard workflow
+  azure), Sentry, MCP (cli / web_api only — scaffolds an MCP server module
+  with typed tools, a `mcp-server-<name>` console script and an in-process
+  client test; see [the MCP how-to](../how-to/mcp.md) and
+  [the layer model](../explanations/long-running.md)), CI provider, logging
+  library
+- **Security** (GitHub projects): SECURITY.md vulnerability policy, OpenSSF
+  Scorecard workflow. GitLab projects skip both (no private-advisory /
+  Scorecard-badge support there)
 
 ## Project details
 

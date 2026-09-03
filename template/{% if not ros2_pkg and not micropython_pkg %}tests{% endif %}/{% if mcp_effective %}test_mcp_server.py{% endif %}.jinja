@@ -1,0 +1,78 @@
+"""In-process client tests for the MCP server scaffold.
+
+The SDK's Client connects to the server object directly — no subprocess, no
+port. This is also the worked example of how to call this server as a client
+from your own code (tools/list, tools/call, resources/read all go through
+the same Client API).
+"""
+
+from collections.abc import AsyncIterator
+
+import pytest
+from mcp import Client
+from mcp.types import TextContent
+from mcp.types import TextResourceContents
+from {{ package_name }} import mcp_server
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+@pytest.fixture
+async def client() -> AsyncIterator[Client]:
+    async with Client(mcp_server.server, raise_exceptions=True) as c:
+        yield c
+
+
+@pytest.mark.anyio
+async def test_call_add_tool(client: Client) -> None:
+    result = await client.call_tool("add", {"a": 1, "b": 2})
+    assert isinstance(result.content[0], TextContent)
+    assert result.content[0].text == "3"
+
+
+@pytest.mark.anyio
+async def test_divide_by_zero_returns_a_tool_error(client: Client) -> None:
+    result = await client.call_tool("divide", {"numerator": 1.0, "denominator": 0.0})
+    assert result.is_error is True
+    assert "division by zero" in str(result.content)
+
+
+@pytest.mark.anyio
+async def test_about_resource(client: Client) -> None:
+    result = await client.read_resource("project://about")
+    assert isinstance(result.contents[0], TextResourceContents)
+    assert result.contents[0].text == "MCP server for {{ repo_name }}."
+
+
+def test_health_route_registered() -> None:
+    """GET /health is served by the Streamable HTTP app.
+
+    Unauthenticated by design (custom routes bypass the allowlist), for
+    container orchestrators.
+    """
+    app = mcp_server.server.streamable_http_app()
+    assert any(getattr(route, "path", None) == "/health" for route in app.routes)
+
+
+def test_allowed_hosts_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    """MCP_ALLOWED_HOSTS turns into TransportSecuritySettings.
+
+    Unset means the SDK's default localhost-only protection stays in charge.
+    """
+    monkeypatch.delenv("MCP_ALLOWED_HOSTS", raising=False)
+    monkeypatch.delenv("MCP_ALLOWED_ORIGINS", raising=False)
+    assert mcp_server._allowed_hosts() is None
+
+    monkeypatch.setenv("MCP_ALLOWED_HOSTS", "localhost, mcp.example.com")
+    security = mcp_server._allowed_hosts()
+    assert security is not None
+    assert security.allowed_hosts == ["localhost", "mcp.example.com"]
+    assert security.allowed_origins == []
+
+    monkeypatch.setenv("MCP_ALLOWED_ORIGINS", "https://app.example.com")
+    security = mcp_server._allowed_hosts()
+    assert security is not None
+    assert security.allowed_origins == ["https://app.example.com"]

@@ -95,3 +95,33 @@ def test_recommended_path_renders(tmp_path: Path, answers: dict[str, object]):
     # leak into the output for flat-layout copies of __main__.py).
     leftovers = list(tmp_path.rglob("*.jinja"))
     assert leftovers == [], f"unrendered .jinja files left in {[str(p) for p in leftovers]}"
+
+
+def test_recommended_path_ships_security_hardening(tmp_path: Path):
+    """The recommended path (all gates true) ships the security defaults.
+
+    SECURITY.md and the zizmor security workflow are part of the
+    recommended settings; the OpenSSF Scorecard workflow is opt-in
+    (public-repo only), so it must NOT appear on the fast path.
+    """
+    run_copy(
+        src_path=str(TOP),
+        dst_path=tmp_path,
+        data={**BASE, "project_type": "library"},
+        vcs_ref="HEAD",
+        defaults=True,
+        unsafe=True,
+        overwrite=True,
+        skip_tasks=True,
+    )
+    assert (tmp_path / "SECURITY.md").exists(), "recommended path should ship SECURITY.md"
+    assert (tmp_path / ".github" / "workflows" / "security.yml").exists(), (
+        "recommended path should ship the zizmor security workflow"
+    )
+    assert not (tmp_path / ".github" / "workflows" / "scorecard.yml").exists(), (
+        "scorecard is opt-in and must not appear on the recommended path"
+    )
+    # The generated QA test (Aqua.jl spirit) ships with the test suite.
+    assert (tmp_path / "tests" / "test_qa.py").exists()
+    readme = (tmp_path / "README.md").read_text()
+    assert "SECURITY.md" in readme, "README should link the security policy"

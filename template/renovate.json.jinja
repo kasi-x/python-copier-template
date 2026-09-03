@@ -35,13 +35,16 @@
         "orhun/git-cliff-action",
         "codecov/codecov-action",
         "arduino/setup-task",
-        "extractions/setup-just"{% if docker %},
+        "extractions/setup-just",
+        "zizmorcore/zizmor-action"{% if docker %},
         "docker/setup-buildx-action",
         "docker/login-action",
         "docker/build-push-action",
         "docker/metadata-action"{% endif %}{% if pypi %},
         "pypa/gh-action-pypi-publish"{% endif %}{% if docs %},
-        "peaceiris/actions-gh-pages"{% endif %}{% if fair %},
+        "peaceiris/actions-gh-pages"{% endif %}{% if scorecard_effective %},
+        "ossf/scorecard-action",
+        "github/codeql-action"{% endif %}{% if fair %},
         "fair-software/howfairis-github-action"{% endif %}
       ],
       "matchManagers": [

@@ -13,6 +13,30 @@ $ docker run ghcr.io/{{github_org | lower}}/{{repo_name}}:latest --version
 
 To get a released version, use a numbered release instead of `latest`.
 
+{% if mcp_effective %}
+## Running the MCP server in the container
+
+The image ships the `mcp-server-{{ repo_name }}` console script alongside the
+CLI. To serve the MCP server over Streamable HTTP:
+
+```
+$ docker run --rm -p 8000:8000 \
+    -e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 \
+    --entrypoint mcp-server-{{ repo_name }} {{ repo_name }} \
+    --transport streamable-http --host 0.0.0.0
+```
+
+`MCP_ALLOWED_HOSTS` is required for the non-local bind: the MCP SDK only
+arms its DNS-rebinding protection for localhost, so `mcp_server.py` refuses
+to start without an explicit host allowlist (it rejects every request the
+SDK does not know). Health check for the container orchestrator:
+`curl http://localhost:8000/health` (unauthenticated; custom routes bypass
+the allowlist by design, and expose no tools or data).
+
+If your task runner is configured for it, the same command is one task:
+`just mcp-serve` / `task mcp-serve` / `poe mcp-serve`.
+{% endif %}
+
 ## Logging in the cloud
 
 Logs go to stderr as human-readable console text by default; set the

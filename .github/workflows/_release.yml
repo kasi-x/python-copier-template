@@ -13,14 +13,14 @@ jobs:
         # Into its own directory, not the workspace root: `files: "*"` below
         # uploads everything sitting in the workspace root as release
         # assets, and that must stay limited to the downloaded artifacts.
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: _checkout
           persist-credentials: false
           fetch-depth: 0
 
       - name: Download artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           merge-multiple: true
 

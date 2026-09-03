@@ -38,10 +38,15 @@ When you generate a project, the `use_recommended_security` gate (default
 - the same hardened CI: minimal permissions, SHA-pinned actions (renovate
   keeps the digests current), a zizmor CI job, `SECURITY.md`;
 - a generated `tests/test_qa.py` that verifies every module imports, the
-  `__all__` public API resolves, and imported third-party modules are
-  declared in `pyproject.toml`.
+  `__all__` public API resolves, and no module imports a missing internal
+  sibling (dependency completeness against `pyproject.toml` is deptry's
+  static job, run in `task type-check`).
 
-Answer **No** to that gate to also choose:
+The gate applies to GitHub projects. GitLab projects skip `SECURITY.md` and
+the Scorecard workflow (GitHub private advisories and the Scorecard badge
+both require github.com); they keep the hardened `.gitlab-ci.yml` instead.
+
+Answer **No** to the gate (on GitHub) to also choose:
 
 - `security_policy` (default yes): include `SECURITY.md`;
 - `scorecard` (default no): add the OpenSSF Scorecard workflow + README

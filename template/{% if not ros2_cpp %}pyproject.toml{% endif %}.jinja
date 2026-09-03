@@ -30,10 +30,11 @@ classifiers = [
 {% elif online_judge %}version = "0.1.0"
 {% else %}dynamic = [ "version" ]
 {% endif %}
-dependencies = [{% if micropython_pkg or oj_code %}{% elif kaggle or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if kaggle %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15,<1", "xgboost>=2", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34", "botocore>=1.34", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if include_mcp %}"mcp", {% endif %}{% if not use_recommended_agent and project_type in ['library', 'cli'] %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if data_science or kaggle %}"duckdb", "pyarrow", "polars>=0.20.15", {% endif %}]  # Add project dependencies here, e.g. ["click", "numpy"]
+dependencies = [{% if micropython_pkg or oj_code %}{% elif kaggle or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if kaggle %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15,<1", "xgboost>=2", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34", "botocore>=1.34", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if mcp_effective %}"mcp[cli]>=2.0,<3", {% endif %}{% if not use_recommended_agent and project_type in ['library', 'cli'] %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if data_science or kaggle %}"duckdb", "pyarrow", "polars>=0.20.15", {% endif %}]  # Add project dependencies here, e.g. ["click", "numpy"]
 urls.GitHub = "{{ repo_url }}"
 {% if not online_judge and not ros2_pkg and not micropython_pkg %}scripts.{{ repo_name }} = "{{ package_name }}.__main__:main"
-{% endif %}
+{% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ package_name }}.mcp_server:main"
+{% endif %}{% endif %}
 {# The MicroPython firmware is not a pip-installable Python package: it is
    deployed to the device with mpremote. The [project] table above exists so
    the CPython dev toolchain (ruff/pytest/basedpyright) has a home, but there
@@ -42,7 +43,8 @@ urls.GitHub = "{{ repo_url }}"
 dev = [
     {% if strictness == 'none' %}"pre-commit",
     "pytest",
-    "ruff",
+    "ruff",{% if mcp_effective %}
+    "anyio",{% endif %}
     {% if micropython_pkg %}"mpremote",
     {% endif %}{% if zensical %}"zensical",
     "mkdocstrings[python]",
@@ -63,7 +65,8 @@ dev = [
     {% elif task_runner_effective == 'duty' %}"duty",
     {% endif %}{% elif strictness == 'basic' %}"pre-commit",
     "pytest",
-    "ruff",
+    "ruff",{% if mcp_effective %}
+    "anyio",{% endif %}
     {% if micropython_pkg %}"mpremote",
     {% endif %}{% if zensical %}"zensical",
     "mkdocstrings[python]",
@@ -92,7 +95,8 @@ dev = [
     {% endif %}{% if type_checker=="ty" %}"ty",
     {% endif %}    "pytest",
     "pytest-cov",
-    "ruff",
+    "ruff",{% if mcp_effective %}
+    "anyio",{% endif %}
     {% if sphinx %}"myst-parser",
     "sphinx-autobuild",
     "sphinx-copybutton",
@@ -222,13 +226,12 @@ typeCheckingMode = "{{ 'strict' if strictness == 'full' else 'recommended' }}"
 # supported Python and lets newer-only syntax slip through.
 pythonVersion = "{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' if ros2_pkg and ros_distro == 'jazzy' else '3.11') }}"
 include = ["{{ pkg_dir }}", "tests"{% if micropython_pkg %}, "firmware/core"{% endif %}]
-# mcp_server.py is a scaffolded sample; the mcp SDK has no full stubs yet.
 # tasks.py/duties.py: invoke/duty's own decorators (@task/@duty) and Context
 # are only partially typed upstream, so an explicit `basedpyright tasks.py`
 # (outside the `include` scan above) would otherwise be noisy.
 # MicroPython's tools/micropython/freeze.py is a device-build script (docker
 # image strings), excluded the same way as the firmware entry points below.
-exclude = [{% if include_mcp %}"{{ pkg_dir }}/mcp_server.py", {% endif %}{% if task_runner_effective == 'invoke' %}"tasks.py", {% endif %}{% if task_runner_effective == 'duty' %}"duties.py", {% endif %}{% if micropython_pkg %}"firmware/main.py", "firmware/boot.py", "firmware/board_config.py", {% endif %}{% if oj_code %}"**/test", "venv", ".venv", ".github", "docs", {% endif %}]
+exclude = [{% if task_runner_effective == 'invoke' %}"tasks.py", {% endif %}{% if task_runner_effective == 'duty' %}"duties.py", {% endif %}{% if micropython_pkg %}"firmware/main.py", "firmware/boot.py", "firmware/board_config.py", {% endif %}{% if oj_code %}"**/test", "venv", ".venv", ".github", "docs", {% endif %}]
 reportMissingImports = false # Ignore missing stubs in imported modules
 reportMissingTypeStubs = false
 {%- if strictness == 'recommended' %}
@@ -249,6 +252,7 @@ reportUnusedImport = false
 reportCallInDefaultInitializer = false # typer のデフォルト引数は正当
 reportUnusedCallResult = false # argparse add_argument 等の副作用目的の呼び出しは正当
 enableTypeIgnoreComments = true # # type: ignore も受け付ける（mypy 互換）
+reportImplicitStringConcatenation = false # ruff の ISC 系（暗黙連結を推奨）と整合させる
 {% endif %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
 [tool.pyrefly]
 # Match requires-python / .python-version: the interpreter the project
@@ -257,7 +261,7 @@ python-version = "{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' 
 {% if micropython_pkg %}project-includes = ["tests", "firmware/core"]
 project-excludes = ["venv", ".venv", "firmware/main.py", "firmware/boot.py", "firmware/board_config.py", "firmware/manifest.py"]
 {% else %}project-includes = ["{{ pkg_dir }}"]
-project-excludes = ["venv", ".venv"{% if include_mcp %}, "{{ pkg_dir }}/mcp_server.py"{% endif %}]
+project-excludes = ["venv", ".venv"]
 {% endif %}
 preset = "{{ 'strict' if strictness == 'full' else 'default' }}"
 {% endif %}{% if type_checker=="ty" and strictness in ['recommended', 'full'] %}
@@ -322,7 +326,7 @@ min_confidence = 80
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=click|fastapi|httpx|pydantic|pydantic-settings|pendulum|rich|structlog|loguru|picologging|typer|uvicorn{% if data_science or kaggle %}|duckdb|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|polars|pyarrow|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %}{% if cloud_provider == 'gcp' %}|google-cloud-storage{% endif %}{% if cloud_provider == 'azure' %}|azure-identity{% endif %},DEP003={{ package_name }}|requests{% if micropython_pkg %},DEP001=mpremote|micropython|machine|board_config{% endif %}"
+per_rule_ignores = "DEP002=click|fastapi|httpx|pydantic|pydantic-settings|pendulum|rich|structlog|loguru|picologging|typer|uvicorn{% if data_science or kaggle %}|duckdb|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|polars|pyarrow|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %}{% if cloud_provider == 'gcp' %}|google-cloud-storage{% endif %}{% if cloud_provider == 'azure' %}|azure-identity{% endif %},DEP003={{ package_name }}|requests{% if mcp_effective %}|starlette{% endif %}{% if micropython_pkg %},DEP001=mpremote|micropython|machine|board_config{% endif %}{% if mcp_effective %},DEP004=pytest{% endif %}"
 # MicroPython の tools/micropython/freeze.py はローカルインポートを依存と誤認するので除外
 # tasks.py/duties.py: root-level dev script, not project source -- deptry
 # would otherwise flag invoke/duty as DEP004 (dev-only dep imported by "source")
@@ -559,6 +563,12 @@ exclude = ["{{ pkg_dir }}/logging_setup.py"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 ignore-decorators = ["typing.overload"]
+
+[tool.ruff.lint.flake8-implicit-str-concat]
+# Implicit concatenation across lines is the standard style (ISC002 off);
+# ISC003 stays enabled, so explicit `+` concatenation is flagged. This is
+# ruff's default; written out so the choice is deliberate and stable.
+allow-multiline = true
 
 [tool.ruff.lint.pycodestyle]
 ignore-overlong-task-comments = true

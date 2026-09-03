@@ -381,10 +381,118 @@ def test_template_include_sentry(tmp_path: Path):
 
 
 def test_template_include_mcp(tmp_path: Path):
-    copy_project(tmp_path, include_mcp=True)
+    copy_project(tmp_path, project_type="cli", include_mcp=True)
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert any(d == "mcp" for d in pyproject_toml["project"]["dependencies"])
-    assert (tmp_path / "src" / "python_copier_template_example" / "mcp_server.py").exists()
+    assert any(d.startswith("mcp[cli]") for d in pyproject_toml["project"]["dependencies"])
+    pkg_dir = tmp_path / "src" / "python_copier_template_example"
+    assert (pkg_dir / "mcp_server.py").exists()
+    assert (tmp_path / "tests" / "test_mcp_server.py").exists()
+    scripts = pyproject_toml["project"]["scripts"]
+    assert "mcp-server-python-copier-template-example" in scripts
+    # mcp_server.py is covered by the type checkers (v2 SDK ships stubs) and
+    # the scaffold uses the v2 API with safe-by-default HTTP serving.
+    mcp_server = (pkg_dir / "mcp_server.py").read_text()
+    assert "from mcp.server import MCPServer" in mcp_server
+    assert "fastmcp" not in mcp_server
+    assert "streamable-http" in mcp_server
+    # Security hardening: non-local binds require MCP_ALLOWED_HOSTS, --host /
+    # --port are exposed, and a /health custom route is registered.
+    assert "MCP_ALLOWED_HOSTS" in mcp_server
+    assert "--host" in mcp_server
+    assert '"/health"' in mcp_server
+    assert "transport_security" in mcp_server
+
+
+def test_template_mcp_docker_task(tmp_path: Path):
+    """With docker enabled, the task runner ships an mcp-serve task that
+    builds and runs the MCP server over Streamable HTTP."""
+    copy_project(tmp_path, project_type="cli", include_mcp=True, docker=True)
+    taskfile = (tmp_path / "Taskfile.yml").read_text()
+    assert "mcp-serve" in taskfile
+    assert "mcp-server-python-copier-template-example" in taskfile
+    assert "MCP_ALLOWED_HOSTS" in taskfile
+    # The Dockerfile exposes the MCP port and documents the run command.
+    dockerfile = (tmp_path / "Dockerfile").read_text()
+    assert "EXPOSE 8000" in dockerfile
+    assert "mcp-server-python-copier-template-example" in dockerfile
+    # .env.example documents the allowlist variable.
+    env_example = (tmp_path / ".env.example").read_text()
+    assert "MCP_ALLOWED_HOSTS" in env_example
+
+
+def test_template_mcp_no_docker_no_task(tmp_path: Path):
+    """Without docker, no mcp-serve task is generated."""
+    copy_project(tmp_path, project_type="cli", include_mcp=True, docker=False)
+    taskfile = (tmp_path / "Taskfile.yml").read_text()
+    assert "mcp-serve" not in taskfile
+
+
+def test_template_mcp_runs_in_process(tmp_path: Path):
+    """The generated MCP server must actually work against the installed v2
+    SDK: sync the project, run the in-process client test, and type-check the
+    scaffold (no exclusions)."""
+    copy_project(tmp_path, project_type="cli", include_mcp=True)
+    run = make_venv(tmp_path)
+    run("uv run --locked pytest -q")
+    run("uv run --locked basedpyright src tests")
+    run("uv run --locked ruff check src tests")
+
+
+def test_template_mcp_not_offered_to_library(tmp_path: Path):
+    """include_mcp is only for cli / web_api: a library must not ship a
+    server module, and forcing the answer must not add an orphan mcp dep."""
+    copy_project(tmp_path, project_type="library", include_mcp=True)
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
+    assert not (tmp_path / "src" / "python_copier_template_example" / "mcp_server.py").exists()
+    assert not (tmp_path / "tests" / "test_mcp_server.py").exists()
+
+
+def test_template_mcp_not_offered_to_online_judge(tmp_path: Path):
+    """online_judge renders no package module: forcing include_mcp must not
+    add an orphan mcp dependency or a server file."""
+    copy_project(tmp_path, project_type="online_judge", oj_kind="atcoder", include_mcp=True)
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
+    assert not (tmp_path / "mcp_server.py").exists()
+    assert not (tmp_path / "tests" / "test_mcp_server.py").exists()
+
+
+def test_template_mcp_not_offered_to_data_science(tmp_path: Path):
+    """data_science / script / kaggle render no mcp_server.py variant:
+    forcing include_mcp must not add an orphan mcp dependency."""
+    cases = [
+        ("data_science", {}),
+        ("script", {}),
+        ("online_judge", {"oj_kind": "kaggle"}),
+    ]
+    for index, (project_type, extra) in enumerate(cases):
+        project_path = tmp_path / f"case_{index}"
+        copy_project(project_path, project_type=project_type, include_mcp=True, **extra)
+        pyproject_toml = tomllib.loads((project_path / "pyproject.toml").read_text())
+        assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
+        assert not (project_path / "tests" / "test_mcp_server.py").exists()
+
+
+def test_template_mcp_web_api(tmp_path: Path):
+    """web_api offers the MCP scaffold too (streamable-http fits the
+    Docker/compose-shaped service)."""
+    copy_project(tmp_path, project_type="web_api", include_mcp=True)
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("mcp[cli]") for d in pyproject_toml["project"]["dependencies"])
+    pkg_dir = tmp_path / "src" / "python_copier_template_example"
+    assert (pkg_dir / "mcp_server.py").exists()
+    assert (tmp_path / "tests" / "test_mcp_server.py").exists()
+
+
+def test_template_mcp_flat_layout(tmp_path: Path):
+    """The flat-layout package variant also ships mcp_server.py and its
+    console script."""
+    copy_project(tmp_path, project_type="cli", layout="flat", include_mcp=True)
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("mcp[cli]") for d in pyproject_toml["project"]["dependencies"])
+    assert (tmp_path / "python_copier_template_example" / "mcp_server.py").exists()
+    assert (tmp_path / "tests" / "test_mcp_server.py").exists()
 
 
 def test_template_no_ci(tmp_path: Path):
@@ -534,7 +642,10 @@ def test_template_fair_metadata(tmp_path: Path):
     assert "Traceability & provenance" in (tmp_path / "data" / "CARE.md").read_text()
     fair_software_workflow = tmp_path / ".github" / "workflows" / "fair-software.yml"
     assert fair_software_workflow.exists()
-    assert "fair-software/howfairis-github-action@0.2.1" in fair_software_workflow.read_text()
+    assert (
+        "fair-software/howfairis-github-action@4c11146488125aa6e1531184eed51d781bcd5871 # 0.2.1"
+        in fair_software_workflow.read_text()
+    )
     assert "fair-software/howfairis-github-action" in (tmp_path / "renovate.json").read_text()
 
 
@@ -614,6 +725,26 @@ def test_template_gitlab(tmp_path: Path):
     copy_project(tmp_path, git_platform="gitlab.com", gitlab_group="mygroup")
     assert (tmp_path / ".gitlab-ci.yml").exists()
     assert not (tmp_path / ".github").exists()
+    # SECURITY.md / Scorecard are GitHub-only (private advisories + badge
+    # both require github.com), so GitLab projects skip them.
+    assert not (tmp_path / "SECURITY.md").exists()
+    assert "SECURITY.md" not in (tmp_path / "README.md").read_text()
+
+
+def test_template_security_policy_opt_out(tmp_path: Path):
+    """use_recommended_security=false + security_policy=false drops SECURITY.md."""
+    copy_project(tmp_path, use_recommended_security=False, security_policy=False, scorecard=False)
+    assert not (tmp_path / "SECURITY.md").exists()
+    assert "SECURITY.md" not in (tmp_path / "README.md").read_text()
+
+
+def test_template_scorecard_opt_in(tmp_path: Path):
+    """scorecard=true adds the Scorecard workflow + README badge."""
+    copy_project(tmp_path, use_recommended_security=False, scorecard=True, security_policy=True)
+    assert (tmp_path / "SECURITY.md").exists()
+    assert (tmp_path / ".github" / "workflows" / "scorecard.yml").exists()
+    readme = (tmp_path / "README.md").read_text()
+    assert "api.scorecard.dev/projects/github.com/kasi-x/python-copier-template-example/badge" in readme
 
 
 def test_template_poetry(tmp_path: Path):

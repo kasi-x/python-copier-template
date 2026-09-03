@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Link Checker
-        uses: lycheeverse/lychee-action@v2.6.0
+        uses: lycheeverse/lychee-action@01a5c94d8e012550040658854b90a7a7301e75ca # v2.6.0
         with:
           # Docs + README; exclude the docs build output (site/ for
           # zensical/mkdocs, build/ for the local Sphinx-era leftovers) and

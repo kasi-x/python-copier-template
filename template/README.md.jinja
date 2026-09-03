@@ -14,7 +14,7 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 [![Copier](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/copier-org/copier/master/img/badge/badge-black.json)](https://github.com/copier-org/copier)
 {% if docs %}[![Documentation](https://img.shields.io/badge/docs-{{docs_url}}-8A2BE2?logo=gitbook&logoColor=white)]({{docs_url}})
-{% endif %}{% if scorecard %}[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/{{github_org}}/{{repo_name}}/badge)](https://scorecard.dev/viewer/?uri=github.com/{{github_org}}/{{repo_name}})
+{% endif %}{% if scorecard_effective %}[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/{{github_org}}/{{repo_name}}/badge)](https://scorecard.dev/viewer/?uri=github.com/{{github_org}}/{{repo_name}})
 {% endif %}
 </div>
 
@@ -243,7 +243,33 @@ Or if it is a commandline tool:
 ```sh
 python -m {{package_name}} --version
 ```
-{% endif %}
+{% if mcp_effective %}
+The project also ships an [MCP](https://modelcontextprotocol.io) server with
+two typed example tools (`add`, `divide`) and a `project://about` resource:
+
+```sh
+# stdio transport (the default; how an MCP host launches the server)
+uv run mcp-server-{{ repo_name }}
+
+# Streamable HTTP (serve it on http://127.0.0.1:8000/mcp)
+uv run python -m {{ package_name }}.mcp_server --transport streamable-http
+
+# Debug with the MCP Inspector (requires npx on PATH)
+uv run mcp dev {{ pkg_dir }}/mcp_server.py
+```
+
+Binding to a non-local address (e.g. `--host 0.0.0.0` inside Docker)
+requires the `MCP_ALLOWED_HOSTS` environment variable — the SDK only arms its
+DNS-rebinding protection for localhost binds, so `mcp_server.py` refuses to
+start without an explicit host allowlist. Health checks live at `GET /health`
+(unauthenticated, for the orchestrator; custom routes bypass the allowlist by
+design); `mcp-server-{{ repo_name }} --help` lists the `--host` / `--port`
+options. See `.env.example` for the variables.
+
+`tests/test_mcp_server.py` calls the tools through the SDK's in-process
+client — read it to see how to call this server (or any MCP server) from
+your own code.
+{% endif %}{% endif %}
 
 {% if docs %}
 > [!TIP]
@@ -260,7 +286,7 @@ python -m {{package_name}} --version
 {% endif %}{% if docs %}Documentation   | <{{docs_url}}>
 {% endif                %}Releases        | <{{repo_url}}/releases>
 {% if fair              %}Citation        | [CITATION.cff](CITATION.cff)
-{% endif %}{% if security_policy %}Security        | [SECURITY.md](SECURITY.md) — how to report a vulnerability
+{% endif %}{% if security_policy_effective %}Security        | [SECURITY.md](SECURITY.md) — how to report a vulnerability
 {% endif %}
 
 ## 🛠️ Development setup
@@ -344,6 +370,13 @@ local compose stack. To build and run the containerised service:
 {% if project_type == 'web_api' %}docker compose -f compose.local.yml up --build   # API on http://localhost:8000 (+ postgres)
 {% else %}docker build -t {{repo_name}} .
 docker run --rm {{repo_name}} --version
+{% if mcp_effective %}
+# run the MCP server over Streamable HTTP instead (or: just mcp-serve)
+docker run --rm -p 8000:8000 \
+  -e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 \
+  --entrypoint mcp-server-{{ repo_name }} {{ repo_name }} \
+  --transport streamable-http --host 0.0.0.0
+{% endif %}
 {% endif %}
 ```
 

@@ -123,6 +123,16 @@
     {'name': 'freeze', 'desc': 'Build a distributable firmware image (Docker)', 'cmd': [run ~ 'python tools/micropython/freeze.py']},
 ] %}
 {% endif %}
+{% if mcp_effective and docker %}
+{% set tasks = tasks + [{
+    'name': 'mcp-serve',
+    'desc': 'Build and run the MCP server in Docker (Streamable HTTP on :8000)',
+    'cmd': ['docker build -t ' ~ repo_name ~ ' . && docker run --rm -p 8000:8000 '
+            ~ '-e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 '
+            ~ '--entrypoint mcp-server-' ~ repo_name ~ ' ' ~ repo_name
+            ~ ' --transport streamable-http --host 0.0.0.0'],
+}] %}
+{% endif %}
 {% set tasks = tasks + [{
     'name': 'check',
     'desc': 'Run all quality checks',

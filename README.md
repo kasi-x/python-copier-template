@@ -26,12 +26,14 @@ The template asks a few questions and generates a project tailored to your answe
 **Recommended settings, per area** (`use_recommended_agent`,
 `use_recommended_toolchain`, `use_recommended_data_science`,
 `use_recommended_polish`, `use_recommended_docs`, `use_recommended_quality`,
-`use_recommended_license`, `use_recommended_integrations`)
+`use_recommended_license`, `use_recommended_integrations`,
+`use_recommended_security`)
 - Besides the essentials (project type, package name, author, ...), each
   customisable area of the template — AI-agent scaffolding, toolchain,
   data-science options (GPU, DUO/CARE data governance), online-judge kind, layout &
   style, docs, type-checking & strictness, license & FAIR metadata, deployment
-  & integrations (including the logging library) — asks a single "use the
+  & integrations (including the logging library), security & compliance
+  (SHA-pinned CI, SECURITY.md, zizmor) — asks a single "use the
   recommended settings?" question first (default: yes), with the
   recommendation spelled out in its help text.
 - Answer **yes** and the area is configured from its defaults without
@@ -96,8 +98,13 @@ flowchart TD
 
     G7 -->|Yes| D7["no Docker/PyPI/cloud/Sentry/MCP · CI: GitHub Actions · structlog"]
     G7 -->|No| A7["ask: docker, pypi, cloud_provider, include_sentry,<br/>include_mcp, ci_provider, log_library"]
-    D7 --> PD["Project details: package_name · description · git platform · author"]
-    A7 --> PD
+    D7 --> G8{use_recommended_security?}
+    A7 --> G8
+
+    G8 -->|Yes| D8["SHA-pinned actions · zizmor · SECURITY.md · test_qa.py"]
+    G8 -->|No| A8["ask: security_policy, scorecard"]
+    D8 --> PD["Project details: package_name · description · git platform · author"]
+    A8 --> PD
     PD --> End([Generate project])
 ```
 
@@ -178,10 +185,17 @@ flowchart TD
   (`essential` / `s3` / `dynamodb` / `sqs` / `lambda`).
 - **Sentry** (`include_sentry`): adds `sentry-sdk` and initialises it from
   `SENTRY_DSN` at CLI startup.
-- **MCP** (`include_mcp`): adds the `mcp` SDK and scaffolds an
-  `mcp_server.py` with stdio and SSE transports. Debug it with the MCP
-  Inspector (`npx @modelcontextprotocol/inspector uv run python -m
-  <package>.mcp_server`).
+- **MCP** (`include_mcp`, cli / web_api): adds the `mcp[cli]` SDK and
+  scaffolds an `mcp_server.py` with typed example tools, a `ToolError`
+  sample and a resource, plus a `mcp-server-<name>` console script and an
+  in-process client test — the template's first *long-running executable*
+  layer (see
+  [the layer model](https://kasi-x.github.io/python-copier-template/main/explanations/long-running.html)
+  and the
+  [MCP how-to](https://kasi-x.github.io/python-copier-template/main/how-to/mcp.html)).
+  Run it with stdio (an MCP host launches `uv run mcp-server-<name>`) or
+  streamable-http (`--transport streamable-http`), and debug it with the
+  MCP Inspector (`uv run mcp dev src/<package>/mcp_server.py`).
 - **Logging library** (`log_library`): `structlog` (default) / `loguru` /
   `picologging` / `logging` (standard library, no extra dependency).
   `logging_setup.py` exposes the same `logger.bind(...)` / `logger.info(event,
@@ -265,9 +279,11 @@ flowchart TD
   `permissions`, and a `required-checks-passed` gate for branch protection
 - **Security gate** (`use_recommended_security`, default yes): GitHub Actions
   pinned to commit SHAs via renovate (`helpers:pinGitHubActionDigests`), a
-  zizmor CI job auditing the workflows, and — when you opt out — the choice
-  of a `SECURITY.md` vulnerability policy and an OpenSSF Scorecard workflow
-  (public repos only)
+  zizmor CI job auditing the workflows, a generated `tests/test_qa.py`, and —
+  when you opt out (GitHub projects) — the choice of a `SECURITY.md`
+  vulnerability policy and an OpenSSF Scorecard workflow (public repos only).
+  GitLab projects keep the hardened `.gitlab-ci.yml` but skip the GitHub-only
+  files (SECURITY.md / Scorecard)
 - PyPI publishing, Docker containers, docs deployment to GitHub Pages
 
 ## Design decisions
@@ -297,6 +313,16 @@ The option set has been consolidated over time. The key moves:
   into every other detailed question too. Each customisable area now asks
   its own yes/no gate, right where that area comes up, with the
   recommendation spelled out in its help text — see the previous section.
+- **Long-running executables (bots, MCP servers) are a layer, not a
+  `project_type`**: they run on the same CPython + uv environment as
+  `library` / `cli` / `web_api`, so adding a `daemon` type would violate the
+  "project_type = fundamentally different execution environment" rule.
+  Instead they are opt-in modules with their own entry point (the first
+  instance is `include_mcp` → `mcp_server.py` on `cli` / `web_api`, with a
+  `mcp-server-<name>` console script), started by an MCP host or via
+  `python -m <package>.mcp_server` — never through `__main__.py`, which the
+  Docker `ENTRYPOINT` and CLI tests own. See
+  [the layer model](https://kasi-x.github.io/python-copier-template/main/explanations/long-running.html).
 
 ```mermaid
 flowchart LR
