@@ -1,0 +1,105 @@
+# Cross-cutting questions, block C: the security gate with its detail
+# questions, then the Project Details block. Asked after the web_api genre
+# block, matching the canonical gate order.
+
+use_recommended_security:
+    type: bool
+    default: true
+    help: |
+        Use the recommended security & compliance settings?
+        Recommended: minimal CI permissions, GitHub Actions pinned to commit
+        SHAs (renovate keeps them up to date), zizmor + actionlint checks,
+        a SECURITY.md vulnerability-reporting policy, and a test_qa.py that
+        verifies dependency integrity and the public API at runtime.
+        Answer No to drop SECURITY.md or add an OpenSSF Scorecard workflow
+        (GitHub projects; public repos only for the badge).
+
+security_policy:
+    type: bool
+    when: "{{ not use_recommended_security }}"
+    help: |
+        Include a SECURITY.md vulnerability-reporting policy (GitHub
+        Security Advisory workflow + response expectations)? GitHub projects
+        only — GitLab has no private-advisory workflow, so its generated
+        projects skip SECURITY.md regardless.
+    default: true
+
+scorecard:
+    type: bool
+    when: "{{ not use_recommended_security }}"
+    help: |
+        Add the OpenSSF Scorecard workflow to measure supply-chain security
+        and publish a badge? GitHub projects only, and only meaningful for
+        public repositories (the badge and published results require a
+        public repo).
+    default: false
+
+# Project Details
+package_name:
+    type: str
+    help: |
+        Name of the python import package.
+        Must be a valid python identifier, i.e. my_package.
+        ASCII characters only (a-z, A-Z, 0-9, _).
+    validator: >-
+        {% if not (package_name | regex_search('^[a-zA-Z][a-zA-Z_0-9]+$')) %}
+        {{ package_name }} is not a valid python package name. Use ASCII letters, digits and underscores only.
+        {% endif %}
+
+description:
+    type: str
+    help: A short description of your project
+    placeholder: One line description of your module
+
+git_platform:
+    type: str
+    help: Git platform hosting the repository
+    choices:
+        - github.com
+        - gitlab.com
+
+github_org:
+    type: str
+    help: |
+        GitHub organisation or username that will contain this repo.
+        Set to your GitHub username (e.g. kasi-x) for a personal repo,
+        or the name of an organisation you belong to.
+    when: "{{ git_platform == 'github.com' }}"
+    default: "{{ github_username() }}"
+
+gitlab_group:
+    type: str
+    help: |
+        GitLab group (or username) that will contain this repo.
+    when: "{{ git_platform == 'gitlab.com' }}"
+
+repo_name:
+    type: str
+    help: |
+        Name of the repository.
+        Generally the package name with underscores replaced by dashes.
+    default: "{{ package_name | replace('_', '-') }}"
+    validator: >-
+        {% if not (repo_name | regex_search('^[a-zA-Z][a-zA-Z_\\.\\-0-9]+$')) %}
+        {{ repo_name }} is not a valid repo name. Use ASCII letters, digits, dashes and underscores only.
+        {% endif %}
+
+distribution_name:
+    type: str
+    help: |
+        Name of the python distribution package that will be created.
+        This is what people will `pip install`.
+        Generally the same as the repo name unless there is a name clash on PyPI.
+    default: "{{ repo_name }}"
+
+author_name:
+    type: str
+    help: Your full name
+    default: "{{ git_user_name() }}"
+    placeholder: FirstName LastName
+
+author_email:
+    type: str
+    help: Your email address
+    default: "{{ git_user_email() }}"
+    placeholder: email@example.com

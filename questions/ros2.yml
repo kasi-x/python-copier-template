@@ -1,0 +1,39 @@
+# ROS 2 follow-up questions (asked when project_type == 'ros2').
+
+pkg_language:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        Which language for the ROS 2 package?
+        - python: ament_python (rclpy) — setup.py + package.xml + resource/.
+        - cpp: ament_cmake — CMakeLists.txt + src/*.cpp + include/.
+    choices:
+        Python (rclpy): python
+        C++ (ament_cmake): cpp
+    default: python
+
+ros_distro:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        ROS 2 distribution. Humble (Ubuntu 22.04, Python 3.10) is the most
+        widely deployed; Jazzy (Ubuntu 24.04, Python 3.12) is the current LTS.
+    choices:
+        Humble (22.04 / Python 3.10): humble
+        Jazzy (24.04 / Python 3.12): jazzy
+    default: humble
+
+ros2_package_manager:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        How should the ROS 2 environment be provisioned?
+        - apt: the classic ROS 2 way — Ubuntu + apt (ros-{{ ros_distro }}-*)
+          + colcon + rosdep. Docker base image ros:{{ ros_distro }}-ros-base.
+        - pixi: RoboStack conda-forge packages via pixi, using the distro
+          channel (https://prefix.dev/robostack-{{ ros_distro }}). No
+          sudo/apt needed. See https://pixi.prefix.dev/latest/robotics/.
+    choices:
+        apt (colcon + rosdep): apt
+        pixi (RoboStack conda): pixi
+    default: apt

@@ -1,0 +1,36 @@
+# MicroPython follow-up questions (asked when project_type == 'micropython').
+# micropython_pkg (internal, when: false) is defined here, right after the
+# port question, because docs_type's choices reference it — a later placement
+# would leave it unresolved when docs_type is asked.
+
+micropython_port:
+    type: str
+    when: "{{ project_type == 'micropython' }}"
+    help: |
+        Which MicroPython port are you targeting? This picks the
+        micropython-<port>-stubs package used for type-checking.
+        - esp32: ESP32 family (most common; default)
+        - esp8266: ESP8266 (legacy, low memory)
+        - rp2: Raspberry Pi Pico / RP2040 / RP2350
+        - stm32: STM32 family (Pyboard etc.)
+        - samd: Microchip SAMD21 / SAMD51
+        - unix: Unix port (runs on your computer — handy for testing)
+        - windows: Windows port
+        - mimxrt: NXP i.MX RT family (Teensy 4.x etc.)
+        Stubs are per-port (generic board); board-specific pins and hardware
+        live in firmware/board_config.py so switching boards is a one-file edit.
+    choices:
+        ESP32: esp32
+        ESP8266: esp8266
+        RP2 (Pico): rp2
+        STM32: stm32
+        SAMD: samd
+        Unix: unix
+        Windows: windows
+        MIMXRT: mimxrt
+    default: esp32
+
+micropython_pkg:
+    type: bool
+    default: "{{ project_type == 'micropython' }}"
+    when: false

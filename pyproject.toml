@@ -29,6 +29,7 @@ dev = [
     "ruff>=0.16.2,<0.17",
     "typos>=1.49.0,<1.50",
     "vulture>=2.14.0,<3.0",
+    "z3-solver>=4.13.0,<5",
     "zensical",
 ]
 
@@ -220,6 +221,13 @@ task-tags = [
     "N999",   # invalid-module-name  CONTEXT: test_example.py は既存の命名。
     "PLW1510",# subprocess-run-without-check  CONTEXT: run_pipe は returncode を assert する。
     "PT006",  # pytest-parametrize-names-wrong-type  CONTEXT: 既存の parametrize 名。
+]
+"tests/test_copier_structure.py" = [
+    "C901",    # too-complex  CONTEXT: the when-expression parser is a compact recursive-descent parser.
+    "PLR0911", # too-many-return-statements  CONTEXT: ditto.
+    "PLR0912", # too-many-branches  CONTEXT: ditto.
+    "EM102",   # f-string-in-exception  CONTEXT: parser errors embed the offending expression for debugging.
+    "RUF010",  # explicit-f-string-type-conversion  CONTEXT: parser errors intentionally use !r.
 ]
 "tools/*" = [
     "INP001", # implicit-namespace-package  CONTEXT: standalone maintenance scripts, not a package.

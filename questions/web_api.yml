@@ -1,0 +1,44 @@
+# Web API questions (asked when project_type == 'web_api').
+# use_recommended_web_api is one of the canonical area gates; the effective
+# derived variables live in questions/_internal.yml.
+
+use_recommended_web_api:
+    type: bool
+    when: "{{ project_type == 'web_api' }}"
+    default: true
+    help: |
+        Use the recommended web API stack?
+        Recommended: FastAPI + async SQLAlchemy 2.0 + Alembic + Postgres, a
+        demo CRUD router, request-id logging (asgi-correlation-id), a
+        BackgroundTasks example, and /health + /docs endpoints. Tests run
+        against Postgres in CI (or SQLite locally) via httpx.
+        Answer No to drop Prometheus metrics, rate limiting or CORS, or to
+        switch the database/ORM (SQLAlchemy 2.0 + Postgres stays fixed).
+
+prometheus:
+    type: bool
+    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    help: |
+        Expose Prometheus metrics at /metrics?
+        Recommended: yes — prometheus-fastapi-instrumentator adds a /metrics
+        endpoint for scraping (request counts, latencies, ...).
+    default: true
+
+rate_limit:
+    type: bool
+    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    help: |
+        Apply rate limiting to the API?
+        Recommended: yes — slowapi protects endpoints (e.g. 5 requests per
+        minute on the demo list endpoint) against abuse.
+    default: true
+
+cors:
+    type: bool
+    when: "{{ project_type == 'web_api' and not use_recommended_web_api }}"
+    help: |
+        Enable CORS for browser clients?
+        Recommended: yes — CORSMiddleware allows the origins listed in the
+        CORS_ORIGINS environment variable (comma-separated) to call the API.
+        Leave CORS_ORIGINS empty to allow nothing.
+    default: true

@@ -1,0 +1,51 @@
+# Online-judge follow-up questions (asked when project_type == 'online_judge').
+# online_judge / kaggle / oj_code (internal, when: false) are defined here,
+# right after oj_kind: docker / pypi (in the integrations gate) reference
+# online_judge and kaggle in their `when`, so they must be resolvable before
+# that gate is reached.
+
+oj_kind:
+    type: str
+    when: "{{ project_type == 'online_judge' }}"
+    help: |
+        Which online judge is this project for?
+        - kaggle: Kaggle competitions. GPU work is the norm and the
+          competition layout (src/utils, src/input, src/output) is generated.
+        - atcoder: AtCoder (Japanese competitive programming). A bare
+          workspace driven with oj + acc (atcoder-cli).
+        - leetcode: LeetCode-style problems. A bare workspace (LeetCode's
+          editor is the judge; oj does not support it).
+        - yukicoder: yukicoder (Japanese practice site). A bare workspace
+          driven with oj (download / test / submit all work).
+        - aoj: Aizu Online Judge (Japanese beginner courses). A bare
+          workspace driven with aoj-cli (oj can download samples but not
+          submit).
+        (Whether AI coding agents are allowed — and therefore whether an
+        AGENTS.md file is generated — differs per judge; that is decided
+        when the AGENTS.md feature lands.)
+    choices:
+        Kaggle: kaggle
+        AtCoder: atcoder
+        LeetCode: leetcode
+        yukicoder: yukicoder
+        AOJ: aoj
+    default: kaggle
+
+online_judge:
+    type: bool
+    default: "{{ project_type == 'online_judge' }}"
+    when: false
+
+kaggle:
+    type: bool
+    default: "{{ online_judge and oj_kind == 'kaggle' }}"
+    when: false
+
+# Code-submission judges (AtCoder / LeetCode / yukicoder / AOJ): single-file
+# solutions submitted to the judge's sandbox. No installable package, no
+# src/ layout, no logging_setup — the repo is a bare workspace the user
+# drives with oj / acc / aoj-cli.
+oj_code:
+    type: bool
+    default: "{{ online_judge and oj_kind != 'kaggle' }}"
+    when: false

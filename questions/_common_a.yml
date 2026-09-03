@@ -1,0 +1,91 @@
+# Cross-cutting questions, block A: the AI-agent gate and the toolchain gate
+# with their detail questions. Asked for most project types, so they precede
+# the genre data_science / online_judge blocks in the include order.
+
+use_recommended_agent:
+    type: bool
+    when: "{{ project_type in ['library', 'cli'] }}"
+    default: true
+    help: |
+        Add an LLM agent (pydantic-ai) scaffold?
+        Recommended: no — a plain library / CLI without agent tooling.
+        Answer No to add a runnable pydantic-ai example: a prompts/
+        directory, a typed tools/ package and an agent module wired with
+        @agent.tool, tested offline with pydantic-ai's TestModel.
+
+use_recommended_toolchain:
+    type: bool
+    when: "{{ not (project_type == 'ros2' and ros2_package_manager == 'pixi') }}"
+    default: true
+    help: |
+        Use the recommended package manager & task runner?
+        Recommended: uv (package manager) + just (task runner).
+        Answer No to pick pixi/poetry, or a different task runner.
+        (For ros2 projects with the pixi ROS environment, pixi manages
+        everything — the package-manager question is not asked.)
+
+package_manager:
+    type: str
+    when: "{{ not use_recommended_toolchain and not (project_type == 'ros2' and ros2_package_manager == 'pixi') }}"
+    help: |
+        Which package manager would you like to use?
+        - uv: Fast, pure Python package manager with a pip-like workflow.
+        - pixi: Conda-based package manager with cross-language support.
+        - poetry: Dependency management and packaging with Poetry.
+        Choose pixi if you need native (non-Python) dependencies.
+        (For ros2 projects the package manager manages the pure-Python dev
+        tooling — ruff/pytest/pre-commit; the ROS environment itself is
+        provided by ros2_package_manager. When the ROS environment is pixi,
+        pixi manages everything, so this question is not asked. When it is
+        apt, pixi is not offered — one package manager at a time.)
+    choices: |
+        {%- if project_type == 'ros2' and ros2_package_manager == 'apt' %}
+        - uv
+        - poetry
+        {%- else %}
+        - uv
+        - pixi
+        - poetry
+        {%- endif %}
+    default: "{{ 'pixi' if project_type == 'ros2' and ros2_package_manager == 'pixi' else 'uv' }}"
+
+task_runner:
+    type: str
+    when: "{{ not use_recommended_toolchain and package_manager != 'pixi' }}"
+    help: |
+        Which task runner would you like to use to drive lint / type-check /
+        test / docs (and, for kaggle's pipeline, the ML shortcuts)?
+        - just: Just. Simple justfile, external binary.
+        - task: Task (go-task). YAML, external binary, used by CI too.
+        - poe: poethepoet. Pure Python, lives in pyproject.toml, no extra
+          binary to install (just a dev dependency).
+        - make: GNU Make. Universally available, terse Makefile syntax.
+        - invoke: pyinvoke. Pure Python, tasks.py with @task-decorated
+          functions, no extra binary to install (just a dev dependency).
+        - duty: duty (used by pawamoy's copier-uv). Pure Python, duties.py
+          with @duty-decorated functions, no extra binary to install.
+    choices:
+        Just: just
+        Task (go-task): task
+        poethepoet: poe
+        Make: make
+        pyinvoke: invoke
+        duty: duty
+    default: just
+
+task_runner_pixi:
+    type: str
+    when: "{{ not use_recommended_toolchain and package_manager == 'pixi' }}"
+    help: |
+        Which task runner would you like to use? (poethepoet doesn't work
+        with pixi, so pixi's own native tasks take its place here.)
+        - pixi: pixi's own native tasks (`pixi run <name>`). No extra tool.
+        - task: Task (go-task). YAML, external binary, used by CI too.
+        - just: Just. Simple justfile, external binary.
+        - make: GNU Make. Universally available, terse Makefile syntax.
+    choices:
+        pixi (native tasks): pixi
+        Task (go-task): task
+        Just: just
+        Make: make
+    default: pixi

@@ -1,0 +1,176 @@
+# Internal derived variables (when: false — never asked, computed from
+# answers at render time). These are only referenced by template files (and
+# by other internal variables), never by question `when`/`default`/`choices`,
+# so they live at the end of the include order. Genre-derived internal
+# variables that questions DO reference (micropython_pkg, online_judge,
+# kaggle, oj_code) live in their genre fragment instead, before the asking
+# gate.
+
+# Security & compliance effective settings. security_policy / scorecard keep
+# their defaults when unasked (gate on); the git_platform guard here is what
+# keeps GitHub-only files (SECURITY.md / scorecard.yml) out of GitLab
+# projects — git_platform is asked in Project Details, so it can only be
+# applied at render time, not in the questions' `when`.
+security_policy_effective:
+    type: bool
+    default: "{{ security_policy and git_platform == 'github.com' }}"
+    when: false
+
+scorecard_effective:
+    type: bool
+    default: "{{ scorecard and git_platform == 'github.com' }}"
+    when: false
+
+# MCP effective settings. include_mcp keeps its default (false) when unasked
+# (gate on); the project_type guard here is what keeps the mcp dependency,
+# mcp_server.py and its test out of project types that render no package
+# module (online_judge / ros2 / micropython), no mcp_server.py variant
+# (data_science / script) or no runnable-server reason to ship one (library)
+# — include_mcp is only asked for the types below, but data can force it in
+# render-time tests, so the guard must live here.
+mcp_effective:
+    type: bool
+    default: "{{ include_mcp and project_type in ['cli', 'web_api'] }}"
+    when: false
+
+# web_api effective settings. prometheus / rate_limit / cors keep their
+# defaults (true) when unasked by use_recommended_web_api; the project_type
+# guard here is what keeps FastAPI-only deps and app/ code out of other
+# project types when render tests force the detail answers on them.
+prometheus_effective:
+    type: bool
+    default: "{{ project_type == 'web_api' and (use_recommended_web_api or prometheus) }}"
+    when: false
+
+rate_limit_effective:
+    type: bool
+    default: "{{ project_type == 'web_api' and (use_recommended_web_api or rate_limit) }}"
+    when: false
+
+cors_effective:
+    type: bool
+    default: "{{ project_type == 'web_api' and (use_recommended_web_api or cors) }}"
+    when: false
+
+# Project-type derived booleans (render-time only; the ones questions
+# reference live in their genre fragments).
+web_api:
+    type: bool
+    default: "{{ project_type == 'web_api' }}"
+    when: false
+
+data_science:
+    type: bool
+    default: "{{ project_type == 'data_science' }}"
+    when: false
+
+data_science_layout:
+    type: bool
+    default: "{{ data_science }}"
+    when: false
+
+use_src_layout:
+    type: bool
+    default: "{{ layout == 'src' and project_type not in ['script', 'online_judge', 'ros2', 'micropython'] }}"
+    when: false
+
+use_gpu_effective:
+    type: bool
+    default: "{{ (use_gpu and project_type == 'data_science') or kaggle }}"
+    when: false
+
+repo_url:
+    type: str
+    default: "https://github.com/{{github_org}}/{{repo_name}}"
+    when: false
+
+docs_url:
+    type: str
+    default: "https://{{github_org | lower}}.github.io/{{repo_name}}"
+    when: false
+
+sphinx:
+    type: bool
+    default: "{{ docs_type == 'sphinx' }}"
+    when: false
+
+zensical:
+    type: bool
+    default: "{{ docs_type == 'zensical' }}"
+    when: false
+
+great_docs:
+    type: bool
+    default: "{{ docs_type == 'great-docs' }}"
+    when: false
+
+docs:
+    type: bool
+    default: "{{ docs_type != 'README' }}"
+    when: false
+
+ros2_pkg:
+    type: bool
+    default: "{{ project_type == 'ros2' }}"
+    when: false
+
+ros2_cpp:
+    type: bool
+    default: "{{ ros2_pkg and pkg_language == 'cpp' }}"
+    when: false
+
+ros2_python:
+    type: bool
+    default: "{{ ros2_pkg and pkg_language == 'python' }}"
+    when: false
+
+# MicroPython release the frozen-firmware build tracks (freeze.py clones this
+# tag). The micropython-<port>-stubs type stubs (from the community
+# josverl/micropython-stubs project, NOT official) are pinned to the same
+# version so the stubs match the firmware. Bump all three together, and run
+# tools/check_micropython_upstream.py to confirm against the official
+# micropython/micropython releases.
+micropython_version:
+    type: str
+    default: "v1.29.0"
+    when: false
+
+task_runner_effective:
+    type: str
+    default: "{{ task_runner_pixi if package_manager == 'pixi' else task_runner }}"
+    when: false
+
+license_effective:
+    type: str
+    default: "{{ license }}"
+    when: false
+
+proprietary:
+    type: bool
+    default: "{{ license_effective in ['Proprietary', 'Confidential'] }}"
+    when: false
+
+reuse_effective:
+    type: bool
+    default: "{{ fair and not proprietary }}"
+    when: false
+
+duo:
+    type: bool
+    default: "{{ data_reusable and data_science_layout }}"
+    when: false
+
+care:
+    type: bool
+    default: "{{ data_ethics and data_science_layout }}"
+    when: false
+
+license_year:
+    type: str
+    default: "{{ current_year() }}"
+    when: false
+
+pkg_dir:
+    type: str
+    default: "{{ 'src/utils' if kaggle else ('.' if online_judge else (('src/' if use_src_layout else '') + package_name)) }}"
+    when: false

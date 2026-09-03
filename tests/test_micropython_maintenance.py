@@ -8,6 +8,7 @@ from pathlib import Path
 TOP = Path(__file__).absolute().parent.parent
 
 COPIER_YML = TOP / "copier.yml"
+QUESTIONS_DIR = TOP / "questions"
 FREEZE_TEMPLATE = (
     TOP
     / "template"
@@ -30,15 +31,18 @@ def doc_has_concrete_tag(doc: str) -> bool:
 
 
 def micropython_version() -> str:
-    """Read micropython_version from copier.yml."""
-    src = COPIER_YML.read_text()
-    match = re.search(
-        r"^micropython_version:\n    type: str\n    default: \"([^\"]+)\"",
-        src,
-        re.MULTILINE,
-    )
-    assert match, "micropython_version not found in copier.yml"
-    return match.group(1)
+    """Read micropython_version from the questionnaire fragments."""
+    sources = [COPIER_YML, *QUESTIONS_DIR.glob("*.yml")]
+    for src in sources:
+        match = re.search(
+            r"^micropython_version:\n    type: str\n    default: \"([^\"]+)\"",
+            src.read_text(),
+            re.MULTILINE,
+        )
+        if match:
+            return match.group(1)
+    msg = "micropython_version not found in copier.yml or questions/"
+    raise AssertionError(msg)
 
 
 def test_upstream_checker_offline_reports_pins():

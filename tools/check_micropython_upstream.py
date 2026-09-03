@@ -42,6 +42,7 @@ from pathlib import Path
 
 TOP = Path(__file__).resolve().parent.parent
 COPIER_YML = TOP / "copier.yml"
+QUESTIONS_DIR = TOP / "questions"
 FREEZE_TEMPLATE = (
     TOP
     / "template"
@@ -99,14 +100,20 @@ def pypi_has_version(package: str, version: str) -> bool:
 
 def extract_pins() -> list[Pin]:
     """Extract the pins from the template files (no network)."""
-    # The single source of truth is copier.yml's micropython_version.
-    copier_src = COPIER_YML.read_text()
-    ver_m = re.search(
-        r"^micropython_version:\n    type: str\n    default: \"([^\"]+)\"",
-        copier_src,
-        re.MULTILINE,
-    )
-    version = ver_m.group(1) if ver_m else "?"
+    # The single source of truth is the `micropython_version` internal
+    # variable. The questionnaire lives in questions/*.yml fragments included
+    # by copier.yml, so search both (the value must appear in exactly one).
+    sources = [COPIER_YML, *QUESTIONS_DIR.glob("*.yml")]
+    version = "?"
+    for src in sources:
+        ver_m = re.search(
+            r"^micropython_version:\n    type: str\n    default: \"([^\"]+)\"",
+            src.read_text(),
+            re.MULTILINE,
+        )
+        if ver_m:
+            version = ver_m.group(1)
+            break
     pins: list[Pin] = [
         Pin(
             name="MicroPython version (copier.yml micropython_version)",

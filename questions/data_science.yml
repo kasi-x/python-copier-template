@@ -1,0 +1,46 @@
+# Data-science gate and follow-up questions (asked when project_type ==
+# 'data_science'). The gate keeps its canonical position (after toolchain);
+# its derived variables (duo / care / use_gpu_effective) stay in
+# questions/_internal.yml since nothing asks them.
+
+use_recommended_data_science:
+    type: bool
+    when: "{{ project_type == 'data_science' }}"
+    default: true
+    help: |
+        Use the recommended data_science options?
+        Recommended: GPU workloads enabled (NVIDIA CUDA Dockerfile +
+        devcontainer), and no DUO data-use sheet or CARE governance
+        statement.
+        Answer No to change any of these.
+        (For Kaggle-style competition projects, pick project_type
+        online_judge instead — that is where the Kaggle layout lives.)
+
+use_gpu:
+    type: bool
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science }}"
+    help: |
+        Will you run GPU workloads?
+        If yes, an NVIDIA CUDA Dockerfile and devcontainer are prepared.
+        Recommended (and the default) for data_science projects.
+    default: true
+
+data_reusable:
+    type: bool
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science }}"
+    help: |
+        Will this data be shared or reused outside the team (e.g.
+        published, or handed to collaborators/another organisation)?
+        If yes, a DUO (Data Use Ontology) data-use conditions sheet is
+        added to data/ so the reuse conditions are documented up front.
+    default: false
+
+data_ethics:
+    type: bool
+    when: "{{ project_type == 'data_science' and not use_recommended_data_science }}"
+    help: |
+        Does this data need ethical / data-governance consideration (e.g.
+        human subjects, indigenous data, other sensitive personal data)?
+        If yes, a CARE principles data-governance statement is added to
+        data/ so those considerations are documented and tracked.
+    default: false
