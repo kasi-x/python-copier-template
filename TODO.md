@@ -69,47 +69,60 @@
 
 ## 2. online_judge project_type の新設（競技用。AI 可否は種類による）
 
-- [ ] copier.yml の project_type に `online_judge` を追加する
+- [x] copier.yml の project_type に `online_judge` を追加する
       - help: 競技用プロジェクト。種類（kaggle / atcoder / leetcode）により
         AI コーディングエージェント利用の可否が異なり、AGENTS.md の有無が変わる
-- [ ] `oj_kind` 質問を新設する（online_judge 選択時のみ）
-      - 初期: kaggle（AI 可）/ atcoder / leetcode
-      - atcoder / leetcode では AI 可否をさらに質問する（下記）
+      - 実装メモ: AI 可否と AGENTS.md 有無の配線は項目1（AGENTS.md）着手時に
+        oj_allow_ai 質問として追加する（今回は質問・変数とも未導入）
+- [x] `oj_kind` 質問を新設する（online_judge 選択時のみ）
+      - kaggle / atcoder / leetcode の3種
+      - atcoder / leetcode では AI 可否をさらに質問する（項目1 で追加予定）
 - [ ] `oj_allow_ai` 質問を新設する（atcoder / leetcode 選択時のみ）
       - AI 利用 OK → AGENTS.md を生成（+ README に AI 向け言及）
       - AI 利用 NG → AGENTS.md を生成しない（規約遵守）
-- [ ] online_judge の生成物（最小構成・追加依存なし・stdlib のみ）
-      - `solutions/` ディレクトリ（問題別 .py 雛形: solve() 関数 + 標準入力の
-        読み込み + `if __name__ == "__main__"`）
-      - `solutions/test_samples.py`（pytest でサンプルケース検証の雛形）
-      - README に提出フロー（oj_kind ごとに文言が変わる）
-- [ ] online_judge では `use_recommended_agent`（pydantic-ai scaffold）を出さない
-      （一元管理: AI NG なら AGENTS.md も pydantic-ai も出さない）
-- [ ] online_judge のテスト: 生成物の存在 + solutions の pytest 実行 +
-      AGENTS.md の有無（AI 可否で反転）を検証
+      - （項目1 の AGENTS.md 設計と一体で導入。今回のコミットでは見送り）
+- [x] online_judge の生成物（最小構成・追加依存なし・stdlib のみ）
+      - **設計変更（oj 実測ベース）**: solutions/ は事前生成しない。oj はカレントに
+        `test/`（sample-N.in/.out）を作り、acc はコンテスト/問題ディレクトリを
+        作るため、「空の作業リポジトリ」を生成し oj / atcoder-cli に全て任せる
+      - atcoder/leetcode はルートが空（src/ も package も無い）。lint は競技向けに
+        緩和（A001 / N802 / N806 / RUF059 / ARG / F841 / PLC0415 等を oj_code 全体に
+        適用）、pytest は tests/ のみ、型チェックは vulture スキップ、CI は dist 無し
+      - README に oj / acc の導入手順と提出フロー（oj download → main.py →
+        oj test → oj submit）を記載
+- [x] online_judge では `use_recommended_agent`（pydantic-ai scaffold）を出さない
+      （online_judge では use_recommended_agent 質問自体が出ないことを確認）
+- [x] online_judge のテスト: 生成物の有無（src 無し・deps 空・CI に dist 無し）+
+      空ワークスペースで task check が通ること + kaggle に solutions が無いこと
 - [ ] **将来拡張**: oj_kind を世界基準の主要 OJ 9種 + 「その他」（選ぶと更に
       選択肢が出る2段階方式）へ拡張する。今回は kaggle / atcoder / leetcode の
-      3種で骨格を作る
+      3種で骨格を作る（ユーザー指摘: competitive coder / result competition の
+      2系統 + サイト列挙の2段階 UI を想定）
 
 ## 3. kaggle の data_science 分離 → online_judge の内部タイプへ統合
 
-- [ ] copier.yml から data_science 配下の `competition` 質問を削除する
+- [x] copier.yml から data_science 配下の `competition` 質問を削除する
       （kaggle = oj_kind=='kaggle' として online_judge 側に移す）
-- [ ] 内部変数を張り替える: competition 条件を kaggle 条件に変更
+- [x] 内部変数を張り替える: competition 条件を kaggle 条件に変更
       - data_science_layout / pkg_dir（'src/utils'）/ use_gpu_effective / duo / care /
         _tasks.jinja の competition 分岐 等
-- [ ] kaggle 用の生成物を移設する（既存 competition のものをほぼそのまま）
+      - oj_code（= online_judge and oj_kind != 'kaggle'）内部変数も追加
+- [x] kaggle 用の生成物を移設する（既存 competition のものをほぼそのまま）
       - src/{configs,data,input,output,features,logs,models,notebook,scripts,utils}/
       - utils パッケージ（config/dataset/features/modeling/plots）
       - Dockerfile.gpu + devcontainer.gpu.json + uv の pytorch-cu124 インデックス
       - marimo notebook（src/notebook/explore.py）
-- [ ] data_science を純粋な分析型に純化する
+      - 依存セットはユーザー判断で「既存 competition を完全維持」（duckdb/polars/
+        pyarrow と experiment extra も kaggle に残す）
+- [x] data_science を純粋な分析型に純化する
       - competition / GPU 質問を外す（notebooks / data / models / reports / paper）
       - **DUO / CARE 質問は data_science に残す**（competition の when 条件を外す）
       - polars/duckdb/pyarrow 等の data_science 初期依存は維持する
 - [ ] kaggle には AGENTS.md を生成する（AI 利用 OK のため。kaggle 固有の指示:
       GPU の使い方・submission の作り方・データ境界を含める）
-- [ ] 既存テストを移設する: test_template_kaggle_competition → kaggle タイプ用に
+      - （項目1 の AGENTS.md 設計で、kaggle / atcoder(AI可) は生成、
+        AI NG の online_judge では生成しない一元管理を実装）
+- [x] 既存テストを移設する: test_template_kaggle_competition → kaggle タイプ用に
       書き換え、test_template_data_science_layout は competition 無しの純化後仕様に
       更新。example-answers.yml / questionnaire.md / README の competition 言及を更新
       （未公開なので移行案内は不要。単に competition を撤去して kaggle に置き換える）
