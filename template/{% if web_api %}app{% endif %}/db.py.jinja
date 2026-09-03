@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from {{ package_name }}.app.settings import get_settings
+from app.settings import get_settings
 
 engine = create_async_engine(get_settings().database_url)
 """Module-level async engine; tests override DATABASE_URL before importing."""

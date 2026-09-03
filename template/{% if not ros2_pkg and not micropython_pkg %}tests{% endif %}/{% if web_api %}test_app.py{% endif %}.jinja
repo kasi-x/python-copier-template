@@ -27,10 +27,10 @@ from httpx import ASGITransport
 from httpx import AsyncClient
 from pydantic import TypeAdapter
 
-from {{ package_name }}.app.db import Base
-from {{ package_name }}.app.db import engine
-from {{ package_name }}.app.main import app
-from {{ package_name }}.app.schemas import ItemRead
+from app.db import Base
+from app.db import engine
+from app.main import app
+from app.schemas import ItemRead
 
 _ItemList = TypeAdapter(list[ItemRead])
 

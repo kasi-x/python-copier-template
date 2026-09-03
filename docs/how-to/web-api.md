@@ -20,10 +20,10 @@ upstream cookiecutter-django).
 
 The recommended stack (`use_recommended_web_api` = Yes) generates:
 
-- **FastAPI + uvicorn + pydantic-settings**. The app lives in
-  `{{ pkg_dir }}/app/` — `main.py` has a `create_app()` factory and a
-  module-level `app` for uvicorn; `settings.py` reads `DATABASE_URL`, `HOST`,
-  `PORT` and `CORS_ORIGINS` from the environment / `.env`.
+- **FastAPI + uvicorn + pydantic-settings**. The app lives in the top-level
+  `app/` package — `main.py` has a `create_app()` factory and a module-level
+  `app` for uvicorn; `settings.py` reads `DATABASE_URL`, `HOST`, `PORT` and
+  `CORS_ORIGINS` from the environment / `.env`.
 - **async SQLAlchemy 2.0 + Alembic + Postgres**. `db.py` builds an async
   engine and session dependency; `models.py` ships a demo `Item` model;
   `alembic/` is pre-wired (async env.py reading the same settings). The demo
@@ -39,7 +39,7 @@ The recommended stack (`use_recommended_web_api` = Yes) generates:
   Locally they run against a throwaway SQLite file; in CI (which starts a
   Postgres service container) they exercise the real database.
 - A multi-stage **Dockerfile** whose runtime image runs
-  `uvicorn {{ package_name }}.app.main:app` with a `/health` HEALTHCHECK, plus
+  `uvicorn app.main:app` with a `/health` HEALTHCHECK, plus
   `compose.local.yml` (API + Postgres 17) for local development.
 - `.env.example` — copy to `.env` and adjust; `.env` is git-ignored and loaded
   by direnv and the compose stack.
@@ -47,7 +47,7 @@ The recommended stack (`use_recommended_web_api` = Yes) generates:
 ## Running it
 
 ```sh
-uv run uvicorn {{ package_name }}.app.main:app --reload
+uv run uvicorn app.main:app --reload
 # Swagger UI: http://localhost:8000/docs
 ```
 

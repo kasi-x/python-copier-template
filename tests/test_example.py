@@ -510,15 +510,15 @@ def test_template_mcp_not_offered_to_data_science(tmp_path: Path):
         assert not (project_path / "tests" / "test_mcp_server.py").exists()
 
 
-def test_template_mcp_web_api(tmp_path: Path):
-    """web_api offers the MCP scaffold too (streamable-http fits the
-    Docker/compose-shaped service)."""
+def test_template_mcp_not_offered_to_web_api(tmp_path: Path):
+    """web_api no longer offers the MCP scaffold: its package is the
+    top-level app/ (uvicorn-served), not a <pkg> with an mcp_server module.
+    Forcing include_mcp must not add an orphan mcp dependency."""
     copy_project(tmp_path, project_type="web_api", include_mcp=True)
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert any(d.startswith("mcp[cli]") for d in pyproject_toml["project"]["dependencies"])
-    pkg_dir = tmp_path / "src" / "python_copier_template_example"
-    assert (pkg_dir / "mcp_server.py").exists()
-    assert (tmp_path / "tests" / "test_mcp_server.py").exists()
+    assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
+    assert not (tmp_path / "app" / "mcp_server.py").exists()
+    assert not (tmp_path / "tests" / "test_mcp_server.py").exists()
 
 
 def test_template_mcp_flat_layout(tmp_path: Path):
@@ -950,20 +950,21 @@ def test_web_api_recommended_fastapi_stack(tmp_path: Path):
     assert any("prometheus-client" in d for d in deps)
     assert any("slowapi" in d for d in deps)
 
-    pkg = tmp_path / "src" / "python_copier_template_example"
-    # app factory + settings + db + demo model/schemas/router
+    pkg = tmp_path / "app"
+    # app factory + settings + db + demo model/schemas/router live in the
+    # top-level app/ package (web_api has no <pkg> library).
     for rel in (
-        "app/main.py",
-        "app/settings.py",
-        "app/db.py",
-        "app/models.py",
-        "app/schemas.py",
-        "app/router.py",
-        "app/routers/health.py",
-        "app/routers/items.py",
+        "main.py",
+        "settings.py",
+        "db.py",
+        "models.py",
+        "schemas.py",
+        "router.py",
+        "routers/health.py",
+        "routers/items.py",
     ):
         assert (pkg / rel).exists(), f"{rel} not generated"
-    main = (pkg / "app" / "main.py").read_text()
+    main = (pkg / "main.py").read_text()
     assert "create_app" in main
     assert "CorrelationIdMiddleware" in main
     assert "app = create_app()" in main
@@ -1001,15 +1002,15 @@ def test_web_api_detail_options_off(tmp_path: Path):
     assert not any("prometheus" in d for d in deps)
     assert not any("slowapi" in d for d in deps)
 
-    pkg = tmp_path / "src" / "python_copier_template_example"
-    assert (pkg / "app" / "main.py").exists()
-    main = (pkg / "app" / "main.py").read_text()
+    pkg = tmp_path / "app"
+    assert (pkg / "main.py").exists()
+    main = (pkg / "main.py").read_text()
     assert "metrics" not in main
     assert "slowapi" not in main
     assert "CORS" not in main
     # conditional modules are not generated
-    assert not (pkg / "app" / "metrics.py").exists()
-    assert not (pkg / "app" / "rate_limit.py").exists()
+    assert not (pkg / "metrics.py").exists()
+    assert not (pkg / "rate_limit.py").exists()
 
 
 def test_web_api_not_offered_to_other_types(tmp_path: Path):

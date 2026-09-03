@@ -8,12 +8,17 @@ use_recommended_web_api:
     default: true
     help: |
         Use the recommended web API stack?
-        Recommended: FastAPI + async SQLAlchemy 2.0 + Alembic + Postgres, a
-        demo CRUD router, request-id logging (asgi-correlation-id), a
-        BackgroundTasks example, and /health + /docs endpoints. Tests run
-        against Postgres in CI (or SQLite locally) via httpx.
+        Recommended: a FastAPI app in a top-level `app/` package (no library
+        <pkg>): async SQLAlchemy 2.0 + Alembic + Postgres, a demo CRUD
+        router, request-id logging (asgi-correlation-id), a BackgroundTasks
+        example, and /health + /docs endpoints. Run with
+        `uvicorn app.main:app`. Tests run against Postgres in CI (or SQLite
+        locally) via httpx.
         Answer No to drop Prometheus metrics, rate limiting or CORS, or to
         switch the database/ORM (SQLAlchemy 2.0 + Postgres stays fixed).
+        For full-stack needs (frontend, auth, ...) use the upstream
+        full-stack-fastapi-template instead — this type is deliberately a
+        minimal, API-only scaffold.
 
 prometheus:
     type: bool

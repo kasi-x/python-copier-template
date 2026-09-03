@@ -3,7 +3,7 @@
 既定は人間向けの開発表示、`LOG_FORMAT=json` で cron / systemd / 集約ログ向けの
 JSON に切り替えられる。
 
-    from {{ package_name }}.logging_setup import logger
+    from {{ import_pkg }}.logging_setup import logger
 
     logger = logger.bind(task_id="T-123")
     logger.info("job_done", chunks=3)
@@ -13,7 +13,7 @@ JSON に切り替えられる。
 The default is a human-readable console output; set `LOG_FORMAT=json` for
 JSON logs suitable for cron / systemd / log aggregation.
 
-    from {{ package_name }}.logging_setup import logger
+    from {{ import_pkg }}.logging_setup import logger
 
     logger = logger.bind(task_id="T-123")
     logger.info("job_done", chunks=3)
@@ -113,7 +113,7 @@ def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
     return structlog.stdlib.get_logger(name)
 
 
-# Module-level logger: `from {{ package_name }}.logging_setup import logger`
+# Module-level logger: `from {{ import_pkg }}.logging_setup import logger`
 logger = get_logger()
 {% elif log_library == 'loguru' %}
 {%- if cloud_provider == 'gcp' %}
@@ -219,7 +219,7 @@ def get_logger(name: str | None = None) -> BoundLogger:
     return BoundLogger(logger=name) if name else BoundLogger()
 
 
-# Module-level logger: `from {{ package_name }}.logging_setup import logger`
+# Module-level logger: `from {{ import_pkg }}.logging_setup import logger`
 logger = get_logger()
 {% else %}
 import json
@@ -235,7 +235,7 @@ from datetime import datetime
 import picologging as logging
 {%- endif %}
 
-_std_logger = logging.getLogger("{{ package_name }}")
+_std_logger = logging.getLogger("{{ import_pkg }}")
 _fmt = "console"
 _configured = False
 {%- if cloud_provider == 'gcp' %}
@@ -311,6 +311,6 @@ def get_logger(name: str | None = None) -> BoundLogger:
     return BoundLogger(logger=name) if name else BoundLogger()
 
 
-# Module-level logger: `from {{ package_name }}.logging_setup import logger`
+# Module-level logger: `from {{ import_pkg }}.logging_setup import logger`
 logger = get_logger()
 {% endif -%}

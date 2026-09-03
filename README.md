@@ -131,11 +131,14 @@ flowchart TD
 
 **Project type** (`project_type`)
 - **library** — a Python library/package
-- **web_api** — a working FastAPI scaffold (async SQLAlchemy 2.0 + Alembic +
-  Postgres, demo CRUD router, request-id logging, `/health` + `/docs`).
-  Ships `compose.local.yml` (API + Postgres) and a CI test job backed by a
-  Postgres service container. Optional: Prometheus `/metrics`, slowapi rate
-  limiting, CORS (see the [web-api how-to](https://kasi-x.github.io/python-copier-template/main/how-to/web-api.html))
+- **web_api** — a working FastAPI scaffold in a top-level `app/` package
+  (no library `<pkg>`; run with `uvicorn app.main:app`): async SQLAlchemy
+  2.0 + Alembic + Postgres, demo CRUD router, request-id logging,
+  `/health` + `/docs`. Deliberately API-only — full-stack needs point to the
+  upstream full-stack-fastapi-template. Ships `compose.local.yml`
+  (API + Postgres) and a CI test job backed by a Postgres service container.
+  Optional: Prometheus `/metrics`, slowapi rate limiting, CORS (see the
+  [web-api how-to](https://kasi-x.github.io/python-copier-template/main/how-to/web-api.html))
 - **cli** — a command-line tool
 - **data_science**: `data/`, `models/`, `reports/`, `notebooks/` and a `src/`
   pipeline (`src/data`, `src/features`, ...) layout. GPU Dockerfile and a
@@ -174,13 +177,14 @@ flowchart TD
   coexists to unit-test `core/`. See the
   [MicroPython how-to](https://kasi-x.github.io/python-copier-template/main/how-to/micropython.html)
 
-**Layout** (`layout`, for `library` / `web_api` / `cli`)
+**Layout** (`layout`, for `library` / `cli`)
 - **src** — package in a `src/` directory (**default**; prevents accidental
   imports of an uninstalled package)
 - **flat** — package at the repository root
 - `data_science` always uses `src/`; `online_judge` with the `kaggle` kind
-  uses `src/` too (as `src/utils`); `script` always uses flat; `micropython`
-  and `ros2` don't ask (firmware/ament layouts instead)
+  uses `src/` too (as `src/utils`); `script` always uses flat; `web_api`
+  always uses a top-level `app/` package (no `src`/flat question);
+  `micropython` and `ros2` don't ask (firmware/ament layouts instead)
 
 **AI agent** (`use_recommended_agent`, for `library` / `cli`)
 - Recommended: **no** — a plain library / CLI without agent tooling.
@@ -198,7 +202,7 @@ flowchart TD
   (`essential` / `s3` / `dynamodb` / `sqs` / `lambda`).
 - **Sentry** (`include_sentry`): adds `sentry-sdk` and initialises it from
   `SENTRY_DSN` at CLI startup.
-- **MCP** (`include_mcp`, cli / web_api): adds the `mcp[cli]` SDK and
+- **MCP** (`include_mcp`, cli): adds the `mcp[cli]` SDK and
   scaffolds an `mcp_server.py` with typed example tools, a `ToolError`
   sample and a resource, plus a `mcp-server-<name>` console script and an
   in-process client test — the template's first *long-running executable*
@@ -332,7 +336,7 @@ The option set has been consolidated over time. The key moves:
   `library` / `cli` / `web_api`, so adding a `daemon` type would violate the
   "project_type = fundamentally different execution environment" rule.
   Instead they are opt-in modules with their own entry point (the first
-  instance is `include_mcp` → `mcp_server.py` on `cli` / `web_api`, with a
+  instance is `include_mcp` → `mcp_server.py` on `cli`, with a
   `mcp-server-<name>` console script), started by an MCP host or via
   `python -m <package>.mcp_server` — never through `__main__.py`, which the
   Docker `ENTRYPOINT` and CLI tests own. See

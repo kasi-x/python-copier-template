@@ -83,7 +83,7 @@
 {% set tasks = tasks + [{
     'name': 'test',
     'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] and not oj_code else ''),
-    'cmd': [run ~ 'pytest' ~ (' --cov=' ~ ('firmware' if micropython_pkg else ('utils' if kaggle else ('solutions' if oj_code else package_name))) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] and not oj_code else '')],
+    'cmd': [run ~ 'pytest' ~ (' --cov=' ~ ('firmware' if micropython_pkg else pkg_dir) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] and not oj_code else '')],
 }] %}
 {% if docs %}
 {% set tasks = tasks + [

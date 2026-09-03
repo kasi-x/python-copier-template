@@ -20,9 +20,9 @@ $ pip install {{ distribution_name }}
 from firmware.core.app import BlinkConfig, run
 ```
 {% else %}```python
-from {{ package_name }} import __version__
+from {{ import_pkg }} import __version__
 
-print(f"Hello {{ package_name }} {__version__}")
+print(f"Hello {{ import_pkg }} {__version__}")
 ```
 {% endif -%}
 {% endif -%}

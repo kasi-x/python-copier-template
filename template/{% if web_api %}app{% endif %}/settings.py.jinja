@@ -1,9 +1,9 @@
 """Application settings, read from the environment / .env.
 
-The pydantic-settings BaseSettings reads `{{ package_name.upper() }}_`-prefixed
-variables first, then the bare names, then `.env`. The docker compose stack
-and CI both inject `DATABASE_URL`; for local runs the `.env.example` default
-(points at the compose Postgres) applies.
+The pydantic-settings BaseSettings reads `APP_`-prefixed variables first,
+then the bare names, then `.env`. The docker compose stack and CI both
+inject `DATABASE_URL`; for local runs the `.env.example` default (points at
+the compose Postgres) applies.
 """
 
 from __future__ import annotations

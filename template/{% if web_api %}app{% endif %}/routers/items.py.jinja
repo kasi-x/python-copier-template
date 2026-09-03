@@ -25,12 +25,12 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from {{ package_name }}.app.db import get_session
-from {{ package_name }}.app.models import Item
-{% if rate_limit_effective %}from {{ package_name }}.app.rate_limit import limiter
-{% endif %}from {{ package_name }}.app.schemas import ItemCreate
-from {{ package_name }}.app.schemas import ItemRead
-from {{ package_name }}.logging_setup import logger
+from app.db import get_session
+from app.logging_setup import logger
+from app.models import Item
+{% if rate_limit_effective %}from app.rate_limit import limiter
+{% endif %}from app.schemas import ItemCreate
+from app.schemas import ItemRead
 
 router = APIRouter(prefix="/api/v1/items", tags=["items"])
 

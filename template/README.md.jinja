@@ -202,10 +202,15 @@ pixi install
 > [!WARNING]
 > The exact commands depend on your operating system.
 
-| OS | Command |
+{% if web_api %}| OS | Command |
+|----|---------|
+| Linux/macOS | `{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}uvicorn app.main:app --reload` |
+| Windows | `{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}uvicorn app.main:app --reload` |
+{% else %}| OS | Command |
 |----|---------|
 | Linux/macOS | `python -m {{package_name}} --help` |
 | Windows | `py -m {{package_name}} --help` |
+{% endif %}
 
 </details>
 {% endif %}
@@ -297,11 +302,10 @@ The repo is linted and type-checked as a whole (the relaxed rules are aimed
 at contest code), so `task check` / `just check` keep your workspace tidy
 before you submit.
 {% endif %}
-{% elif web_api %}Start the API server (the app factory lives in
-`{{ package_name }}/app/`):
+ {% elif web_api %}Start the API server (the FastAPI app lives in `app/`):
 
 ```sh
-{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}uvicorn {{ package_name }}.app.main:app --reload
+{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}uvicorn app.main:app --reload
 ```
 
 The API is then at:

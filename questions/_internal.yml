@@ -30,7 +30,7 @@ scorecard_effective:
 # render-time tests, so the guard must live here.
 mcp_effective:
     type: bool
-    default: "{{ include_mcp and project_type in ['cli', 'web_api'] }}"
+    default: "{{ include_mcp and project_type == 'cli' }}"
     when: false
 
 # web_api effective settings. prometheus / rate_limit / cors keep their
@@ -71,7 +71,7 @@ data_science_layout:
 
 use_src_layout:
     type: bool
-    default: "{{ layout == 'src' and project_type not in ['script', 'online_judge', 'ros2', 'micropython'] }}"
+    default: "{{ layout == 'src' and project_type not in ['script', 'online_judge', 'ros2', 'micropython', 'web_api'] }}"
     when: false
 
 use_gpu_effective:
@@ -172,5 +172,14 @@ license_year:
 
 pkg_dir:
     type: str
-    default: "{{ 'src/utils' if kaggle else ('.' if online_judge else (('src/' if use_src_layout else '') + package_name)) }}"
+    default: "{{ 'app' if web_api else ('src/utils' if kaggle else ('.' if online_judge else (('src/' if use_src_layout else '') + package_name))) }}"
+    when: false
+
+# The importable package that owns logging_setup.py and is the import root
+# for generated code. web_api has no <pkg> library: its application lives in
+# the top-level app/ package, so the import root is `app` there; every other
+# project type imports the <pkg> library package.
+import_pkg:
+    type: str
+    default: "{{ 'app' if web_api else package_name }}"
     when: false

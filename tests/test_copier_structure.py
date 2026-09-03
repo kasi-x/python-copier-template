@@ -141,6 +141,7 @@ _JINJA_IF_WORDS = {
     "set",
     "endset",
     "import",
+    "include",
     "from",
     "as",
     "with",
@@ -164,10 +165,17 @@ def _is_known(name: str, keys: set[str]) -> bool:
 
 
 def _template_files() -> list[Path]:
-    """Every file in template/ plus the root _tasks.jinja it imports."""
-    files = list(TEMPLATE_DIR.rglob("*"))
+    """Every file in template/ plus the root _tasks.jinja and _shared/
+    partials (both included by template files via {% import %}/{% include %})."""
+    files = [Path(p) for p in TEMPLATE_DIR.rglob("*")]
     files.append(TOP / "_tasks.jinja")
+    files.extend(_shared_files())
     return files
+
+
+def _shared_files() -> list[Path]:
+    """Root-level shared partials (_shared/*.jinja) that template files include."""
+    return sorted((TOP / "_shared").glob("*.jinja"))
 
 
 def _template_local_vars(files: list[Path]) -> set[str]:

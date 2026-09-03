@@ -15,7 +15,8 @@ Asked first, ahead of every area, because the toolchain and several later
 questions depend on it.
 
 - **library** — a Python library/package
-- **web_api** — a web API service (Docker included)
+- **web_api** — an API-only FastAPI service in a top-level `app/` package
+  (Docker included; no library `<pkg>`; run with `uvicorn app.main:app`)
 - **cli** — a command-line tool
 - **data_science** — notebooks, `data/`, `models/`, `reports/` and a `src/`
   pipeline layout; GPU Dockerfile and Quarto paper always included
@@ -66,15 +67,17 @@ Answering **No** to an area gate reveals its detailed questions:
 - **License**: the full choosealicense.com list plus Proprietary/Confidential,
   FAIR metadata (CITATION.cff / REUSE), author ORCID
 - **Integrations**: Docker, PyPI publishing, cloud provider (aws / gcp /
-  azure), Sentry, MCP (cli / web_api only — scaffolds an MCP server module
+  azure), Sentry, MCP (cli only — scaffolds an MCP server module
   with typed tools, a `mcp-server-<name>` console script and an in-process
   client test; see [the MCP how-to](../how-to/mcp.md) and
   [the layer model](../explanations/long-running.md)), CI provider, logging
   library
 - **Web API** (web_api only): Prometheus metrics at `/metrics`, slowapi rate
   limiting, and CORS — all three default to on; the recommended stack itself
-  (FastAPI + async SQLAlchemy 2.0 + Alembic + Postgres, demo CRUD, request-id
-  logging, BackgroundTasks example) is not optional
+  (FastAPI + async SQLAlchemy 2.0 + Alembic + Postgres in a top-level `app/`
+  package, demo CRUD, request-id logging, BackgroundTasks example) is not
+  optional. Deliberately an API-only scaffold: full-stack needs (frontend,
+  auth, ...) point to the upstream full-stack-fastapi-template instead.
 - **Security** (GitHub projects): SECURITY.md vulnerability policy, OpenSSF
   Scorecard workflow. GitLab projects skip both (no private-advisory /
   Scorecard-badge support there)

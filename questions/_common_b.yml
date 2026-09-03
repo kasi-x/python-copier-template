@@ -8,18 +8,19 @@ use_recommended_polish:
     default: true
     help: |
         Use the recommended layout & repo polish?
-        Recommended: src/ layout (library/web_api/cli), no Japanese
-        (multibyte) characters in comments/docstrings.
+        Recommended: src/ layout (library/cli), no Japanese (multibyte)
+        characters in comments/docstrings.
         Answer No to change the layout or allow Japanese text.
 
 layout:
     type: str
-    when: "{{ project_type not in ['data_science', 'online_judge', 'ros2', 'micropython'] and not use_recommended_polish }}"
+    when: "{{ project_type not in ['data_science', 'online_judge', 'ros2', 'micropython', 'web_api'] and not use_recommended_polish }}"
     help: |
         Which layout would you like to use for the package?
         - src: package in a src/ directory (recommended, prevents accidental
                imports of an uninstalled package).
         - flat: package at the repository root.
+        (web_api always uses a top-level app/ package instead.)
     choices:
         - src
         - flat
@@ -272,15 +273,14 @@ include_sentry:
 
 include_mcp:
     type: bool
-    when: "{{ not use_recommended_integrations and project_type in ['cli', 'web_api'] }}"
+    when: "{{ not use_recommended_integrations and project_type == 'cli' }}"
     help: |
         Publish this project as an MCP (Model Context Protocol) server?
         If yes, the mcp SDK (with its CLI) is added and an mcp_server.py
-        is generated: a typed-tools example server you run over stdio or
-        Streamable HTTP, plus an in-process client test as a worked example
-        of how to call it. A mcp-server-<name> console script is added too,
-        so an MCP host can launch it (and, once published, users can run it
-        with uvx).
+        is generated: a typed-tools example server you run over stdio,
+        plus an in-process client test as a worked example of how to call
+        it. A mcp-server-<name> console script is added too, so an MCP host
+        can launch it (and, once published, users can run it with uvx).
     default: false
 
 ci_provider:
