@@ -7,6 +7,8 @@ here in milliseconds instead of surfacing as a cryptic render error in the
 slow test_example.py suite.
 """
 
+from pathlib import Path
+
 import jinja2
 import pytest
 import yaml
@@ -15,15 +17,15 @@ from copier._template import load_template_config
 from test_copier_structure import COPIER_YML
 from test_copier_structure import QUESTIONS_DIR
 from test_copier_structure import TOP
-from test_copier_structure import _shared_files  # noqa: SLF001 — same suite, intentional reuse
-from test_copier_structure import _template_files  # noqa: SLF001 — same suite, intentional reuse
+from test_copier_structure import shared_files
+from test_copier_structure import template_files
 
 
 def test_all_jinja_sources_parse():
     """Every .jinja source (template/ + _shared/ + _tasks.jinja) parses."""
     env = jinja2.Environment()
     broken = []
-    for f in _template_files():
+    for f in template_files():
         if not f.is_file() or f.suffix != ".jinja":
             continue
         try:
@@ -67,7 +69,7 @@ def test_shared_partials_are_all_consumed():
     consumer's conditions — either wire it or delete it.
     """
     consumers = []
-    for f in _template_files():
+    for f in template_files():
         if not f.is_file() or f.suffix != ".jinja":
             continue
         try:
@@ -76,7 +78,7 @@ def test_shared_partials_are_all_consumed():
             continue
         consumers.append(text)
     blob = "\n".join(consumers)
-    orphaned = [p.name for p in _shared_files() if p.name not in blob]
+    orphaned = [p.name for p in shared_files() if p.name not in blob]
     assert not orphaned, f"orphan _shared/ partials (not included anywhere): {orphaned}"
 
 
@@ -111,7 +113,7 @@ def _matrix_id(answers: dict[str, object]) -> str:
 
 
 @pytest.mark.parametrize("answers", RENDER_MATRIX, ids=[_matrix_id(a) for a in RENDER_MATRIX])
-def test_render_matrix_renders_and_parses(tmp_path, answers):
+def test_render_matrix_renders_and_parses(tmp_path: Path, answers: dict[str, object]):
     """Every matrix path renders; pyproject.toml (when generated) parses.
 
     Catches unbalanced Jinja that only triggers on one branch (e.g. a

@@ -25,6 +25,7 @@ This module guards the questionnaire's shape:
 import re
 from contextlib import suppress
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 import yaml
@@ -164,16 +165,16 @@ def _is_known(name: str, keys: set[str]) -> bool:
     return name in keys or name in ALLOWED_NON_KEYS or name in _JINJA_IF_WORDS
 
 
-def _template_files() -> list[Path]:
+def template_files() -> list[Path]:
     """Every file in template/ plus the root _tasks.jinja and _shared/
     partials (both included by template files via {% import %}/{% include %})."""
     files = [Path(p) for p in TEMPLATE_DIR.rglob("*")]
     files.append(TOP / "_tasks.jinja")
-    files.extend(_shared_files())
+    files.extend(shared_files())
     return files
 
 
-def _shared_files() -> list[Path]:
+def shared_files() -> list[Path]:
     """Root-level shared partials (_shared/*.jinja) that template files include."""
     return sorted((TOP / "_shared").glob("*.jinja"))
 
@@ -247,7 +248,7 @@ def test_template_conditionals_reference_defined_variables():
     """
     questions, _ = _load_questions()
     keys = set(questions) | ALLOWED_NON_KEYS
-    files = _template_files()
+    files = template_files()
     known = keys | _template_local_vars(files)
     references: dict[str, list[str]] = {}
     for f in files:
@@ -466,7 +467,7 @@ def _static_str_choices(question: dict) -> list[str]:
     return values
 
 
-def _when_expr_satisfiable(expr: str, str_domains: dict[str, list[str]], z3) -> bool:
+def _when_expr_satisfiable(expr: str, str_domains: dict[str, list[str]], z3: ModuleType) -> bool:
     """Check a when expression is satisfiable, modeling it in Z3.
 
     The questionnaire's when grammar is a small Jinja subset: comparisons
