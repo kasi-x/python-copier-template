@@ -21,6 +21,9 @@ class Settings(BaseSettings):
 
     model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
         env_file=".env",
+        # CI injects an empty DATABASE_URL when no Postgres service runs;
+        # an empty value must fall back to the default, not override it.
+        env_ignore_empty=True,
         extra="ignore",
     )
 

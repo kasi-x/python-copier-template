@@ -661,19 +661,34 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
 
 ## 15. 検知・運用の残課題（2026-09-05、Strategy.md 実装後に判明）
 
-Strategy.md ①②③④ は commit a82f9a46 で実装済み。以下は残る問題。
+Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push 検証で
+**CI-only の失敗が3種類**見つかり、すべて修正済み（詳細は各項目）。
 
-- [ ] **main が赤（GitHub 上）**: 直近の push（085b1579 / 922bc3b3 / fea050a4）で
-      lint と test が失敗している。
-      - lint: check-yaml × copier.yml（multi-document）→ a82f9a46 で修正済み、
-        push で解消する
-      - test: `test_example_repo_updates` が clone する
-        `kasi-x/python-copier-template-example` が存在しない（404）→ **未解決**。
-        ci.yml の `example` ジョブも同依存
-- [ ] example リポジトリの再作成、または `test_example_repo_updates` に
-      リポジトリ不在時の skip ガードを入れる。v1.0 の新リポジトリ公開まで
-      赤が許容できないならガードを先に入れる（scheduled-check.yml の火曜初回
-      実行前に要決定。決定しないと scheduled-check が毎週赤になる）
+- [x] lint 失敗（2段階）: (a) check-yaml × copier.yml（multi-document）→
+      exclude を追加。(b) 新設テストファイルの ruff format 差分（ルートの
+      line-length は 120）→ format 適用。**レッスン: 新規ファイル追加後も
+      `task lint` を回す。ローカル通過をファイル作成前に確認して終えていた**
+- [x] test 失敗①: `test_example_repo_updates` が clone する
+      `kasi-x/python-copier-template-example` が存在しない（404）
+      → リポジトリを新規作成（public）+ 現 HEAD から生成して初期 push +
+      書き込み可能 deploy key を登録 + `EXAMPLE_DEPLOY_KEY` secret を設定。
+      テストがローカルで pass することまで確認済み
+- [x] test 失敗②（テンプレートバグ）: CI の `_test.yml` は Postgres サービスなしの
+      組み合わせで**空文字の `DATABASE_URL` を export する**ため、生成 web_api の
+      `settings.py` が空 URL を既定値の代わりに採用し `test_app.py` の import が
+      落ちていた（09-03/04 の postgres CI 導入以降、CI だけ赤で未発見）。
+      → `env_ignore_empty=True`（settings）+ 生成 `test_app.py` 側も
+      空文字を未設定扱いにするよう修正。空 DATABASE_URL での再現テストで確認
+- [x] docs 失敗: gh-pages publish が 403。リポジトリの
+      `default_workflow_permissions` が read であり、reusable workflow
+      （`_docs.yml`）自身の top-level `permissions: contents: read` が
+      呼び出し元（ci.yml）の write をキャップするため
+      → `_docs.yml` の build ジョブに `permissions: contents: write` を明記
+- [x] `example` ジョブも非対話で copier が停止する問題を修正
+      （085b1579 追加の scraping 質問が example-answers.yml に答えを持たないため。
+      `_example.yml` に `--defaults` + `--with copier-template-extensions` +
+      `--trust` を追加。テストの update コマンドとは既に揃っていた）
+- [ ] **次の CI run が緑になることの確認**（上記修正の push 後。test 12分前後）
 - [ ] README の CI バッジと実態の乖離に注意: 直近コミットで CI が赤でも
       バッジは古い成功を示し続けた。赤を放置しない運用（push 後の run 確認、
       または merge queue / required checks の見直し）を習慣化する
@@ -682,7 +697,7 @@ Strategy.md ①②③④ は commit a82f9a46 で実装済み。以下は残る�
       初回結果を確認し、赤ならリンク修正
 - [ ] flaky: `test_template_task_runner_just_works` がフル並列実行で 1 回のみ
       失敗（単独・再実行は pass）。uv キャッシュ競合の疑い。再現時に
-      `--runpytest` 分離ではなく実行時間/worker 数で切り分ける
+      実行時間/worker 数で切り分ける
 - [ ] ルート `.python-version` が未レンダの Jinja 式のまま（`ros2_pkg` 等の変数は
       ルートに存在しない）。全 uv コマンドで warning が出て CI ログも汚れるので、
       `3.11` 等の固定値にするか削除する

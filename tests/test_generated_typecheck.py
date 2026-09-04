@@ -60,9 +60,7 @@ def _run(cmd: str, cwd: Path) -> str:
 
 @pytest.mark.timeout(550)
 @pytest.mark.parametrize("answers", TYPECHECK_PATHS, ids=[_id(a) for a in TYPECHECK_PATHS])
-def test_generated_project_typechecks_with_own_toolchain(
-    tmp_path: Path, answers: dict[str, object]
-):
+def test_generated_project_typechecks_with_own_toolchain(tmp_path: Path, answers: dict[str, object]):
     run_copy(
         src_path=str(TOP),
         dst_path=tmp_path,

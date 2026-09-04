@@ -42,9 +42,7 @@ def git_user_email() -> str:
 
 def github_username() -> str:
     """Best-effort GitHub username: the logged-in `gh` user, else `git config github.user`."""
-    return _run(["gh", "api", "user", "--jq", ".login"]) or _run(
-        ["git", "config", "--get", "github.user"]
-    )
+    return _run(["gh", "api", "user", "--jq", ".login"]) or _run(["git", "config", "--get", "github.user"])
 
 
 def cuda_hint() -> str:

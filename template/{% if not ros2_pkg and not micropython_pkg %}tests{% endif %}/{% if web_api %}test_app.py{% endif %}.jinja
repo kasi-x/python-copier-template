@@ -18,9 +18,12 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 
 # Must be set before the app package is imported (db.py builds the engine at
-# import time from get_settings()).
+# import time from get_settings()). An *empty* DATABASE_URL counts as unset:
+# CI exports it empty when no Postgres service runs, and it must fall back to
+# SQLite here just like an absent variable does.
 _TEST_DB = Path(__file__).resolve().parent.parent / ".test.db"
-os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{_TEST_DB}")
+if not os.environ.get("DATABASE_URL"):
+    os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_TEST_DB}"
 
 import pytest
 from httpx import ASGITransport

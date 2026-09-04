@@ -17,6 +17,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # Job-level grant: the caller (ci.yml) sets contents: write for the docs
+    # job, but a reusable workflow's own top-level permissions cap it back to
+    # read -- and repo-level default_workflow_permissions is read-only, so
+    # the gh-pages publish would 403 without this explicit job grant.
+    permissions:
+      contents: write
+
     steps:
       - name: Avoid git conflicts when tag and branch pushed at same time
         if: github.ref_type == 'tag'

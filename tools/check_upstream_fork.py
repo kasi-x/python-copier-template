@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Check whether upstream (DiamondLightSource/python-copier-template) has
-commits on main that this fork hasn't reviewed yet.
+"""Report new commits on the upstream fork parent's main.
 
-This is a *different* concern from tools/check_upstream.py (which tracks
-hardcoded version pins like MicroPython/CUDA/ROS2 EOL): this script tracks
-the git history of the upstream fork relationship itself. Exits 1 when
+DiamondLightSource/python-copier-template is this fork's parent. This is a
+*different* concern from tools/check_upstream.py (which tracks hardcoded
+version pins like MicroPython/CUDA/ROS2 EOL): this script tracks the git
+history of the upstream fork relationship itself. Exits 1 when
 upstream/main has commits not reachable from HEAD (see
 .github/workflows/check-upstream-fork.yml, which opens an issue on drift).
 
@@ -21,7 +21,8 @@ UPSTREAM_URL = "https://github.com/DiamondLightSource/python-copier-template.git
 
 
 def run(*args: str) -> str:
-    return subprocess.run(args, check=True, capture_output=True, text=True).stdout
+    # args is a fixed literal argv built by this script, never user input.
+    return subprocess.run(args, check=True, capture_output=True, text=True).stdout  # noqa: S603
 
 
 def main() -> int:
