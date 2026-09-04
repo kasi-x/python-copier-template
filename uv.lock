@@ -1435,7 +1435,7 @@ dev = [
 [package.metadata.requires-dev]
 dev = [
     { name = "basedpyright", specifier = ">=1.39.9,<1.40" },
-    { name = "copier" },
+    { name = "copier", specifier = ">=9,<10" },
     { name = "copier-template-extensions", specifier = ">=0.3.3,<0.4" },
     { name = "coverage", specifier = ">=7.15.4,<8" },
     { name = "deptry", specifier = ">=0.25.1,<0.26" },

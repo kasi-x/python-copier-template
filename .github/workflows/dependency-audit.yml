@@ -1,0 +1,55 @@
+name: Dependency audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    # pip-audit (OSV-based) over the root repo's own dependencies. Renovate's
+    # vulnerabilityAlerts cover the GitHub Advisory feed, but the sources
+    # differ -- the same reason the generated projects keep `task audit`
+    # separate from `task check`. Staggered from the other scheduled
+    # workflows (Mon/Tue/Wed/Sat) so a failure names one workflow.
+    - cron: "0 7 * * THU"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Install Task
+        uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Audit dependencies
+        id: audit
+        run: task audit
+
+      - name: Open vulnerability issue
+        if: failure() && steps.audit.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          body=$(uv run --locked pip-audit 2>&1 || true)
+          existing=$(gh issue list --search "pip-audit found vulnerabilities" \
+            --state open --json number --jq 'length')
+          if [ "$existing" -eq 0 ]; then
+            gh issue create \
+              --title "pip-audit found vulnerabilities in the template's own dependencies" \
+              --body "$body"
+          else
+            echo "An issue for this audit failure is already open; skipping."
+          fi

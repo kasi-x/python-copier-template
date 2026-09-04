@@ -10,8 +10,14 @@ from pathlib import Path
 
 
 def test_example_solve_runs() -> None:
-    solve = Path(__file__).resolve().parent.parent / "challenges" / "pwn" / "example" / "solve.py"
+    root = Path(__file__).resolve().parent.parent
+    solve = root / "challenges" / "pwn" / "example" / "solve.py"
     assert solve.exists(), "challenges/pwn/example/solve.py must be generated"
-    proc = subprocess.run([sys.executable, str(solve)], capture_output=True, timeout=30, check=False)
+    proc = subprocess.run(
+        [sys.executable, str(solve)],
+        timeout=30,
+        capture_output=True,
+        check=False,
+    )
     assert proc.returncode == 0, proc.stderr.decode()
     assert len(proc.stdout) > 0

@@ -1,0 +1,50 @@
+name: Check upstream fork
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Track DiamondLightSource/python-copier-template (the fork parent) for
+    # new commits on main worth reviewing. This is the *git fork*
+    # relationship -- check-upstream.yml (Monday) tracks hardcoded version
+    # pins, a different concern; don't confuse the two.
+    - cron: "0 6 * * TUE"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history so HEAD..FETCH_HEAD can resolve across the fork.
+          fetch-depth: 0
+
+      - name: Check upstream fork for new commits
+        id: check
+        run: python3 tools/check_upstream_fork.py
+        # The checker exits 1 when upstream/main has commits not reachable
+        # from HEAD.
+
+      - name: Open drift issue
+        if: failure() && steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          body=$(python3 tools/check_upstream_fork.py 2>&1 || true)
+          existing=$(gh issue list --search "Upstream has new commits" \
+            --state open --json number --jq 'length')
+          if [ "$existing" -eq 0 ]; then
+            gh issue create \
+              --title "Upstream has new commits to review" \
+              --body "$body"
+          else
+            echo "An issue for this drift is already open; skipping."
+          fi

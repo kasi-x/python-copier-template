@@ -228,6 +228,18 @@ def extract_pins() -> list[Pin]:
             floor = floor_m.group(1) if floor_m else "?"
             pins.append(Pin(name=f"PyPI floor [{category}] {dep}", current=floor or "unpinned", checkable=True))
 
+    # copier itself: this repo's own dev dependency, not a template floor.
+    # Unlike the PyPI-floor pins above (which check the *floor* still
+    # exists), this checks whether a newer *major* than our ceiling has
+    # shipped -- that's the drift signal worth a human look, since a copier
+    # major bump can change run_copy()'s signature / exception types (see
+    # docs/explanations/template-dev.md).
+    root_pyproject_src = (TOP / "pyproject.toml").read_text()
+    copier_m = re.search(r'"copier>=(\d+),<(\d+)"', root_pyproject_src)
+    if copier_m:
+        floor, ceiling = copier_m.group(1), copier_m.group(2)
+        pins.append(Pin(name="copier ceiling (root pyproject.toml)", current=f">={floor},<{ceiling}", checkable=True))
+
     return pins
 
 
@@ -351,6 +363,8 @@ def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911
         return _resolve_cuda_base()
     if name.startswith("PyPI floor"):
         return _resolve_pypi_floor(name, current)
+    if name.startswith("copier ceiling"):
+        return pypi_latest("copier")
     return None
 
 
@@ -360,6 +374,18 @@ def _is_drift(pin: Pin) -> tuple[bool, str]:
         return False, f"[info]   {pin.name}: {pin.current} (upstream unknown)"
     upstream = pin.upstream
     name, current = pin.name, pin.current
+    # copier ceiling needs a numeric major comparison, which fits neither
+    # the exact-match table nor the substring triggers below.
+    if name.startswith("copier ceiling"):
+        ceiling = int(current.split("<")[1])
+        latest_major = _parse_version(upstream)[0] if upstream else None
+        drift = latest_major is not None and latest_major >= ceiling
+        msg = (
+            f"[DRIFT]  {name}: ceiling <{ceiling} but latest is {upstream}"
+            if drift
+            else f"[ok]     {name}: {current} (latest {upstream})"
+        )
+        return drift, msg
     by_exact_match = {
         "MicroPython tag": (
             current == upstream,

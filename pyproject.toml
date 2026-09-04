@@ -10,7 +10,7 @@ requires-python = ">=3.11"
 [dependency-groups]
 dev = [
     "basedpyright>=1.39.9,<1.40",
-    "copier",
+    "copier>=9,<10",
     "copier-template-extensions>=0.3.3,<0.4",
     "coverage>=7.15.4,<8",
     "deptry>=0.25.1,<0.26",

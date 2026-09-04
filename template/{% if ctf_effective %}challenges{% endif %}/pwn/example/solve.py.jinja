@@ -23,11 +23,15 @@ BINARY = HERE / "vuln"  # place the challenge binary here (not committed)
 HOST = "example.com"
 PORT = 1337
 
+
 def solve_local() -> bytes:
     """Solve against the local binary. Replace with the real exploit."""
     if BINARY.exists():
         return subprocess.run(
-            [str(BINARY)], capture_output=True, timeout=10, check=False
+            [str(BINARY)],
+            capture_output=True,
+            timeout=10,
+            check=False,
         ).stdout
     # No binary yet: demonstrate the packing helpers (keeps CI green).
     # Print as hex so the output stays text-safe for pipes and tests.

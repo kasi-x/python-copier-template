@@ -5,6 +5,11 @@ repos:
       - id: check-added-large-files
         exclude: ^(uv|pixi)\.lock
       - id: check-yaml
+        # copier.yml is a multi-document stream by design: the `---`
+        # separator splits the jinja-extensions preamble from the
+        # questionnaire (copier merges the documents itself), which
+        # check-yaml's single-document reader rejects.
+        exclude: ^copier\.yml
       - id: check-merge-conflict
       - id: end-of-file-fixer
         # uv/pixi lockfiles are machine-generated and may not end in a newline.

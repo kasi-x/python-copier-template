@@ -5,6 +5,10 @@ on:
         type: string
         description: Which task runner drives the docs task (task, just, poe, make, pixi)
         required: true
+      publish:
+        type: boolean
+        description: Publish the build to gh-pages (scheduled drift checks pass false to build only)
+        default: true
 
 permissions:
   contents: read
@@ -100,7 +104,7 @@ jobs:
         run: python .github/pages/make_switcher.py --add "$DOCS_VERSION" "${{ github.repository }}" .github/pages/switcher.json
 
       - name: Publish Docs to gh-pages
-        if: github.ref_type == 'tag' || github.ref_name == 'main'
+        if: inputs.publish && (github.ref_type == 'tag' || github.ref_name == 'main')
         # We pin to the SHA, not the tag, for security reasons.
         # https://docs.github.com/en/actions/learn-github-actions/security-hardening-for-github-actions#using-third-party-actions
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0

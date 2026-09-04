@@ -60,7 +60,6 @@ async def create_item(
     return item
 {% if rate_limit_effective %}
 
-
 @router.get("", response_model=list[ItemRead])
 @limiter.limit("5/minute")  # type: ignore[reportUnknownMemberType] - slowapi ships no stubs
 async def list_items(
@@ -79,7 +78,6 @@ async def list_items(session: SessionDep) -> Sequence[Item]:
     result = await session.execute(select(Item).order_by(Item.id))
     return result.scalars().all()
 {% endif %}
-
 
 @router.get("/{item_id}", response_model=ItemRead)
 async def get_item(item_id: int, session: SessionDep) -> Item:

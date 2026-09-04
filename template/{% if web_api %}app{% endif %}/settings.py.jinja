@@ -26,6 +26,7 @@ class Settings(BaseSettings):
 
     database_url: str = (
         "postgresql+asyncpg://postgres:postgres@localhost:5432/"
+        # database name: repo name with dashes replaced by underscores
         "{{ repo_name | replace('-', '_') }}"
     )
     """SQLAlchemy async database URL (postgresql+asyncpg:// or sqlite+aiosqlite://)."""

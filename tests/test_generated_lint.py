@@ -45,6 +45,17 @@ EXTRA_PATHS: list[dict[str, object]] = [
 
 RENDERED_PATHS = FAST_PATHS + EXTRA_PATHS
 
+# The end-of-file and ruff-check tiers above only run BASE + path answers, so
+# `allow_japanese` (and therefore ruff's line-length 88 vs 120) never varies
+# unless we vary it here. copier applies a data-supplied value even when the
+# question's `when` is false (see copy_project_recommended's docstring in
+# test_example.py), so passing allow_japanese directly is enough to flip the
+# generated [tool.ruff] width for these two cases.
+JAPANESE_VARIANTS: list[dict[str, object]] = [
+    {"project_type": "cli", "allow_japanese": True},
+    {"project_type": "cli", "allow_japanese": False},
+]
+
 
 def _ruff_bin() -> Path:
     """The ruff to lint rendered output with: the one in this repo's venv.
@@ -60,6 +71,19 @@ def _ruff_bin() -> Path:
     which = shutil.which("ruff")
     assert which, "ruff not found in .venv/bin, next to sys.executable, or on PATH"
     return Path(which)
+
+
+def _render(tmp_path: Path, answers: dict[str, object]) -> None:
+    run_copy(
+        src_path=str(TOP),
+        dst_path=tmp_path,
+        data={**BASE, **answers},
+        vcs_ref="HEAD",
+        defaults=True,
+        unsafe=True,
+        overwrite=True,
+        skip_tasks=True,
+    )
 
 
 @pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
@@ -84,6 +108,57 @@ def test_generated_project_is_ruff_clean(tmp_path: Path, answers: dict[str, obje
     )
     assert proc.returncode == 0, (
         f"generated project is not clean under its own [tool.ruff]:\n{proc.stdout}{proc.stderr}"
+    )
+
+
+def _run_ruff_format_check(tmp_path: Path) -> subprocess.CompletedProcess[str]:
+    ruff = _ruff_bin()
+    return subprocess.run(
+        [str(ruff), "format", "--check", "--no-cache", "."],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+@pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
+def test_generated_project_is_ruff_format_clean(tmp_path: Path, answers: dict[str, object]):
+    """The rendered tree must already match `ruff format`'s output.
+
+    A .jinja source whose static content only happens to match one
+    line-length setting's formatting (e.g. allow_japanese=True's 120 vs
+    False's 88) breaks `task check` for the other setting on every run.
+    ruff format doesn't need the project's dependencies installed (it's
+    pure syntax/style), so this runs in the same skip_tasks=True tier as
+    test_generated_project_is_ruff_clean -- the bug this guards (the
+    test_qa.py.jinja width dependency) used to hide in the heavy
+    test_example.py tier where only some combinations reach it.
+    """
+    _render(tmp_path, answers)
+    proc = _run_ruff_format_check(tmp_path)
+    assert proc.returncode == 0, (
+        f"generated project is not ruff-format-clean under its own [tool.ruff]:\n{proc.stdout}{proc.stderr}"
+    )
+
+
+@pytest.mark.parametrize("answers", JAPANESE_VARIANTS, ids=[_id(a) for a in JAPANESE_VARIANTS])
+def test_generated_project_is_ruff_format_clean_per_line_length(tmp_path: Path, answers: dict[str, object]):
+    """ruff format --check for both allow_japanese values (line-length 120/88).
+
+    The base RENDERED_PATHS cases inherit allow_japanese's default, so the
+    two line-length settings the template generates are only both exercised
+    by these explicit variants.
+    """
+    _render(tmp_path, answers)
+    pyproject = (tmp_path / "pyproject.toml").read_text()
+    expected_length = "120" if answers["allow_japanese"] else "88"
+    assert f"line-length = {expected_length}" in pyproject, (
+        f"expected line-length {expected_length} in generated pyproject.toml"
+    )
+    proc = _run_ruff_format_check(tmp_path)
+    assert proc.returncode == 0, (
+        f"generated project is not ruff-format-clean at line-length {expected_length}:\n{proc.stdout}{proc.stderr}"
     )
 
 

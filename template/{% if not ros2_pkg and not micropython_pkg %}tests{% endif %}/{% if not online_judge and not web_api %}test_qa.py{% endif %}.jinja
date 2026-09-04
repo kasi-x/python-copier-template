@@ -45,7 +45,7 @@ def test_public_api_declared_in_all_is_importable() -> None:
     # stays clean under basedpyright (reportAny / reportUnknownVariableType).
     all_names = cast("tuple[str, ...]", getattr(pkg, "__all__", ()))
     for name in all_names:
-        assert hasattr(pkg, name), f"{name!r} is in __all__ but missing from the package"
+        assert hasattr(pkg, name), f"{name!r} missing from the package"
 
 
 def test_no_obviously_undefined_internal_imports() -> None:

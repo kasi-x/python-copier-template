@@ -454,6 +454,14 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       ROS 2 EOL + Python floor + Postgres + Ubuntu）。週次 check-upstream.yml で
       drift issue を自動作成。旧ツールは shim として残し、旧 workflow は手動化。
       template-dev.md に「Hardcoded pins need an upstream check」規約を追加
+- [x] 上流フォーク（DiamondLightSource）の新規コミット検知と、copier 自体の
+      メジャー更新検知を追加する
+      → git フォーク追従は tools/check_upstream_fork.py + 週次
+      check-upstream-fork.yml（火曜 06:00）。**check-upstream.yml（pin 専用・月曜）とは
+      別物** — 名前は似ているが役割が違う。copier は root pyproject.toml で
+      `>=9,<10` に pin し、check_upstream.py が「copier ceiling」pin として
+      メジャー drift を週次報告する。ルート依存の pip-audit は task audit +
+      週次 dependency-audit.yml（木曜 07:00）で実施
 
 ## 12. セキュリティ / コンプライアンス基盤の整備（OpenSSF Scorecard / OSPS 準拠）
 

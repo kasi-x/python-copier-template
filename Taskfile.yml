@@ -36,6 +36,10 @@ tasks:
       - command -v lychee >/dev/null 2>&1 || (echo "lychee is not installed. Install it (e.g. 'cargo install lychee' or 'brew install lychee') or run the Link Checker job in CI."; exit 1)
       - lychee --no-progress --exclude-path site README.md docs zensical.toml
 
+  audit:
+    desc: Audit dependencies for known vulnerabilities (network; not part of check)
+    cmd: uv run --locked pip-audit
+
   check:
     desc: Run all quality checks
     deps: [lint, type-check, test, docs]

@@ -1,0 +1,58 @@
+name: Scheduled full check
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Re-run the ci.yml lint/test/docs jobs weekly with zero code changes:
+    # external toolchain drift (new ruff rules, basedpyright behaviour
+    # changes, a pinned dependency's latest release) is invisible to
+    # push/PR CI. Days are staggered from check-upstream.yml (Mon 06:00),
+    # check-upstream-fork.yml (Tue 06:00), periodic.yml (Wed 08:00) and
+    # scorecard.yml (Sat 01:30) so a failure names exactly one workflow.
+    - cron: "0 7 * * TUE"
+
+jobs:
+  lint:
+    uses: ./.github/workflows/_tasks.yml
+    with:
+      task_runner: task
+      task: lint,type-check
+
+  test:
+    uses: ./.github/workflows/_test.yml
+    with:
+      runs-on: ubuntu-latest
+      task_runner: task
+
+  docs:
+    uses: ./.github/workflows/_docs.yml
+    with:
+      task_runner: task
+      # Build-only: a scheduled drift check must not publish docs.
+      publish: false
+
+  open-drift-issue:
+    name: Open issue on drift
+    needs: [lint, test, docs]
+    if: always() && contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          existing=$(gh issue list --search "Scheduled full check failed" \
+            --state open --json number --jq 'length')
+          if [ "$existing" -eq 0 ]; then
+            gh issue create \
+              --title "Scheduled full check failed (no code change involved)" \
+              --body "The weekly full check (lint/type-check/test/docs, same jobs as ci.yml) failed with no repo changes involved. This usually means an external toolchain (ruff, basedpyright, a pinned dependency's latest release, ...) changed behaviour. See: $RUN_URL"
+          else
+            echo "An issue for this drift is already open; skipping."
+          fi

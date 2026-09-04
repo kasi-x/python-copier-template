@@ -135,6 +135,13 @@ on drift):
 - The check is report-only: it never edits files or opens PRs. CUDA-class
   bumps need a human (torch floor + index + Docker base move together).
 
+copier itself is pinned `<10` in the root `pyproject.toml` (renovate's
+`lockFileMaintenance` would otherwise pull a breaking major into `uv.lock`
+unannounced). When raising the ceiling, re-verify the whole test suite —
+especially `run_copy()`'s signature and `copier.errors`' exception classes —
+first. The ceiling is tracked by the weekly drift check as the
+"copier ceiling (root pyproject.toml)" pin.
+
 ## Freshness policy: combinations that cannot stay current
 
 Some combinations cannot track upstream HEAD, by design. The weekly check
