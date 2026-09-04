@@ -1,0 +1,41 @@
+{% if strictness in ['recommended', 'full'] %}
+[tool.basedpyright]
+typeCheckingMode = "{{ 'strict' if strictness == 'full' else 'recommended' }}"
+# Pin the language version to what the project actually targets
+# (requires-python / .python-version): ros2 humble -> 3.10, jazzy -> 3.12,
+# everything else 3.11. Without this basedpyright assumes its newest
+# supported Python and lets newer-only syntax slip through.
+pythonVersion = "{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' if ros2_pkg and ros_distro == 'jazzy' else '3.11') }}"
+include = ["{{ pkg_dir }}", "tests"{% if micropython_pkg %}, "firmware/core"{% endif %}]
+# tasks.py/duties.py: invoke/duty's own decorators (@task/@duty) and Context
+# are only partially typed upstream, so an explicit `basedpyright tasks.py`
+# (outside the `include` scan above) would otherwise be noisy.
+# MicroPython's tools/micropython/freeze.py is a device-build script (docker
+# image strings), excluded the same way as the firmware entry points below.
+exclude = [{% if task_runner_effective == 'invoke' %}"tasks.py", {% endif %}{% if task_runner_effective == 'duty' %}"duties.py", {% endif %}{% if micropython_pkg %}"firmware/main.py", "firmware/boot.py", "firmware/board_config.py", {% endif %}{% if oj_code %}"**/test", "venv", ".venv", ".github", "docs", {% endif %}]
+reportMissingImports = false # Ignore missing stubs in imported modules
+reportMissingTypeStubs = false
+{%- if strictness == 'recommended' %}
+analyzeUnannotatedFunctions = false # 完全未注釈関数はスキップ（partial のみ。none はもっと緩い）
+{%- endif %}{% if strictness == 'full' %}
+# full: Any を許さない。外部 API も明示的に型を書く
+reportAny = true
+reportExplicitAny = true
+reportUnknownParameterType = true
+reportUnknownArgumentType = true
+reportUnknownVariableType = true
+{% endif %}
+# 重複検出は ruff / vulture が担うので無効化（片方に寄せる）
+reportPrivateUsage = false
+reportUnusedParameter = false
+reportUnusedFunction = false
+reportUnusedImport = false
+reportCallInDefaultInitializer = false # typer のデフォルト引数は正当
+reportUnusedCallResult = false # argparse add_argument 等の副作用目的の呼び出しは正当
+enableTypeIgnoreComments = true # # type: ignore も受け付ける（mypy 互換）
+reportImplicitStringConcatenation = false # ruff の ISC 系（暗黙連結を推奨）と整合させる
+{% if web_api %}
+# slowapi (and similar FastAPI-ecosystem decorators) ships no type stubs, so
+# @limiter.limit(...) would otherwise trip reportUntypedFunctionDecorator.
+reportUntypedFunctionDecorator = false
+{% endif %}{% endif %}

@@ -17,6 +17,7 @@ Practical step-by-step guides for the more experienced user.
 - [MicroPython Firmware](how-to/micropython.md)
 - [Web API Service Scaffolding](how-to/web-api.md)
 - [MCP Server Scaffolding](how-to/mcp.md)
+- [Polite Web Fetching](how-to/scraping.md)
 - [Code Coverage](how-to/coverage.md)
 - [Check Docs Style](how-to/check-docs-style.md)
 - [Renovate Dependency Updates](how-to/renovate.md)

@@ -1,0 +1,186 @@
+{% if strictness in ['recommended', 'full'] %}lint.preview = true
+lint.explicit-preview-rules = true
+lint.select = ["ALL"]
+{% elif strictness == 'basic' %}lint.select = [
+    "B",
+    "C4",  # flake8-comprehensions - https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
+    "E",
+    "F",
+    "N",
+    "W",
+    "I",
+    "UP",
+    "SLF",
+    "S",
+    "PT",
+]
+{% else %}lint.select = [
+    "E",
+    "F",
+    "W",
+    "I",
+]
+{% endif %}{% if strictness == 'full' %}lint.extend-ignore = [
+    "SIM401",  # if-else-block-instead-of-dict-get
+    "S101",    # assert-used
+    "PT018",   # pytest-composite-assertion
+]
+{% elif strictness == 'recommended' %}lint.extend-ignore = [
+    "ANN001",  # missing-type-function-argument
+    "ANN002",  # missing-type-args
+    "ANN003",  # missing-type-kwargs
+    "ANN202",  # missing-return-type-private-function
+    "ANN204",  # missing-return-type-special-method
+    "ANN205",  # missing-return-type-static-method
+    "ANN206",  # missing-return-type-class-method
+    "ANN401",  # any-type
+    "SIM401",  # if-else-block-instead-of-dict-get
+    "S101",    # assert-used
+    "PT018",   # pytest-composite-assertion
+    "TD",
+    "FIX",
+    "T20",     # flake8-print
+    "TRY002",  # raise-vanilla-class
+    "TRY003",  # raise-vanilla-args
+    "D10",     # undocumented-code
+    "DOC",
+    "D420",    # incorrect-section-order
+    "D421",    # property-docstring-verb
+    "PLR2004", # magic-value-comparison
+    "PLR6301", # no-self-use
+    "E1",      # pycodestyle indentation
+    "E2",      # pycodestyle whitespace
+    "E3",      # pycodestyle blank lines
+    "E502",    # redundant-backslash
+    "W391",    # too-many-newlines
+    "COM812",  # missing-trailing-comma
+    "ISC001",  # single-line-implicit-str-concat
+    "TC",
+    "CPY001",  # missing-copyright-notice
+    "RUF105",  # noqa-comments
+    "RUF106",  # rule-codes-in-suppression
+    "RUF201",  # rule-codes-in-selectors
+    "PLW1514", # unspecified-encoding
+    "PT029",   # pytest-warns-without-warning
+    "TID254",  # lazy-import-mismatch
+    "TID255",  # lazy-import-immediately-resolved
+    "FA",
+{% if oj_code %}    # Contest-code relaxations: single-file submissions are written for
+    # speed and the judge, not a shared codebase. Shadowing `input`,
+    # ALL-CAPS variables (N, M, INF), unused locals/helpers and in-function
+    # imports are idiomatic there, so they are excluded project-wide.
+    "A001",   # builtin-variable-shadowing
+    "A002",   # builtin-argument-shadowing
+    "N802",   # non-lowercase-variable-in-function
+    "N803",   # non-lowercase-variable-in-function  (引数)
+    "N806",   # non-lowercase-variable-in-function  (関数内定数)
+    "RUF059", # unused-unpacked-variable
+    "F841",   # unused-variable
+    "ARG001", # unused-function-argument
+    "ARG002", # unused-method-argument
+    "ARG003", # unused-class-method-argument
+    "ARG004", # unused-static-method-argument
+    "ARG005", # unused-lambda-argument
+    "PLC0415",# import-outside-top-level
+{% endif %}]
+{% elif strictness == 'basic' %}lint.extend-ignore = [
+    "ANN401",  # any-type
+    "SIM401",  # if-else-block-instead-of-dict-get
+    "S101",    # assert-used
+    "PT018",   # pytest-composite-assertion
+    "TD",
+]
+{% else %}lint.extend-ignore = [
+    "ANN001",  # missing-type-function-argument
+    "ANN002",  # missing-type-args
+    "ANN003",  # missing-type-kwargs
+    "ANN202",  # missing-return-type-private-function
+    "ANN204",  # missing-return-type-special-method
+    "ANN205",  # missing-return-type-static-method
+    "ANN206",  # missing-return-type-class-method
+    "ANN401",  # any-type
+    "SIM401",  # if-else-block-instead-of-dict-get
+    "S101",    # assert-used
+    "PT018",   # pytest-composite-assertion
+    "TD",
+]
+{% endif %}lint.task-tags = [
+    # Future
+    "WIP",
+    "TBD",
+    "HOLD",
+    "PLAN",
+    "MVP",
+    "WANT",
+    "PILOT",
+
+    # Fixes
+    "TODO",
+    "BUG",
+    "FIXME",
+    "HACK",
+    "MISSING",
+    "DOCME",
+    "UPGRADE",
+
+    # Memo
+    "MEMO",
+    "NOTE",
+    "CASE",
+
+    # Judgment
+    "MUST",
+    "SHOULD",
+    "MAY",
+    "FOLLOW",
+    "WHYNOT",
+    "RISK",
+    "WARN",
+    "IDEA",
+
+    # Reflection
+    "IMO",
+    "YAGNI",
+
+    # History
+    "ADR",
+    "CONTEXT",
+
+    # Conversation
+    "BLOCKER",
+    "REVIEW",
+    "DISCUSS",
+    "REQUEST",
+
+    # Tools
+    "ISSUE",
+    "QUESTION",
+
+    # TDD
+    "BLUE",
+    "RED",
+    "GREEN",
+    "REFACTOR",
+    "UNCOVERED",
+    "FLAKY",
+    "SLOW",
+    "OVERTEST",
+
+    # Performance
+    "BENCHMARK",
+    "SCALE",
+    "BOTTLENECK",
+
+    # Compliance
+    "SECURE",
+    "VULNERABILITY",
+    "PRIVACY",
+    "ILLEGAL",
+    "ACCESSIBILITY",
+    "LOCALIZE",
+
+    # Legacy
+    "DEPRECATE",
+    "DEBT",
+    "UNKNOWN",
+]

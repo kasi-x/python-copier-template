@@ -2,7 +2,7 @@
 # Build and run with:
 #   docker build --target developer -f Dockerfile.gpu -t {{ repo_name }}:gpu .
 #   docker run --gpus all -it {{ repo_name }}:gpu
-FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 AS developer
+FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04 AS developer
 
 # Install system dependencies
 RUN apt-get update -y && apt-get install -y --no-install-recommends \

@@ -1,9 +1,10 @@
-<div align="center">
 # {{ package_name }}
 
 *{{ description }}*
 
 **{{ package_name }}** is a Python package that ... <!-- describe what it does and why -->
+
+<div align="center">
 
 [![CI]({{repo_url}}/actions/workflows/ci.yml/badge.svg)]({{repo_url}}/actions/workflows/ci.yml)
 {% if not ros2_pkg %}[![Coverage](https://codecov.io/gh/{{github_org}}/{{repo_name}}/branch/main/graph/badge.svg)](https://codecov.io/gh/{{github_org}}/{{repo_name}})
@@ -125,11 +126,19 @@ The installable helpers live in `src/utils/` (`from utils.config import ...`);
 competition data goes in `src/input/` and predictions are written to
 `src/output/`. See the `dataset` / `features` / `train` / `predict` tasks
 below for the pipeline.
+{% elif oj_ctf %}
+This repository is a CTF participant workspace. Per-problem starters live in
+`challenges/<category>/<problem>/solve.py` — run one directly, then adapt
+the offset / target once you have the binary:
+
+```sh
+python challenges/pwn/example/solve.py
+# with the ctf extra: uv sync --extra ctf
+pytest tests/test_ctf_example.py -q
+```
+
+Challenge binaries (`vuln`) and flags are never committed (see .gitignore).
 {% else %}
-This repository is a bare workspace for code-submission judges. Sample cases
-and per-problem folders are **not** generated — a CLI tool fetches them for
-you and stays out of git (see below). Write your solution as a single file
-(e.g. `main.py`), then test and submit it.
 {% if oj_kind == 'atcoder' %}
 Use [online-judge-tools](https://github.com/online-judge-tools/oj) (`oj`) for
 samples/testing, and optionally [atcoder-cli](https://github.com/Tatamo/atcoder-cli)
@@ -325,16 +334,22 @@ database with alembic:
 ```
 {% if mcp_effective %}
 The project also ships an [MCP](https://modelcontextprotocol.io) server with
-two typed example tools (`add`, `divide`) and a `project://about` resource:
+two typed example tools (`add`, `divide`), two resources (`project://about`,
+`greeting://{name}`) and a `review_code` prompt:
 
 ```sh
 # stdio transport (the default; how an MCP host launches the server)
 uv run mcp-server-{{ repo_name }}
 ```
 
-`tests/test_mcp_server.py` calls the tools through the SDK's in-process
-client — read it to see how to call this server (or any MCP server) from
-your own code.
+A `.mcp.json` pointing at that command is generated, so VS Code / Cursor
+and other hosts pick the server up with no manual registration. For Claude
+Code / Claude Desktop: `claude mcp add {{ repo_name }} -- uv run
+mcp-server-{{ repo_name }}`.
+
+`tests/test_mcp_server.py` calls the tools, resources and prompt through the
+SDK's in-process client — read it to see how to call this server (or any MCP
+server) from your own code.
 {% endif %}{% else %}```python
 from {{package_name}} import __version__
 
@@ -348,7 +363,8 @@ python -m {{package_name}} --version
 ```
 {% if mcp_effective %}
 The project also ships an [MCP](https://modelcontextprotocol.io) server with
-two typed example tools (`add`, `divide`) and a `project://about` resource:
+two typed example tools (`add`, `divide`), two resources (`project://about`,
+`greeting://{name}`) and a `review_code` prompt:
 
 ```sh
 # stdio transport (the default; how an MCP host launches the server)
@@ -361,6 +377,11 @@ uv run python -m {{ package_name }}.mcp_server --transport streamable-http
 uv run mcp dev {{ pkg_dir }}/mcp_server.py
 ```
 
+A `.mcp.json` pointing at the stdio command is generated, so VS Code / Cursor
+and other hosts pick the server up with no manual registration. For Claude
+Code / Claude Desktop: `claude mcp add {{ repo_name }} -- uv run
+mcp-server-{{ repo_name }}`.
+
 Binding to a non-local address (e.g. `--host 0.0.0.0` inside Docker)
 requires the `MCP_ALLOWED_HOSTS` environment variable — the SDK only arms its
 DNS-rebinding protection for localhost binds, so `mcp_server.py` refuses to
@@ -369,9 +390,33 @@ start without an explicit host allowlist. Health checks live at `GET /health`
 design); `mcp-server-{{ repo_name }} --help` lists the `--host` / `--port`
 options. See `.env.example` for the variables.
 
-`tests/test_mcp_server.py` calls the tools through the SDK's in-process
-client — read it to see how to call this server (or any MCP server) from
-your own code.
+`tests/test_mcp_server.py` calls the tools, resources and prompt through the
+SDK's in-process client — read it to see how to call this server (or any MCP
+server) from your own code.
+{% endif %}{% if scraping_effective %}
+
+The project also ships a **polite web-fetching layer** under the
+[Good-future charter](CHARTER.md) (robots.txt first, 1 req/s per host,
+on-disk cache, contactable User-Agent):
+
+```sh
+uv run python -c "from {{ package_name }}.fetcher import fetch_text; print(fetch_text('https://example.com/')[:200])"
+# tests run fully offline: pytest tests/test_scraping.py -q
+```
+
+{% if scraping_scrapy_effective %}A Scrapy spider starter (`{{ pkg_dir }}/spider.py`, politeness enforced
+via `ROBOTSTXT_OBEY` + `AUTOTHROTTLE`) is included — run it with
+`scrapy crawl example`.
+{% endif %}{% if scraping_memorious_effective %}A memorious crawler config (`{{ pkg_dir }}/crawler.py`, rate-limited
+cached HTTP sessions) is included — run it with `memorious run example`.
+Note: memorious4 is AGPL-3.0, so this project is AGPL-3.0 (see `LICENSE`).
+{% endif %}{% if scraping_playwright_effective %}A Playwright browser-fetch module (`{{ pkg_dir }}/browser_fetch.py`,
+headless Chromium for JS-rendered pages) is included — run
+`playwright install chromium` once, then call `fetch_rendered_text()`.
+{% endif %}Direct HTTP calls (`requests.get`, `httpx.get`, `urlopen`) are banned by
+ruff outside the fetcher, so every fetch stays polite. CAPTCHA-solving
+helpers are never generated — if a site blocks bots, use its API or ask
+permission.
 {% endif %}{% endif %}
 
 {% if docs %}
@@ -390,6 +435,7 @@ your own code.
 {% endif                %}Releases        | <{{repo_url}}/releases>
 {% if fair              %}Citation        | [CITATION.cff](CITATION.cff)
 {% endif %}{% if security_policy_effective %}Security        | [SECURITY.md](SECURITY.md) — how to report a vulnerability
+{% endif %}{% if agents_md_effective %}Agent guide     | [AGENTS.md](AGENTS.md) — instructions for AI coding agents
 {% endif %}
 
 ## 🛠️ Development setup
@@ -565,8 +611,9 @@ GitHub Releases by CI. Type-checking the firmware needs the stubs installed
 first (`stubs` above); `tests/` (the CPython core tests) and `firmware/core/`
 are checked without them.
 {% endif %}
+{% if agents_md_effective %}See [AGENTS.md](AGENTS.md) for AI-agent guidance (commands, edit scope, commit rules).
 
-See the [how-to guides]({% if docs %}{{docs_url}}/how-to){% else %}.github/CONTRIBUTING.md){% endif %} for details on contributing,
+{% endif %}See the [how-to guides]({% if docs %}{{docs_url}}/how-to){% else %}.github/CONTRIBUTING.md){% endif %} for details on contributing,
 running tests and making a release.
 {% endif %}
 

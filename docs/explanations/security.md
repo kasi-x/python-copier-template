@@ -11,7 +11,7 @@ each Scorecard check to the mechanism that satisfies it.
 | Token-Permissions | Critical | Every workflow declares `permissions: contents: read` (or a narrower job-level scope); checkout steps set `persist-credentials: false` except the workflow that pushes the example repo |
 | Pinned-Dependencies | High | renovate's `helpers:pinGitHubActionDigests` converts every third-party `uses:` to a 40-char commit SHA (with the version tag as a comment); `unpinned-uses` is re-enabled in zizmor once the pinning PR lands |
 | Dangerous-Workflow | Critical | No `pull_request_target`; `github.event` contexts are never interpolated into `run:` shells (zizmor's `template-injection` audit is enabled) |
-| SAST | Medium | zizmor (`.github/workflows/security.yml`) audits the workflow files on every push/PR; pip-audit scans dependencies |
+| SAST | Medium | zizmor (`.github/workflows/security.yml`) audits the workflow files on every push/PR; pip-audit scans dependencies via the on-demand `audit` task |
 | Security-Policy | Low | Root `SECURITY.md`; generated projects get one under the `use_recommended_security` gate |
 | Branch-Protection | High | Not enforceable from the repo: enable signed commits, linear history and required reviews in GitHub settings / rulesets |
 | Binary-Artifacts | High | `.gitignore` excludes build outputs; no compiled artifacts are committed |

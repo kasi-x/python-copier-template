@@ -21,7 +21,7 @@ from utils.config import logger
 app = typer.Typer()
 
 
-def objective(trial: optuna.Trial, cfg: DictConfig) -> float:
+def objective(trial: optuna.Trial, _cfg: DictConfig) -> float:
     """Optuna objective: tune hyperparameters, return a metric to maximize."""
     lr = trial.suggest_float("lr", 1e-4, 1e-2, log=True)
     n_estimators = trial.suggest_int("n_estimators", 50, 500, step=50)
@@ -52,7 +52,8 @@ def main(
     src = FEATURES_DIR / input_path
     dst = MODELS_DIR / output_path
     if not src.exists():
-        raise typer.BadParameter(f"input not found: {src}")
+        msg = f"input not found: {src}"
+        raise typer.BadParameter(msg)
     logger.info("training", src=str(src), dst=str(dst))
     # TODO: replace with real training
     Path(dst).write_bytes(b"")

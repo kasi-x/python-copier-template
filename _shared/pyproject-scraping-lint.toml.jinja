@@ -1,0 +1,5 @@
+{% if scraping_effective %}"{{ pkg_dir }}/fetcher.py" = [
+    "S310",   # urlopen  CONTEXT: fetcher.py owns the single audited urlopen call-site
+    "TID251", # banned-api  CONTEXT: fetcher.py is the allowlisted implementation behind the ban
+]
+{% endif %}

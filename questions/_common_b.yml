@@ -203,6 +203,10 @@ author_orcid:
     help: |
         Your ORCID iD (e.g. 0000-0002-1825-0099), recorded in CITATION.cff
         so citation systems can attribute you correctly. Leave empty to skip.
+    validator: >-
+        {% if author_orcid and not (author_orcid | regex_search('^([0-9]{4}-){3}[0-9]{3}[0-9X]$|^https://orcid.org/([0-9]{4}-){3}[0-9]{3}[0-9X]$')) %}
+        {{ author_orcid }} is not a valid ORCID iD. Use 0000-0002-1825-0099 or https://orcid.org/0000-0002-1825-0099 (leave empty to skip).
+        {% endif %}
 
 use_recommended_integrations:
     type: bool

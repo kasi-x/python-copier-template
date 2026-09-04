@@ -29,7 +29,8 @@ def main(
     src = FEATURES_DIR / input_path
     dst = OUTPUT_DIR / output_path
     if not src.exists():
-        raise typer.BadParameter(f"input not found: {src}")
+        msg = f"input not found: {src}"
+        raise typer.BadParameter(msg)
     logger.info("plotting", src=str(src), dst=str(dst))
     # TODO: replace with real plotting
     dst.write_bytes(b"")

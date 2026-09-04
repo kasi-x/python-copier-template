@@ -11,7 +11,7 @@ toolchain is. Pick one level when prompted; it drives the generated
 |---|---|---|---|---|
 | `none` | Not required | None | None | Minimal set (pycodestyle, pyflakes, isort) |
 | `basic` | Not required | None | None | Basic set (bugbear, pycodestyle, isort, pyupgrade, ...) |
-| `recommended` | Partial (fully-untyped functions pass) | basedpyright + secondary (pyrefly by default) | typos, vulture, deptry, pip-audit | `ALL` rules with pragmatic ignores |
+| `recommended` | Partial (fully-untyped functions pass) | basedpyright + secondary (pyrefly by default) | typos, vulture, deptry (+ `audit` on demand: pip-audit) | `ALL` rules with pragmatic ignores |
 | `full` | All functions annotated | basedpyright (strict, `Any` forbidden) + secondary (pyrefly/ty) | Same as recommended | `ALL` rules with minimal ignores |
 
 - **`none`**: pytest + ruff with a minimal rule set. No type checking, no
@@ -21,8 +21,10 @@ toolchain is. Pick one level when prompted; it drives the generated
 - **`recommended`** (default): the full toolchain — ruff with `ALL` rules
   (preview enabled, pragmatic `WHYNOT` ignores), basedpyright (always) plus
   your chosen secondary checker (`type_checker`: pyrefly by default, or ty),
-  typos / vulture / deptry / pip-audit, driven by your task runner.
-  Partially-annotated functions are allowed.
+  typos / vulture / deptry, driven by your task runner.
+  Partially-annotated functions are allowed. Dependency auditing is a
+  separate on-demand `audit` task (`pip-audit`, needs network) so offline
+  `type-check`/`check`/CI stays green.
 - **`full`**: everything in recommended plus strict type checking. `Any` is
   forbidden (`reportAny` etc.), every function must be annotated, and ruff's
   ignores are minimized. When ty is the secondary checker, it additionally

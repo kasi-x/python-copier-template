@@ -29,7 +29,8 @@ def main(
     src = DATA_DIR / input_path
     dst = FEATURES_DIR / output_path
     if not src.exists():
-        raise typer.BadParameter(f"input not found: {src}")
+        msg = f"input not found: {src}"
+        raise typer.BadParameter(msg)
     logger.info("building_features", src=str(src), dst=str(dst))
     # TODO: replace with real feature engineering
     dst.write_bytes(src.read_bytes())

@@ -1,0 +1,55 @@
+"""Playwright browser-fetch module for {{ package_name }}.
+
+For pages that need JavaScript rendering: run the same :meth:`preflight`
+judgement as the httpx fetcher (feed/API discovery, robots.txt, access and
+budget checks — shared per-origin caches), then render in headless Chromium
+(``playwright install chromium`` once). Requires the ``playwright`` runtime
+dependency plus the downloaded browser (added automatically with this
+engine). Browser launches are expensive — prefer the httpx fetcher for
+plain HTML and reserve this module for JS-rendered pages.
+
+Tests never launch a browser (no ``playwright install`` in CI); they only
+assert the module imports and the config defaults. CAPTCHA-solving helpers
+are deliberately out of scope: if a site blocks bots, use its API or ask
+permission instead of bypassing the protection.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from dataclasses import field
+
+from playwright.sync_api import sync_playwright
+
+from {{ import_pkg }}.fetcher import FetchConfig
+from {{ import_pkg }}.fetcher import PoliteFetcher
+
+__all__ = ["BrowserFetchConfig", "fetch_rendered_text"]
+
+
+@dataclass(frozen=True)
+class BrowserFetchConfig:
+    """Tuning knobs for :func:`fetch_rendered_text`."""
+
+    fetch: FetchConfig = field(default_factory=FetchConfig)
+    headless: bool = True
+    wait_until: str = "domcontentloaded"
+
+
+def fetch_rendered_text(url: str, config: BrowserFetchConfig | None = None) -> str:
+    """Render *url* in headless Chromium and return the page HTML."""
+    cfg = config or BrowserFetchConfig()
+    # Same judgement as the httpx fetcher: feed/API discovery, robots.txt,
+    # access (401/403) and per-host budget — enforced before any browser
+    # launch, sharing the origin discovery cache. A dedicated PoliteFetcher
+    # is opened so the probes count toward the host budget.
+    with PoliteFetcher(cfg.fetch) as fetcher:
+        fetcher.preflight(url)
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=cfg.headless)
+        try:
+            page = browser.new_page(user_agent=cfg.fetch.resolved_user_agent())
+            page.goto(url, wait_until=cfg.wait_until)  # type: ignore[arg-type]
+            return page.content()
+        finally:
+            browser.close()

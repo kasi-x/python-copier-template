@@ -33,17 +33,22 @@ nav = [
       { "MicroPython" = "how-to/micropython.md" },
       { "Web API" = "how-to/web-api.md" },
       { "MCP Server" = "how-to/mcp.md" },
+      { "Web Fetching" = "how-to/scraping.md" },
   ]},
   { "Explanations" = [
       { "Overview" = "explanations.md" },
+      { "Good-Future Charter" = "explanations/good-future.md" },
       { "Structure" = "explanations/structure.md" },
       { "Why Use Template" = "explanations/why-use-template.md" },
+      { "Authoring Template Sources" = "explanations/template-dev.md" },
       { "Long-Running Executables" = "explanations/long-running.md" },
       { "Security & Compliance" = "explanations/security.md" },
   ]},
   { "Reference" = [
       { "Overview" = "reference.md" },
       { "Questionnaire" = "reference/questionnaire.md" },
+      { "Dependencies" = "reference/dependencies.md" },
+      { "References" = "reference/references.md" },
       { "Standards" = "reference/standards.md" },
   ]},
 ]

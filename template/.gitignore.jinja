@@ -74,7 +74,7 @@ paper/paper_files/**
 slides/*_slides.html
 slides/slides_files/*
 
-# DS project data
+{% if data_science %}# DS project data
 notebooks/*
 !notebooks/.gitkeep
 data/raw/*
@@ -91,11 +91,7 @@ reports/figures/*
 !reports/figures/.gitkeep
 outputs/*
 !outputs/.gitkeep
-input/*
-!input/.gitkeep
-exp/*
-!exp/.gitkeep
-# Kaggle competition data
+{% endif %}{% if kaggle %}# Kaggle competition data
 src/input/*
 !src/input/.gitkeep
 src/output/*
@@ -110,6 +106,7 @@ src/data/*
 !src/data/.gitkeep
 src/notebook/*
 !src/notebook/.gitkeep
+{% endif %}
 
 # PyBuilder
 target/
@@ -132,6 +129,7 @@ lockfiles/
 .codegraph/
 .commandcode/
 .omo/
+.pi/
 
 # Local environment variables (see .env.example)
 .env
@@ -150,3 +148,4 @@ build/micropython-src/
 
 # Local test database (web API tests fall back to SQLite when no DATABASE_URL)
 .test.db
+{# CTF and scraping bodies are shared (_shared/gitignore-*.jinja). #}{% include "_shared/gitignore-ctf.jinja" %}{% include "_shared/gitignore-scraping.jinja" %}

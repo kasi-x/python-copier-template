@@ -1,0 +1,37 @@
+"""Memorious crawler config for {{ package_name }} (rate-limited, cached HTTP).
+
+Memorious composes crawlers from YAML-configured stages over rate-limited,
+cached HTTP sessions (see ``memorious.logic.http.ContextHttp``): retries,
+conditional requests and session cookies are managed by the framework
+instead of hand-rolled loops. Requires the ``memorious4`` runtime
+dependency (added automatically with this engine).
+
+.. note::
+   memorious4 is AGPL-3.0, so choosing this engine forces the whole
+   project to AGPL-3.0 (the template rewrites ``license_effective``
+   automatically — check ``LICENSE`` and ``pyproject.toml``).
+
+Run with ``memorious run example`` (see memorious docs for the ``MEMORIOUS_``
+environment settings: ``http_rate_limit``, ``http_cache``, ``user_agent``).
+CAPTCHA-solving stages are deliberately out of scope: if a site blocks
+bots, use its API or ask permission instead of bypassing the protection.
+"""
+
+from __future__ import annotations
+
+CRAWLER_NAME = "example"
+
+CRAWLER_CONFIG: dict[str, object] = {
+    "name": CRAWLER_NAME,
+    "description": "Example memorious crawler (adapt stages to the target site).",
+    "pipeline": {
+        "fetch": {
+            "method": "fetch",
+            "params": {
+                "rules": {"domain": "example.com"},
+                "retry": 3,
+            },
+            "handle": {"pass": "parse"},
+        },
+    },
+}

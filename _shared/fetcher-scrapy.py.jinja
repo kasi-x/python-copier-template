@@ -1,0 +1,44 @@
+"""Scrapy spider starter for {{ package_name }} (polite defaults enforced).
+
+Politeness is configured in ``settings`` below — not left to discipline:
+
+- ``ROBOTSTXT_OBEY = True`` — robots.txt is always honoured;
+- ``AUTOTHROTTLE_ENABLED = True`` + ``DOWNLOAD_DELAY = 1.0`` — per-host
+  throttling is always on;
+- ``USER_AGENT`` identifies this project plus a contact address (replace
+  the placeholder before any real crawl).
+
+Run with ``scrapy crawl example`` (requires the ``scrapy`` runtime
+dependency, added automatically with this engine). CAPTCHA-solving
+middleware is deliberately out of scope: if a site blocks bots, use its
+API or ask permission instead of bypassing the protection.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+from typing import ClassVar
+
+import scrapy
+from scrapy.http import Response
+
+
+class ExampleSpider(scrapy.Spider):
+    """Minimal polite spider: replace start_urls / parse for the real crawl."""
+
+    name = "example"
+    custom_settings: ClassVar[dict[str, Any]] = {
+        "ROBOTSTXT_OBEY": True,
+        "AUTOTHROTTLE_ENABLED": True,
+        "AUTOTHROTTLE_START_DELAY": 1.0,
+        "DOWNLOAD_DELAY": 1.0,
+        "CONCURRENT_REQUESTS_PER_DOMAIN": 1,
+        "USER_AGENT": "{{ repo_name }}/0.1 (+mailto:contact@example.com)",
+    }
+
+    start_urls: ClassVar[list[str]] = ["https://example.com/"]
+
+    def parse(self, response: Response) -> Any:
+        """Yield one item per page (adapt selectors to the target site)."""
+        title = response.css("title::text").get(default="").strip()
+        yield {"url": response.url, "title": title}

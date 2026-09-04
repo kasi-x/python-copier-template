@@ -47,6 +47,20 @@ async def test_about_resource(client: Client) -> None:
     assert result.contents[0].text == "MCP server for {{ repo_name }}."
 
 
+@pytest.mark.anyio
+async def test_greeting_resource_template(client: Client) -> None:
+    result = await client.read_resource("greeting://carol")
+    assert isinstance(result.contents[0], TextResourceContents)
+    assert result.contents[0].text == "Hello, carol! Welcome to {{ repo_name }}."
+
+
+@pytest.mark.anyio
+async def test_review_code_prompt(client: Client) -> None:
+    result = await client.get_prompt("review_code", {"code": "x = 1"})
+    assert result.messages[0].role == "user"
+    assert "x = 1" in str(result.messages[0].content)
+
+
 def test_health_route_registered() -> None:
     """GET /health is served by the Streamable HTTP app.
 

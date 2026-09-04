@@ -60,8 +60,21 @@ partial and include it from thin per-location wrappers:
   two-line wrapper (comment line, then the include) emits the comment's
   newline as a leading blank line in the output. (`logging_setup.py`'s
   two-line wrappers predate this rule and carry that leading blank line as
-  their accepted baseline; new shared partials must not add another one.)
-  Verify with a baseline-vs-current render diff (see below).
+The same pattern applies to single-location conditional blocks that are
+edited often enough to cause hunk-boundary mistakes: the CTF `ctf` extra
+(`_shared/pyproject-ctf-extra.toml.jinja`) and the `challenges/` ruff
+ignores (`_shared/pyproject-ctf-lint.toml.jinja`) are included from
+`template/pyproject.toml.jinja`. Verify with a baseline-vs-current render
+Current inventory (all byte-identical verified over 9 render paths —
+library / cli / web_api / data_science / atcoder / kaggle / micropython /
+ros2 / cli+ctf):
+`pyproject-basedpyright.toml.jinja`, `pyproject-ty-checkers.toml.jinja`
+(pyrefly/ty), `pyproject-test-coverage.toml.jinja` (pytest/coverage/typos/
+vulture/deptry), `pyproject-ruff-lint.toml.jinja` (select/extend-ignore/
+task-tags), `pyproject-ctf-extra.toml.jinja`, `pyproject-ctf-lint.toml.jinja`.
+Out of scope: inline single-line conditionals (README badges, dependency
+one-liners, deptry `|token` fragments) — extracting those would scatter
+one-line logic across files with no hunk-boundary benefit.
 
 Enforced by `_template_files()` walking `_shared/` in
 `tests/test_copier_structure.py` (variables inside shared partials must be
@@ -105,3 +118,41 @@ earlier answers. A typo in a `project_type` comparison or a guard no genre
 satisfies makes the question dead — it can never be asked. `test_every_question_when_is_z3_satisfiable`
 models the when-expressions in Z3 and fails on unsatisfiable ones; run it
 after touching any `when` / `choices` / genre list.
+
+## Hardcoded pins need an upstream check
+
+Renovate tracks PyPI ranges, Action digests and lockfiles — but not release
+tags, CUDA indexes, distro codenames or image tags hardcoded in the
+template. Every such pin must be covered by `tools/check_upstream.py`
+(run weekly by `.github/workflows/check-upstream.yml`, which opens an issue
+on drift):
+
+- Add the pin to `extract_pins()` with its single source of truth, a
+  resolver in `_resolve_one()`, and a drift rule in `_is_drift()`.
+- Prefer machine-readable feeds (PyPI JSON, endoflife.date, index listings)
+  over scraping; hardcode spec dates (e.g. REP-2000) only when the source is
+  a versioned document.
+- The check is report-only: it never edits files or opens PRs. CUDA-class
+  bumps need a human (torch floor + index + Docker base move together).
+
+## Freshness policy: combinations that cannot stay current
+
+Some combinations cannot track upstream HEAD, by design. The weekly check
+reports drift; the policy below decides whether drift is a bug or accepted:
+
+- **Track HEAD**: core floors (structlog/ruff/pytest), web_api FastAPI
+  ecosystem, MCP SDK (`mcp[cli]>=2.0,<3` — the `<3` cap is intentional
+  after the v1→v2 breakage, not staleness). Drift here is a bug: bump the
+  floor after verifying the render matrix stays green.
+- **Track with lag**: torch/CUDA (cu126 pinned while cu128 exists — bump
+  only when torch resolves on the new index *and* the Dockerfile base
+  moves together), ROS 2 distros (REP-2000 EOL-gated; rolling is never
+  offered), Python floor (endoflife.date-gated).
+- **Pin by rule, not by latest**: MicroPython firmware/stubs (single source
+  of truth `micropython_version`; community stubs lag official releases),
+  Postgres/Ubuntu images (compose+CI must agree; bump together).
+- **PyPI floor categories** (`PyPI floor [<category>]` pins) mirror the
+  questionnaire axes (core / web_api / kaggle-DS / ctf / mcp) so a drift
+  issue names the combination it breaks. A `REMOVED` verdict (floor matches
+  no PyPI release) is always a bug — `uv sync` breaks for that combination.
+  A `floor X / latest Y` gap is a judgment call per the policy above.

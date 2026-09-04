@@ -65,3 +65,66 @@ def test_no_obviously_undefined_internal_imports() -> None:
             missing = exc.name or ""
             if missing == pkg_name or missing.startswith(f"{pkg_name}."):
                 raise
+{% if scraping_httpx_effective %}
+
+def test_charter_and_fetcher_contact_wired() -> None:
+    """CHARTER.md exists and the fetcher carries a contactable User-Agent.
+
+    The Good-future charter is enforced by shape, not prose: every fetch
+    goes through fetcher.py, whose User-Agent identifies the project plus
+    a contact address (FETCHER_CONTACT env or CONTACT_PLACEHOLDER).
+    """
+    assert (TOP / "CHARTER.md").exists(), "scraping layer must ship CHARTER.md"
+    fetcher_src = (PKG_DIR / "fetcher.py").read_text(encoding="utf-8")
+    assert "CONTACT_PLACEHOLDER" in fetcher_src
+    assert "FETCHER_CONTACT" in fetcher_src
+{% endif %}{% if data_science_layout %}
+
+def test_deidentification_guardrails_present() -> None:
+    """De-identification bar ships with the data layout (ISO 20889 / GDPR R26).
+
+    DEIDENTIFICATION.md states the rule; sharing/TRANSFER_LOG.csv records
+    every external transfer; DATA_TRANSFER_AGREEMENT.md gates restricted
+    moves. A data tree without this trio can ship extracts with no paper
+    trail, so the QA suite fails first.
+    """
+    assert (TOP / "data" / "DEIDENTIFICATION.md").exists()
+    assert (TOP / "data" / "sharing" / "DATA_TRANSFER_AGREEMENT.md").exists()
+    log = TOP / "data" / "sharing" / "TRANSFER_LOG.csv"
+    assert log.exists()
+    header = log.read_text(encoding="utf-8").splitlines()[0]
+    for column in ("recipient", "sha256", "authorized_by", "deletion_confirmed"):
+        assert column in header, f"TRANSFER_LOG.csv lost column {column!r}"
+
+
+def test_no_deidentification_salt_committed() -> None:
+    """No pseudonymisation salt may be committed (gitleaks is the backstop).
+
+    DEIDENTIFICATION.md requires the HMAC salt to stay out of the repo.
+    This offline sweep mirrors the gitleaks `deidentification-salt` rule
+    so `task test` catches a committed salt without needing the hook.
+    """
+    import re
+
+    pattern = re.compile(r"(?i)\b(secret|deidentification|pseudonym)_salt\s*=\s*\S+")
+    offenders = [
+        str(p)
+        for p in TOP.rglob("*")
+        if p.is_file()
+        and ".git/" not in p.as_posix()
+        and ".venv/" not in p.as_posix()
+        and pattern.search(p.read_text(encoding="utf-8", errors="ignore"))
+    ]
+    assert not offenders, f"de-identification salt committed in: {offenders}"
+{% endif %}{% if fair %}
+
+def test_citation_metadata_present() -> None:
+    """FAIR opt-in ships machine-readable citation metadata."""
+    assert (TOP / "CITATION.cff").exists()
+{% endif %}{% if reuse_effective %}
+
+def test_spdx_annotations_present() -> None:
+    """Open-source FAIR opt-in ships aggregate SPDX annotations."""
+    reuse = (TOP / "REUSE.toml").read_text(encoding="utf-8")
+    assert 'SPDX-License-Identifier = "{{ license_effective }}"' in reuse
+{% endif -%}

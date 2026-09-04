@@ -91,10 +91,6 @@ reports/figures/*
 !reports/figures/.gitkeep
 outputs/*
 !outputs/.gitkeep
-input/*
-!input/.gitkeep
-exp/*
-!exp/.gitkeep
 # Kaggle competition data
 src/input/*
 !src/input/.gitkeep
@@ -132,16 +128,17 @@ lockfiles/
 .codegraph/
 .commandcode/
 .omo/
+.pi/
 
 # Local environment variables (see .env.example)
 .env
 .envs/
 *.pem
 
-# ROS 2 / colcon workspace artifacts
-{% if ros2_pkg %}install/
+# ROS 2 / colcon workspace artifacts (union of the conditional ros2 branch —
+# generated non-ROS projects don't get these)
+install/
 log/
-{% endif %}
 # MicroPython type stubs — installed into typings/, not committed
 typings/
 # MicroPython source tree cloned by the freeze task, and its output
@@ -150,3 +147,13 @@ build/micropython-src/
 
 # Local test database (web API tests fall back to SQLite when no DATABASE_URL)
 .test.db
+
+# CTF challenge binaries / downloaded assets (union of the conditional ctf
+# branch — generated non-CTF projects don't get these)
+challenges/**/vuln
+challenges/**/flag*
+
+# Polite-fetcher cache and Playwright browser profiles (union of the
+# conditional scraping branch — generated non-scraping projects don't get these)
+.cache/fetcher/
+.cache/ms-playwright/

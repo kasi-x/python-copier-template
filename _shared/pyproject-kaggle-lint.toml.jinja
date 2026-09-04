@@ -1,0 +1,12 @@
+{% if kaggle %}"src/notebook/explore.py" = [
+    "INP001", # implicit-namespace-package  CONTEXT: marimo notebook dir には __init__.py を置かない慣習
+    "PLC0415",# import-outside-top-level  CONTEXT: marimo の @app.cell 内 import は公式パターン
+    "N803",   # argument-name-non-lowercase  CONTEXT: marimo の cell 引数 (INPUT_DIR, pl) はセル間受け渡しの慣習
+]
+"src/utils/**/*.py" = [
+    "F401",   # unused-import  CONTEXT: 実験中の特徴量/モデル候補の import 残しは試行錯誤の痕跡として許容 (code_fix で整理)
+    "F841",   # unused-variable  CONTEXT: 実験中の途中変数の残しは試行錯誤の痕跡として許容 (code_fix で整理)
+    "ARG001", # unused-function-argument  CONTEXT: optuna objective 等の固定シグネチャ引数は残す (code_fix で整理)
+    "ARG002", # unused-method-argument  CONTEXT: 同上
+]
+{% endif %}

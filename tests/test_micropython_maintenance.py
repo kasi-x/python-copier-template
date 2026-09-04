@@ -19,7 +19,7 @@ MICROPYTHON_DOC = TOP / "docs" / "how-to" / "micropython.md"
 
 
 def run_checker(offline: bool = True) -> subprocess.CompletedProcess[str]:
-    cmd = [sys.executable, str(TOP / "tools" / "check_micropython_upstream.py")]
+    cmd = [sys.executable, str(TOP / "tools" / "check_upstream.py"), "--only", "MicroPython,micropython"]
     if offline:
         cmd.append("--offline")
     return subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -49,9 +49,8 @@ def test_upstream_checker_offline_reports_pins():
     """The checker extracts the MicroPython pin without needing the network."""
     result = run_checker(offline=True)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert "MicroPython version (copier.yml micropython_version)" in result.stdout
+    assert "MicroPython tag (micropython_version)" in result.stdout
     assert "v1." in result.stdout
-    assert "Docker image" in result.stdout
     assert "micropython-<port>-stubs pin" in result.stdout
 
 

@@ -1,0 +1,29 @@
+{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
+[tool.pyrefly]
+# Match requires-python / .python-version: the interpreter the project
+# actually targets (ros2 humble -> 3.10, ros2 jazzy -> 3.12, else 3.11).
+python-version = "{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' if ros2_pkg and ros_distro == 'jazzy' else '3.11') }}"
+{% if micropython_pkg %}project-includes = ["tests", "firmware/core"]
+project-excludes = ["venv", ".venv", "firmware/main.py", "firmware/boot.py", "firmware/board_config.py", "firmware/manifest.py"]
+{% else %}project-includes = ["{{ pkg_dir }}"]
+project-excludes = ["venv", ".venv"]
+{% endif %}
+preset = "{{ 'strict' if strictness == 'full' else 'default' }}"
+{% endif %}
+{% if type_checker=="ty" and strictness in ['recommended', 'full'] %}
+[tool.ty]
+# ty complements basedpyright with a second, independent analysis pass.
+# CPython-side code only; the MicroPython firmware (firmware/) is checked by
+# the dedicated firmware/pyrightconfig.json pass instead.
+[tool.ty.src]
+{% if micropython_pkg %}include = ["tests", "firmware/core"]
+exclude = ["tools", ".venv", "firmware/main.py", "firmware/boot.py", "firmware/board_config.py", "firmware/manifest.py"]
+{% else %}include = ["{{ pkg_dir }}", "tests"]
+exclude = ["tools", ".venv"]
+{% endif %}
+{% if strictness == 'full' %}
+[tool.ty.rules]
+# full: treat unresolved references as errors.
+possibly-unresolved-reference = "error"
+{% endif %}
+{% endif %}

@@ -25,6 +25,61 @@ include_web_api:
         project? The web_api detail questions follow when answered Yes.
         (For full-stack needs use the upstream full-stack-fastapi-template —
         this stays a minimal, API-only scaffold.)
+include_ctf:
+    type: bool
+    when: "{{ project_type in ['library', 'cli'] }}"
+    default: false
+    help: |
+        Add a CTF participant workspace (challenges/<category>/<problem>/
+        with a solve.py exploit starter, plus pwntools and z3-solver)?
+        Participant-side only: per-problem folders with an executable
+        template. Organiser scaffolds (Docker + socat + gdb) are out of
+        scope — a separate-repo concern like IaC.
+include_scraping:
+    type: bool
+    when: "{{ project_type == 'cli' }}"
+    default: false
+    help: |
+        Add a polite web-fetching layer (robots.txt + rate limit + cache)?
+        If yes, a fetcher module is generated and direct HTTP calls
+        (requests / httpx / urlopen) are banned by ruff so every fetch goes
+        through it. No CAPTCHA-solving helpers are ever generated — if a
+        site blocks bots, use its API or ask permission. No new runtime
+        dependencies for the recommended httpx fetcher.
+use_recommended_scraping:
+    type: bool
+    when: "{{ include_scraping }}"
+    default: true
+    help: |
+        Use the recommended web-fetching engine?
+        Recommended: httpx — a polite stdlib-robots fetcher (contactable
+        User-Agent, robots.txt check, per-host rate limiting, on-disk
+        cache) with offline tests. No browser, no crawler framework.
+        Answer No to pick scrapy / memorious / playwright instead (or all).
+scraping_engine:
+    type: str
+    when: "{{ include_scraping and not use_recommended_scraping }}"
+    help: |
+        Which web-fetching engine should the fetcher layer prepare?
+        - httpx: polite httpx fetcher (same as recommended).
+        - scrapy: a Scrapy spider starter (ROBOTSTXT_OBEY + AUTOTHROTTLE +
+          DOWNLOAD_DELAY enforced in settings, offline parse test).
+        - memorious: a memorious crawler config (rate-limited, cached HTTP
+          sessions). memorious4 is AGPL-3.0 — choosing it requires an
+          AGPL-3.0 project license (enforced below).
+        - playwright: a Playwright browser-fetch module (Chromium via
+          `playwright install`; robots precheck + rate limit reused from
+          the fetcher; no browser launch in tests).
+        - all: prepare every engine above (all runtime dependencies).
+        CAPTCHA-solving (2captcha-style) helpers are never generated —
+        bypassing bot protection violates the site's terms.
+    choices:
+        - httpx
+        - scrapy
+        - memorious
+        - playwright
+        - all
+    default: httpx
 
 combinable:
     type: bool

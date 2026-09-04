@@ -30,7 +30,7 @@ classifiers = [
 {% elif online_judge %}version = "0.1.0"
 {% else %}dynamic = [ "version" ]
 {% endif %}
-dependencies = [{% if micropython_pkg or oj_code %}{% elif kaggle or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if web_api %}"alembic>=1.13,<2", "asgi-correlation-id>=4.3,<6", "asyncpg>=0.29,<1", "fastapi>=0.115,<1", "pydantic-settings>=2.2.1", "sqlalchemy[asyncio]>=2.0,<3", "uvicorn[standard]>=0.30,<1", {% endif %}{% if prometheus_effective %}"prometheus-client>=0.20,<1", {% endif %}{% if rate_limit_effective %}"slowapi>=0.1.9,<1", {% endif %}{% if kaggle %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=3.5", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=15,<16", "torch>=2.6", "torchvision>=0.21", "typer>=0.15,<1", "xgboost>=2", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34", "botocore>=1.34", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if mcp_effective %}"mcp[cli]>=2.0,<3", {% endif %}{% if not use_recommended_agent and project_type in ['library', 'cli'] %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if data_science or kaggle %}"duckdb", "pyarrow", "polars>=0.20.15", {% endif %}]  # Add project dependencies here, e.g. ["click", "numpy"]
+dependencies = [{% if micropython_pkg or oj_code %}{% elif kaggle or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if web_api %}"alembic>=1.13,<2", "asgi-correlation-id>=4.3,<6", "asyncpg>=0.29,<1", "fastapi>=0.115,<1", "pydantic-settings>=2.2.1", "sqlalchemy[asyncio]>=2.0,<3", "uvicorn[standard]>=0.30,<1", {% endif %}{% if prometheus_effective %}"prometheus-client>=0.20,<1", {% endif %}{% if rate_limit_effective %}"slowapi>=0.1.9,<1", {% endif %}{% if kaggle %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=4.0", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=13.0", "torch>=2.12", "torchvision>=0.27", "typer", "xgboost", {% endif %}{% if scraping_httpx_effective and not web_api %}"httpx>=0.27,<1", {% endif %}{% if scraping_scrapy_effective %}"scrapy>=2.11,<3", {% endif %}{% if scraping_memorious_effective %}"memorious4>=4.0,<5", {% endif %}{% if scraping_playwright_effective %}"playwright>=1.49,<2", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34", "botocore>=1.34", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if mcp_effective %}"mcp[cli]>=2.0,<3", {% endif %}{% if not use_recommended_agent and project_type in ['library', 'cli'] %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if data_science or kaggle %}"duckdb", "pyarrow", "polars>=0.20.15", {% endif %}]  # Add project dependencies here, e.g. ["click", "numpy"]
 urls.GitHub = "{{ repo_url }}"
 {% if not web_api and not online_judge and not ros2_pkg and not micropython_pkg %}scripts.{{ repo_name }} = "{{ package_name }}.__main__:main"
 {% endif %}{% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ import_pkg }}.mcp_server:main"
@@ -111,7 +111,6 @@ dev = [
     {% endif %}    {% if data_science or kaggle %}"ipykernel",
     "nbclient",
     "nbstripout",
-    {% endif %}{% if kaggle %}"responses",
     {% endif %}{% if data_science or kaggle %}"pandas",
     "tomli",
     "quartodoc",
@@ -126,15 +125,16 @@ dev = [
     "coverage>=7.15.4,<8",
     "hypothesis>=6.130.0,<7.0",
     "pip-audit>=2.9.0,<3.0",
-    "pyproject-fmt>=2.27.0,<3.0",
+{% if license_check_effective %}    "pip-licenses>=5.0,<6",
+{% endif %}    "pyproject-fmt>=2.27.0,<3.0",
     "pytest-mock>=3.14.0,<4.0",
     "pytest-timeout>=2.4.0,<2.5",
     "pytest-xdist>=3.8.0,<3.9",
     {% endif %}
 ]
 
-{% if data_science or kaggle %}[project.optional-dependencies]
-experiment = [
+{% if data_science or kaggle or ctf_effective %}[project.optional-dependencies]
+{% endif %}{% if data_science or kaggle %}experiment = [
     # 実験・探索・デバッグ用の依存 (marimo / 可視化 / LLM API)。
     # uv: `uv sync --extra experiment` で追加インストール。
     # pixi: `[tool.pixi.feature.experiment]` として分離。
@@ -151,6 +151,7 @@ experiment = [
     "wandb>=0.16.4",
 ]
 {% endif %}
+{# CTF extra body is shared (see _shared/pyproject-ctf-extra.toml.jinja). #}{% include "_shared/pyproject-ctf-extra.toml.jinja" %}
 
 {% if package_manager == "pixi" and not ros2_pkg %}[tool.pixi.workspace]
 channels = ["conda-forge"]
@@ -199,13 +200,13 @@ wandb = ">=0.16.4"
 
 {% endif %}{% if package_manager == "uv" and kaggle and use_gpu_effective %}
 [[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
 explicit = true
 
 [tool.uv.sources]
-torch = { index = "pytorch-cu124" }
-torchvision = { index = "pytorch-cu124" }
+torch = { index = "pytorch-cu126" }
+torchvision = { index = "pytorch-cu126" }
 {% endif %}{% if micropython_pkg %}# Nothing to install: firmware/ is deployed to the device with mpremote.
 [tool.setuptools]
 packages = []
@@ -229,129 +230,8 @@ version_file = "{{ pkg_dir }}/_version.py"
 # ros2 ament_python: no git-tag versioning; setup.py / package.xml own the version.
 {% endif %}
 {% endif %}
-{% if strictness in ['recommended', 'full'] %}
-[tool.basedpyright]
-typeCheckingMode = "{{ 'strict' if strictness == 'full' else 'recommended' }}"
-# Pin the language version to what the project actually targets
-# (requires-python / .python-version): ros2 humble -> 3.10, jazzy -> 3.12,
-# everything else 3.11. Without this basedpyright assumes its newest
-# supported Python and lets newer-only syntax slip through.
-pythonVersion = "{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' if ros2_pkg and ros_distro == 'jazzy' else '3.11') }}"
-include = ["{{ pkg_dir }}", "tests"{% if micropython_pkg %}, "firmware/core"{% endif %}]
-# tasks.py/duties.py: invoke/duty's own decorators (@task/@duty) and Context
-# are only partially typed upstream, so an explicit `basedpyright tasks.py`
-# (outside the `include` scan above) would otherwise be noisy.
-# MicroPython's tools/micropython/freeze.py is a device-build script (docker
-# image strings), excluded the same way as the firmware entry points below.
-exclude = [{% if task_runner_effective == 'invoke' %}"tasks.py", {% endif %}{% if task_runner_effective == 'duty' %}"duties.py", {% endif %}{% if micropython_pkg %}"firmware/main.py", "firmware/boot.py", "firmware/board_config.py", {% endif %}{% if oj_code %}"**/test", "venv", ".venv", ".github", "docs", {% endif %}]
-reportMissingImports = false # Ignore missing stubs in imported modules
-reportMissingTypeStubs = false
-{%- if strictness == 'recommended' %}
-analyzeUnannotatedFunctions = false # 完全未注釈関数はスキップ（partial のみ。none はもっと緩い）
-{%- endif %}{% if strictness == 'full' %}
-# full: Any を許さない。外部 API も明示的に型を書く
-reportAny = true
-reportExplicitAny = true
-reportUnknownParameterType = true
-reportUnknownArgumentType = true
-reportUnknownVariableType = true
-{% endif %}
-# 重複検出は ruff / vulture が担うので無効化（片方に寄せる）
-reportPrivateUsage = false
-reportUnusedParameter = false
-reportUnusedFunction = false
-reportUnusedImport = false
-reportCallInDefaultInitializer = false # typer のデフォルト引数は正当
-reportUnusedCallResult = false # argparse add_argument 等の副作用目的の呼び出しは正当
-enableTypeIgnoreComments = true # # type: ignore も受け付ける（mypy 互換）
-reportImplicitStringConcatenation = false # ruff の ISC 系（暗黙連結を推奨）と整合させる
-{% if web_api %}
-# slowapi (and similar FastAPI-ecosystem decorators) ships no type stubs, so
-# @limiter.limit(...) would otherwise trip reportUntypedFunctionDecorator.
-reportUntypedFunctionDecorator = false
-{% endif %}{% endif %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
-[tool.pyrefly]
-# Match requires-python / .python-version: the interpreter the project
-# actually targets (ros2 humble -> 3.10, ros2 jazzy -> 3.12, else 3.11).
-python-version = "{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' if ros2_pkg and ros_distro == 'jazzy' else '3.11') }}"
-{% if micropython_pkg %}project-includes = ["tests", "firmware/core"]
-project-excludes = ["venv", ".venv", "firmware/main.py", "firmware/boot.py", "firmware/board_config.py", "firmware/manifest.py"]
-{% else %}project-includes = ["{{ pkg_dir }}"]
-project-excludes = ["venv", ".venv"]
-{% endif %}
-preset = "{{ 'strict' if strictness == 'full' else 'default' }}"
-{% endif %}{% if type_checker=="ty" and strictness in ['recommended', 'full'] %}
-[tool.ty]
-# ty complements basedpyright with a second, independent analysis pass.
-# CPython-side code only; the MicroPython firmware (firmware/) is checked by
-# the dedicated firmware/pyrightconfig.json pass instead.
-[tool.ty.src]
-{% if micropython_pkg %}include = ["tests", "firmware/core"]
-exclude = ["tools", ".venv", "firmware/main.py", "firmware/boot.py", "firmware/board_config.py", "firmware/manifest.py"]
-{% else %}include = ["{{ pkg_dir }}", "tests"]
-exclude = ["tools", ".venv"]
-{% endif %}
-{% if strictness == 'full' %}
-[tool.ty.rules]
-# full: treat unresolved references as errors.
-possibly-unresolved-reference = "error"
-{% endif %}
-{% endif %}
-[tool.pytest.ini_options]
-# Run pytest with all our checkers, and don't spam us with massive tracebacks on error
-addopts = """
-    --tb=native -vv{% if sphinx %} --doctest-modules --doctest-glob="*.rst"{% endif %}
-    """
-# https://iscinumpy.gitlab.io/post/bound-version-constraints/#watch-for-warnings
-filterwarnings = "error"
-# Doctest python code in docs, python code in src docstrings, test functions in tests
-testpaths = "{% if sphinx %}docs {% endif %}{{ 'tests' if micropython_pkg or oj_code else (pkg_dir ~ ' tests') }}"
-{% if micropython_pkg %}# firmware/ is not pip-installed; put the repo root on sys.path so the
-# CPython core tests can `from firmware.core import ...`.
-pythonpath = ["."]
-{% endif %}
-
-{% if strictness in ['recommended', 'full'] %}
-[tool.coverage.run]
-patch = ["subprocess"]
-# Project-local data file: each generated project (and each parallel test
-# worker copying it) writes its own .coverage instead of racing on a shared
-# /tmp/<package>.coverage file.
-data_file = ".coverage"
-
-[tool.coverage.paths]
-# Tests are run from installed location, map back to the src directory
-source = ["{{ 'firmware' if micropython_pkg else pkg_dir }}", "**/site-packages/"]
-
-[tool.coverage.report]
-show_missing = true
-skip_covered = true
-skip_empty = true
-
-[tool.typos.default]
-extend-ignore-words-re = ['\b[A-Z]{3}\b']
-extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
-
-[tool.typos.files]
-# docs のビルド出力 (site/) はチェック対象外。
-extend-exclude = ["site"]
-
-[tool.vulture]
-paths = ["{{ 'firmware' if micropython_pkg else pkg_dir }}"]
-min_confidence = 80
-
-[tool.deptry]
-# 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=alembic|asgi-correlation-id|asyncpg|click|fastapi|httpx|pydantic|pydantic-settings|pendulum|prometheus-client|rich|slowapi|sqlalchemy|structlog|loguru|picologging|typer|uvicorn{% if data_science or kaggle %}|duckdb|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|polars|pyarrow|seaborn|wandb{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %}{% if cloud_provider == 'gcp' %}|google-cloud-storage{% endif %}{% if cloud_provider == 'azure' %}|azure-identity{% endif %},DEP003={{ package_name }}|requests{% if mcp_effective %}|starlette{% endif %}{% if micropython_pkg %},DEP001=mpremote|micropython|machine|board_config{% endif %}{% if mcp_effective or web_api %},DEP004={% if mcp_effective %}pytest{% endif %}{% if mcp_effective and web_api %}|{% endif %}{% if web_api %}aiosqlite|httpx{% endif %}{% endif %}"
-# MicroPython の tools/micropython/freeze.py はローカルインポートを依存と誤認するので除外
-# tasks.py/duties.py: root-level dev script, not project source -- deptry
-# would otherwise flag invoke/duty as DEP004 (dev-only dep imported by "source")
-exclude = ["tools", ".venv", ".pixi", ".task", "build", "dist"{% if micropython_pkg %}, "firmware"{% endif %}{% if task_runner_effective == 'invoke' %}, "tasks.py"{% endif %}{% if task_runner_effective == 'duty' %}, "duties.py"{% endif %}]
-
-[tool.pyproject_fmt]
-keep-full-version = true
-no-generate-python-version-classifiers = true
-{% endif %}
+{# basedpyright body is shared (see _shared/pyproject-basedpyright.toml.jinja). #}{% include "_shared/pyproject-basedpyright.toml.jinja" %}{# pyrefly/ty bodies are shared (see _shared/pyproject-ty-checkers.toml.jinja). #}{% include "_shared/pyproject-ty-checkers.toml.jinja" -%}
+{# pytest/coverage/typos/vulture/deptry bodies are shared (see _shared/pyproject-test-coverage.toml.jinja). #}{% include "_shared/pyproject-test-coverage.toml.jinja" %}
 
 {% if task_runner_effective == 'poe' %}
 {% import "_tasks.jinja" as _t with context %}
@@ -377,192 +257,7 @@ line-length = {{ 88 if not allow_japanese else 120 }}
 unsafe-fixes = false
 {% if not micropython_pkg and not oj_code %}lint.logger-objects = ["{{ import_pkg }}.logging_setup.get_logger"]
 {% endif %}
-{% if strictness in ['recommended', 'full'] %}lint.preview = true
-lint.explicit-preview-rules = true
-lint.select = ["ALL"]
-{% elif strictness == 'basic' %}lint.select = [
-    "B",
-    "C4",  # flake8-comprehensions - https://docs.astral.sh/ruff/rules/#flake8-comprehensions-c4
-    "E",
-    "F",
-    "N",
-    "W",
-    "I",
-    "UP",
-    "SLF",
-    "S",
-    "PT",
-]
-{% else %}lint.select = [
-    "E",
-    "F",
-    "W",
-    "I",
-]
-{% endif %}{% if strictness == 'full' %}lint.extend-ignore = [
-    "SIM401",  # if-else-block-instead-of-dict-get
-    "S101",    # assert-used
-    "PT018",   # pytest-composite-assertion
-]
-{% elif strictness == 'recommended' %}lint.extend-ignore = [
-    "ANN001",  # missing-type-function-argument
-    "ANN002",  # missing-type-args
-    "ANN003",  # missing-type-kwargs
-    "ANN202",  # missing-return-type-private-function
-    "ANN204",  # missing-return-type-special-method
-    "ANN205",  # missing-return-type-static-method
-    "ANN206",  # missing-return-type-class-method
-    "ANN401",  # any-type
-    "SIM401",  # if-else-block-instead-of-dict-get
-    "S101",    # assert-used
-    "PT018",   # pytest-composite-assertion
-    "TD",
-    "FIX",
-    "T20",     # flake8-print
-    "TRY002",  # raise-vanilla-class
-    "TRY003",  # raise-vanilla-args
-    "D10",     # undocumented-code
-    "DOC",
-    "D420",    # incorrect-section-order
-    "D421",    # property-docstring-verb
-    "PLR2004", # magic-value-comparison
-    "PLR6301", # no-self-use
-    "E1",      # pycodestyle indentation
-    "E2",      # pycodestyle whitespace
-    "E3",      # pycodestyle blank lines
-    "E502",    # redundant-backslash
-    "W391",    # too-many-newlines
-    "COM812",  # missing-trailing-comma
-    "ISC001",  # single-line-implicit-str-concat
-    "TC",
-    "CPY001",  # missing-copyright-notice
-    "RUF105",  # noqa-comments
-    "RUF106",  # rule-codes-in-suppression
-    "RUF201",  # rule-codes-in-selectors
-    "PLW1514", # unspecified-encoding
-    "PT029",   # pytest-warns-without-warning
-    "TID254",  # lazy-import-mismatch
-    "TID255",  # lazy-import-immediately-resolved
-    "FA",
-{% if oj_code %}    # Contest-code relaxations: single-file submissions are written for
-    # speed and the judge, not a shared codebase. Shadowing `input`,
-    # ALL-CAPS variables (N, M, INF), unused locals/helpers and in-function
-    # imports are idiomatic there, so they are excluded project-wide.
-    "A001",   # builtin-variable-shadowing
-    "A002",   # builtin-argument-shadowing
-    "N802",   # non-lowercase-variable-in-function
-    "N803",   # non-lowercase-variable-in-function  (引数)
-    "N806",   # non-lowercase-variable-in-function  (関数内定数)
-    "RUF059", # unused-unpacked-variable
-    "F841",   # unused-variable
-    "ARG001", # unused-function-argument
-    "ARG002", # unused-method-argument
-    "ARG003", # unused-class-method-argument
-    "ARG004", # unused-static-method-argument
-    "ARG005", # unused-lambda-argument
-    "PLC0415",# import-outside-top-level
-{% endif %}]
-{% elif strictness == 'basic' %}lint.extend-ignore = [
-    "ANN401",  # any-type
-    "SIM401",  # if-else-block-instead-of-dict-get
-    "S101",    # assert-used
-    "PT018",   # pytest-composite-assertion
-    "TD",
-]
-{% else %}lint.extend-ignore = [
-    "ANN001",  # missing-type-function-argument
-    "ANN002",  # missing-type-args
-    "ANN003",  # missing-type-kwargs
-    "ANN202",  # missing-return-type-private-function
-    "ANN204",  # missing-return-type-special-method
-    "ANN205",  # missing-return-type-static-method
-    "ANN206",  # missing-return-type-class-method
-    "ANN401",  # any-type
-    "SIM401",  # if-else-block-instead-of-dict-get
-    "S101",    # assert-used
-    "PT018",   # pytest-composite-assertion
-    "TD",
-]
-{% endif %}lint.task-tags = [
-    # Future
-    "WIP",
-    "TBD",
-    "HOLD",
-    "PLAN",
-    "MVP",
-    "WANT",
-    "PILOT",
-
-    # Fixes
-    "TODO",
-    "BUG",
-    "FIXME",
-    "HACK",
-    "MISSING",
-    "DOCME",
-    "UPGRADE",
-
-    # Memo
-    "MEMO",
-    "NOTE",
-    "CASE",
-
-    # Judgment
-    "MUST",
-    "SHOULD",
-    "MAY",
-    "FOLLOW",
-    "WHYNOT",
-    "RISK",
-    "WARN",
-    "IDEA",
-
-    # Reflection
-    "IMO",
-    "YAGNI",
-
-    # History
-    "ADR",
-    "CONTEXT",
-
-    # Conversation
-    "BLOCKER",
-    "REVIEW",
-    "DISCUSS",
-    "REQUEST",
-
-    # Tools
-    "ISSUE",
-    "QUESTION",
-
-    # TDD
-    "BLUE",
-    "RED",
-    "GREEN",
-    "REFACTOR",
-    "UNCOVERED",
-    "FLAKY",
-    "SLOW",
-    "OVERTEST",
-
-    # Performance
-    "BENCHMARK",
-    "SCALE",
-    "BOTTLENECK",
-
-    # Compliance
-    "SECURE",
-    "VULNERABILITY",
-    "PRIVACY",
-    "ILLEGAL",
-    "ACCESSIBILITY",
-    "LOCALIZE",
-
-    # Legacy
-    "DEPRECATE",
-    "DEBT",
-    "UNKNOWN",
-]
+{# ruff select/ignore/task-tags bodies are shared (see _shared/pyproject-ruff-lint.toml.jinja). #}{% include "_shared/pyproject-ruff-lint.toml.jinja" %}
 
 [tool.ruff.format]
 quote-style = "double"
@@ -596,6 +291,7 @@ force-single-line = true
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
+{# Scraping banned-api body is shared (see _shared/pyproject-scraping-banned-api.toml.jinja). #}{% include "_shared/pyproject-scraping-banned-api.toml.jinja" -%}
 
 [tool.ruff.lint.flake8-type-checking]
 exempt-modules = ["typing", "typing_extensions"]
@@ -647,6 +343,7 @@ suppress-none-returning = false
     "E501",   # line-too-long  CONTEXT: test_qa.py の assert メッセージ
     "PLR0912",# too-many-branches  CONTEXT: test_qa.py の依存宣言チェックは複数分岐が自然
 ]
+{# CTF / scraping / kaggle lint bodies are shared (see _shared/pyproject-*-lint.toml.jinja). #}{% include "_shared/pyproject-ctf-lint.toml.jinja" %}{% include "_shared/pyproject-scraping-lint.toml.jinja" %}{% include "_shared/pyproject-kaggle-lint.toml.jinja" -%}
 {% if micropython_pkg %}"firmware/main.py" = [
     "PLC0415", # import-outside-top-level  CONTEXT: machine は unix/windows ポートに
                #   存在しないため、実機（LED 有り）の時だけ遅延 import する。
@@ -656,8 +353,7 @@ suppress-none-returning = false
     "I001",   # unsorted-imports  CONTEXT: ament 標準テンプレの import 順（ament_* を先に置く）。
     "E501",   # line-too-long  CONTEXT: ament テストの長い assert 行。
 ]
-{% endif %}
-{% if web_api %}# app/main.py は直交オプション（cors/rate_limit/prometheus）の条件付き
+{% endif %}{% if web_api %}# app/main.py は直交オプション（cors/rate_limit/prometheus）の条件付き
 # import を含む app factory のため、isort の自動整列は無効化する。
 "{{ pkg_dir }}/main.py" = ["I001"]
 {% endif %}{% if not oj_code %}# logging_setup.py の長い呼び出し（structlog の ConsoleRenderer /
@@ -665,8 +361,7 @@ suppress-none-returning = false
 # ruff format が折り返しを変えるため、E501 は免除する。
 # 日本語 docstring の終端句読点（D415）とシングルトン設定の global（PLW0603）も免除。
 "{{ pkg_dir }}/logging_setup.py" = ["E501", "D", "PLW0603", "I001"]
-{% endif -%}
-{% if package_manager == "poetry" %}
+{% endif %}{% if package_manager == "poetry" %}
 [tool.poetry]
 # Poetry reads the PEP 621 [project] table and [dependency-groups] above.
 # packages are auto-detected from the project layout.

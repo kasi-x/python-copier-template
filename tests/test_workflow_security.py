@@ -14,6 +14,7 @@ These are static, offline assertions over `.github/workflows/*.yml`, in the
 same spirit as test_copier_structure.py / test_micropython_maintenance.py.
 """
 
+import json
 import re
 from pathlib import Path
 
@@ -164,3 +165,34 @@ def test_uses_are_pinned_to_full_sha():
                     f"{name}:{job_name} uses {uses!r} -- pin to a 40-char SHA "
                     f"with the version as a comment (e.g. @<sha> # vX.Y.Z)"
                 )
+
+
+def test_renovate_baseline_matches_generated_template():
+    """Root and generated renovate.json share the update baseline.
+
+    Both must extend the same presets (recommended + digest pinning +
+    vulnerability alerts) with lockFileMaintenance automerge on. The
+    per-manager rules intentionally differ: the root groups non-major
+    action updates (its digests are renovate-tracked), while generated
+    projects disable template-owned actions per category (updates flow
+    through copier update). This test pins that contract so neither side
+    drifts silently.
+    """
+    root = json.loads((TOP / "renovate.json").read_text(encoding="utf-8"))
+    template_src = (TOP / "template" / "renovate.json.jinja").read_text(encoding="utf-8")
+    for preset in (
+        "config:recommended",
+        ":configMigration",
+        ":enableVulnerabilityAlerts",
+        "helpers:pinGitHubActionDigests",
+    ):
+        assert preset in root["extends"], f"root renovate.json lost {preset}"
+        assert preset in template_src, f"generated renovate.json.jinja lost {preset}"
+    assert root["lockFileMaintenance"]["automerge"] is True
+    assert root["vulnerabilityAlerts"]["automerge"] is True
+    assert '"automerge": true' in template_src
+    # generated template disables template-owned actions per category
+    assert template_src.count('"enabled": false') >= 4
+    # root keeps digest-tracked actions grouped, not disabled
+    group_rules = [r for r in root["packageRules"] if r.get("groupName") == "GitHub Actions"]
+    assert group_rules, "root renovate.json lost the GitHub Actions group rule"

@@ -13,7 +13,6 @@
   - 例: library（import）、web_api（HTTP+Docker）、cli（即終了）、data_science、
     script、online_judge（競技。AI 利用の可否が大会ごとに異なる）、ros2（colcon/
     rosdep）、micropython（デバイス+firmware 特殊ビルド）。
-    将来 vfx（DCC内Python）が加わる場合もこの根拠による。
 - **実行環境が同じでも「AI 利用の可否」という規約の軸が明確なら project_type にできる**
   - online_judge は実行環境としては script/cli と同じだが、大会ごとに
     「AI コーディングエージェントの利用可否」が異なり、生成物に AGENTS.md を
@@ -52,21 +51,29 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
 
 ## 1. AI コーディングエージェント向け指示（AGENTS.md）の生成
 
-- [ ] `AGENTS.md.jinja` を新設し、生成物の設定（task_runner / strictness / docs /
+- [x] `AGENTS.md.jinja` を新設し、生成物の設定（task_runner / strictness / docs /
       project_type）に応じた開発フローを自動生成する
       - 内容: テスト・lint・type-check・docs の実行コマンド、編集してよい範囲
         （src/<pkg>/, tests/）、commit 規約（conventional）、CI の構成
       - 生成: library / cli / web_api / data_science / script / kaggle
         （online_judge の AI-NG タイプでは生成しない）
-- [ ] README.md.jinja に「See AGENTS.md for AI-agent guidance」を追記する
+      - 配線: `agents_md_effective`（questions/_internal.yml）を新設し、ファイル名
+        条件 `template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja` で
+        生成有無を一元管理（mcp_effective / security_policy_effective と同型）
+- [x] README.md.jinja に「See AGENTS.md for AI-agent guidance」を追記する
       （Development setup 付近。docs 生成時は docs にも反映）
-- [ ] .gitignore / renovate / pre-commit への影響を確認する
+- [x] .gitignore / renovate / pre-commit への影響を確認する
       （AGENTS.md は通常の md として扱い、typos / markdown lint / docs 取込の
       対象にするか決める）
-- [ ] CONTRIBUTING.md との住み分けを docs に明記する
+      → 確認済み: 素の `.md` として扱う（末尾改行テストの対象に自動で入る）。
+      typos は md を検査するが AGENTS.md 固有の除外は不要。docs 取込（index.md /
+      sphinx conf）は README 側の既存リンクのみで AGENTS.md 自体は取込対象外。
+- [x] CONTRIBUTING.md との住み分けを docs に明記する
       （AGENTS.md = エージェント向け簡潔版、CONTRIBUTING.md = 人間向け詳細版）
-- [ ] AGENTS.md の有無を検証するテストを追加する
+      → AGENTS.md.jinja 冒頭で CONTRIBUTING.md へのリンクを明記し住み分けを固定
+- [x] AGENTS.md の有無を検証するテストを追加する
       （各 project_type と online_judge の AI 可否で、ファイルの有無が正しいこと）
+      → tests/test_example.py に present/absent 4件を追加
 
 ## 2. online_judge project_type の新設（競技用。AI 可否は種類による）
 
@@ -83,10 +90,11 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
         atcoder = oj + acc / yukicoder = oj（submit まで対応）/ aoj = aoj-cli 主軸
         （oj は AOJ に submit 不可）/ leetcode = LeetCode エディタ（oj 非対応）
       - atcoder / leetcode では AI 可否をさらに質問する（項目1 で追加予定）
-- [ ] `oj_allow_ai` 質問を新設する（atcoder / leetcode 選択時のみ）
+- [x] `oj_allow_ai` 質問を新設する（atcoder / leetcode 選択時のみ）
       - AI 利用 OK → AGENTS.md を生成（+ README に AI 向け言及）
       - AI 利用 NG → AGENTS.md を生成しない（規約遵守）
-      - （項目1 の AGENTS.md 設計と一体で導入。今回のコミットでは見送り）
+      - 実装: questions/online_judge.yml に `oj_allow_ai`（bool, default false,
+        when は online_judge かつ atcoder / leetcode）を追加
 - [x] online_judge の生成物（最小構成・追加依存なし・stdlib のみ）
       - **設計変更（oj 実測ベース）**: solutions/ は事前生成しない。oj はカレントに
         `test/`（sample-N.in/.out）を作り、acc はコンテスト/問題ディレクトリを
@@ -101,16 +109,17 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
 - [x] online_judge のテスト: 生成物の有無（src 無し・deps 空・CI に dist 無し）+
       空ワークスペースで task check が通ること + kaggle に solutions が無いこと
 - [ ] **将来拡張**: oj_kind を世界基準の主要 OJ 9種 + 「その他」（選ぶと更に
-      選択肢が出る2段階方式）へ拡張する。**2026-09 に yukicoder / aoj を追加して
-      5種**（kaggle / atcoder / leetcode / yukicoder / aoj）。残り候補は
-      Codeforces / CodeChef 等（oj 対応だが教育的OJを優先して今回見送り）。
-      サイト数が増えたら2段階 UI（competitive coder / result competition の
-      2系統 + サイト列挙）へ移行する
-      - 対象外の整理（調査済み）: Project Euler（oj 非対応・数値回答のみ）、
-        ML コンペ系（DrivenData / AIcrowd / 天池 / Analytics Vidhya。kaggle の
-        コンペレイアウトに載せられるが日本話者の実利用は低く見送り）、
-        CTF（pwntools の pwn template 等は下記項目8 の「亜種レイヤー検討」と統合）
-
+- [x] **2段階化**: `oj_category` 3択（data_science / competitive_coding / ctf）を
+      OJ 直後に新設し、`oj_kind` の選択肢をカテゴリごとに切替（kaggle のみ /
+      atcoder・leetcode・yukicoder・aoj / ctf のみ）。`default` もカテゴリ連動
+      - `oj_ctf` internal を新設（online_judge かつ oj_kind == 'ctf'）。`oj_code`
+        はコード提出4種に狭め（CTF 除外：challenges＋tests＋ctf extra を持つため）
+      - `ctf_effective` は `oj_ctf or (include_ctf and library/cli)` の2経路に
+        拡張（library/cli レイヤーと OJ 所属で同形生成）。`use_src_layout` /
+        `pkg_dir` / `agents_md_effective`（CTF は AI OK で常時生成）を対応
+      - README / AGENTS.md に CTF 分岐を追加。tests/test_example.py に
+        `test_template_oj_ctf_workspace` を追加し、既存 OJ テスト全件に
+        `oj_category` を付与
 ## 3. kaggle の data_science 分離 → online_judge の内部タイプへ統合
 
 - [x] copier.yml から data_science 配下の `competition` 質問を削除する
@@ -130,10 +139,10 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       - competition / GPU 質問を外す（notebooks / data / models / reports / paper）
       - **DUO / CARE 質問は data_science に残す**（competition の when 条件を外す）
       - polars/duckdb/pyarrow 等の data_science 初期依存は維持する
-- [ ] kaggle には AGENTS.md を生成する（AI 利用 OK のため。kaggle 固有の指示:
+- [x] kaggle には AGENTS.md を生成する（AI 利用 OK のため。kaggle 固有の指示:
       GPU の使い方・submission の作り方・データ境界を含める）
-      - （項目1 の AGENTS.md 設計で、kaggle / atcoder(AI可) は生成、
-        AI NG の online_judge では生成しない一元管理を実装）
+      - `agents_md_effective` が kaggle を常時 true にし、AGENTS.md.jinja の
+        kaggle 分岐が input/output 境界と pipeline タスクを案内する
 - [x] 既存テストを移設する: test_template_kaggle_competition → kaggle タイプ用に
       書き換え、test_template_data_science_layout は competition 無しの純化後仕様に
       更新。example-answers.yml / questionnaire.md / README の competition 言及を更新
@@ -146,7 +155,7 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       設計にするか決定する → **既存の上に載るレイヤー方式** に決定
       - 判断基準は設計原則1（実行環境が根本から違うか）。bot/MCP は「イベントループ +
         トークン/env で起動する長命プロセス」だが、library / cli / web_api と同じ
-        CPython + uv 実行環境に載る。マイクロPython / VFX（ビルド・実行対象が根本から
+        CPython + uv 実行環境に載る。マイクロPython（ビルド・実行対象が根本から
         違う）と違い、実行環境軸で project_type を増やす根拠が無い
       - 「cli / web_api の上に bot 実行モジュールを置く」レイヤーとして扱う
         （bot / MCP server は「ホストやイベントループに起動される実行可能物」であり、
@@ -264,12 +273,15 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       - スモーク検証済み: allowlist 無しの 0.0.0.0 バインドは拒否、allowlist 有りで起動し
         悪意 Host は /mcp で 421、/health は 200。uv sync + pytest 9本 + ruff/basedpyright/
         pyrefly/deptry/vulture 全クリーン
+- [x] **MCP scaffold の拡充: prompt + resource template + `.mcp.json`**（2026-09。
+      参考: [Zenn 入門記事](https://zenn.dev/kiitosu/articles/31f55b99c33ce5)（v1系だが
+      primitive 構成の参考）、[mcp-cookie-cutter](https://github.com/codingthefuturewithai/mcp-cookie-cutter)
+      （SDK `<2.0` ピンで基盤は古いが example の豊富さが参考。デコレータ層・Streamlit UI・
+      SQLite logging・JIRA DevFlow は守備範囲外として不採用））
+      - 三 primitive 揃え: tool（add/divide）+ resource（about + greeting template）+
+        prompt（review_code）。in-process テスト7本、basedpyright/ruff/format/deptry 全クリーン
+      - `.mcp.json` 生成でホスト登録ゼロ手間化。README・how-to に登録手順を追記
 - [ ] **将来拡張: 配布前提スタンドアロン MCP サーバのレシピ**（reference servers 型）
-      - cli + include_mcp は console script（`mcp-server-<name>`）まで生成済み。残りは
-        PyPI 公開（既存 `pypi` 質問 + CI release job）後の `uvx mcp-server-<name>` 利用案内と、
-        `.mcp.json` / `claude mcp add` でのホスト登録レシピの docs 拡充
-      - 「自作サーバを library として配る」要求は cli 形状の配布アプリとして扱う
-        （import される library ではなく、起動される console script が配布単位）
 - [ ] **将来拡張: MCP server の本番運用**（残作業）
       - 調査メモ（2026-09）: MCP SDK 公式に Docker レシピは無い。SDK はプロセス管理を
         提供せず（`mcp.run()` は単一 uvicorn）、デプロイで MCP が関与するのは
@@ -353,82 +365,99 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       - 各オプションは「動く見本 + テスト」必須（デモ Item 前提）。現状は docs の
         「後で足せる」に記載のみ
 
-## 7. VFX 分野（マイクロPython型の特殊 project_type として検討）
+## 7. セキュリティ / CTF の扱い
 
-- [ ] VFX は「特殊ビルド/実行対象」という点で micropython と同型と判断。
-      ただし1つの巨大 project_type にせず、まず**単一DCC（Houdini）の最小実装**から
-      始める（micropython が esp32 から始まったのと同様）
-      - DCC内Python（hython / mayapy）は CPython と非互換の実行環境で、
-        pip 配布より DCC プラグイン/シーン資産として展開する
-      - 依存は pixi / conda（USD、OpenImageIO、OpenColorIO 等の native deps）
-- [ ] micropython の実装（firmware/ 特殊レイアウト、専用ビルド、専用テスト、専用 CI）を
-      「特殊 project_type の青写真」として参照する
-- [ ] Maya / Nuke / アセット管理 / ocio 設定はスコープ外（後続TODO）と明記する
-
-## 8. セキュリティ / CTF の扱い
-
-- [ ] CTF を project_type に**追加しない**（実行環境は既存 library/cli と同じ。
+- [x] CTF を project_type に**追加しない**（実行環境は既存 library/cli と同じ。
       設計原則2）。online_judge とも別物（CTF に AI 可否の大会規約は無い）と整理する
-- [ ] セキュリティ基盤は既に実装済みであることを docs に明記する:
+      → docs/reference/questionnaire.md に「Not project types」節として文書化済み
+- [x] セキュリティ基盤は既に実装済みであることを docs に明記する:
       zizmor（CI 監査）、pip-audit（脆弱性スキャン）、Sentry（任意）
-- [ ] 本当に欲しいのが CTF のファイルレイアウト（challenges/、solvers/）や依存
-      （pwntools / z3）なら、library/cli の「亜種」として最小レイヤーを別TODOで検討
-      - 参考（2026-09 調査）: pwntools の `pwn template`（exploit 雛形の自動生成。
-        参加者側）、mhtoribio/pwn-scaffold（Docker + socat + gdb + solve.py の単一
-        pwn 問題 scaffold。問題作成者側）、b01lers/rich-ctf-template と
-        CTFd/ctfcli（CTF コンペ全体の構成・運営。問題作成者側）。参加者側の
-        「問題別フォルダ + pwntools 初期化」は online_judge の空ワークスペースに
-        近いので、そちらへの載せ方も含めて検討する
+      → pip-audit は _tasks.jinja の `audit` タスクとして分離（recommended/full のみ。
+      OSV/PyPI への network 依存のため type-check/check/CI からは外し、offline でも
+      green を維持）。zizmor / Sentry は従来通り docs 記載
+- [x] 参加者向け CTF レイヤー（`include_ctf`）を実装する（library / cli の上に載る
+      opt-in レイヤー。`ctf_effective` で render を一元化）
+      - 生成物: `challenges/pwn/example/solve.py`（stdlib のみで動作＋pwntools
+        レシピ同梱）、`tests/test_ctf_example.py`（solve.py の実実行検証）、
+        `ctf` extra（pwntools / z3-solver）、.gitignore（vuln / flag* 除外）、
+        ruff per-file-ignores（challenges 緩和）、deptry DEP002 許可
+      - テスト: tests/test_example.py に3件（render / 実実行＋ruff /
+        他タイプへの leak 無し）。構造（Z3/forward-only/union）・改行・QA 全緑
+      - 対象外（据え置き）: 問題作成者側（Docker+socat+gdb、CTF 運営）は別リポジトリの
+        仕事として生成しない
 
-## 9. SRE / Ansible / IaC の扱い
+## 8. SRE / Ansible / IaC の扱い
 
-- [ ] Ansible を project_type に**追加しない**（YAML プロジェクトであり Python の
-      実行環境と噛み合わない。設計原則3: web_django 方式で拒否・案内する）
-- [ ] Terraform / K8s / Ansible 等の IaC は「アプリの隣に置く別リポジトリの仕事」と
-      位置づけ、このテンプレートでは生成しない
-- [ ] SRE は「web_api の運用強化」に限定して進める:
+- [x] Ansible を project_type に**追加しない**（YAML プロジェクトであり Python の
+      実行環境と噛み合わない。設計原則3）
+      → questionnaire.md の Not project types 節に文書案内として記載
+      （web_django のような生成時 abort は無し — 選択肢自体が無いため）
+- [x] Terraform / K8s / Ansible 等の IaC は「アプリの隣に置く別リポジトリの仕事」と
+      位置づけ、このテンプレートでは生成しない → 同上
+- [x] SRE は「web_api の運用強化」に限定して進める:
       healthcheck、非root実行、read-only filesystem、resource limit を Dockerfile /
-      compose に追加。otel / prometheus のメトリクスは上記6の「取り込まない機能」に
-      従い、まず初期質問にしない
+      compose に追加。otel は見送り（初期質問にしない）。prometheus / rate_limit /
+      cors の3スイッチは web_api の観測面として維持
+      → 実装済み: Dockerfile runtime に USER appuser + /app chown（uv/pixi 両方）、
+      compose.local.yml に read_only + tmpfs（/tmp と ~/.cache）+ mem_limit/cpus
+      （plain `compose up` で効く service-level）。
+      HEALTHCHECK は従来通り。otel は見送り
 
-## 10. 初期ライブラリの設定（project_type / レイヤー別の初期依存マトリクス）
+## 9. 初期ライブラリの設定（project_type / レイヤー別の初期依存マトリクス）
 
-- [ ] project_type ごとに「初期依存セット」を一覧表（マトリクス）に整理する
+- [x] project_type ごとに「初期依存セット」を一覧表（マトリクス）に整理する
       - 例: web_api → fastapi/uvicorn/sqlalchemy/alembic/pydantic-settings、
         data_science → polars/duckdb 等、online_judge → なし（stdlib のみ）。
         推奨1本 + No でカスタムの形
-- [ ] 生成される pyproject.toml の初期設定を充実させる
+      → docs/reference/dependencies.md を新設（runtime/dev/experiment/entry point/
+      deptry ignores/renovate/config parity を記載）。zensical nav + reference.md に登録
+- [x] 生成される pyproject.toml の初期設定を充実させる
       - ruff / basedpyright の生成先への展開がテンプレート本体と一致しているか確認
+        → 共有選択肢（ALL+preview、line-length 120、single-line isort等）は一致、
+        差分は意図的（対象の違い）を文書化。ついでに kaggle の deptry 24件を解消
+        （`responses` 除去 + ML依存/自己参照の ignore 追加、新規テストで固定）
       - `[project.scripts]` の entry point と、上記4の常駐起動（daemon）の関係を整理
-- [ ] 初期依存の更新（下記12のバージョン追従）と整合するよう、生成先 renovate.json の
+        → マトリクス文書の Entry points 節に整理済み（CLI/MCP/web_api等の対応表）
+- [x] 初期依存の更新（下記12のバージョン追従）と整合するよう、生成先 renovate.json の
       packageRules を依存カテゴリごとに整理する
+      → Core CI / Release / Container / PyPI / Docs / Scorecard / FAIR /
+      Dockerfile の8カテゴリに分割。パリティテストも分割対応に更新
+## 10. data-science / kaggle の整理（AGENTS.md / online_judge 再編後の整合）
 
-## 11. data-science / kaggle の整理（AGENTS.md / online_judge 再編後の整合）
-
-- [ ] data_science の純化後仕様を再確認する: notebooks / data / models / reports /
+- [x] data_science の純化後仕様を再確認する: notebooks / data / models / reports /
       paper の分析型として、competition 残骸（_tasks.jinja の dataset/train/predict 等
-      の競技タスク、README の competition 言及、.gitignore の input//exp/ 等）を掃除する
-- [ ] kaggle（online_judge 内）の初期依存を整理する: torch/lightgbm/xgboost 等の
+      の競技タスク、.gitignore の input//exp/ 等）を掃除する
+      → 確認済み: _tasks の競技タスクは kaggle 条件、template/.gitignore を
+      .gitignore.jinja 化して DS/Kaggle ブロックを条件化し、root から input//exp/
+      を削除。.dockerignore も同様に条件化（DS 全枝 + kaggle 全枝）。
+      test_gitignore_same は union 検査に更新。README の competition 言及は
+      kaggle パスのみ残存（data_science パスは無し）— 意図通り
+- [x] kaggle（online_judge 内）の初期依存を整理する: torch/lightgbm/xgboost 等の
       競技用依存、wandb、GPU/CUDA バージョン追従
-- [ ] online_judge（atcoder / leetcode）と kaggle で、AI 可否の扱いが一貫しているかを
+      → cu124→cu126（torch 2.6凍結のため。cu126でtorch 2.14.0+cu126解決を確認）、
+      optuna>=3.5→>=4.0、torch>=2.6→>=2.12、torchvision>=0.21→>=0.27、
+      Dockerfile.gpuもCUDA 12.6.3に更新。deptryはクリーン維持
+- [x] online_judge（atcoder / leetcode）と kaggle で、AI 可否の扱いが一貫しているかを
       AGENTS.md 生成ロジックで担保する（一元管理のテスト）
+      → `agents_md_effective` が library / cli / script / web_api /
+      data_science / kaggle を常時、oj_code は oj_allow_ai 時のみ true にし、
+      ros2 / micropython は false。tests/test_example.py の 4件で固定
 
-## 12. バージョン追従
-
-- [ ] テンプレート本体の renovate.json の運用を点検する
+## 11. バージョン追従
+- [x] テンプレート本体の renovate.json の運用を点検する
       - lockFileMaintenance / pre-commit / vulnerabilityAlerts は有効。
         テンプレートが固定するバージョン（micropython_version 等）の追従方針を一元化
-- [ ] `tools/check_micropython_upstream.py` のような上流確認ツールを他分野へ拡張する
+      → 点検済み: extends/vulnerabilityAlerts/lockFileMaintenance は両方で有効。
+- [x] `tools/check_micropython_upstream.py` のような上流確認ツールを他分野へ拡張する
       （ROS 2 distro の EOL、CUDA、python サポート一覧 等）
-- [ ] 生成先 renovate.json（template/renovate.json.jinja）とテンプレート本体の同期確認
-- [ ] periodic.yml の linkcheck に加え、copier.yml の default / README 記載の固定バージョン
-      が古くならないかの定期チェックを検討する
+      → tools/check_upstream.py に統合（MicroPython tag/stubs + CUDA base/cu-index +
+      ROS 2 EOL + Python floor + Postgres + Ubuntu）。週次 check-upstream.yml で
+      drift issue を自動作成。旧ツールは shim として残し、旧 workflow は手動化。
+      template-dev.md に「Hardcoded pins need an upstream check」規約を追加
 
-## 13. セキュリティ / コンプライアンス基盤の整備（OpenSSF Scorecard / OSPS 準拠）
+## 12. セキュリティ / コンプライアンス基盤の整備（OpenSSF Scorecard / OSPS 準拠）
 
 ルート（テンプレ自体）と生成物の両層に、OpenSSF Scorecard の検証項目とリポジトリ配置
-（SECURITY.md / CODEOWNERS / ISSUE_TEMPLATE / REUSE / CITATION.cff / codemeta.json /
-Scorecard workflow / zizmor SAST / Aqua.jl 風 test_qa.py）を実装した。
 
 ### 実施済み
 
@@ -484,7 +513,7 @@ Scorecard workflow / zizmor SAST / Aqua.jl 風 test_qa.py）を実装した。
 - [ ] ブランチ保護/ルールセット（署名コミット・線形履歴・必須チェック・レビュー）は
       GitHub 設定で有効化（コードでは強制不可）
 
-## 14. 質問票・テンプレートソースの保守性向上（2026-09）
+## 13. 質問票・テンプレートソースの保守性向上（2026-09）
 
 肥大化した copier.yml（940行）と、jinja の頻出バグ（末尾改行）への対処。
 
@@ -514,17 +543,100 @@ Scorecard workflow / zizmor SAST / Aqua.jl 風 test_qa.py）を実装した。
 - [x] **テンプレートソース作成規約を docs に蓄積**（2026-09）
       - docs/explanations/template-dev.md を新設: 末尾改行制御 / _shared/ include 共有 /
         questions/ 順序・前方参照 / Z3 充足維持。各規約に強制テストをリンク
+- [x] **pyproject.toml.jinja を `_shared/` フラグメントへ分割**（2026-09。項目5の
+      mcp_server.py / logging_setup.py と同じ「共有 partial + 薄い include」パターンを、
+      肥大化した pyproject.toml.jinja 自体にも適用）
+      - `_shared/pyproject-basedpyright.toml.jinja` / `-ty-checkers.toml.jinja`（pyrefly/ty）/
+        `-test-coverage.toml.jinja`（pytest/coverage/typos/vulture/deptry）/
+        `-ruff-lint.toml.jinja`（select/ignore/task-tags 本体）/ `-ctf-extra.toml.jinja` /
+        `-ctf-lint.toml.jinja` / `-scraping-lint.toml.jinja` / `-kaggle-lint.toml.jinja`
+        （per-file-ignores 各節）を新設し、本体からは `{% include %}` のみにする
+      - `_shared/pyproject-scraping-banned-api.toml.jinja` は下記項目14（scraping
+        レイヤー）の ruff `banned-api` 節をここに同居させ、本体は1行 include のまま
+      - 末尾改行規約（上記）はここでも適用: 各 include の直前直後で改行を持たない
+        ラッパー行にする。`.pre-commit-config.yaml` の `end-of-file-fixer` に
+        `.jinja` 除外を追加し、`pre-commit run --all-files` がこの規約を壊して
+        レンダー結果に空行を混入させる事故を構造的に防止（2026-09 に実際に
+        7ファイル巻き込まれて発覚・修正 — 生成物側の改行検証は既存の
+        `test_generated_files_end_with_single_newline` が担うので、ソース側の
+        `end-of-file-fixer` は不要かつ有害と判断）
+- [x] **`tests/test_machine_gate.py` を新設**（2026-09。高速な静的事前検査）
+      - 全 `.jinja` ソースを Jinja2 でパース（if/endif 不整合等の壊れを検出）+
+        全 `questions/*.yml` を YAML としてロード + copier 自身の
+        `load_template_config` で解決可能かを検証。uv sync 不要・オフラインで
+        ミリ秒オーダーに終わるため、test_example.py の重いレンダーテストより先に
+        壊れを検出できる
 - [ ] **将来拡張: ジャンル別サブディレクトリ（_subdirectory 切替）は不採用**
       - template/ をジャンル別ツリーに分け `_subdirectory: template/{{ project_type }}` で
         切替える案は調査・実験の結果**不採用**（2026-09）。全8ジャンル共通ファイルが64あり、
         各ツリーへの symlink 共有が過大。質問票の !include 分割（上記）で主目的
         （肥大化解消）は達成済み
-- [ ] **将来拡張: AGENTS.md / oj_allow_ai の設計と実装**（項目1・2 の残り。AGENTS.md は
+- [x] **将来拡張: AGENTS.md / oj_allow_ai の設計と実装**（項目1・2 の残り。AGENTS.md は
       library / cli / web_api / data_science / script / kaggle に常時生成し、AI NG の
       online_judge 種に置かない。項目1 のチェックリストを参照）
-- [ ] **残存するテスト失敗2件の解消**（2026-09 combo 対応時に発覚。いずれも HEAD でも
+- [x] **残存するテスト失敗2件の解消**（2026-09 combo 対応時に発覚。いずれも HEAD でも
       失敗する既存の問題で、combo の退行ではない）
       - `test_template_with_extra_code_and_api_docs`: 生成物の sphinx docs ビルドが
-        失敗する。原因切り分けから着手
+        失敗する。原因切り分けから着手 → **解消**: README 先頭の H1 が
+        `<div align="center">` 内にあり MyST が H1 と認識せず myst.header 警告 9件が
+        --fail-on-warning で落ちていた。H1 を div 外に移動してテスト通過を確認
       - `test_example_repo_updates`: example リポジトリとの parity 不一致。main push で
-        _example.yml が example repo を再生成した後に通す（項目13 の外部依存と同型）
+        _example.yml が example repo を再生成した後に通す（項目12 の外部依存と同型。
+        ローカルでは外部リポジトリへの push 不可のため未実行のまま残す）
+
+## 14. Web スクレイピングレイヤー（include_scraping）の新設
+
+設計原則1に従い project_type は増やさず、CTF / MCP と同じ「既存 project_type の上に
+載る opt-in レイヤー」として cli に追加する。**Good-future-python** charter
+（respect the source / law / commons。詳細は docs/explanations/good-future.md）を
+コードで強制することが狙い — 礼儀正しいスクレイピングを「ドキュメントで頼む」のではなく
+「ruff banned-api / robots.txt チェック / レート制限 / CI」で構造的に強制する。
+
+- [x] `include_scraping` 質問を新設する（`project_type == 'cli'` のみ。項目4の
+      combo 方式に合わせ `questions/_combo.yml` に配置）
+      - Yes で `CHARTER.md` + フェッチャーモジュールを生成。ruff `banned-api` で
+        `requests.get` / `httpx.get` / `urllib.request.urlopen` 等の直接呼び出しを
+        フェッチャー外で禁止し、全フェッチが1箇所を通ることを構造的に強制
+      - CAPTCHA 回避ヘルパーは一切生成しない（サイト規約違反のため対象外と明記）
+- [x] `use_recommended_scraping` ゲート（既存 use_recommended_* 方式）+
+      `scraping_engine` 詳細質問（httpx / scrapy / memorious / playwright / all）
+      - 推奨: httpx — stdlib robots チェック + per-host レート制限 + on-disk
+        キャッシュのポライトフェッチャー。新規ランタイム依存なし・オフラインテスト
+      - No を選ぶと4エンジンから選択（all は全エンジン同時生成）
+- [x] エンジンごとの生成物（`_shared/fetcher-httpx.py.jinja` 他3種 + wrapper 8種
+      [src/flat layout × 4エンジン]。項目5/13 と同じ「共有 partial + 薄い wrapper」
+      パターン）
+      - **httpx**（全エンジンの土台。memorious/playwright/all も再利用）:
+        `preflight()` が feed（`/feed`, `/rss.xml`, `/atom.xml`...）→ API ヒント
+        （`/api`, `api.` サブドメイン, `openapi.json`）→ scraping の順で判断
+        （feed-first / API-second / scraping-last）。robots.txt 拒否は
+        `RobotDeniedError`、401/403 は `AccessDeniedError`（回避せず停止）、
+        host あたり `max_requests_per_host`（既定100。discovery probe も含む）
+        超過は `BudgetExceededError`。判断結果は origin 単位でキャッシュし
+        2ページ目以降の probe コストを削減
+      - **scrapy**: `ROBOTSTXT_OBEY` + `AUTOTHROTTLE` + `DOWNLOAD_DELAY` を
+        `custom_settings` に強制したスパイダー starter
+      - **memorious**: レート制限・キャッシュ済み HTTP セッションの crawler config。
+        **memorious4 は AGPL-3.0** のため選択時に `license_effective` を
+        AGPL-3.0 へ強制上書き（勝手に MIT へ戻さないよう README/docs に明記）
+      - **playwright**: JS レンダリングページ向け headless-Chromium フェッチ
+        （robots precheck はフェッチャーから再利用）。テストではブラウザ起動しない
+        （config デフォルトのみ検証）
+      - 全エンジンに offline テスト付き: `test_scraping.py` /
+        `test_scrapy_spider.py` / `test_memorious_crawler.py` /
+        `test_browser_fetch.py`（`{% if scraping_*_effective %}` で個別出し分け）
+- [x] `.cache/fetcher/` / `.cache/ms-playwright/` を gitignore（`_shared/`
+      partial 化し `template/.gitignore.jinja` とルート `.gitignore` の両方に
+      union 反映。項目13 の末尾改行規約に従い include ラッパーは改行なしで終端）
+- [x] docs 新設: `docs/how-to/scraping.md`（生成物一覧・ライセンス影響・非対応の明記）+
+      `docs/explanations/good-future.md`（charter 本文。respect the source /
+      law / commons の3原則と、各ルールの実施箇所（ruff/pytest/CI）の対応表）+
+      zensical.toml nav 登録
+- [x] テスト: `test_template_include_scraping_httpx` / `_runs` /
+      `_not_offered_elsewhere` / `test_template_scraping_engine_choices` /
+      `test_template_scraping_memorious_forces_agpl`（他 project_type に
+      scraping 関連の依存/質問が漏れないことも検証）
+- [ ] **将来拡張**: CAPTCHA 回避以外のポライトネス拡張（sitemap.xml 優先探索、
+      条件付き GET の ETag/If-Modified-Since 対応）は要望が出てから検討。
+      現状は feed/API 優先探索 + robots.txt + レート制限 + キャッシュで
+      「行儀の良いデフォルト」を満たしていると判断し、初期スコープに含めない

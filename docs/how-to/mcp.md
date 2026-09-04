@@ -25,15 +25,19 @@ host. The security sections are split accordingly.
   - a **`ToolError` example** — `divide` by zero raises one, which the SDK
     turns into an `is_error=True` result whose message the calling model can
     read (any other exception is sanitised);
-  - one **resource** (`project://about`) to show the resources side.
+  - two **resources** — `project://about` (static) and `greeting://{name}`
+    (template: URI parameters map to function arguments);
+  - one **prompt** — `review_code` (a reusable message template the host
+    surfaces as a slash command; the user picks it and fills in `code`).
   (The module lives in `app/mcp_server.py` when the web_api layer is present,
   otherwise in `<pkg>/mcp_server.py` — one body shared via `_shared/`, so the
   two locations never drift.)
 - A **console script** `mcp-server-<name>` so an MCP host can launch the
   server, and users can run it with `uvx` once published.
-- An in-process client test `tests/test_mcp_server.py` that calls the tools
-  and resource through the SDK's `Client` — no subprocess, no port. Treat it
-  as the worked example for calling this server from your own client code.
+- An in-process client test `tests/test_mcp_server.py` that calls the tools,
+  resources and prompt through the SDK's `Client` — no subprocess, no port.
+  Treat it as the worked example for calling this server from your own
+  client code.
 
 The MCP SDK v2 ships full type stubs, so `mcp_server.py` **is** covered by
 the generated type checkers (no exclusions).
@@ -60,16 +64,16 @@ offers stdio and streamable-http.
 
 ## Registering it with an MCP host
 
-The generated project is the server side; pointing a host at it is a
-configuration step outside the template:
+The generated project ships a `.mcp.json` pointing at the stdio command
+(`uv run mcp-server-<name>`), so VS Code / Cursor and other hosts pick the
+server up with no manual registration. Beyond that:
 
 - **Claude Code / Claude Desktop**: `claude mcp add <name> -- uv run
   mcp-server-<name>` (stdio), or the streamable-http URL after starting the
   server.
-- **VS Code / Cursor and other hosts**: a `.mcp.json` entry in the project
-  that runs `uv run mcp-server-<name>`.
 - **Published server**: after releasing to PyPI (the `pypi` option), users
-  run `uvx mcp-server-<name>` — no install needed.
+  run `uvx mcp-server-<name>` — no install needed. Point `.mcp.json` (or the
+  host config) at that command instead.
 
 ## Consuming MCP servers (as a client)
 

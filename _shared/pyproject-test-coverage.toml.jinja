@@ -1,0 +1,57 @@
+[tool.pytest.ini_options]
+# Run pytest with all our checkers, and don't spam us with massive tracebacks on error
+addopts = """
+    --tb=native -vv{% if sphinx %} --doctest-modules --doctest-glob="*.rst"{% endif %}
+    """
+# https://iscinumpy.gitlab.io/post/bound-version-constraints/#watch-for-warnings
+filterwarnings = "error"
+# Doctest python code in docs, python code in src docstrings, test functions in tests
+testpaths = "{% if sphinx %}docs {% endif %}{{ 'tests' if micropython_pkg or oj_code else (pkg_dir ~ ' tests') }}"
+{% if micropython_pkg %}# firmware/ is not pip-installed; put the repo root on sys.path so the
+# CPython core tests can `from firmware.core import ...`.
+pythonpath = ["."]
+{% endif %}
+
+{% if strictness in ['recommended', 'full'] %}
+[tool.coverage.run]
+patch = ["subprocess"]
+# Project-local data file: each generated project (and each parallel test
+# worker copying it) writes its own .coverage instead of racing on a shared
+# /tmp/<package>.coverage file.
+data_file = ".coverage"
+
+[tool.coverage.paths]
+# Tests are run from installed location, map back to the src directory
+source = ["{{ 'firmware' if micropython_pkg else pkg_dir }}", "**/site-packages/"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+skip_empty = true
+
+[tool.typos.default]
+extend-ignore-words-re = ['\b[A-Z]{3}\b']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
+
+[tool.typos.files]
+# docs のビルド出力 (site/) はチェック対象外。
+extend-exclude = ["site"]
+
+[tool.vulture]
+paths = ["{{ 'firmware' if micropython_pkg else pkg_dir }}"]
+min_confidence = 80
+
+[tool.deptry]
+# 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
+# DEP004 pytest: pytest を import するのは tests/（fixture / raises /
+# MonkeyPatch）だけであり、正当な dev 専用利用。mcp_server のテストも同じ
+# ルールに触れるため、エンジン横断で無視する。
+per_rule_ignores = "DEP002=alembic|asgi-correlation-id|asyncpg|click|fastapi|httpx|pydantic|pydantic-settings|pendulum|prometheus-client|rich|slowapi|sqlalchemy|structlog|loguru|picologging|typer|uvicorn{% if data_science or kaggle %}|duckdb|ipykernel|marimo|matplotlib|nbclient|nbstripout|openai|plotly|polars|pyarrow|seaborn|wandb{% endif %}{% if kaggle %}|hydra-core|lightgbm|omegaconf|optuna|pandas|pyyaml|torch|torchvision|xgboost{% endif %}{% if ctf_effective %}|pwntools|z3-solver{% endif %}{% if scraping_scrapy_effective %}|scrapy{% endif %}{% if scraping_memorious_effective %}|memorious4{% endif %}{% if scraping_playwright_effective %}|playwright{% endif %}{% if cloud_provider == 'aws' %}|boto3|botocore|boto3-stubs{% endif %}{% if cloud_provider == 'gcp' %}|google-cloud-storage{% endif %}{% if cloud_provider == 'azure' %}|azure-identity{% endif %},DEP003={{ package_name }}|requests{% if mcp_effective %}|starlette{% endif %}{% if micropython_pkg %},DEP001=mpremote|micropython|machine|board_config{% endif %}{% if mcp_effective %},DEP001=starlette{% endif %},DEP004=pytest"
+# tasks.py/duties.py: root-level dev script, not project source -- deptry
+# would otherwise flag invoke/duty as DEP004 (dev-only dep imported by "source")
+exclude = ["tools", ".venv", ".pixi", ".task", "build", "dist"{% if micropython_pkg %}, "firmware"{% endif %}{% if task_runner_effective == 'invoke' %}, "tasks.py"{% endif %}{% if task_runner_effective == 'duty' %}, "duties.py"{% endif %}]
+
+[tool.pyproject_fmt]
+keep-full-version = true
+no-generate-python-version-classifiers = true
+{% endif %}

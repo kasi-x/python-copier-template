@@ -62,9 +62,24 @@
         'desc': 'Run pre-commit on all files',
         'cmd': [run ~ 'pre-commit run --all-files --show-diff-on-failure'],
     },
+    {
+        'name': 'code-fix',
+        'desc': 'Auto-fix lint findings (ruff check --fix + format)',
+        'cmd': [run ~ 'ruff check --fix .', run ~ 'ruff format .'],
+    },
 ] %}
 {% if strictness in ['recommended', 'full'] %}
 {% set secondary = 'ty check' if type_checker == 'ty' else 'pyrefly check' %}
+{# License compliance (PyPI metadata): deterministic copyleft policy that
+   fails on licenses the project license cannot absorb. Network-dependent
+   like audit, so it stays out of `type-check`/`check` (both must run
+   offline): run it standalone, or from CI where the lint job calls it
+   alongside type-check. #}
+{# With --partial-match, one substring covers the whole family: "GPL" matches
+   GPL/LGPL/AGPL alike, so permissive projects fail on any copyleft; weak
+   copyleft (GPL/LGPL) tolerates its own family and fails only on AGPL. #}
+{% set license_fail_on = 'GPL' if license_effective in ['MIT', 'ISC', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', '0BSD', 'Unlicense', 'CC0-1.0', 'BlueOak-1.0.0'] else ('AGPL' if license_effective in ['GPL-2.0', 'GPL-3.0', 'LGPL-2.1', 'LGPL-3.0'] else '') %}
+{% set license_check_cmd = run ~ 'pip-licenses --from=mixed --partial-match' ~ (' --fail-on=' ~ license_fail_on if license_fail_on else '') %}
 {% set type_check_cmds = [
     run ~ 'basedpyright',
     run ~ secondary,
@@ -74,11 +89,24 @@
     run ~ 'deptry .',
     run ~ 'typos .',
 ] %}
+{# Network-dependent (OSV/PyPI): exits non-zero on findings or fetch
+   failures, so `audit` stays out of `type-check`/`check`/CI: run on demand. #}
 {% set tasks = tasks + [{
     'name': 'type-check',
     'desc': 'Run basedpyright + ' ~ type_checker ~ ' + static analysis',
     'cmd': type_check_cmds,
+}, {
+    'name': 'audit',
+    'desc': 'Audit dependencies for known vulnerabilities (needs network)',
+    'cmd': [run ~ 'pip-audit'],
 }] %}
+{% if license_check_effective %}
+{% set tasks = tasks + [{
+    'name': 'license-check',
+    'desc': 'Check dependency licenses comply with ' ~ license_effective ~ ' (needs network)',
+    'cmd': [license_check_cmd],
+}] %}
+{% endif %}
 {% endif %}
 {% set tasks = tasks + [{
     'name': 'test',

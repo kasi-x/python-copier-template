@@ -202,7 +202,7 @@ def test_template_great_docs(tmp_path: Path):
 
 
 def test_template_kaggle_competition(tmp_path: Path):
-    copy_project(tmp_path, project_type="online_judge", oj_kind="kaggle")
+    copy_project(tmp_path, project_type="online_judge", oj_category="data_science", oj_kind="kaggle")
     # src/ with the Kaggle dirs; the analysis-only DS dirs are not generated
     assert (tmp_path / "src").is_dir()
     assert not (tmp_path / "data").exists()
@@ -240,6 +240,28 @@ def test_template_kaggle_competition(tmp_path: Path):
     assert (tmp_path / "src" / "notebook" / "explore.py").exists()
     # no solutions/ tree (that is for the other online_judge kinds)
     assert not (tmp_path / "solutions").exists()
+
+
+def test_template_kaggle_deptry_ignores_match_shipped_deps(tmp_path: Path):
+    """The kaggle render's deptry ignores must cover its own dep sets.
+
+    Regression: the kaggle render once failed `task type-check` — unused
+    `responses` dev dep (DEP002), unused ML deps (DEP002), and the
+    installable `utils` package's self-imports (DEP003). The ignores below
+    pin the contract: every ML dep and `utils` must be ignored, and no
+    stale ignore (like `responses`) may linger.
+    """
+    copy_project(tmp_path, project_type="online_judge", oj_category="data_science", oj_kind="kaggle")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    ignores = pyproject_toml["tool"]["deptry"]["per_rule_ignores"]
+    deps = pyproject_toml["project"]["dependencies"]
+    ml_deps = [d.split(">")[0].split("<")[0].split("[")[0].split("=")[0] for d in deps]
+    for dep in ("hydra-core", "lightgbm", "omegaconf", "optuna", "pandas", "pyyaml", "torch", "torchvision", "xgboost"):
+        assert dep in ml_deps, f"{dep} missing from kaggle deps"
+        assert dep in ignores, f"{dep} missing from deptry DEP002 ignores"
+    dev_deps = pyproject_toml.get("dependency-groups", {}).get("dev", [])
+    assert "responses" not in dev_deps, "stale responses dev dep"
+    assert "responses" not in ignores, "stale responses ignore"
 
 
 def test_template_data_science_layout(tmp_path: Path):
@@ -281,10 +303,26 @@ def test_template_data_science_layout(tmp_path: Path):
     assert not (tmp_path / "src" / "utils").exists()
 
 
+def test_template_oj_ctf_workspace(tmp_path: Path):
+    """oj_category=ctf: the OJ-owned CTF path ships the same shape as the
+    library/cli include_ctf layer (challenges + ctf extra + AGENTS.md)."""
+    copy_project(tmp_path, project_type="online_judge", oj_category="ctf", oj_kind="ctf")
+    assert (tmp_path / "challenges" / "pwn" / "example" / "solve.py").exists()
+    assert (tmp_path / "tests" / "test_ctf_example.py").exists()
+    assert (tmp_path / "AGENTS.md").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["optional-dependencies"]["ctf"] == [
+        "pwntools>=4.13,<5",
+        "z3-solver>=4.13,<5",
+    ]
+    readme = (tmp_path / "README.md").read_text()
+    assert "challenges/pwn/example/solve.py" in readme
+
+
 def test_template_atcoder_workspace(tmp_path: Path):
     # code-submission judge: a bare workspace, no solutions/ scaffold — the
     # user drives oj/atcoder-cli which create their own dirs and test/ files
-    copy_project(tmp_path, project_type="online_judge", oj_kind="atcoder")
+    copy_project(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="atcoder")
     assert not (tmp_path / "solutions").exists()
     assert not (tmp_path / "tests" / "test_samples.py").exists()
     # No package layout at all: no src/, no flat package, no CLI/logging files
@@ -309,7 +347,7 @@ def test_template_atcoder_workspace(tmp_path: Path):
 
 
 def test_template_leetcode_workspace_like_atcoder(tmp_path: Path):
-    copy_project(tmp_path, project_type="online_judge", oj_kind="leetcode")
+    copy_project(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="leetcode")
     assert not (tmp_path / "solutions").exists()
     assert not (tmp_path / "src").exists()
     assert not (tmp_path / "tests" / "test_samples.py").exists()
@@ -318,7 +356,7 @@ def test_template_leetcode_workspace_like_atcoder(tmp_path: Path):
 def test_template_yukicoder_workspace(tmp_path: Path):
     # yukicoder is a code-submission judge: same bare workspace as atcoder,
     # driven with oj (download / test / submit all work for yukicoder)
-    copy_project(tmp_path, project_type="online_judge", oj_kind="yukicoder")
+    copy_project(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="yukicoder")
     assert not (tmp_path / "solutions").exists()
     assert not (tmp_path / "tests" / "test_samples.py").exists()
     assert not (tmp_path / "src").exists()
@@ -336,7 +374,7 @@ def test_template_yukicoder_workspace(tmp_path: Path):
 def test_template_aoj_workspace(tmp_path: Path):
     # AOJ is a code-submission judge: same bare workspace, but oj cannot
     # submit to AOJ — the README leads with aoj-cli
-    copy_project(tmp_path, project_type="online_judge", oj_kind="aoj")
+    copy_project(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="aoj")
     assert not (tmp_path / "solutions").exists()
     assert not (tmp_path / "tests" / "test_samples.py").exists()
     assert not (tmp_path / "src").exists()
@@ -353,15 +391,86 @@ def test_template_aoj_workspace(tmp_path: Path):
 
 def test_template_online_judge_repo_lints_clean(tmp_path: Path):
     """The empty workspace renders a ruff/type-check-clean repo (no sources)."""
-    copy_project_recommended(tmp_path, project_type="online_judge", oj_kind="atcoder")
+    copy_project_recommended(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="atcoder")
     run = make_venv(tmp_path)
     run("uvx --from rust-just just check")
 
 
 def test_template_online_judge_no_solutions_for_kaggle(tmp_path: Path):
     # kaggle is a result competition: no solutions/ scripts tree either
-    copy_project(tmp_path, project_type="online_judge", oj_kind="kaggle")
+    copy_project(tmp_path, project_type="online_judge", oj_category="data_science", oj_kind="kaggle")
     assert not (tmp_path / "solutions").exists()
+
+
+def test_template_agents_md_present_by_default(tmp_path: Path):
+    """library ships AGENTS.md and the README points at it."""
+    copy_project(tmp_path, project_type="library")
+    agents = tmp_path / "AGENTS.md"
+    assert agents.exists()
+    body = agents.read_text()
+    assert "task check" in body
+    assert ".github/CONTRIBUTING.md" in body
+    readme = (tmp_path / "README.md").read_text()
+    assert "AGENTS.md" in readme
+
+
+def test_template_agents_md_present_for_kaggle_and_opt_in_judges(tmp_path: Path):
+    """kaggle always ships AGENTS.md; atcoder/leetcode ship it when
+    oj_allow_ai is Yes (with the judge-specific workspace note)."""
+    kaggle_path = tmp_path / "kaggle"
+    copy_project(kaggle_path, project_type="online_judge", oj_category="data_science", oj_kind="kaggle")
+    kaggle_agents = (kaggle_path / "AGENTS.md").read_text()
+    assert (kaggle_path / "AGENTS.md").exists()
+    assert "src/input/" in kaggle_agents
+
+    atcoder_path = tmp_path / "atcoder"
+    copy_project(
+        atcoder_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="atcoder", oj_allow_ai=True
+    )
+    atcoder_agents = (atcoder_path / "AGENTS.md").read_text()
+    assert (atcoder_path / "AGENTS.md").exists()
+    assert "atcoder" in atcoder_agents
+    assert "AGENTS.md" in (atcoder_path / "README.md").read_text()
+
+    leetcode_path = tmp_path / "leetcode"
+    copy_project(
+        leetcode_path,
+        project_type="online_judge",
+        oj_category="competitive_coding",
+        oj_kind="leetcode",
+        oj_allow_ai=True,
+    )
+    assert (leetcode_path / "AGENTS.md").exists()
+
+
+def test_template_agents_md_absent_for_ai_ng_judges(tmp_path: Path):
+    """AI-NG workspaces omit AGENTS.md and its README mention (byte-identical
+    renders apart from the pre-existing oj_kind branches)."""
+    cases = [
+        ("atcoder", {}),
+        ("atcoder", {"oj_allow_ai": False}),
+        ("leetcode", {}),
+        ("yukicoder", {}),
+        ("aoj", {}),
+    ]
+    for index, (oj_kind, extra) in enumerate(cases):
+        project_path = tmp_path / f"case_{index}"
+        copy_project(
+            project_path, project_type="online_judge", oj_category="competitive_coding", oj_kind=oj_kind, **extra
+        )
+        assert not (project_path / "AGENTS.md").exists()
+        readme = (project_path / "README.md").read_text()
+        assert "AGENTS.md" not in readme
+
+
+def test_template_agents_md_absent_for_ros2_and_micropython(tmp_path: Path):
+    """ros2 / micropython never ship the agent guide."""
+    ros2_path = tmp_path / "ros2"
+    copy_project(ros2_path, project_type="ros2", pkg_language="python", ros_distro="humble", ros2_package_manager="apt")
+    assert not (ros2_path / "AGENTS.md").exists()
+    micro_path = tmp_path / "micro"
+    copy_project(micro_path, project_type="micropython", micropython_port="esp32")
+    assert not (micro_path / "AGENTS.md").exists()
 
 
 def test_template_script_type(tmp_path: Path):
@@ -454,6 +563,12 @@ def test_template_mcp_docker_task(tmp_path: Path):
     # .env.example documents the allowlist variable.
     env_example = (tmp_path / ".env.example").read_text()
     assert "MCP_ALLOWED_HOSTS" in env_example
+    # .mcp.json points the host at the stdio command (zero-config registration).
+    mcp_json = json.loads((tmp_path / ".mcp.json").read_text())
+    server = mcp_json["mcpServers"]["python-copier-template-example"]
+    assert server["args"] == ["run", "mcp-server-python-copier-template-example"]
+    # README advertises the registration path.
+    assert ".mcp.json" in (tmp_path / "README.md").read_text()
 
 
 def test_template_mcp_no_docker_no_task(tmp_path: Path):
@@ -488,7 +603,9 @@ def test_template_mcp_not_offered_to_library(tmp_path: Path):
 def test_template_mcp_not_offered_to_online_judge(tmp_path: Path):
     """online_judge renders no package module: forcing include_mcp must not
     add an orphan mcp dependency or a server file."""
-    copy_project(tmp_path, project_type="online_judge", oj_kind="atcoder", include_mcp=True)
+    copy_project(
+        tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="atcoder", include_mcp=True
+    )
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
     assert not (tmp_path / "mcp_server.py").exists()
@@ -501,7 +618,7 @@ def test_template_mcp_not_offered_to_data_science(tmp_path: Path):
     cases = [
         ("data_science", {}),
         ("script", {}),
-        ("online_judge", {"oj_kind": "kaggle"}),
+        ("online_judge", {"oj_category": "data_science", "oj_kind": "kaggle"}),
     ]
     for index, (project_type, extra) in enumerate(cases):
         project_path = tmp_path / f"case_{index}"
@@ -561,6 +678,260 @@ def test_template_no_ci(tmp_path: Path):
     assert not (tmp_path / ".github" / "workflows").exists()
     # GitHub-specific files are still generated
     assert (tmp_path / ".github" / "actionlint.yaml").exists()
+
+
+def test_template_include_ctf(tmp_path: Path):
+    """include_ctf layers the participant workspace: solve.py starter, its
+    test, the ctf extra, and the gitignore guards."""
+    copy_project(tmp_path, project_type="cli", include_ctf=True)
+    assert (tmp_path / "challenges" / "pwn" / "example" / "solve.py").exists()
+    assert (tmp_path / "tests" / "test_ctf_example.py").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["optional-dependencies"]["ctf"] == [
+        "pwntools>=4.13,<5",
+        "z3-solver>=4.13,<5",
+    ]
+    gitignore = (tmp_path / ".gitignore").read_text()
+    assert "challenges/**/vuln" in gitignore
+
+
+def test_template_include_ctf_runs(tmp_path: Path):
+    """The generated solve.py starter must actually run: sync the project
+    and execute both the starter directly and its generated test."""
+    copy_project(tmp_path, project_type="cli", include_ctf=True)
+    run = make_venv(tmp_path)
+    run(
+        "uv run --locked python challenges/pwn/example/solve.py",
+        # noqa: S603 -- test helper, fixed argv
+    )
+    run("uv run --locked pytest tests/test_ctf_example.py -q")
+    run("uv run --locked ruff check challenges tests/test_ctf_example.py")
+
+
+def test_template_include_ctf_not_offered_elsewhere(tmp_path: Path):
+    """Forcing include_ctf outside library/cli must not leak the workspace
+    or the ctf extra (ctf_effective guard)."""
+    cases = [
+        ("web_api", {}),
+        ("data_science", {}),
+        ("script", {}),
+        ("online_judge", {"oj_category": "competitive_coding", "oj_kind": "atcoder"}),
+    ]
+    for index, (project_type, extra) in enumerate(cases):
+        project_path = tmp_path / f"case_{index}"
+        copy_project(project_path, project_type=project_type, include_ctf=True, **extra)
+        pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
+        assert "ctf" not in pyproject["project"].get("optional-dependencies", {})
+        assert not (project_path / "challenges").exists()
+        assert not (project_path / "tests" / "test_ctf_example.py").exists()
+
+
+def test_template_include_scraping_httpx(tmp_path: Path):
+    """include_scraping layers the polite fetcher: CHARTER.md, fetcher.py,
+    its offline test, the httpx dep, ruff banned-api and gitignore guards."""
+    copy_project(tmp_path, project_type="cli", include_scraping=True)
+    assert (tmp_path / "CHARTER.md").exists()
+    pkg_dir = tmp_path / "src" / "python_copier_template_example"
+    assert (pkg_dir / "fetcher.py").exists()
+    assert (tmp_path / "tests" / "test_scraping.py").exists()
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("httpx") for d in pyproject_toml["project"]["dependencies"])
+    pyproject_text = (tmp_path / "pyproject.toml").read_text()
+    assert "banned-api" in pyproject_text
+    assert "fetcher.py" in pyproject_text
+    gitignore = (tmp_path / ".gitignore").read_text()
+    assert ".cache/fetcher/" in gitignore
+    agents = (tmp_path / "AGENTS.md").read_text()
+    assert "CHARTER.md" in agents
+    assert "banned-api" in agents
+    readme = (tmp_path / "README.md").read_text()
+    assert "CHARTER.md" in readme
+
+
+def test_template_include_scraping_runs(tmp_path: Path):
+    """The generated fetcher must actually run: sync the project and execute
+    its offline test plus ruff on the fetcher."""
+    copy_project(tmp_path, project_type="cli", include_scraping=True)
+    run = make_venv(tmp_path)
+    run("uv run --locked pytest tests/test_scraping.py -q")
+    run("uv run --locked ruff check src tests/test_scraping.py")
+
+
+def test_template_include_scraping_not_offered_elsewhere(tmp_path: Path):
+    """Forcing include_scraping outside cli must not leak the fetcher
+    (scraping_effective guard)."""
+    cases = [
+        ("library", {}),
+        ("web_api", {}),
+        ("data_science", {}),
+        ("script", {}),
+        ("online_judge", {"oj_category": "competitive_coding", "oj_kind": "atcoder"}),
+    ]
+    for index, (project_type, extra) in enumerate(cases):
+        project_path = tmp_path / f"case_{index}"
+        copy_project(project_path, project_type=project_type, include_scraping=True, **extra)
+        pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
+        assert not any(d.startswith("httpx") for d in pyproject["project"]["dependencies"])
+        assert not (project_path / "CHARTER.md").exists()
+        assert not list(project_path.rglob("fetcher.py"))
+        assert not (project_path / "tests" / "test_scraping.py").exists()
+
+
+def test_template_scraping_engine_choices(tmp_path: Path):
+    """Each non-default engine ships its starter + test; `all` ships all."""
+    cases = {
+        "scrapy": (["spider.py"], ["test_scrapy_spider.py"], "scrapy"),
+        "memorious": (["crawler.py"], ["test_memorious_crawler.py"], "memorious4"),
+        "playwright": (["browser_fetch.py"], ["test_browser_fetch.py"], "playwright"),
+        "all": (
+            ["fetcher.py", "spider.py", "crawler.py", "browser_fetch.py"],
+            ["test_scraping.py", "test_scrapy_spider.py", "test_memorious_crawler.py", "test_browser_fetch.py"],
+            "memorious4",
+        ),
+    }
+    for engine, (modules, tests, dep) in cases.items():
+        project_path = tmp_path / f"engine_{engine}"
+        copy_project(
+            project_path,
+            project_type="cli",
+            include_scraping=True,
+            use_recommended_scraping=False,
+            scraping_engine=engine,
+        )
+        pkg_dir = project_path / "src" / "python_copier_template_example"
+        for module in modules:
+            assert (pkg_dir / module).exists(), f"{engine}: missing {module}"
+        for test in tests:
+            assert (project_path / "tests" / test).exists(), f"{engine}: missing {test}"
+        pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
+        assert any(d.startswith(dep) for d in pyproject["project"]["dependencies"]), f"{engine}: missing {dep}"
+
+
+def test_template_scraping_memorious_forces_agpl(tmp_path: Path):
+    """memorious4 is AGPL-3.0: the generated project license must be AGPL-3.0
+    even when MIT was asked."""
+    copy_project(
+        tmp_path,
+        project_type="cli",
+        include_scraping=True,
+        use_recommended_scraping=False,
+        scraping_engine="memorious",
+        license="MIT",
+    )
+    pyproject = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject["project"]["license"] == "AGPL-3.0"
+    assert "GNU AFFERO GENERAL PUBLIC LICENSE" in (tmp_path / "LICENSE").read_text()
+
+
+def test_template_license_check_task(tmp_path: Path):
+    """Recommended path ships pip-licenses + a standalone license-check task.
+
+    The task stays out of local `type-check`/`check` (both must run
+    offline): CI's lint job calls `lint,type-check,license-check` together
+    instead (see ci.yml / .gitlab-ci.yml). Opting out drops the dep and
+    the task.
+    """
+    copy_project(tmp_path, project_type="cli")
+    pyproject = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert any(d.startswith("pip-licenses") for d in pyproject["dependency-groups"]["dev"])
+    taskfile = (tmp_path / "Taskfile.yml").read_text()
+    assert "license-check" in taskfile
+    assert "pip-licenses" in taskfile
+    type_check_block = taskfile.split("type-check:")[1].split("\n  ")[0]
+    assert "pip-licenses" not in type_check_block
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "lint,type-check,license-check" in ci
+
+    off_path = tmp_path / "off"
+    copy_project(
+        off_path,
+        project_type="cli",
+        use_recommended_security=False,
+        security_policy=True,
+        scorecard=False,
+        license_check=False,
+    )
+    off_pyproject = tomllib.loads((off_path / "pyproject.toml").read_text())
+    assert not any(d.startswith("pip-licenses") for d in off_pyproject["dependency-groups"]["dev"])
+    assert "license-check" not in (off_path / "Taskfile.yml").read_text()
+
+
+def test_template_data_governance_asked_on_recommended_path(tmp_path: Path):
+    """DUO/CARE are asked even when the data_science gate stays recommended.
+
+    The recommended answer only settles GPU now; data_reusable/data_ethics
+    default to false but are always asked, so silence is an explicit No,
+    not an unseen question.
+    """
+    from copier import run_copy
+
+    from test_recommended_path import BASE
+
+    run_copy(
+        src_path=str(TOP),
+        dst_path=tmp_path,
+        data={**BASE, "project_type": "data_science"},
+        vcs_ref="HEAD",
+        defaults=True,
+        unsafe=True,
+        overwrite=True,
+        skip_tasks=True,
+    )
+    assert not (tmp_path / "data" / "DUO.md").exists()
+    assert not (tmp_path / "data" / "CARE.md").exists()
+    # The trio is unconditional on the data layout: guardrails ship even
+    # when both sheets are declined.
+    assert (tmp_path / "data" / "DEIDENTIFICATION.md").exists()
+    assert (tmp_path / "data" / "sharing" / "DATA_TRANSFER_AGREEMENT.md").exists()
+    assert (tmp_path / "data" / "sharing" / "TRANSFER_LOG.csv").exists()
+
+
+def test_template_ci_runs_license_check(tmp_path: Path):
+    """CI lint calls the standalone license-check; GitLab matches."""
+    copy_project(tmp_path, project_type="cli")
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "lint,type-check,license-check" in ci
+
+    gitlab_path = tmp_path / "gitlab"
+    copy_project(
+        gitlab_path,
+        project_type="cli",
+        git_platform="gitlab.com",
+        gitlab_group="mygroup",
+    )
+    gitlab = (gitlab_path / ".gitlab-ci.yml").read_text()
+    assert "license-check" in gitlab
+
+
+def test_template_gitleaks_blocks_deidentification_salt(tmp_path: Path):
+    """The generated gitleaks config carries the deidentification-salt rule."""
+    copy_project(tmp_path, project_type="cli")
+    gitleaks = (tmp_path / ".gitleaks.toml").read_text()
+    assert "deidentification-salt" in gitleaks
+    assert "secret_salt" in gitleaks
+
+
+def test_template_author_orcid_validator(tmp_path: Path):
+    """A malformed ORCID iD is rejected at question time (validator)."""
+    from test_recommended_path import BASE
+
+    with pytest.raises(ValueError, match="not a valid ORCID"):
+        run_copy(
+            src_path=str(TOP),
+            dst_path=tmp_path,
+            data={
+                **BASE,
+                "project_type": "library",
+                "use_recommended_license": False,
+                "fair": True,
+                "author_orcid": "not-an-orcid",
+            },
+            vcs_ref="HEAD",
+            defaults=True,
+            unsafe=True,
+            overwrite=True,
+            skip_tasks=True,
+        )
 
 
 def test_template_log_library_default_is_structlog(tmp_path: Path):
@@ -733,7 +1104,14 @@ def test_template_data_governance_off_by_default(tmp_path: Path):
 def test_template_data_governance_skipped_for_online_judge(tmp_path: Path):
     # online_judge projects have no data/ tree, so the DUO/CARE sheets never
     # apply -- they are a data_science-only concern.
-    copy_project(tmp_path, project_type="online_judge", oj_kind="kaggle", data_reusable=True, data_ethics=True)
+    copy_project(
+        tmp_path,
+        project_type="online_judge",
+        oj_category="data_science",
+        oj_kind="kaggle",
+        data_reusable=True,
+        data_ethics=True,
+    )
     assert not (tmp_path / "data" / "DUO.md").exists()
     assert not (tmp_path / "data" / "CARE.md").exists()
 
@@ -943,8 +1321,9 @@ def test_django_not_supported_aborts(tmp_path: Path):
         copy_project(tmp_path, project_type="web_django")
 
 
-def test_web_api_ships_env_and_compose(tmp_path: Path):
-    copy_project(tmp_path, project_type="web_api", docker=True)
+@pytest.mark.parametrize("package_manager", ["uv", "pixi"])
+def test_web_api_ships_env_and_compose(tmp_path: Path, package_manager: str):
+    copy_project(tmp_path, project_type="web_api", docker=True, package_manager=package_manager)
     # cookiecutter-django style additions
     assert (tmp_path / ".editorconfig").exists()
     assert (tmp_path / ".env.example").exists()
@@ -954,6 +1333,20 @@ def test_web_api_ships_env_and_compose(tmp_path: Path):
     compose = (tmp_path / "compose.local.yml").read_text()
     assert "postgres" in compose
     assert "8000:8000" in compose
+    # least privilege: read-only rootfs (writable /tmp + $HOME cache tmpfs)
+    # with real local-dev caps (plain `compose up` ignores `deploy`)
+    assert "read_only: true" in compose
+    assert "- /tmp" in compose
+    assert ".cache" in compose
+    assert "mem_limit: 512M" in compose
+    assert "deploy:" not in compose
+    # the runtime image runs as a non-root user owning its workdir
+    dockerfile = (tmp_path / "Dockerfile").read_text()
+    assert "USER appuser" in dockerfile
+    assert "chown appuser" in dockerfile
+    assert "PYTHONDONTWRITEBYTECODE" in dockerfile
+    # USER comes after the runtime COPY/WORKDIR it locks down
+    assert dockerfile.index("COPY --from=build") < dockerfile.index("USER appuser")
     # .env is git-ignored
     gitignore = (tmp_path / ".gitignore").read_text()
     assert ".env" in gitignore
@@ -1338,11 +1731,33 @@ def test_example_repo_updates(tmp_path: Path):
 
 
 def test_gitignore_same():
-    with (
-        Path(TOP / ".gitignore").open() as top_gi,
-        Path(TOP / "template" / ".gitignore").open() as template_gi,
-    ):
-        assert top_gi.read() == template_gi.read()
+    # template/.gitignore.jinja is conditional (data_science / kaggle /
+    # ros2 blocks render per project type); the root .gitignore is the
+    # union of every conditional branch, so the template repo itself
+    # ignores everything any generated project could produce.
+    # Compare normalized line sets (jinja tags stripped) in both
+    # directions: exact parity catches stale root-only lines (e.g. a
+    # removed input//exp/) and missing template lines, which a one-way
+    # substring check would hide. template/.gitignore.jinja shares its
+    # CTF / scraping bodies via {% include %} (_shared/gitignore-*.jinja),
+    # so those are inlined before normalizing.
+    def normalized(path: Path) -> set[str]:
+        lines = set()
+        text = path.read_text()
+        for included in re.findall(r'{%\s*include\s*"([^"]+)"\s*%}', text):
+            text += "\n" + (TOP / included).read_text()
+        for line in text.splitlines():
+            stripped = re.sub(r"{%.*?%}|{#.*?#}", "", line).strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            lines.add(stripped)
+        return lines
+
+    template = normalized(TOP / "template" / ".gitignore.jinja")
+    root = normalized(TOP / ".gitignore")
+    assert template - root == set(), f"missing from root .gitignore: {sorted(template - root)}"
+    assert root - template == set(), f"stale in root .gitignore: {sorted(root - template)}"
+    assert ".gitignore.jinja" not in (TOP / ".gitignore").read_text()
 
 
 def test_private_member_access(tmp_path: Path):
@@ -1431,6 +1846,16 @@ def is_big(arr: np.ndarray) -> bool:
     run("uvx --from go-task-bin task type-check")
 
 
+def test_audit_isolated_from_type_check(tmp_path: Path):
+    # pip-audit is network-dependent (OSV/PyPI): on-demand `audit` task,
+    # never inside type-check/check so offline CI stays green.
+    copy_project(tmp_path)
+    taskfile = (tmp_path / "Taskfile.yml").read_text()
+    assert "pip-audit" in taskfile
+    type_check_block = taskfile.split("type-check", 1)[1].split("audit", 1)[0]
+    assert "pip-audit" not in type_check_block
+
+
 def test_full_strictness_mode(tmp_path: Path):
     copy_project(tmp_path, strictness="full")
     pyproject_toml = tmp_path / "pyproject.toml"
@@ -1485,11 +1910,14 @@ def test_renovate_actions_match_what_is_shipped(override: dict, tmp_path: Path):
     }
     answers.update(override)
     copy_project(tmp_path, **answers)
-    # Find the GitHub actions ignored by renovate
+    # Find the GitHub actions ignored by renovate (all github-actions
+    # packageRules now that they are split per category, not one block)
     renovate_config_path = tmp_path / "renovate.json"
     renovate_config = json.loads(renovate_config_path.read_text())
-    config_github_actions = set(renovate_config["packageRules"][1]["matchPackageNames"])
-    # Find the GitHub actions actually used in the workflows
+    config_github_actions = set()
+    for rule in renovate_config["packageRules"]:
+        if rule.get("matchManagers") == ["github-actions"]:
+            config_github_actions.update(rule.get("matchPackageNames", []))
     used_github_actions = set[str]()
     for workflow_file in (tmp_path / ".github" / "workflows").glob("*.yml"):
         workflow = yaml.safe_load(workflow_file.read_text())

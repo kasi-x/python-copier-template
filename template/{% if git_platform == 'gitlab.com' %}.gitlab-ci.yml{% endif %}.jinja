@@ -37,14 +37,15 @@ image: python:3.12
     - uv sync --locked
 {%- endif %}
 {% set type_check = " type-check" if strictness in ['recommended', 'full'] else "" %}
+{% set license_check_task = " license-check" if strictness in ['recommended', 'full'] and license_check_effective else "" %}
 lint:
   stage: lint
   extends: .before_{{ task_runner_effective }}
   script:
 {%- if task_runner_effective == 'poe' %}
-    - poe lint && poe{{ type_check }}
+    - poe lint{% if strictness in ['recommended', 'full'] %} && poe type-check{% endif %}{{ " && poe license-check" if strictness in ['recommended', 'full'] and license_check_effective else "" }}
 {%- else %}
-    - {{ task_runner_effective }} lint{{ type_check }}
+    - {{ task_runner_effective }} lint{{ type_check }}{{ license_check_task }}
 {%- endif %}
 
 test:

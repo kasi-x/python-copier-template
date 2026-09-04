@@ -31,16 +31,27 @@ docs/_api
 
 # Local environment & secrets
 .env
-.envs
+.envs/
 *.pem
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Data science artifacts (large / regenerable)
+{% if data_science %}# Data science artifacts (large / regenerable)
 data/raw
 data/interim
 data/processed
+data/external
 models
+outputs
+reports/figures
 notebooks/.ipynb_checkpoints
+{% endif %}{% if kaggle %}# Kaggle competition data
+src/input
+src/output
+src/logs
+src/models
+src/data
+src/features
+src/notebook
+{% endif %}
+# OS files
+.DS_Store
+Thumbs.db

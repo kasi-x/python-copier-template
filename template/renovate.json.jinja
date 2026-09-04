@@ -23,7 +23,7 @@
       "enabled": false
     },
     {
-      "description": "Disable github actions that are managed by python-copier-template",
+      "description": "Core CI actions managed by python-copier-template (checkout, toolchain setup, lint/test helpers)",
       "matchPackageNames": [
         "actions/checkout",
         "astral-sh/setup-uv",
@@ -31,27 +31,81 @@
         "snok/install-poetry",
         "actions/upload-artifact",
         "actions/download-artifact",
-        "softprops/action-gh-release",
-        "orhun/git-cliff-action",
-        "codecov/codecov-action",
         "arduino/setup-task",
         "extractions/setup-just",
-        "zizmorcore/zizmor-action"{% if docker %},
-        "docker/setup-buildx-action",
-        "docker/login-action",
-        "docker/build-push-action",
-        "docker/metadata-action"{% endif %}{% if pypi %},
-        "pypa/gh-action-pypi-publish"{% endif %}{% if docs %},
-        "peaceiris/actions-gh-pages"{% endif %}{% if scorecard_effective %},
-        "ossf/scorecard-action",
-        "github/codeql-action"{% endif %}{% if fair %},
-        "fair-software/howfairis-github-action"{% endif %}
+        "zizmorcore/zizmor-action"
       ],
       "matchManagers": [
         "github-actions"
       ],
       "enabled": false
     },
+    {
+      "description": "Release actions managed by python-copier-template (release notes, coverage, changelog)",
+      "matchPackageNames": [
+        "softprops/action-gh-release",
+        "orhun/git-cliff-action",
+        "codecov/codecov-action"
+      ],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "enabled": false
+    }{% if docker %},
+    {
+      "description": "Container actions managed by python-copier-template",
+      "matchPackageNames": [
+        "docker/setup-buildx-action",
+        "docker/login-action",
+        "docker/build-push-action",
+        "docker/metadata-action"
+      ],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "enabled": false
+    }{% endif %}{% if pypi %},
+    {
+      "description": "PyPI publish action managed by python-copier-template",
+      "matchPackageNames": [
+        "pypa/gh-action-pypi-publish"
+      ],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "enabled": false
+    }{% endif %}{% if docs %},
+    {
+      "description": "Docs deploy action managed by python-copier-template",
+      "matchPackageNames": [
+        "peaceiris/actions-gh-pages"
+      ],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "enabled": false
+    }{% endif %}{% if scorecard_effective %},
+    {
+      "description": "OpenSSF Scorecard actions managed by python-copier-template",
+      "matchPackageNames": [
+        "ossf/scorecard-action",
+        "github/codeql-action"
+      ],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "enabled": false
+    }{% endif %}{% if fair %},
+    {
+      "description": "FAIR compliance action managed by python-copier-template",
+      "matchPackageNames": [
+        "fair-software/howfairis-github-action"
+      ],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "enabled": false
+    }{% endif %},
     {
       "description": "Disable Dockerfile base images that are managed by python-copier-template",
       "matchManagers": [

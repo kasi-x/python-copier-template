@@ -31,12 +31,21 @@ FROM ubuntu:resolute AS runtime
 #     some-library \
 #     && apt-get dist-clean
 
+# Run as a non-root user (least privilege; the venv is world-readable).
+# /app itself is chowned so the app user owns its workdir; bytecode writes
+# stay off via PYTHONDONTWRITEBYTECODE (compose also sets it).
+RUN useradd --create-home --shell /usr/sbin/nologin appuser
+
 # Copy the python installation from the build stage
 COPY --from=build /python /python
 
 # Copy the environment, but not the source code
 COPY --from=build /app/.venv /app/.venv
 ENV PATH=/app/.venv/bin:$PATH
+ENV PYTHONDONTWRITEBYTECODE=1
+WORKDIR /app
+RUN chown appuser:appuser /app
+USER appuser
 {% else %}
 # The build stage installs the context into the pixi environment
 FROM developer AS build
@@ -59,9 +68,18 @@ FROM ubuntu:resolute AS runtime
 #     some-library \
 #     && apt-get dist-clean
 
+# Run as a non-root user (least privilege; the env is world-readable).
+# /app itself is chowned so the app user owns its workdir; bytecode writes
+# stay off via PYTHONDONTWRITEBYTECODE (compose also sets it).
+RUN useradd --create-home --shell /usr/sbin/nologin appuser
+
 # Copy the environment, but not the source code
 COPY --from=build /app/.pixi /app/.pixi
 ENV PATH=/app/.pixi/envs/default/bin:$PATH
+ENV PYTHONDONTWRITEBYTECODE=1
+WORKDIR /app
+RUN chown appuser:appuser /app
+USER appuser
 {% endif %}
 
 {% if web_api %}

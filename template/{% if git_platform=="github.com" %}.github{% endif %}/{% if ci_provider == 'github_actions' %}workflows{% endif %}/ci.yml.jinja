@@ -59,7 +59,7 @@ jobs:
     uses: ./.github/workflows/_tasks.yml
     with:
       task_runner: {{ task_runner_effective }}
-      task: lint{{ ",type-check" if strictness in ['recommended', 'full'] else "" }}
+      task: lint{{ ",type-check" if strictness in ['recommended', 'full'] else "" }}{{ ",license-check" if strictness in ['recommended', 'full'] and license_check_effective else "" }}
 {% raw %}
   test:
     strategy:

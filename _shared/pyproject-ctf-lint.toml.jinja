@@ -1,0 +1,7 @@
+{% if ctf_effective %}"challenges/**/*" = [
+    "S",      # subprocess/socket  CONTEXT: exploit starter はローカル binary 実行・socket 通信が本質
+    "S324",   # hashed-password  CONTEXT: ハードコード値は exploit ペイロード定数
+    "PLR0911",# too-many-return-statements  CONTEXT: solver 分岐は自然
+    "T201",   # print  CONTEXT: flag 出力は print が自然
+]
+{% endif %}

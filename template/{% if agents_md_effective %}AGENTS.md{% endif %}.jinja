@@ -1,0 +1,95 @@
+# Agent Guide for `{{ repo_name }}`
+
+This file is for AI coding agents working in this repository. It states how
+to run the checks and where edits belong. The human-facing contribution
+guide is [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
+{% if kaggle %}
+> Kaggle competition project: shared helpers live in `src/utils/`
+> (`from utils.config import ...`); competition data goes in `src/input/`
+> and predictions are written to `src/output/`. Do not commit data,
+> predictions, or logs — they are git-ignored.
+{% elif oj_code %}
+> Code-submission workspace ({{ oj_kind }}): write solutions as single files
+> (e.g. `main.py`). Per-problem folders and `test/` sample cases are created
+> by the judge CLI at runtime — do not commit downloaded cases.
+{% elif oj_ctf %}
+> CTF participant workspace: per-problem starters live in
+> `challenges/<category>/<problem>/solve.py`. Run one directly
+> (`python challenges/pwn/example/solve.py`), then adapt the offset /
+> target. Never commit binaries (`vuln`) or flags — they are git-ignored.
+{% elif web_api %}
+> Web API service: the application lives in the top-level `app/` package
+> (no `<pkg>` library). Run it with `uvicorn app.main:app --reload`.
+{% endif %}
+## Commands
+
+The `{{ task_runner_effective }}` task runner drives the common commands:
+
+```sh
+{% if task_runner_effective == 'task' %}task lint           # pre-commit on all files
+task test           # pytest{% if strictness in ['recommended', 'full'] %}
+task type-check     # type checker + static analysis{% endif %}
+task check          # everything above
+{% elif task_runner_effective == 'just' %}just lint
+just test
+just check
+{% elif task_runner_effective == 'make' %}make lint
+make test
+make check
+{% elif task_runner_effective == 'poe' %}poe lint
+poe test
+poe check
+{% elif task_runner_effective == 'invoke' %}invoke lint
+invoke test
+invoke check
+{% elif task_runner_effective == 'duty' %}duty lint
+duty test
+duty check
+{% else %}pixi run -e dev lint
+pixi run -e dev test
+pixi run -e dev check
+{% endif %}```
+
+Run `{{ task_runner_effective }} check` (or `lint` + `test`
+{% if strictness in ['recommended', 'full'] %}+ `type-check` {% endif %}individually) before finishing a change.
+{% if strictness in ['recommended', 'full'] %}
+Type checking uses basedpyright plus `{{ type_checker }}`; `deptry`,
+`vulture`, and `typos` also run as part of type-check.
+{% else %}
+Type checking is minimal at `strictness: {{ strictness }}` — pytest and
+ruff are the checks that matter.
+{% endif %}
+{% if docs %}
+Build the docs with `{{ task_runner_effective }} docs`.
+{% endif %}
+## Where to edit
+
+- Application/package code: `{{ pkg_dir }}/`
+- Tests: `tests/`
+- Docs: `README.md`{% if docs %} and `docs/`{% endif %}
+
+Keep 100% coverage where it exists; do not lower it.
+{% if scraping_effective %}
+## Web-fetching rules (Good-future charter)
+
+- Every web fetch goes through `{{ pkg_dir }}/fetcher.py`
+{% if scraping_scrapy_effective %}  (or the `{{ pkg_dir }}/spider.py` spider)
+{% endif %}{% if scraping_memorious_effective %}  (or the `{{ pkg_dir }}/crawler.py` crawler)
+{% endif %}{% if scraping_playwright_effective %}  (or `{{ pkg_dir }}/browser_fetch.py` for JS-rendered pages)
+{% endif %}  — never call `requests.get` / `httpx.get` / `urlopen` directly
+  (ruff `banned-api` fails the build).
+- Read [CHARTER.md](CHARTER.md) before touching fetch code: robots.txt,
+  1 req/s per host, disk cache, contactable User-Agent.
+- Never generate CAPTCHA-solving helpers. If a site blocks bots, stop and
+  ask the maintainer — do not bypass the protection.
+{% endif %}
+{% if data_science_layout %}
+Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
+`reports/`) are analysis artifacts — keep generated outputs out of git.
+{% endif %}
+## Commits and CI
+
+- Use [Conventional Commits](https://www.conventionalcommits.org/)
+  (`feat:`, `fix:`, ...); the commit-msg hook enforces it.
+- CI runs lint, type-check, and tests on every push
+{% if docs %} plus a docs build{% endif %}; keep all of them green.

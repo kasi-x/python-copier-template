@@ -1,0 +1,18 @@
+"""Playwright-starter tests: config defaults without launching a browser.
+
+Browser launches are expensive and need `playwright install` (absent in
+CI), so these tests only assert the module imports and the config
+defaults — headless on, polite fetcher config attached.
+"""
+
+from __future__ import annotations
+
+from {{ package_name }}.browser_fetch import BrowserFetchConfig
+
+
+def test_browser_fetch_defaults_are_polite() -> None:
+    """Headless rendering with the polite fetcher config attached."""
+    config = BrowserFetchConfig()
+    assert config.headless is True
+    assert config.fetch.delay_seconds >= 1.0
+    assert "contact@example.com" in config.fetch.resolved_user_agent()

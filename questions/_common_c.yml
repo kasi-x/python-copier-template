@@ -9,10 +9,24 @@ use_recommended_security:
         Use the recommended security & compliance settings?
         Recommended: minimal CI permissions, GitHub Actions pinned to commit
         SHAs (renovate keeps them up to date), zizmor + actionlint checks,
-        a SECURITY.md vulnerability-reporting policy, and a test_qa.py that
-        verifies dependency integrity and the public API at runtime.
-        Answer No to drop SECURITY.md or add an OpenSSF Scorecard workflow
-        (GitHub projects; public repos only for the badge).
+        a SECURITY.md vulnerability-reporting policy, a test_qa.py that
+        verifies dependency integrity and the public API at runtime, and a
+        license-check task (pip-licenses --fail-on with the project's
+        copyleft policy) that runs inside type-check.
+        Answer No to drop SECURITY.md, drop the license check, or add an
+        OpenSSF Scorecard workflow (GitHub projects; public repos only for
+        the badge).
+license_check:
+    type: bool
+    when: "{{ not use_recommended_security }}"
+    help: |
+        Keep the license-compliance check (pip-licenses --fail-on)?
+        If yes, a license-check task audits installed dependency licenses
+        in CI and fails on copyleft the project license cannot absorb
+        (GPL/AGPL family for permissive projects; memorious/AGPL scraping
+        additionally forces an AGPL-3.0 project license — see the license
+        validator). Needs network (PyPI metadata), like the audit task.
+    default: true
 
 security_policy:
     type: bool

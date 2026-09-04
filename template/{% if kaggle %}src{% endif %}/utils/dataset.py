@@ -29,7 +29,8 @@ def main(
     src = INPUT_DIR / input_path
     dst = DATA_DIR / output_path
     if not src.exists():
-        raise typer.BadParameter(f"input not found: {src}")
+        msg = f"input not found: {src}"
+        raise typer.BadParameter(msg)
     logger.info("building_dataset", src=str(src), dst=str(dst))
     # TODO: replace with real preprocessing
     dst.write_bytes(src.read_bytes())

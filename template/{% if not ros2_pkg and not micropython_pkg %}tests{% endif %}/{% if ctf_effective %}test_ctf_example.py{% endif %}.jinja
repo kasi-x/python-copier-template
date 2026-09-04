@@ -1,0 +1,17 @@
+"""CTF workspace test: the solve.py starter must actually run.
+
+Runs the example starter as a subprocess (no binary needed — it exercises
+the stdlib packing path) and asserts exit 0 with non-empty output.
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+
+def test_example_solve_runs() -> None:
+    solve = Path(__file__).resolve().parent.parent / "challenges" / "pwn" / "example" / "solve.py"
+    assert solve.exists(), "challenges/pwn/example/solve.py must be generated"
+    proc = subprocess.run([sys.executable, str(solve)], capture_output=True, timeout=30, check=False)
+    assert proc.returncode == 0, proc.stderr.decode()
+    assert len(proc.stdout) > 0

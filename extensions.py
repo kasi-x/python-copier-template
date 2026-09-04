@@ -8,6 +8,7 @@ code ends up in a generated project.
 
 from __future__ import annotations
 
+import re
 import subprocess
 from datetime import UTC
 from datetime import datetime
@@ -41,7 +42,31 @@ def git_user_email() -> str:
 
 def github_username() -> str:
     """Best-effort GitHub username: the logged-in `gh` user, else `git config github.user`."""
-    return _run(["gh", "api", "user", "-q", ".login"], timeout=3.0) or _run(["git", "config", "--get", "github.user"])
+
+
+def cuda_hint() -> str:
+    """One-line GPU recommendation from `nvidia-smi`, or "" without a GPU.
+
+    Shown in the use_gpu help text so the user can sanity-check the CUDA
+    choice at generation time. Never blocks or decides anything: the
+    generated project always pins the template's CUDA (currently 12.6),
+    and a missing/old driver just yields "" or a driver-update nudge.
+    """
+    out = _run(["nvidia-smi"])
+    if not out:
+        return ""
+    cuda_m = re.search(r"CUDA Version: (\d+)\.(\d+)", out)
+    gpu_m = re.search(r"^\| *\d+ +(.+?) +Off \|", out, re.MULTILINE)
+    gpu = gpu_m.group(1).strip() if gpu_m else "NVIDIA GPU"
+    if not cuda_m:
+        return f"Detected {gpu}, but the driver CUDA version is unreadable."
+    major, minor = int(cuda_m.group(1)), int(cuda_m.group(2))
+    if (major, minor) >= (12, 6):
+        return f"Detected {gpu} (driver CUDA {major}.{minor}): the pinned CUDA 12.6 image works here."
+    return (
+        f"Detected {gpu} (driver CUDA {major}.{minor}): older than the pinned "
+        "CUDA 12.6 — update the NVIDIA driver, or the GPU container will not start."
+    )
 
 
 class GitExtension(Extension):
@@ -59,6 +84,7 @@ class GitExtension(Extension):
         globals_["git_user_name"] = git_user_name
         globals_["git_user_email"] = git_user_email
         globals_["github_username"] = github_username
+        globals_["cuda_hint"] = cuda_hint
 
 
 class CurrentYearExtension(Extension):

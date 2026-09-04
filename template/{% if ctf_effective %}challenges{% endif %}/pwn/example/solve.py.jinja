@@ -1,0 +1,71 @@
+"""Exploit starter for pwn/example (CTF participant workspace).
+
+Usage:
+    python solve.py            # run against the local binary (./vuln)
+    python solve.py REMOTE     # run against the remote service
+
+The scaffold runs on the standard library alone so `pytest` stays green
+without extra setup. When pwntools is available (ctf extra), the commented
+`tube` helpers below show the idiomatic switch — uncomment and adapt the
+offset / target once you have the binary.
+"""
+
+from __future__ import annotations
+
+import socket
+import struct
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+BINARY = HERE / "vuln"  # place the challenge binary here (not committed)
+HOST = "example.com"
+PORT = 1337
+
+def solve_local() -> bytes:
+    """Solve against the local binary. Replace with the real exploit."""
+    if BINARY.exists():
+        return subprocess.run(
+            [str(BINARY)], capture_output=True, timeout=10, check=False
+        ).stdout
+    # No binary yet: demonstrate the packing helpers (keeps CI green).
+    # Print as hex so the output stays text-safe for pipes and tests.
+    payload = b"A" * 64 + struct.pack("<Q", 0xDEADBEEF)
+    assert struct.unpack("<Q", payload[64:])[0] == 0xDEADBEEF
+    sys.stdout.write(payload.hex() + "\n")
+    return b""
+
+
+def solve_remote() -> bytes:
+    """Solve against the remote service. Replace host/port per challenge."""
+    with socket.create_connection((HOST, PORT), timeout=10) as sock:
+        sock.sendall(b"\n")
+        return sock.recv(4096)
+
+
+def main(argv: list[str]) -> int:
+    data = solve_remote() if len(argv) > 1 and argv[1] == "REMOTE" else solve_local()
+    sys.stdout.buffer.write(data)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))
+
+
+PWNTOOLS_RECIPE = """
+pwntools version (requires the ctf extra: `uv sync --extra ctf`).
+
+    from pwn import ELF, context, process, remote
+
+    context.binary = ELF(str(BINARY))
+
+    def tube(remote_mode: bool = False):
+        return remote(HOST, PORT) if remote_mode else process(str(BINARY))
+
+    def exploit(remote_mode: bool = False) -> bytes:
+        io = tube(remote_mode)
+        io.sendlineafter(b"> ", b"A" * 64 + p64(0xDEADBEEF))
+        return io.recvall(timeout=5)
+"""

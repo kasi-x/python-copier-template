@@ -1,0 +1,7 @@
+{% if ctf_effective %}ctf = [
+    # CTF 参加者用の依存 (pwntools / z3-solver)。
+    # uv: `uv sync --extra ctf` で追加インストール。
+    "pwntools>=4.13,<5",
+    "z3-solver>=4.13,<5",
+]
+{% endif %}

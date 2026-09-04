@@ -658,3 +658,75 @@ def test_every_question_when_is_z3_satisfiable():
         )
         checked += 1
     assert checked > 0, "no templated when conditions found to check"
+
+
+def _sweep_str_domains(questions: dict[str, dict]) -> dict[str, list[str]]:
+    """Str domains for sweep tests (same classification as the main check)."""
+    pt_domain = _static_str_choices(questions["project_type"])
+    referenced: set[str] = set()
+    for q in questions.values():
+        w = q.get("when")
+        if isinstance(w, str):
+            referenced |= _jinja_identifiers(w)
+    domains: dict[str, list[str]] = {"project_type": pt_domain}
+    for name in sorted(referenced - {"project_type", "true", "false", "not", "and", "or", "in"}):
+        q = questions.get(name)
+        if q is None or q.get("type") == "bool":
+            continue
+        values = _static_str_choices(q)
+        if values:
+            domains[name] = values
+    return domains
+
+
+def test_z3_sweep_detects_typo_project_type():
+    """Error sweep: a typo'd project_type literal is unsatisfiable.
+
+    Guards the guard — proves _when_expr_satisfiable rejects the
+    'librry' class of typos instead of vacuously passing.
+    """
+    z3 = pytest.importorskip("z3")
+    questions, _ = _load_questions()
+    assert not _when_expr_satisfiable("{{ project_type == 'librry' }}", _sweep_str_domains(questions), z3)
+
+
+def test_z3_sweep_detects_self_contradictory_gate():
+    """Error sweep: `X and not X` is unsatisfiable."""
+    z3 = pytest.importorskip("z3")
+    questions, _ = _load_questions()
+    assert not _when_expr_satisfiable(
+        "{{ use_recommended_docs and not use_recommended_docs }}",
+        _sweep_str_domains(questions),
+        z3,
+    )
+
+
+def test_z3_sweep_detects_impossible_genre_combo():
+    """Error sweep: two distinct project_type literals conjoined."""
+    z3 = pytest.importorskip("z3")
+    questions, _ = _load_questions()
+    assert not _when_expr_satisfiable(
+        "{{ project_type == 'cli' and project_type == 'ros2' }}",
+        _sweep_str_domains(questions),
+        z3,
+    )
+
+
+@pytest.mark.xfail(
+    reason="free-bool modelling: unknown names are satisfiable by design; "
+    "test_when_and_default_reference_defined_variables owns this"
+)
+def test_z3_sweep_wrong_variable_name_is_out_of_scope():
+    """Error sweep (known gap): a misspelled variable is satisfiable to Z3.
+
+    Unknown identifiers model as free bools, so Z3 cannot see the
+    always-falsy Undefined. Detection belongs to the loader-level
+    reference test, not Z3 — this pins the division of labour.
+    """
+    z3 = pytest.importorskip("z3")
+    questions, _ = _load_questions()
+    assert not _when_expr_satisfiable(
+        "{{ project_type == 'cli' and use_recommended_doccs }}",
+        _sweep_str_domains(questions),
+        z3,
+    )

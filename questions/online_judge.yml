@@ -4,6 +4,22 @@
 # online_judge and kaggle in their `when`, so they must be resolvable before
 # that gate is reached.
 
+oj_category:
+    type: str
+    when: "{{ project_type == 'online_judge' }}"
+    help: |
+        Which competition category is this project for?
+        - data_science: Kaggle-style data competitions (GPU competition layout).
+        - competitive_coding: code-submission judges (AtCoder / LeetCode /
+          yukicoder / AOJ). A bare workspace driven with oj / acc / aoj-cli.
+        - ctf: CTF competitions (participant workspace with challenges/ and
+          a solve.py starter, plus pwntools / z3-solver).
+    choices:
+        Data science: data_science
+        Competitive coding: competitive_coding
+        CTF: ctf
+    default: data_science
+
 oj_kind:
     type: str
     when: "{{ project_type == 'online_judge' }}"
@@ -20,16 +36,23 @@ oj_kind:
         - aoj: Aizu Online Judge (Japanese beginner courses). A bare
           workspace driven with aoj-cli (oj can download samples but not
           submit).
-        (Whether AI coding agents are allowed — and therefore whether an
-        AGENTS.md file is generated — differs per judge; that is decided
-        when the AGENTS.md feature lands.)
-    choices:
-        Kaggle: kaggle
-        AtCoder: atcoder
-        LeetCode: leetcode
-        yukicoder: yukicoder
-        AOJ: aoj
-    default: kaggle
+        - ctf: CTF competitions. A participant workspace (challenges/ with a
+          solve.py starter, pwntools / z3-solver via the ctf extra).
+        (Kaggle projects always allow AI coding agents; AtCoder / LeetCode
+        ask `oj_allow_ai` next, which decides whether AGENTS.md is generated;
+        yukicoder / AOJ omit it.)
+    choices: |
+        {%- if oj_category == 'competitive_coding' %}
+        - atcoder
+        - leetcode
+        - yukicoder
+        - aoj
+        {%- elif oj_category == 'ctf' %}
+        - ctf
+        {%- else %}
+        - kaggle
+        {%- endif %}
+    default: "{{ 'ctf' if oj_category == 'ctf' else ('atcoder' if oj_category == 'competitive_coding' else 'kaggle') }}"
 
 online_judge:
     type: bool
@@ -44,8 +67,27 @@ kaggle:
 # Code-submission judges (AtCoder / LeetCode / yukicoder / AOJ): single-file
 # solutions submitted to the judge's sandbox. No installable package, no
 # src/ layout, no logging_setup — the repo is a bare workspace the user
-# drives with oj / acc / aoj-cli.
+# drives with oj / acc / aoj-cli. CTF is excluded: it ships challenges/ +
+# tests + the ctf extra (a layout-carrying judge like kaggle).
 oj_code:
     type: bool
-    default: "{{ online_judge and oj_kind != 'kaggle' }}"
+    default: "{{ online_judge and oj_kind in ['atcoder', 'leetcode', 'yukicoder', 'aoj'] }}"
     when: false
+
+# CTF competitions: participant workspace (challenges/ + solve.py starter),
+# optionally under online_judge (oj_category == 'ctf') or as a layer on
+# library / cli (include_ctf). Both paths share the same generated shape.
+oj_ctf:
+    type: bool
+    default: "{{ online_judge and oj_kind == 'ctf' }}"
+    when: false
+oj_allow_ai:
+    type: bool
+    when: "{{ online_judge and (oj_kind == 'atcoder' or oj_kind == 'leetcode') }}"
+    default: false
+    help: |
+        Is AI assistance (coding agents, code completion) allowed for this judge?
+        Answer Yes only if the judge's rules allow it: an AGENTS.md agent guide
+        is generated. Answer No (or leave it) and AGENTS.md is omitted to keep
+        the workspace rules-compliant.
+        (Kaggle always ships AGENTS.md; yukicoder / AOJ never ask this and omit it.)

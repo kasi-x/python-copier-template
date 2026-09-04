@@ -17,3 +17,9 @@ regexes = [
 ]
 # Limit to YAML only for now. Comment this out if you want it to apply everywhere.
 paths = ['''(?i).*\.ya?ml$''']
+
+[[rules]]
+id = "deidentification-salt"
+description = "De-identification salt must never enter the repository (see data/DEIDENTIFICATION.md: the salt never enters this repository)."
+regex = '''(?i)\b(secret_salt|deidentification_salt|pseudonym_salt)\s*=\s*['"][^'"]+['"]'''
+tags = ["privacy", "de-identification"]

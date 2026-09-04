@@ -46,6 +46,19 @@ FAST_PATHS: list[dict[str, object]] = [
     {"project_type": "script"},
     {"project_type": "data_science", "include_web_api": True},
     {"project_type": "cli", "include_data_science": True},
+    {"project_type": "cli", "include_ctf": True},
+    {"project_type": "cli", "use_recommended_integrations": False, "include_mcp": True},
+    {
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+    },
+    {
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder",
+    },
+    {"project_type": "online_judge", "oj_category": "ctf", "oj_kind": "ctf"},
 ]
 
 # Artifacts unique to each case, to prove the fast path took the right
@@ -69,6 +82,31 @@ MARKERS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
         ("src/smoke_example/__init__.py", "notebooks/.gitkeep"),
         ("compose.local.yml", "app/main.py"),
     ),
+    # layer: the CTF participant workspace on top of a cli base.
+    "cli+ctf": (
+        ("src/smoke_example/__init__.py", "challenges/pwn/example/solve.py"),
+        ("compose.local.yml", "app/main.py"),
+    ),
+    # layer: the MCP server on top of a cli base (integrations gate open).
+    "cli+mcp": (
+        ("src/smoke_example/mcp_server.py", "tests/test_mcp_server.py"),
+        ("compose.local.yml", "app/main.py"),
+    ),
+    # oj: kaggle ships the competition layout.
+    "oj_kaggle": (
+        ("src/utils/__init__.py",),
+        ("compose.local.yml", "src/smoke_example/__init__.py", "challenges"),
+    ),
+    # oj: atcoder ships a bare workspace.
+    "oj_atcoder": (
+        ("README.md",),
+        ("src", "challenges", "AGENTS.md"),
+    ),
+    # oj: ctf ships the participant workspace plus the agent guide.
+    "oj_ctf": (
+        ("challenges/pwn/example/solve.py", "AGENTS.md"),
+        ("compose.local.yml", "src/smoke_example/__init__.py"),
+    ),
 }
 
 # Content that must appear for each case (proves the branch, not just
@@ -83,6 +121,11 @@ CONTENT: dict[str, tuple[tuple[str, str], ...]] = {
         ("pyproject.toml", "polars"),
     ),
     "cli+data_science": (("pyproject.toml", "polars"),),
+    "cli+ctf": (("pyproject.toml", "pwntools"),),
+    "cli+mcp": (("pyproject.toml", "mcp"),),
+    "oj_kaggle": (("pyproject.toml", "torch"),),
+    "oj_atcoder": (("pyproject.toml", "dependencies = []"),),
+    "oj_ctf": (("pyproject.toml", "pwntools"),),
 }
 
 
@@ -91,10 +134,16 @@ def _id(answers: dict[str, object]) -> str:
 
 
 def _key(answers: dict[str, object]) -> str:
+    if answers.get("project_type") == "online_judge":
+        return "oj_" + str(answers.get("oj_kind", "kaggle"))
     if answers.get("include_web_api") is True:
         return "data_science+web_api"
     if answers.get("include_data_science") is True:
         return "cli+data_science"
+    if answers.get("include_ctf") is True:
+        return "cli+ctf"
+    if answers.get("include_mcp") is True:
+        return "cli+mcp"
     return str(answers["project_type"])
 
 

@@ -44,5 +44,15 @@ NOTEBOOK_DIR = SRC_DIR / "notebook"
 SCRIPTS_DIR = SRC_DIR / "scripts"
 
 # Create the directories on import so paths always exist.
-for _dir in (CONFIG_DIR, DATA_DIR, INPUT_DIR, OUTPUT_DIR, FEATURES_DIR, LOGS_DIR, MODELS_DIR, NOTEBOOK_DIR, SCRIPTS_DIR):
+for _dir in (
+    CONFIG_DIR,
+    DATA_DIR,
+    INPUT_DIR,
+    OUTPUT_DIR,
+    FEATURES_DIR,
+    LOGS_DIR,
+    MODELS_DIR,
+    NOTEBOOK_DIR,
+    SCRIPTS_DIR,
+):
     _dir.mkdir(parents=True, exist_ok=True)

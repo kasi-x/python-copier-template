@@ -33,9 +33,11 @@ def main(
     src = INPUT_DIR / input_path
     dst = OUTPUT_DIR / output_path
     if not model.exists():
-        raise typer.BadParameter(f"model not found: {model}")
+        msg = f"model not found: {model}"
+        raise typer.BadParameter(msg)
     if not src.exists():
-        raise typer.BadParameter(f"input not found: {src}")
+        msg = f"input not found: {src}"
+        raise typer.BadParameter(msg)
     logger.info("predicting", model=str(model), src=str(src), dst=str(dst))
     # TODO: replace with real inference
     dst.write_bytes(b"")

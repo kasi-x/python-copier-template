@@ -1,0 +1,35 @@
+"""Scrapy-starter tests: politeness is configured, not left to discipline.
+
+No crawl is launched (no network, no reactor): these tests assert the
+generated spider carries the enforced polite defaults — robots.txt
+obedience, autothrottle + download delay — and yields items from a fake
+response.
+"""
+
+from __future__ import annotations
+
+from scrapy.http import HtmlResponse, Request
+
+from {{ package_name }}.spider import ExampleSpider
+
+
+def test_spider_enforces_politeness() -> None:
+    """Robots obedience and throttling must be on in the spider settings."""
+    settings = ExampleSpider.custom_settings
+    assert settings["ROBOTSTXT_OBEY"] is True
+    assert settings["AUTOTHROTTLE_ENABLED"] is True
+    assert float(settings["DOWNLOAD_DELAY"]) >= 1.0
+    assert "contact@example.com" in str(settings["USER_AGENT"])
+
+
+def test_spider_parse_yields_item() -> None:
+    """parse() extracts an item from a synthetic response (offline)."""
+    spider = ExampleSpider()
+    response = HtmlResponse(
+        url="https://example.com/",
+        body=b"<html><head><title>Example</title></head></html>",
+        request=Request(url="https://example.com/"),
+    )
+    items = list(spider.parse(response))
+    assert items[0]["url"] == "https://example.com/"
+    assert items[0]["title"] == "Example"

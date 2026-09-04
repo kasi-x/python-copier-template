@@ -1,10 +1,10 @@
-name: Check MicroPython upstream
+name: Check upstream pins
 
 on:
   workflow_dispatch:
   schedule:
-    # MicroPython ships roughly quarterly; check weekly that the template's
-    # frozen-build tag still tracks the latest release.
+    # Template pins renovate cannot track (release tags, CUDA indexes,
+    # distro EOLs, image tags); check weekly and open an issue on drift.
     - cron: "0 6 * * MON"
 
 permissions:
@@ -24,10 +24,10 @@ jobs:
           # Need this to get version number from last tag
           fetch-depth: 0
 
-      - name: Check MicroPython pins against upstream
+      - name: Check template pins against upstream
         id: check
-        run: python3 tools/check_micropython_upstream.py
-        # The checker exits 1 when DEFAULT_TAG is behind the latest release.
+        run: python3 tools/check_upstream.py
+        # The checker exits 1 on any [DRIFT] line.
 
       - name: Open drift issue
         if: failure() && steps.check.outcome == 'failure'
@@ -35,12 +35,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
-          body=$(python3 tools/check_micropython_upstream.py 2>&1 || true)
-          existing=$(gh issue list --search "MicroPython tag is behind upstream" \
+          body=$(python3 tools/check_upstream.py 2>&1 || true)
+          existing=$(gh issue list --search "Template pins are behind upstream" \
             --state open --json number --jq 'length')
           if [ "$existing" -eq 0 ]; then
             gh issue create \
-              --title "MicroPython tag is behind upstream" \
+              --title "Template pins are behind upstream" \
               --body "$body"
           else
             echo "An issue for this drift is already open; skipping."

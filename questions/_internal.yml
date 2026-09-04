@@ -50,6 +50,42 @@ mcp_effective:
     type: bool
     default: "{{ include_mcp and (project_type == 'cli' or web_api) }}"
     when: false
+# Web-fetching effective setting. include_scraping is only asked for the cli
+# base (a CLI-owned fetching layer); the guard here keeps fetcher.py and its
+# test out of other project types when render tests force the answer on them
+# (mcp_effective / ctf_effective precedent).
+scraping_effective:
+    type: bool
+    default: "{{ include_scraping and project_type == 'cli' }}"
+    when: false
+# Scraping engine selection. use_recommended_scraping keeps its default
+# (true) when unasked (include_scraping off); scraping_engine keeps its
+# default (httpx). The httpx fetcher is the recommended engine and the only
+# one with zero new runtime dependencies. `all` ships every engine (the
+# httpx fetcher stays the politeness core the other starters reuse).
+scraping_httpx_effective:
+    type: bool
+    default: "{{ scraping_effective and (use_recommended_scraping or scraping_engine in ['httpx', 'memorious', 'playwright', 'all']) }}"
+    when: false
+scraping_scrapy_effective:
+    type: bool
+    default: "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['scrapy', 'all'] }}"
+    when: false
+scraping_memorious_effective:
+    type: bool
+    default: "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['memorious', 'all'] }}"
+    when: false
+scraping_playwright_effective:
+    type: bool
+    default: "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['playwright', 'all'] }}"
+    when: false
+# oj_category == 'ctf'). The base guard keeps the CTF deps and workspace out
+# of other project types when render tests force the answer on them
+# (mcp_effective precedent).
+ctf_effective:
+    type: bool
+    default: "{{ oj_ctf or (include_ctf and project_type in ['library', 'cli']) }}"
+    when: false
 
 # web_api effective settings. prometheus / rate_limit / cors keep their
 # defaults (true) when unasked by use_recommended_web_api; the web_api
@@ -77,7 +113,7 @@ data_science_layout:
 
 use_src_layout:
     type: bool
-    default: "{{ layout == 'src' and project_type not in ['script', 'online_judge', 'ros2', 'micropython'] and not web_api }}"
+    default: "{{ layout == 'src' and (oj_ctf or project_type not in ['script', 'online_judge', 'ros2', 'micropython']) and not web_api }}"
     when: false
 
 use_gpu_effective:
@@ -134,7 +170,7 @@ ros2_python:
 # tag). The micropython-<port>-stubs type stubs (from the community
 # josverl/micropython-stubs project, NOT official) are pinned to the same
 # version so the stubs match the firmware. Bump all three together, and run
-# tools/check_micropython_upstream.py to confirm against the official
+# tools/check_upstream.py to confirm against the official
 # micropython/micropython releases.
 micropython_version:
     type: str
@@ -148,12 +184,21 @@ task_runner_effective:
 
 license_effective:
     type: str
-    default: "{{ license }}"
+    default: "{{ 'AGPL-3.0' if scraping_memorious_effective else license }}"
     when: false
 
+# memorious4 is AGPL-3.0: linking it forces the whole project AGPL-3.0.
+# The effective license above hard-forces AGPL-3.0 (not a validator abort:
+# validators cannot rewrite answers, and copier asks license before the
+# scraping engine, so the later engine answer must win silently).
 proprietary:
     type: bool
     default: "{{ license_effective in ['Proprietary', 'Confidential'] }}"
+    when: false
+
+license_check_effective:
+    type: bool
+    default: "{{ use_recommended_security or license_check }}"
     when: false
 
 reuse_effective:
@@ -178,7 +223,7 @@ license_year:
 
 pkg_dir:
     type: str
-    default: "{{ 'app' if web_api else ('src/utils' if kaggle else ('.' if online_judge else (('src/' if use_src_layout else '') + package_name))) }}"
+    default: "{{ 'app' if web_api else ('src/utils' if kaggle else ('.' if online_judge and not oj_ctf else (('src/' if use_src_layout else '') + package_name))) }}"
     when: false
 
 # The importable package that owns logging_setup.py and is the import root
@@ -188,4 +233,19 @@ pkg_dir:
 import_pkg:
     type: str
     default: "{{ 'app' if web_api else package_name }}"
+    when: false
+
+# AGENTS.md effective setting. The library / cli / script bases and the
+# web_api / data_science layers (including combo opt-ins) always ship the
+# agent guide; kaggle competitions always allow AI; bare code-submission
+# workspaces (oj_code) ship it only when oj_allow_ai was answered Yes
+# (asked for atcoder / leetcode; yukicoder / AOJ keep its default false).
+# ros2 / micropython never ship it: their build (colcon / firmware) is
+# outside this guide's scope. Placed LAST: it references web_api /
+# data_science above plus the genre internals from
+# questions/online_judge.yml (copier evaluates when:false in definition
+# order, so every referenced internal must be earlier).
+agents_md_effective:
+    type: bool
+    default: "{{ project_type in ['library', 'cli', 'script'] or web_api or data_science or kaggle or oj_ctf or (oj_code and oj_allow_ai) }}"
     when: false

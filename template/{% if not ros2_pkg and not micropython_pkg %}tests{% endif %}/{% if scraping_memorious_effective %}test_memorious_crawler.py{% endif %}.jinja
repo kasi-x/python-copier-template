@@ -1,0 +1,33 @@
+"""Memorious-starter tests: the generated crawler config is well-formed.
+
+No crawl is launched (no network): these tests assert the starter config
+names a fetch stage with retries and domain rules, and record the AGPL-3.0
+consequence of the memorious dependency in the test itself so a future
+license change breaks loudly.
+"""
+
+from __future__ import annotations
+
+import tomllib
+from pathlib import Path
+
+from {{ package_name }}.crawler import CRAWLER_CONFIG, CRAWLER_NAME
+
+TOP = Path(__file__).resolve().parent.parent
+
+
+def test_crawler_config_has_fetch_stage() -> None:
+    """The starter pipeline must fetch with retries and a domain rule."""
+    assert CRAWLER_NAME == "example"
+    pipeline = CRAWLER_CONFIG["pipeline"]
+    assert isinstance(pipeline, dict)
+    fetch = pipeline["fetch"]
+    assert fetch["method"] == "fetch"
+    assert int(fetch["params"]["retry"]) >= 1
+    assert "domain" in fetch["params"]["rules"]
+
+
+def test_memorious_forces_agpl_project_license() -> None:
+    """memorious4 is AGPL-3.0: the generated project must be AGPL-3.0 too."""
+    pyproject = tomllib.loads((TOP / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["project"]["license"] == "AGPL-3.0"

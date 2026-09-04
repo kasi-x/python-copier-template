@@ -11,9 +11,9 @@ use_recommended_data_science:
     help: |
         Use the recommended data_science options?
         Recommended: GPU workloads enabled (NVIDIA CUDA Dockerfile +
-        devcontainer), and no DUO data-use sheet or CARE governance
-        statement.
-        Answer No to change any of these.
+        devcontainer). Data reuse (DUO sheet) and data ethics (CARE
+        statement) are asked separately below, whatever you answer here.
+        Answer No to change the GPU setting.
         (For Kaggle-style competition projects, pick project_type
         online_judge instead — that is where the Kaggle layout lives.)
 
@@ -24,11 +24,12 @@ use_gpu:
         Will you run GPU workloads?
         If yes, an NVIDIA CUDA Dockerfile and devcontainer are prepared.
         Recommended (and the default) for data_science projects.
+        {{ cuda_hint() }}
     default: true
 
 data_reusable:
     type: bool
-    when: "{{ has_data_science and not use_recommended_data_science }}"
+    when: "{{ has_data_science }}"
     help: |
         Will this data be shared or reused outside the team (e.g.
         published, or handed to collaborators/another organisation)?
@@ -38,7 +39,7 @@ data_reusable:
 
 data_ethics:
     type: bool
-    when: "{{ has_data_science and not use_recommended_data_science }}"
+    when: "{{ has_data_science }}"
     help: |
         Does this data need ethical / data-governance consideration (e.g.
         human subjects, indigenous data, other sensitive personal data)?

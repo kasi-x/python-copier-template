@@ -7,8 +7,14 @@ repos:
       - id: check-yaml
       - id: check-merge-conflict
       - id: end-of-file-fixer
-        # uv/pixi lockfiles are machine-generated and may not end in a newline
-        exclude: ^(uv|pixi)\.lock$
+        # uv/pixi lockfiles are machine-generated and may not end in a newline.
+        # .jinja sources deliberately control their own trailing newline (see
+        # docs/explanations/template-dev.md): an include/wrapper file that ends
+        # right after a `{% include %}`/`{% endif %}` tag with no newline avoids
+        # doubling up a blank line in the rendered output. The generated output's
+        # own newline hygiene is enforced separately by
+        # test_generated_files_end_with_single_newline, not by this hook.
+        exclude: ^(uv|pixi)\.lock$|\.jinja$
 
   - repo: local
     hooks:

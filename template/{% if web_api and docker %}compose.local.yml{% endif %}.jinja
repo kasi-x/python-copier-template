@@ -17,7 +17,18 @@ services:
       target: runtime
     image: ghcr.io/{{ github_org | lower }}/{{ repo_name }}:local
     command: ["--host", "0.0.0.0", "--port", "8000"]
+    # Least privilege: the runtime image already runs as a non-root user;
+    # keep its root filesystem read-only. /tmp covers stdlib temp files
+    # and multipart spooling; the cache tmpfs covers $HOME caches
+    # (huggingface_hub, matplotlib, pip) which default under /home/appuser.
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/appuser/.cache
     environment:
+      # Keep bytecode out of the read-only /app tree; caches stay on tmpfs.
+      PYTHONDONTWRITEBYTECODE: "1"
+      XDG_CACHE_HOME: /home/appuser/.cache
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/{{ repo_name | replace('-', '_') }}
     env_file:
       - path: .env
@@ -33,7 +44,10 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
-
+    # Plain `docker compose up` ignores `deploy.resources` (Swarm-only),
+    # so enforce local-dev caps with service-level limits.
+    mem_limit: 512M
+    cpus: 1.0
   postgres:
     image: postgres:17-alpine
     environment:

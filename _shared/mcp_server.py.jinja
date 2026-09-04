@@ -20,7 +20,8 @@ refuses to start in that state. Health checks (unauthenticated, for
 orchestrators) live at GET /health.
 
 The in-process client test (tests/test_mcp_server.py) shows how to call
-these tools with the SDK's Client — the same pattern a real MCP client uses.
+these tools, resources and prompts with the SDK's Client — the same pattern
+a real MCP client uses.
 """
 
 from __future__ import annotations
@@ -60,6 +61,21 @@ def divide(numerator: float, denominator: float) -> float:
 def about() -> str:
     """Describe this server as an MCP resource."""
     return "MCP server for {{ repo_name }}."
+
+
+@server.resource("greeting://{name}")
+def greeting(name: str) -> str:
+    """Resource template: URI parameters map to function arguments."""
+    return f"Hello, {name}! Welcome to {{ repo_name }}."
+
+
+@server.prompt(title="Review code")
+def review_code(code: str) -> str:
+    """Ask the model to review a piece of code for correctness and clarity."""
+    return (
+        "Please review the following code for correctness, clarity, "
+        f"and potential bugs:\n\n{code}"
+    )
 
 
 @server.custom_route("/health", methods=["GET"])
