@@ -462,6 +462,16 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       `>=9,<10` に pin し、check_upstream.py が「copier ceiling」pin として
       メジャー drift を週次報告する。ルート依存の pip-audit は task audit +
       週次 dependency-audit.yml（木曜 07:00）で実施
+- [ ] v1.0 公開のタイミングで fork を解除し、履歴を新規にして独立リポジトリとして
+      公開し直す（2026-09 方針確定。GitHub Support への detach 依頼はしない）
+      → 手順: 作業クローンで `git checkout --orphan` + 単一初期コミットを作成し、
+      `gh repo create` した新リポジトリへ push（過去ログ・DiamondLightSource 由来の
+      履歴は持ち込まない。setuptools-scm 用に v1.0.0 tag を打ち直す）。
+      新リポジトリで再設定が必要なもの: EXAMPLE_DEPLOY_KEY 等の secrets、
+      GitHub Pages、branch protection、renovate 連携。
+      check-upstream-fork.yml は URL 直 fetch なので解除後もそのまま機能する
+      （fork の間は Issues が無効のため、週次 workflow の issue 作成ステップは失敗する。
+      気になるなら detach まで該当 workflow を無効化）
 
 ## 12. セキュリティ / コンプライアンス基盤の整備（OpenSSF Scorecard / OSPS 準拠）
 
