@@ -1272,6 +1272,10 @@ def test_template_agent_scaffold(tmp_path: Path):
     assert (tmp_path / "tests" / "test_agent.py").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("pydantic-ai") for d in pyproject_toml["project"]["dependencies"])
+    # the agent's LLM keys are documented in the env example (shipped because
+    # the agent scaffold consumes env vars)
+    env_example = (tmp_path / ".env.example").read_text()
+    assert "OPENAI_API_KEY" in env_example
 
 
 def test_template_agent_cli_only(tmp_path: Path):
@@ -1515,8 +1519,10 @@ def test_library_no_web_api_extras(tmp_path: Path):
     assert not (tmp_path / "compose.local.yml").exists()
     ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
     assert "postgres" not in ci
-    # .env.example and .editorconfig are always shipped
-    assert (tmp_path / ".env.example").exists()
+    # .editorconfig is always shipped; .env.example is gated on features
+    # that consume env vars (web_api/mcp/scraping/sentry/agent) -- a plain
+    # library with no env-var consumers gets no env scaffolding.
+    assert not (tmp_path / ".env.example").exists()
     assert (tmp_path / ".editorconfig").exists()
 
 

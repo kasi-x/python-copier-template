@@ -496,6 +496,7 @@ cd {{repo_name}}
 pre-commit install           # install the git hooks (lint/format on commit)
 ```
 
+{% if web_api or mcp_effective or scraping_effective or include_sentry or (not use_recommended_agent and project_type in ['library', 'cli']) %}
 ### Environment variables
 
 Copy the example file and adjust the values:
@@ -508,6 +509,7 @@ cp .env.example .env
 and by the Docker stack; it is git-ignored, so never commit real secrets.
 {% if include_sentry %}
 The app initialises [Sentry](https://sentry.io) from `SENTRY_DSN` when set.
+{% endif %}
 {% endif %}
 {% if docker %}
 ### Run with Docker

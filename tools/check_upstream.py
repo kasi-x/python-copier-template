@@ -64,11 +64,11 @@ class Pin:
     checkable: bool = False
 
 
-def https_get(host: str, path: str) -> tuple[int, str, str]:
+def https_get(host: str, path: str, headers: dict[str, str] | None = None) -> tuple[int, str, str]:
     """GET a resource over https. Returns (status, body, content-type)."""
     conn = http.client.HTTPSConnection(host, timeout=20)
     try:
-        conn.request("GET", path, headers={"User-Agent": "python-copier-template-upstream-check"})
+        conn.request("GET", path, headers={"User-Agent": "python-copier-template-upstream-check", **(headers or {})})
         resp = conn.getresponse()
         body = resp.read().decode("utf-8", "replace")
         return resp.status, body, resp.getheader("Content-Type", "")
@@ -211,6 +211,13 @@ def extract_pins() -> list[Pin]:
     ubuntu_tags = set(re.findall(r"(?:ubuntu:|ubuntu-devcontainer:)(\w+)", docker_src))
     pins.append(Pin(name="Ubuntu base (Dockerfile)", current=",".join(sorted(ubuntu_tags)) or "?", checkable=False))
 
+    # Devcontainer base image: the hardcoded ghcr reference every generated
+    # devcontainer pulls. Renovate keeps the *version* current; this checks
+    # the image still EXISTS -- a removed package 404s every devcontainer
+    # build for every generated project.
+    base_m = re.search(r"FROM (ghcr\.io/\S+) AS developer", docker_src)
+    pins.append(Pin(name="Devcontainer base (Dockerfile)", current=base_m.group(1) if base_m else "?", checkable=True))
+
     # PyPI floors per combination category: every runtime floor pinned in
     # the pyproject template must exist on PyPI (a floor above latest, or a
     # removed release, breaks `uv sync` for that combination). Categories
@@ -342,7 +349,21 @@ def _resolve_pypi_floor(name: str, current: str) -> str | None:
     return f"floor {floor} / latest {latest}"
 
 
-def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911
+def _resolve_devcontainer_base(image: str) -> str:
+    """Anonymous registry manifest check for the ghcr devcontainer base."""
+    path, tag = image.removeprefix("ghcr.io/").rsplit(":", 1)
+    headers = {"Accept": "application/vnd.oci.image.index.v1+json"}
+    try:
+        data = https_get_json("ghcr.io", f"/token?scope=repository:{path}:pull")
+        if isinstance(data, dict) and data.get("token"):
+            headers["Authorization"] = f"Bearer {data['token']}"
+        status, _, _ = https_get("ghcr.io", f"/v2/{path}/manifests/{tag}", headers)
+    except RuntimeError:
+        return "registry unreachable"
+    return "present" if status == 200 else f"MISSING (HTTP {status})"
+
+
+def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911, C901
     """Resolve a single pin. Dispatches on the pin name prefix."""
     name, current = pin.name, pin.current
     if name.startswith("micropython-<port>-stubs"):
@@ -365,6 +386,8 @@ def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911
         return _resolve_pypi_floor(name, current)
     if name.startswith("copier ceiling"):
         return pypi_latest("copier")
+    if name.startswith("Devcontainer base"):
+        return _resolve_devcontainer_base(current)
     return None
 
 
@@ -406,6 +429,7 @@ def _is_drift(pin: Pin) -> tuple[bool, str]:
         "ROS 2 distros": ("EOL passed",),
         "Python floor": ("PASSED",),
         "PyPI floor": ("REMOVED",),
+        "Devcontainer base": ("MISSING",),
     }
     for prefix, markers in triggers.items():
         if name.startswith(prefix):

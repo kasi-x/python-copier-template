@@ -7,8 +7,8 @@ use_recommended_agent:
     when: "{{ project_type in ['library', 'cli'] }}"
     default: true
     help: |
-        Add an LLM agent (pydantic-ai) scaffold?
-        Recommended: no — a plain library / CLI without agent tooling.
+        Use the recommended agent setup (no agent tooling)?
+        Recommended: yes — a plain library / CLI without agent tooling.
         Answer No to add a runnable pydantic-ai example: a prompts/
         directory, a typed tools/ package and an agent module wired with
         @agent.tool, tested offline with pydantic-ai's TestModel.

@@ -661,6 +661,23 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
 
 ## 15. 検知・運用の残課題（2026-09-05、Strategy.md 実装後に判明）
 
+### 追加対応（2026-09-05 bugs.md / 生成セッションのフィードバック）
+
+- [x] `.env.example` / README "Environment variables" を機能ゲート化
+      （web_api / mcp / scraping / sentry / agent scaffold のいずれかがあるときのみ。
+      依存ゼロ library へのノイズ解消 = bugs.md #3。`.envrc` は venv アクティベーション
+      用として全タイプ常に生成）
+- [x] devcontainer ベースイメージを実在する
+      `ghcr.io/diamondlightsource/ubuntu-devcontainer:resolute` に戻し
+      （`kasi-x/ubuntu-devcontainer` は未公開で devcontainer ビルドが 404 する =
+      bugs.md #2）+ `tools/check_upstream.py` に Devcontainer base pin
+      （GHCR manifest 実在チェック、404 で drift）を追加
+- [x] `use_recommended_agent` の質問文を gate 形式に修正
+      （"Add an LLM agent scaffold?" は Yes の意味と gating が逆 = bugs.md #1。
+      変数名は設計原則の `use_recommended_*` 統一のため維持）
+
+### 既知の残課題
+
 Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push 検証で
 **CI-only の失敗が3種類**見つかり、すべて修正済み（詳細は各項目）。
 
