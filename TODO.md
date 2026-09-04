@@ -658,3 +658,34 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       条件付き GET の ETag/If-Modified-Since 対応）は要望が出てから検討。
       現状は feed/API 優先探索 + robots.txt + レート制限 + キャッシュで
       「行儀の良いデフォルト」を満たしていると判断し、初期スコープに含めない
+
+## 15. 検知・運用の残課題（2026-09-05、Strategy.md 実装後に判明）
+
+Strategy.md ①②③④ は commit a82f9a46 で実装済み。以下は残る問題。
+
+- [ ] **main が赤（GitHub 上）**: 直近の push（085b1579 / 922bc3b3 / fea050a4）で
+      lint と test が失敗している。
+      - lint: check-yaml × copier.yml（multi-document）→ a82f9a46 で修正済み、
+        push で解消する
+      - test: `test_example_repo_updates` が clone する
+        `kasi-x/python-copier-template-example` が存在しない（404）→ **未解決**。
+        ci.yml の `example` ジョブも同依存
+- [ ] example リポジトリの再作成、または `test_example_repo_updates` に
+      リポジトリ不在時の skip ガードを入れる。v1.0 の新リポジトリ公開まで
+      赤が許容できないならガードを先に入れる（scheduled-check.yml の火曜初回
+      実行前に要決定。決定しないと scheduled-check が毎週赤になる）
+- [ ] README の CI バッジと実態の乖離に注意: 直近コミットで CI が赤でも
+      バッジは古い成功を示し続けた。赤を放置しない運用（push 後の run 確認、
+      または merge queue / required checks の見直し）を習慣化する
+- [ ] Periodic（リンクチェック）: 2026-08-26 / 09-02 の赤は旧 tox 版 workflow の
+      失敗。現行 lychee 版（085b1579 で投入）は水曜スケジュールが初回実行 →
+      初回結果を確認し、赤ならリンク修正
+- [ ] flaky: `test_template_task_runner_just_works` がフル並列実行で 1 回のみ
+      失敗（単独・再実行は pass）。uv キャッシュ競合の疑い。再現時に
+      `--runpytest` 分離ではなく実行時間/worker 数で切り分ける
+- [ ] ルート `.python-version` が未レンダの Jinja 式のまま（`ros2_pkg` 等の変数は
+      ルートに存在しない）。全 uv コマンドで warning が出て CI ログも汚れるので、
+      `3.11` 等の固定値にするか削除する
+- [ ] fork の間は Issues が無効のため、週次 workflow の issue 作成ステップが
+      失敗する（節11の v1.0 fork 解除まで。気になるなら該当 workflow を
+      一時無効化）

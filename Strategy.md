@@ -4,6 +4,29 @@
 実装可能な粒度まで具体化したものです。**別セッション/別エージェントがこのファイルだけを読んで
 再現できる**ことを目的に、対象ファイル・関数名・コマンド・完了条件まで明記します。
 
+## 実装ステータス（2026-09-05 更新・commit a82f9a46）
+
+①②③④-a④-b は実装済み。仕様からの差分と、実装時に判明したことを以下に記す。
+
+- **②**: `git remote add/remove` ではなく URL 直 fetch（`git fetch <URL> main` →
+  `HEAD..FETCH_HEAD`）で実装。名付きリモートを触らないので、まっさらなチェックアウトから
+  毎回実行できる。
+- **①**: 「現時点未確認」だった `_docs.yml` の publish 挙動は `publish` 入力（既定 true、
+  CI は変更なし）を追加して解決。`scheduled-check.yml` は `publish: false` で build のみ。
+- **③**: pip-audit は 1 workflow 1 関心の方針どおり、独立した `dependency-audit.yml`
+  （木曜 07:00）にした。
+- **④-a**: 実装時に RENDERED_PATHS の大半（12パス）で実 drift を検出し、テンプレート
+  ソース 9 ファイルを修正した（`test_qa.py.jinja` / `test_flake8.py.jinja` の幅依存
+  assert メッセージ、web_api の jinja ブロック由来の空行と settings.py の URL 結合、
+  ctf のパス結合と subprocess 呼び出し、`explore.py` の空行）。原因は example-answers
+  （重いテスト層）が `allow_japanese: true`（幅120）しか通っていなかったこと。
+  RENDERED_PATHS は allow_japanese を跨がないため、`JAPANESE_VARIANTS` を別途追加した。
+  両幅で安定させる手法: 短縮（≤88 行）か、magic trailing comma、暗黙結合の部分間コメント。
+- **計画外の追加修正**（緑ベースライン復元のため実施）: check-yaml に copier.yml を除外
+  （multi-document YAML で lint job が既に赤だった）、extensions.py の `github_username()`
+  本体復旧（docstring のみで本体が欠損 → type-check エラー + author/org 既定値機能が
+  死んでいた）。
+
 背景となる調査（2026-09、このセッションで実施）は本文中に埋め込んであります。ここに書かれた
 現状認識（ファイルパス・行番号・既存の挙動）は調査時点のものなので、実装前に該当ファイルを
 読み直して前提が変わっていないか確認してください。
@@ -25,20 +48,20 @@
 3. 定期実行（スケジュール。コード変更ゼロでも発火する唯一の経路）
 4. 論理的検証（Z3。コード実行なしで数学的に充足可能性を証明）
 
-現状のマッピング（詳細は各セクション）:
+現状のマッピング（詳細は各セクション。✅ = 2026-09-05 実装済み）:
 
 | | 1: pre-commit | 2: push/PR CI | 3: 定期実行 | 4: Z3 |
 |---|---|---|---|---|
 | A | ruff/typos | `test_machine_gate.py` | — | `test_copier_structure.py` |
-| B | — | `test_example.py`(重)/`test_generated_lint.py`(軽=ruff checkのみ) | **穴①** | — |
-| C | — | renovate PR時のみ | `check-upstream.yml`(週次)/`lockFileMaintenance` | — |
-| D | — | — | **穴②（仕組みゼロ）** | — |
-| E | （今回`.jinja`除外を追加） | — | — | — |
+| B | — | `test_example.py`(重)/`test_generated_lint.py`(軽=ruff check + format)/`test_generated_typecheck.py`(deps込み) | ✅ `scheduled-check.yml`(火曜) | — |
+| C | — | renovate PR時のみ | `check-upstream.yml`(月)/`lockFileMaintenance`/✅ `dependency-audit.yml`(木)/✅ copier ceiling | — |
+| D | — | — | ✅ `check-upstream-fork.yml`(火曜) | — |
+| E | `.jinja`/`copier.yml` 除外 | — | — | — |
 
-このドキュメントが埋めるのは **① B×3、② D、③ Cの未カバー項目（copier pin / pip-audit）、
-④ Bの軽量検査の拡充**。⑤（Z3充足可能性×テストカバレッジの突き合わせ）と ⑥（pre-commitフック
-事故の一般的な再発防止テスト）は別途・専門性が高いためこのドキュメントの対象外
-（着手時は新しい `Strategy-*.md` か本ファイルへの追記で扱う）。
+かつての**穴①（B×3）、②（D）、③（Cの未カバー: copier pin / pip-audit）、
+④（Bの軽量検査の拡充）はすべて実装済み**。⑤（Z3充足可能性×テストカバレッジの突き合わせ）と
+⑥（pre-commitフック事故の一般的な再発防止テスト）は別途・専門性が高いためこのドキュメントの
+対象外（着手時は新しい `Strategy-*.md` か本ファイルへの追記で扱う。TODO.md セクション15 も参照）。
 
 ---
 
@@ -506,14 +529,14 @@ OSVベースのpip-auditとは情報源が異なるため、生成物向けと�
 
 ---
 
-## 実装順序の推奨
+## 実装順序の推奨（2026-09-05 完了）
 
-依存関係は無い（4つとも独立）。着手コストの低い順:
-1. ③のcopier pin（1行変更 + drift検知1ブロック追加）
-2. ④-a（既存テストのコピー+微修正、今日の実バグの再発防止に直結）
-3. ②（新規ファイル2つだが、既存issueパターンの横展開）
-4. ①（新規ワークフロー1つ、docsジョブのpublish挙動だけ要確認）
-5. ④-b（実行時間の見積りが必要なため、他が終わってから着手を推奨）
+依存関係は無い（4つとも独立）。着手コストの低い順（✅ = 実行済み。実際にはこの順で実施した）:
+1. ✅ ③のcopier pin（1行変更 + drift検知1ブロック追加）
+2. ✅ ④-a（既存テストの拡張。予想どおり実バグを12件検出し、ソース修正を伴った）
+3. ✅ ②（新規ファイル2つ。URL直fetch方式で草案より簡潔になった）
+4. ✅ ①（新規ワークフロー1つ。publish挙動は `_docs.yml` への `publish` 入力追加で解決）
+5. ✅ ④-b（deps込みで6経路、warm 4.3秒。torch同期の data_science/kaggle は除外）
 
 ## スコープ外（別セッションで扱う）
 
@@ -522,4 +545,6 @@ OSVベースのpip-auditとは情報源が異なるため、生成物向けと�
   検証する仕組み）
 - ⑥ pre-commitフックの事故再発防止の一般化（`pre-commit run --all-files`実行後に
   `git diff --exit-code`で無変更をassertする回帰テスト。今回end-of-file-fixerが
-  `.jinja`を壊した事故の教訓の一般化）
+  `.jinja`を壊した事故の教訓の一般化。なお2026-09-05時点で、check-yaml×copier.yml の
+  既存赤がローカルでもCIでも数日気づかれないままだった — 「赤を放置しない運用」の
+  観点で TODO.md セクション15 も参照）
