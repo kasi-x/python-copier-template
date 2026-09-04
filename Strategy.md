@@ -351,7 +351,11 @@ copierは過去に破壊的変更を経験してきたツールで（このセ�
        ceiling = int(current.split("<")[1])
        latest_major = _parse_version(upstream)[0] if upstream else None
        drift = latest_major is not None and latest_major >= ceiling
-       msg = f"[DRIFT]  {name}: ceiling <{ceiling} but latest is {upstream}" if drift else f"[ok]     {name}: {current} (latest {upstream})"
+       msg = (
+           f"[DRIFT]  {name}: ceiling <{ceiling} but latest is {upstream}"
+           if drift
+           else f"[ok]     {name}: {current} (latest {upstream})"
+       )
        return drift, msg
    ```
    （`_is_drift`は現状「exact_match」と「triggers（文字列包含）」の2パターンで分岐しており、
