@@ -30,3 +30,90 @@
 - `dependencies = []`・env 変数を使わない library でも env ファイル一式と README の "Environment variables" セクションが出る。ノイズ。
 - **提案**: env ファイル群は web_api / data_science / cloud_provider != none のときだけ生成するのが自然。
 - **✅ 対応**: `.env.example` と README の "Environment variables" セクションを、**env 変数を消費する機能が1つでもあるときだけ**生成するようにゲート（`web_api or mcp_effective or scraping_effective or include_sentry or agent scaffold`。提案の cloud_provider は .env.example に該当セクションが無いため条件から除外し、代わりに mcp/scraping/sentry/agent を採用 — 中身の条件分岐に基づく）。data_science/kaggle も専用セクションが無いため対象外。**`.envrc` は常に生成**（中身は env 変数ではなく venv/pixi の自動アクティベーションで、依存ゼロの library でも機能するため）。`test_library_no_web_api_extras` を negativeケースへ更新し、agent ケースの positive アサーションを追加。
+
+---
+
+# 2026-09-05 新規報告（kasi-x publish pipeline から）
+
+## 4. `just check` が git repository 必須でパイプラインと矛盾
+
+- **現象**: `just check` は `pre-commit` を実行するが、pre-commit は `.git` ディレクトリが存在する必要がある。パイプライン（PIPELINE.md）は「チェックを先に通してから `git init` → 単一コミット → push」という順序のため、鶏と卵の矛盾が起きる。
+- **エラーメッセージ**:
+  ```
+  uv run --locked pre-commit run --all-files --show-diff-on-failure
+  An error has occurred: FatalError: git failed. Is it installed, and are you in a Git repository directory?
+  ```
+- **回避策**: 一時的に `git init -q -b main && git add -A && git commit -q -m "temp"` してから `just check` を実行し、最終的にコミットを amend または reset して単一コミットにする。
+- **提案**:
+  - パイプライン文書にこのワークアラウンドを明記する
+  - `just check` を `.git` 未存在時は pre-commit をスキップするようにする
+  - `just check-no-git` のような別レシピを用意する
+
+## 5. 日本語テキストで E501 (line-too-long) が多発
+
+- **現象**: テンプレートの `line-length = 88` は日本語テキストには短すぎる。日本語は情報密度が高く、88文字では収まらない文が頻出する。
+- **具体例**（discord_calender_bot）:
+  ```python
+  f"🗓️ {start.strftime('%Y-%m-%d %H:%M')}〜（{duration}分 / JST）\n"
+  "⚠️ 日時の形式が正しくありません。`date` は `2026-07-01`、`time` は `19:00` の形式で。",
+  ```
+- **回避策**: 各ファイルに `per-file-ignores` で `E501` を追加。
+- **提案**:
+  - デフォルトの line-length を 100-120 に引き上げる
+  - copier に「日本語テキストを含むか」の質問を追加し、line-length を調整する
+  - 日本語プロジェクト向けのドキュメントを用意する
+
+## 6. `@pytest.fixture()` が自動修正されない
+
+- **現象**: 生成されたテストファイルに `@pytest.fixture()` が含まれるが、ruff が `@pytest.fixture` に自動修正してくれない（手動修正が必要）。
+- **具体例**:
+  ```python
+  @pytest.fixture()
+  def signing_key(monkeypatch: pytest.MonkeyPatch) -> SigningKey:
+  ```
+- **回避策**: 手動で括弧を削除するか、`per-file-ignores` に `PT006` を追加。
+- **提案**: テンプレートの ruff 設定で `PT006` を auto-fix 対象に含める。
+
+## 7. DTZ007 (call-datetime-strptime-without-zone) が厳しすぎる
+
+- **現象**: `datetime.strptime()` でパースして `.replace(tzinfo=...)` でタイムゾーンを後付する一般的なパターンが DTZ007 に引っかかる。
+- **具体例**:
+  ```python
+  dt = datetime.strptime(f"{date_str} {time_str}", "%Y-%m-%d %H:%M")
+  return dt.replace(tzinfo=config.TZ)
+  ```
+- **回避策**: `per-file-ignores` に `DTZ007` を追加。
+- **提案**:
+  - デフォルトの `extend-ignore` に `DTZ007` を追加する
+  - またはドキュメントに「日時パターンでは per-file-ignores が必要」と記載する
+
+## 8. 生成されたテストに未使用引数がある (ARG001)
+
+- **現象**: テンプレートが生成したテストフィクスチャのうち、テスト本体で使われていない引数が ruff の ARG001 に引っかかる。
+- **具体例**:
+  ```python
+  def test_invalid_signature_rejected(
+      client: FlaskClient, signing_key: SigningKey  # signing_key 未使用!
+  ) -> None:
+  ```
+- **回避策**: 未使用引数を削除するか `_` プレフィックスを付ける。
+- **提案**: テスト生成で実際に使用されるフィクスチャのみを含める。
+
+## 9. pyproject.toml のコメントが長すぎる
+
+- **現象**: ruff の `per-file-ignores` に詳細な説明コメントが付いており、pyproject.toml が 300+ 行になる。
+- **問題**:
+  - 設定ファイルが見づらい
+  - 実際の設定がコメントに埋もれる
+- **提案**:
+  - 詳細な説明は `RUFF.md` や `CONTRIBUTING.md` に移動する
+  - インラインは最小限のコメントにする
+
+## 10. copier `--defaults` でも質問がスキップされない
+
+- **現象**: `copier copy --defaults` を実行しても、デフォルト値があるはずの質問が表示されてしまう。
+- **問題**: 自動バッチ処理が中断する
+- **提案**:
+  - 全質問を `--defaults` でテストし、スキップされるか確認する
+  - 「デフォルトでも聞かれる質問」をドキュメントに記載する
+  - 完全非インタラクティブモード（`--force` 等）を用意する
