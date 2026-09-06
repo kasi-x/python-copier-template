@@ -34,7 +34,7 @@ package_manager:
         - poetry: Dependency management and packaging with Poetry.
         Choose pixi if you need native (non-Python) dependencies.
         (For ros2 projects the package manager manages the pure-Python dev
-        tooling — ruff/pytest/pre-commit; the ROS environment itself is
+        tooling — ruff/pytest/typos; the ROS environment itself is
         provided by ros2_package_manager. When the ROS environment is pixi,
         pixi manages everything, so this question is not asked. When it is
         apt, pixi is not offered — one package manager at a time.)

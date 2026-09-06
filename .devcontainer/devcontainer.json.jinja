@@ -9,7 +9,6 @@
         // ROS 2 container: no uv venv, just the sourced ROS environment.
         "ROS_DISTRO": "{{ ros_distro }}",
         // Put things that allow it in the persistent cache
-        "PRE_COMMIT_HOME": "/cache/pre-commit",
         "CCACHE_DIR": "/cache/ccache"
     },
     "customizations": {
@@ -45,7 +44,7 @@
             "target": "/user-terminal-config",
             "type": "bind"
         },
-        // Keep a persistent cross container cache for pre-commit and ccache
+        // Keep a persistent cross container cache for ccache
         {
             "source": "devcontainer-shared-cache",
             "target": "/cache",
@@ -53,13 +52,12 @@
         }
     ],
     // After the container is created, resolve rosdep deps and build the workspace
-    "postCreateCommand": "{% if ros2_package_manager == 'pixi' %}pixi install && pixi run colcon build --symlink-install && pre-commit install --install-hooks{% else %}sudo rosdep init && rosdep update && rosdep install --from-paths . --ignore-src -r -y && colcon build --symlink-install && pre-commit install --install-hooks{% endif %}"
+    "postCreateCommand": "{% if ros2_package_manager == 'pixi' %}pixi install && pixi run colcon build --symlink-install{% else %}sudo rosdep init && rosdep update && rosdep install --from-paths . --ignore-src -r -y && colcon build --symlink-install{% endif %}"
 {% else %}    "remoteEnv": {
         // Allow X11 apps to run inside the container
         "DISPLAY": "${localEnv:DISPLAY}",
         // Put things that allow it in the persistent cache
-        "PRE_COMMIT_HOME": "/cache/pre-commit",
-        "UV_CACHE_DIR": "/cache/uv",
+                "UV_CACHE_DIR": "/cache/uv",
         "UV_PYTHON_CACHE_DIR": "/cache/uv-python",
         // Make a venv that is specific for this workspace path as the cache is shared
         "UV_PROJECT_ENVIRONMENT": "/cache/venv-for${localWorkspaceFolder}",
@@ -107,7 +105,7 @@
             "target": "/user-terminal-config",
             "type": "bind"
         },
-        // Keep a persistent cross container cache for uv, pre-commit, and the venvs
+        // Keep a persistent cross container cache for uv and the venvs
         {
             "source": "devcontainer-shared-cache",
             "target": "/cache",
@@ -116,7 +114,7 @@
     ],
     // Mount the parent as /workspaces so we can pip install peers as editable
     "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind",
-    // After the container is created, recreate the venv then make pre-commit first run faster
-    "postCreateCommand": "uv venv --clear && uv sync && pre-commit install --install-hooks"
+    // After the container is created, recreate the venv
+    "postCreateCommand": "uv venv --clear && uv sync"
 {% endif %}
 }

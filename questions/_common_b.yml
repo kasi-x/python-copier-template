@@ -55,18 +55,9 @@ docs_type:
         - sphinx: Sphinx with the pydata theme. More powerful, more config.
         - great-docs: Great Docs, a Quarto-based tool. Requires Quarto installed.
         (For micropython projects, Sphinx is not offered: the firmware is not
-        a CPython-importable package, and zensical can document firmware/core.)
-    choices: |
-        {%- if micropython_pkg %}
-        - README
-        - zensical
-        - great-docs
-        {%- else %}
-        - README
-        - zensical
-        - sphinx
-        - great-docs
-        {%- endif %}
+        a CPython-importable package, and zensical can document firmware/core.
+        Answering sphinx for a micropython project falls back to zensical.)
+    choices: [README, zensical, sphinx, great-docs]
     default: zensical
 
 use_recommended_quality:
@@ -187,7 +178,7 @@ fair:
     when: "{{ not use_recommended_license }}"
     help: |
         Add FAIR research-software metadata?
-        - CITATION.cff for software citation, validated by a pre-commit hook
+        - CITATION.cff for software citation, validated in CI (cffconvert)
           (an optional ORCID iD is asked below when enabled)
         - REUSE.toml with SPDX annotations, checked by the reuse hook — but
           only when an open-source license is selected; Proprietary projects

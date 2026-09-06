@@ -133,12 +133,17 @@ docs_url:
 
 sphinx:
     type: bool
-    default: "{{ docs_type == 'sphinx' }}"
+    # docs_type keeps static choices (needed for --data-file validation), so
+    # micropython users can still answer sphinx even though the firmware is
+    # not a CPython-importable package and autodoc has nothing to import.
+    # Redirect that answer to zensical (the only offered micropython site
+    # tool) at render time — the same place the license AGPL override lives.
+    default: "{{ docs_type == 'sphinx' and not micropython_pkg }}"
     when: false
 
 zensical:
     type: bool
-    default: "{{ docs_type == 'zensical' }}"
+    default: "{{ docs_type == 'zensical' or (micropython_pkg and docs_type == 'sphinx') }}"
     when: false
 
 great_docs:

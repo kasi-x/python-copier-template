@@ -41,6 +41,19 @@
       "enabled": false
     },
     {
+      "description": "Hygiene actions managed by python-copier-template (secrets, workflow linting, REUSE, CITATION.cff)",
+      "matchPackageNames": [
+        "gitleaks/gitleaks-action",
+        "rhysd/actionlint",
+        "fsfe/reuse-action",
+        "citation-file-format/cffconvert-github-action"
+      ],
+      "matchManagers": [
+        "github-actions"
+      ],
+      "enabled": false
+    },
+    {
       "description": "Release actions managed by python-copier-template (release notes, coverage, changelog)",
       "matchPackageNames": [
         "softprops/action-gh-release",

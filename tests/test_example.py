@@ -84,8 +84,8 @@ def make_venv(project_path: Path) -> Callable[[str], str]:
     exe_path = venv_path / "bin" / "python"
     assert exe_path.exists(), f"UV created a venv but did not install {exe_path}"
 
-    # Commit the freshly created lockfile so pre-commit's `uv sync` hook does
-    # not report a diff.
+    # Commit the freshly created lockfile: `uv run --locked` (used by the
+    # generated tasks and CI) requires it to match the environment.
     run("git config user.email 'you@example.com'")
     run("git config user.name 'Your Name'")
     run("git add -A")
@@ -142,8 +142,7 @@ class Thing:
     """A docstring."""
 '''
     (extra_pkg / "extra_module.py").write_text(code)
-    # Add to make sure pre-commit doesn't moan
-    run("git add .")
+    run("git add .")  # track the added code so the docs build sees it
     # Build
     run("uvx --from go-task-bin task check")
     run("uvx --from go-task-bin task docs")
@@ -187,6 +186,32 @@ def test_template_no_docs(tmp_path: Path):
     assert "task docs" not in (tmp_path / "Taskfile.yml").read_text()
 
 
+def test_template_no_precommit_hygiene_in_ci(tmp_path: Path):
+    """pre-commit is replaced by: task-runner lint/fix tasks (ruff, local)
+    plus a hygiene workflow (secrets, workflow linting, YAML/EOF, conventional
+    commits, REUSE/CFF — CI-only)."""
+    copy_project(tmp_path, task_runner="task")
+    # nothing pre-commit-shaped ships in the generated project
+    assert not (tmp_path / ".pre-commit-config.yaml").exists()
+    taskfile = (tmp_path / "Taskfile.yml").read_text()
+    assert "pre-commit" not in taskfile
+    assert "ruff format --check ." in taskfile
+    pyproject = (tmp_path / "pyproject.toml").read_text()
+    assert "pre-commit" not in pyproject
+    # the hygiene workflow exists, is a reusable workflow, and pins actions
+    hygiene = (tmp_path / ".github" / "workflows" / "_hygiene.yml").read_text()
+    assert "workflow_call:" in hygiene
+    assert "gitleaks/gitleaks-action@" in hygiene
+    assert "reviewdog" not in hygiene  # actionlint runs via the digest-pinned docker step
+    assert "docker://rhysd/actionlint@sha256:" in hygiene
+    # CI calls it and includes it in the required-checks gate
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "uses: ./.github/workflows/_hygiene.yml" in ci
+    assert "needs: [hygiene, lint, test" in ci
+    # the fix task exists as the pre-commit replacement
+    assert "fix:" in taskfile
+
+
 def test_template_zensical_docs(tmp_path: Path):
     copy_project(tmp_path, docs_type="zensical")
     pyproject_toml = tmp_path / "pyproject.toml"
@@ -199,6 +224,72 @@ def test_template_great_docs(tmp_path: Path):
     copy_project(tmp_path, docs_type="great-docs")
     assert (tmp_path / "great-docs.yml").exists()
     assert (tmp_path / "index.qmd").exists()
+
+
+def test_template_web_api_sphinx_docs(tmp_path: Path):
+    """web_api has no <pkg> library: the Sphinx docs and the dist CI check
+    must target the app import root, not the (unused) package_name."""
+    copy_project(
+        tmp_path,
+        project_type="web_api",
+        use_recommended_docs=False,
+        docs_type="sphinx",
+    )
+    conf = (tmp_path / "docs" / "conf.py").read_text()
+    assert "import app" in conf
+    assert "release = app.__version__" in conf
+    assert "import python_copier_template_example" not in conf
+    # The switcher probe must not break offline docs builds
+    assert "except requests.RequestException" in conf
+    api_rst = (tmp_path / "docs" / "_api.rst").read_text()
+    assert "\n    app\n" in api_rst
+    assert "<_api/app>" in (tmp_path / "docs" / "reference.md").read_text()
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert 'version-command: python -c "import app; print(app.__version__)"' in ci
+
+
+def test_template_library_sphinx_version_command(tmp_path: Path):
+    """Non-web_api types keep the CLI --version check, named exactly."""
+    copy_project(tmp_path, docs_type="README")
+    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
+    assert "version-command: python -m python_copier_template_example --version" in ci
+    # The guess-based fallback stays only as the reusable workflow's default.
+    dist = (tmp_path / ".github" / "workflows" / "_dist.yml").read_text()
+    assert "version-command" in dist
+
+
+def test_template_micropython_sphinx_falls_back_to_zensical(tmp_path: Path):
+    """docs_type has static choices (for --data-file validation), so sphinx
+    is answerable for micropython even though the firmware has nothing for
+    autodoc to import — render must redirect that answer to zensical."""
+    copy_project(
+        tmp_path,
+        project_type="micropython",
+        micropython_port="esp32",
+        use_recommended_docs=False,
+        docs_type="sphinx",
+    )
+    assert (tmp_path / "zensical.toml").exists()
+    assert not (tmp_path / "docs" / "conf.py").exists()
+    assert not (tmp_path / "docs" / "_api.rst").exists()
+    pyproject_toml = (tmp_path / "pyproject.toml").read_text()
+    assert "pydata-sphinx-theme" not in pyproject_toml
+    assert '"zensical"' in pyproject_toml
+
+
+def test_template_web_api_data_science_combo_guide(tmp_path: Path):
+    """The app/ + src/ coexistence must be explained where agents and humans
+    read (AGENTS.md / README)."""
+    copy_project(
+        tmp_path,
+        project_type="web_api",
+        include_data_science=True,
+        use_recommended_integrations=False,
+    )
+    assert "data-science layer coexists" in (tmp_path / "AGENTS.md").read_text()
+    readme = (tmp_path / "README.md").read_text()
+    assert "two trees coexist" in readme
+    assert "`src/`" in readme
 
 
 def test_template_kaggle_competition(tmp_path: Path):
@@ -1066,9 +1157,9 @@ def test_template_fair_metadata(tmp_path: Path):
     assert 'orcid: "https://orcid.org/0000-0002-1825-0099"' in cff
     reuse_toml = (tmp_path / "REUSE.toml").read_text()
     assert 'SPDX-License-Identifier = "Apache-2.0"' in reuse_toml
-    pre_commit = (tmp_path / ".pre-commit-config.yaml").read_text()
-    assert "cff-converter-python" in pre_commit
-    assert "reuse-tool" in pre_commit
+    hygiene = (tmp_path / ".github" / "workflows" / "_hygiene.yml").read_text()
+    assert "citation-file-format/cffconvert-github-action@" in hygiene
+    assert "fsfe/reuse-action@" in hygiene
     assert (tmp_path / "data" / "DUO.md").exists()
     assert (tmp_path / "data" / "CARE.md").exists()
     assert "Traceability & provenance" in (tmp_path / "data" / "CARE.md").read_text()
@@ -1087,9 +1178,6 @@ def test_template_fair_off(tmp_path: Path):
     assert not (tmp_path / "REUSE.toml").exists()
     assert not (tmp_path / ".github" / "workflows" / "fair-software.yml").exists()
     assert "howfairis" not in (tmp_path / "renovate.json").read_text()
-    pre_commit = (tmp_path / ".pre-commit-config.yaml").read_text()
-    assert "cff-converter-python" not in pre_commit
-    assert "reuse-tool" not in pre_commit
 
 
 def test_template_data_governance_off_by_default(tmp_path: Path):
@@ -1125,9 +1213,9 @@ def test_template_fair_restricted_license(tmp_path: Path, restricted_license: st
     assert "license:" not in cff
     # reuse only applies to open-source licenses
     assert not (tmp_path / "REUSE.toml").exists()
-    pre_commit = (tmp_path / ".pre-commit-config.yaml").read_text()
-    assert "cff-converter-python" in pre_commit
-    assert "reuse-tool" not in pre_commit
+    hygiene = (tmp_path / ".github" / "workflows" / "_hygiene.yml").read_text()
+    assert "citation-file-format/cffconvert-github-action@" in hygiene
+    assert "fsfe/reuse-action@" in hygiene
 
 
 def test_template_license_confidential(tmp_path: Path):
@@ -1203,7 +1291,8 @@ def test_template_readme_badges(tmp_path: Path):
     # (e.g. uv, pixi have no official "used by" badge upstream)
     assert "astral-sh/ruff/main/assets/badge/v2.json" in readme
     assert "copier-org/copier/master/img/badge/badge-black.json" in readme
-    assert "pre--commit-enabled-brightgreen" in readme
+    # pre-commit is no longer shipped: its badge must not come back
+    assert "pre--commit" not in readme
     assert "astral-sh/uv" not in readme
     assert "prefix-dev/pixi" not in readme
     assert "Python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-3776AB" in readme
@@ -1931,7 +2020,10 @@ def test_renovate_actions_match_what_is_shipped(override: dict, tmp_path: Path):
             for step in job.get("steps", []):
                 action = step.get("uses")
                 if action:
-                    used_github_actions.add(action.split("@")[0])
+                    name = action.split("@")[0]
+                    # docker:// steps track the bare image name in renovate
+                    name = name.removeprefix("docker://")
+                    used_github_actions.add(name)
     # Check they match
     assert used_github_actions == config_github_actions
 

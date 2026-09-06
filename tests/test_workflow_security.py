@@ -142,9 +142,9 @@ def test_uses_are_pinned_to_full_sha():
     """Scorecard Pinned-Dependencies: every third-party action is SHA-pinned.
 
     renovate's `helpers:pinGitHubActionDigests` keeps these digests current.
-    The only exception is `pypa/gh-action-pypi-publish@release/v1` (see
-    DELIBERATE_BRANCH_REFS) — a deliberate, documented deviation mirrored in
-    .github/zizmor.yml.
+    The only exceptions are `pypa/gh-action-pypi-publish@release/v1` (see
+    DELIBERATE_BRANCH_REFS) and `docker://` steps, which must be pinned to a
+    full sha256 image digest.
     """
     workflows = _workflows()
     sha_re = re.compile(r"^[0-9a-f]{40}$")
@@ -160,6 +160,12 @@ def test_uses_are_pinned_to_full_sha():
                     continue
                 _owner_repo, _, ref = uses.partition("@")
                 if uses in DELIBERATE_BRANCH_REFS:
+                    continue
+                if _owner_repo.startswith("docker://"):
+                    _image, _, digest = ref.partition(":")
+                    assert digest and len(digest) == 64, (
+                        f"{name}:{job_name} uses {uses!r} -- pin the docker image to a full sha256 digest"
+                    )
                     continue
                 assert sha_re.match(ref), (
                     f"{name}:{job_name} uses {uses!r} -- pin to a 40-char SHA "

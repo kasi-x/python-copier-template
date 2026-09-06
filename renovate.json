@@ -14,9 +14,6 @@
     "enabled": true,
     "automerge": true
   },
-  "pre-commit": {
-    "enabled": true
-  },
   "packageRules": [
     {
       "description": "Disable python version as that is managed by python-copier-template",

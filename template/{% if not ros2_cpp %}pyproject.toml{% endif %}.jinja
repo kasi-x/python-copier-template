@@ -41,8 +41,7 @@ urls.GitHub = "{{ repo_url }}"
    is no setuptools_scm git-tag version and nothing is built or installed. #}
 [dependency-groups]
 dev = [
-    {% if strictness == 'none' %}"pre-commit",
-    "pytest",
+    {% if strictness == 'none' %}"pytest",
     "ruff",{% if mcp_effective or web_api %}
     "anyio",{% endif %}{% if web_api %}
     "aiosqlite>=0.20,<1",
@@ -65,8 +64,7 @@ dev = [
     {% endif %}{% if task_runner_effective == 'poe' %}"poethepoet",
     {% elif task_runner_effective == 'invoke' %}"invoke",
     {% elif task_runner_effective == 'duty' %}"duty",
-    {% endif %}{% elif strictness == 'basic' %}"pre-commit",
-    "pytest",
+    {% endif %}{% elif strictness == 'basic' %}"pytest",
     "ruff",{% if mcp_effective or web_api %}
     "anyio",{% endif %}{% if web_api %}
     "aiosqlite>=0.20,<1",
@@ -92,8 +90,7 @@ dev = [
     {% endif %}{% else %}"basedpyright",
     {% if zensical %}"zensical",
     "mkdocstrings[python]",
-    {% endif %}"pre-commit",
-    {% if micropython_pkg %}"mpremote",
+    {% endif %}{% if micropython_pkg %}"mpremote",
     {% endif %}{% if sphinx %}"pydata-sphinx-theme>=0.12",
     {% endif %}{% if type_checker=="pyrefly" %}"pyrefly",
     {% endif %}{% if type_checker=="ty" %}"ty",

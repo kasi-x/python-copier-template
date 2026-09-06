@@ -19,6 +19,12 @@
   when task_runner_effective == 'pixi': pixi's own tasks already run inside
   the activated environment, so no `pixi run` prefix is needed there.
   For ros2 projects the commands source the ROS environment and use colcon.
+
+  `lint` is check-only (safe in CI); the `fix` task is the explicit
+  pre-commit replacement — run it before committing to auto-fix formatting
+  and lint findings. Repo hygiene (secrets, workflow linting, YAML/EOF
+  checks, conventional commits, REUSE/CFF) runs in CI via the `_hygiene.yml`
+  workflow instead of local git hooks.
 #}
 {% if ros2_pkg %}{% if ros2_package_manager == 'pixi' %}{% set run = '' %}
 {% set ros_source = '' %}
@@ -28,8 +34,8 @@
 {% set tasks = [
     {
         'name': 'lint',
-        'desc': 'Run pre-commit on all files',
-        'cmd': [run ~ 'pre-commit run --all-files --show-diff-on-failure'],
+        'desc': 'Check formatting and lint (ruff, check-only)',
+        'cmd': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .'],
     },
     {
         'name': 'build',
@@ -59,12 +65,12 @@
 {% set tasks = [
     {
         'name': 'lint',
-        'desc': 'Run pre-commit on all files',
-        'cmd': [run ~ 'pre-commit run --all-files --show-diff-on-failure'],
+        'desc': 'Check formatting and lint (ruff, check-only)',
+        'cmd': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .'],
     },
     {
-        'name': 'code-fix',
-        'desc': 'Auto-fix lint findings (ruff check --fix + format)',
+        'name': 'fix',
+        'desc': 'Auto-fix formatting and lint (run before committing)',
         'cmd': [run ~ 'ruff check --fix .', run ~ 'ruff format .'],
     },
 ] %}

@@ -32,4 +32,4 @@ However, this does not test whether processes like CI and docs work correctly. Y
 
 It is recommended that developers use a [vscode devcontainer](https://code.visualstudio.com/docs/devcontainers/containers). This repository contains configuration to set up a containerized development environment that suits its own needs.
 
-For more information on common tasks like setting up a developer environment, running the tests, and setting a pre-commit hook, see the [How-to guides](https://kasi-x.github.io/python-copier-template/main/how-to.html)
+For more information on common tasks like setting up a developer environment, running the tests, and the lint workflow, see the [How-to guides](https://kasi-x.github.io/python-copier-template/main/how-to.html)

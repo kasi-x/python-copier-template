@@ -18,7 +18,6 @@ dev = [
     "jinja2>=3.1.6,<4",
     "mkdocstrings[python]",
     "pip-audit>=2.9.0,<3.0",
-    "pre-commit>=4.6.1,<5",
     "pyproject-fmt>=2.27.0,<3.0",
     "pyrefly>=1.2.0,<1.3",
     "pytest>=9.1.1,<9.2",
@@ -273,7 +272,7 @@ extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
 
 [tool.typos.files]
 # template/ は生成コード。生成先プロジェクト側でチェックされる。
-extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS"]
+extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS", "BUGS_AND_IMPROVEMENTS.md"]
 
 [tool.vulture]
 paths = ["tests", "tools", "extensions.py"]

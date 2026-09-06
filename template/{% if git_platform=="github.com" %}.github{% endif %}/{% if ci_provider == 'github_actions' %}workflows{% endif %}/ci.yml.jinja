@@ -61,6 +61,10 @@ jobs:
       task_runner: {{ task_runner_effective }}
       task: lint{{ ",type-check" if strictness in ['recommended', 'full'] else "" }}{{ ",license-check" if strictness in ['recommended', 'full'] and license_check_effective else "" }}
 {% raw %}
+  hygiene:
+    uses: ./.github/workflows/_hygiene.yml
+{% endraw %}
+{% raw %}
   test:
     strategy:
       matrix:
@@ -163,6 +167,10 @@ jobs:
 {% elif not micropython_pkg %}
   dist:
     uses: ./.github/workflows/_dist.yml
+{% raw %}    with:
+      # The exact check for the installed wheel: <pkg> ships a `--version`
+      # CLI; web_api's app/ has no CLI entry point, so import it instead.
+{% endraw %}      version-command: {{ 'python -m {0} --version'.format(import_pkg) if not web_api else ('python -c ' + '"import {0}; print({0}.__version__)"'.format(import_pkg)) }}
   {% if pypi %}
   pypi:
     needs: [dist, test]
@@ -180,7 +188,7 @@ jobs:
 {% endif %}
   required-checks-passed:
     name: all required checks passed
-    needs: [lint, test{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}{% if micropython_pkg %}, firmware{% elif online_judge %}{% elif not micropython_pkg %}, dist{% endif %}]
+    needs: [hygiene, lint, test{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}{% if micropython_pkg %}, firmware{% elif online_judge %}{% elif not micropython_pkg %}, dist{% endif %}]
 {% raw %}
     if: always()
     runs-on: ubuntu-latest

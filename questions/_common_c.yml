@@ -55,6 +55,7 @@ package_name:
         Name of the python import package.
         Must be a valid python identifier, i.e. my_package.
         ASCII characters only (a-z, A-Z, 0-9, _).
+    default: my_package
     validator: >-
         {% if not (package_name | regex_search('^[a-zA-Z][a-zA-Z_0-9]+$')) %}
         {{ package_name }} is not a valid python package name. Use ASCII letters, digits and underscores only.
@@ -63,7 +64,7 @@ package_name:
 description:
     type: str
     help: A short description of your project
-    placeholder: One line description of your module
+    default: A Python project generated from python-copier-template
 
 git_platform:
     type: str
@@ -71,6 +72,7 @@ git_platform:
     choices:
         - github.com
         - gitlab.com
+    default: github.com
 
 github_org:
     type: str
@@ -86,6 +88,9 @@ gitlab_group:
     help: |
         GitLab group (or username) that will contain this repo.
     when: "{{ git_platform == 'gitlab.com' }}"
+    # Smart default from local git config, like github_org: the prompt shows
+    # it and the user can override; --defaults stays fully non-interactive.
+    default: "{{ git_user_name() }}"
 
 repo_name:
     type: str

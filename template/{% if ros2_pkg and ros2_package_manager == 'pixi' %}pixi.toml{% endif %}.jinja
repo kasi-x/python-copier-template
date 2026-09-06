@@ -29,15 +29,15 @@ ros-{{ ros_distro }}-ament-flake8 = "*"
 ros-{{ ros_distro }}-ament-pep257 = "*"
 {% else %}ros-{{ ros_distro }}-ament-lint-auto = "*"
 ros-{{ ros_distro }}-ament-lint-common = "*"
-{% endif %}pre-commit = "*"
-pytest = "*"
+{% endif %}pytest = "*"
 ruff = "*"
 
 [environments]
 default = ["dev"]
 
 [tasks]
-lint = { cmd = "pre-commit run --all-files --show-diff-on-failure" }
+lint = { cmd = "ruff format --check . && ruff check ." }
+fix = { cmd = "ruff check --fix . && ruff format ." }
 build = { cmd = "colcon build --symlink-install --packages-select {{ package_name }}" }
 test = { cmd = "colcon test --packages-select {{ package_name }} && colcon test-result --verbose" }
 check = { depends-on = ["lint", "build", "test"] }

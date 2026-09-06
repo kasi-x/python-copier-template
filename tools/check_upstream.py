@@ -224,7 +224,7 @@ def extract_pins() -> list[Pin]:
     # mirror the questionnaire axes so a combination that cannot stay
     # current is visible per axis, not as one flat list.
     for category, pattern in {
-        "core (all projects)": r'"(structlog|ruff|pytest|pre-commit)"',
+        "core (all projects)": r'"(structlog|ruff|pytest)"',
         "web_api": r'"(fastapi|uvicorn|sqlalchemy|alembic|asyncpg|pydantic-settings|slowapi|prometheus-client)[^"]*"',
         "kaggle/DS": r'"(torch|torchvision|lightgbm|xgboost|optuna|hydra-core|polars|duckdb|pyarrow)[^"]*"',
         "ctf": r'"(pwntools|z3-solver)[^"]*"',

@@ -223,6 +223,22 @@ def test_questionnaire_gate_table_matches_copier_yml():
     assert doc_gates == CANONICAL_GATES, f"questionnaire.md gate table drifted: {doc_gates}"
 
 
+def test_every_asked_question_has_a_default():
+    """`--defaults` only auto-answers questions that HAVE a default; a
+    question without one still prompts and breaks non-interactive generation
+    (gitlab_group regressed exactly this way). Every question that can
+    actually be asked (`when` not statically false) must carry a default."""
+    questions, _ = _load_questions()
+    for name, question in questions.items():
+        if name.startswith("_"):
+            continue
+        if question.get("when") in (False, "false"):
+            continue
+        assert "default" in question, (
+            f"question {name!r} can be asked but has no default: `copier copy --defaults` would stop and prompt for it"
+        )
+
+
 def test_when_and_default_reference_defined_variables():
     questions, _ = _load_questions()
     keys = set(questions)

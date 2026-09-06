@@ -1,4 +1,4 @@
-# Configuration for zizmor (GitHub Actions security analysis), run via pre-commit.
+# Configuration for zizmor (GitHub Actions security analysis), run in CI via security.yml.
 # See https://woodruffw.github.io/zizmor for the full reference.
 #
 # All audits are enabled. The exceptions below are deliberate and documented
