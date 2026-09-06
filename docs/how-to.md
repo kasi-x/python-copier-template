@@ -15,6 +15,7 @@ Practical step-by-step guides for the more experienced user.
 - [Publishing to PyPI](how-to/pypi.md)
 - [ROS 2 Package Integration](how-to/ros2.md)
 - [MicroPython Firmware](how-to/micropython.md)
+- [Pixi Projects](how-to/pixi.md)
 - [Web API Service Scaffolding](how-to/web-api.md)
 - [MCP Server Scaffolding](how-to/mcp.md)
 - [Polite Web Fetching](how-to/scraping.md)

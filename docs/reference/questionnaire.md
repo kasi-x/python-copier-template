@@ -113,8 +113,12 @@ Answering **No** to an area gate reveals its detailed questions:
   Kaggle and CTF always ship an `AGENTS.md` agent guide; AtCoder / LeetCode
   ask `oj_allow_ai` (default: no) which decides whether `AGENTS.md` is
   generated; yukicoder / AOJ omit it.
-- **Polish**: layout (src / flat), Japanese text allowed
-- **Docs**: README-only / zensical / sphinx / great-docs
+- **Polish**: layout (src / flat), Japanese text allowed (`allow_japanese`
+  relaxes line-length 88 → 120 and max-doc-length 150 → 200 so wide multibyte
+  text does not trigger E501/D rules)
+- **Docs**: README-only / zensical / sphinx / great-docs. For micropython,
+  sphinx is not offered — answering it falls back to zensical (the firmware
+  is not a CPython-importable package, so autodoc has nothing to document)
 - **Quality**: secondary checker (pyrefly / ty) and strictness
   (none / basic / recommended / full)
 - **License**: the full choosealicense.com list plus Proprietary/Confidential,

@@ -5,8 +5,17 @@ Once you have followed the [installation](./installation.md) tutorial, you can u
 ```
 git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
-uvx copier copy --trust https://github.com/kasi-x/python-copier-template.git $_
+uvx --with copier-template-extensions copier copy --trust --vcs-ref=main \
+    https://github.com/kasi-x/python-copier-template.git $_
 ```
+
+`--vcs-ref=main` asks for the current main branch. Without it copier checks
+out the **latest git tag**, and this repository still carries inherited
+upstream tags that point at the old, pre-fork template (they are re-tagged
+at the v1.0 fork detach). `--with copier-template-extensions` is required
+because the template ships custom Jinja extensions that must be importable
+by copier itself — a bare `uvx copier` runs in an isolated environment
+without them.
 
 This will:
 

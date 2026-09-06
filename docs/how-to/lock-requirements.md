@@ -22,7 +22,7 @@ $ uv sync
 
 This will ensure that any new dependencies you add will be placed in the lockfile, and your venv updated to match. It will *not* update any existing dependencies, unless `pyproject.toml` requires a later version.
 
-This command will be run by [pre-commit](./lint.md) during a `git commit` and by CI.
+Run this command before committing — CI runs the tests against the committed lockfile.
 
 To update all dependencies to their latest versions run:
 ```bash

@@ -33,10 +33,10 @@ harvests, and credentials are git-ignored — commit code, never data.
 |---|---|---|
 | feed-first / API-second judgement | `preflight()` (`Preflight.should_use_feed` / `.should_use_api`) | pytest (offline) |
 | robots.txt + access + budget refusals | `RobotDeniedError` / `AccessDeniedError` / `BudgetExceededError` | pytest (offline) |
-| no direct HTTP calls | ruff `banned-api` | `task lint` (pre-commit) |
+| no direct HTTP calls | ruff `banned-api` | `task lint` + CI lint job |
 | dependency license compliance | `task license-check` (pip-licenses) | CI lint job (with `type-check`); never inside offline `check` |
 | vulnerability audit | `task audit` (pip-audit) | on demand |
-| citation / SPDX metadata | `validate-cff` / `reuse` hooks | `task lint` (pre-commit) |
-| data governance (DUO/CARE) | `data/DUO.md` / `data/CARE.md` sheets + `test_qa.py` presence asserts + gitleaks `deidentification-salt` | pytest + `task lint` (pre-commit) |
+| citation / SPDX metadata | `validate-cff` / `reuse` checks | CI hygiene workflow |
+| data governance (DUO/CARE) | `data/DUO.md` / `data/CARE.md` sheets + `test_qa.py` presence asserts + gitleaks `deidentification-salt` | pytest + CI hygiene workflow |
 See [the scraping how-to](../how-to/scraping.md) for the engine choices
 and [Security & Compliance](security.md) for the Scorecard mapping.

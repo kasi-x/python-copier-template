@@ -47,7 +47,6 @@ Per-board differences (which GPIO the LED is on, etc.) are concentrated in
 ```sh
 uv sync                              # ruff / pytest / basedpyright / mpremote / pyrefly|ty
 uv run pip install -r requirements-dev.txt --target typings   # port stubs
-pre-commit install
 ```
 
 The stubs are installed into `typings/` (git-ignored) so `basedpyright` can

@@ -3,7 +3,7 @@
 The template offers a single axis — `strictness` — that controls both how
 strictly type annotations are required and how thorough the static-analysis
 toolchain is. Pick one level when prompted; it drives the generated
-`pyproject.toml`, `pre-commit` hooks and CI configuration together.
+`pyproject.toml`, task-runner tasks and CI configuration together.
 
 ## The 4 levels
 

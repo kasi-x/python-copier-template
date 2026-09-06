@@ -11,9 +11,8 @@ test name is linked so a future change can verify itself.
 Jinja tags at the end of a `.jinja` source silently add a trailing blank
 line: a file ending in `{% include "..." %}` or a plain `{% endif %}` leaves
 its own newline in the output, so the rendered file ends with `\n\n`. The
-generated project's `end-of-file-fixer` (pre-commit) then rewrites it on
-first commit, which fails the generated project's CI and produces a dirty
-tree.
+generated project's hygiene workflow then fails CI on the first push with
+its end-of-file newline check.
 
 Rules:
 
@@ -163,3 +162,27 @@ reports drift; the policy below decides whether drift is a bug or accepted:
   issue names the combination it breaks. A `REMOVED` verdict (floor matches
   no PyPI release) is always a bug — `uv sync` breaks for that combination.
   A `floor X / latest Y` gap is a judgment call per the policy above.
+
+## Documented generation commands must pin `--vcs-ref`
+
+Every `copier copy` command we publish against the template URL passes
+`--vcs-ref=main` (or a deliberate release ref). Reason: copier checks out the
+**latest git tag** when `--vcs-ref` is absent, and this fork still carries
+inherited upstream tags — the newest of them (`5.4.0`) points at the old
+pre-fork DiamondLightSource template. Generating without the flag therefore
+silently asks the old questionnaire and renders the old files, which produced
+two real bug reports ("docs_type rejects zensical", "asks component_owner";
+see BUG.md — both were misdiagnosed twice before the tag mechanism was
+confirmed via `git show 5.4.0:copier.yml`).
+
+This stays a hard rule until the v1.0 fork detach re-tags the repository
+(TODO item 11). Enforced by `tests/test_generation_docs.py`, which scans the
+README and docs/tutorials fenced blocks for URL-based `copier copy` commands
+without a `--vcs-ref=` flag.
+
+The same investigation pattern is worth reusing: when generation behaves
+differently between two invocations that look identical, print
+`Worker(...).template.config_data` from the Python API — it exposes which
+template source (working tree vs tag clone) and which settings keys copier
+actually resolved, and turned a day of "flaky copier" theories into a
+one-line root cause.

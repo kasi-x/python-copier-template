@@ -3,6 +3,7 @@
 生成セッション(2026-09-05、`transrecord` を `copier copy --trust --defaults --vcs-ref=HEAD --data ...` で生成)で発見。各項目は issue 化してよい。
 
 > **2026-09-05 対応済み**（3件とも修正 + テスト追加。修正内容の決定事項は各節末尾）。
+> **2026-09-06 対応**（#4, #5, #6, #7, #10。各節末尾の ✅ を参照。#8, #9 は本文末尾に追記）。
 
 ## 1. `use_recommended_agent` の意味が三重に矛盾し、誤レンダリングする
 
@@ -48,6 +49,10 @@
   - パイプライン文書にこのワークアラウンドを明記する
   - `just check` を `.git` 未存在時は pre-commit をスキップするようにする
   - `just check-no-git` のような別レシピを用意する
+- **✅ 対応 (2026-09-06)**: 生成物 AGENTS.md の Commands 節に「check/lint は
+  pre-commit を経由するため git リポジトリ外では実行不可。新規ワークスペースは
+  先に `git init`」と明記（エージェントがまっ先に読む場所に置く。スキップする
+  レシピは「check が静かに縮む」問題を生むため作らない）。
 
 ## 5. 日本語テキストで E501 (line-too-long) が多発
 
@@ -62,6 +67,10 @@
   - デフォルトの line-length を 100-120 に引き上げる
   - copier に「日本語テキストを含むか」の質問を追加し、line-length を調整する
   - 日本語プロジェクト向けのドキュメントを用意する
+- **✅ 対応 (2026-09-06)**: すでに `allow_japanese` 質問が存在
+  （`use_recommended_polish: false` で顕在化。true で line-length 88→120、
+  max-doc-length 150→200 に緩和、E501/D は multibyte を考慮した計算になる）。
+  提案の質問はこの質問が担うため新設せず、questionnaire.md に追記済み。
 
 ## 6. `@pytest.fixture()` が自動修正されない
 
@@ -73,6 +82,11 @@
   ```
 - **回避策**: 手動で括弧を削除するか、`per-file-ignores` に `PT006` を追加。
 - **提案**: テンプレートの ruff 設定で `PT006` を auto-fix 対象に含める。
+- **✅ 対応 (2026-09-06)**: 該当ルールは PT001（`fixture-parentheses`）。テンプレートは
+  括弧なし `@pytest.fixture` を正とするスタイルで、ruff の実効デフォルトも同方向。
+  `lint.flake8-pytest-style.fixture-parentheses = false` を明示固定し、ruff の
+  デフォルト変更で生成物のスタイルが静かに反転しないようにした。修正は
+  `ruff check --fix` で自動適用される（`--fix` なしの `ruff check` は指摘のみ）。
 
 ## 7. DTZ007 (call-datetime-strptime-without-zone) が厳しすぎる
 
@@ -86,6 +100,10 @@
 - **提案**:
   - デフォルトの `extend-ignore` に `DTZ007` を追加する
   - またはドキュメントに「日時パターンでは per-file-ignores が必要」と記載する
+- **✅ 対応 (2026-09-06)**: recommended strictness の `extend-ignore` に
+  `DTZ007` を追加（理由コメント付き: naive な入力をパースして
+  `.replace(tzinfo=...)` で tz を後付する一般的な正しいパターンを
+  DTZ007 は見分けられない。フォーマットが %z を持つなら ignore を外せばよい）。
 
 ## 8. 生成されたテストに未使用引数がある (ARG001)
 
@@ -117,3 +135,25 @@
   - 全質問を `--defaults` でテストし、スキップされるか確認する
   - 「デフォルトでも聞かれる質問」をドキュメントに記載する
   - 完全非インタラクティブモード（`--force` 等）を用意する
+- **✅ 対応 (2026-09-06)**: 根本原因は `--trust` 漏れ — copier は unsafe feature
+  （jinja_extensions/tasks）を持つテンプレートを trust 無しでは生成せず、
+  **exit 4 で何も出力せず終了**する（`_cli.py` の `0b100`）。加えて
+  `gitlab_group` だけ default が無く `--defaults` + gitlab.com で止まり得たため
+  default を追加した。全質問に default が付いたことを機械検証するテスト
+  （test_every_asked_question_has_a_default）を新設。README の非インタラクティブ節を
+  `--trust` 必須・`uvx --with copier-template-extensions` 付きで書き直した。
+
+---
+
+# 2026-09-06 検証結果(残り2件)
+
+- **#8 (生成テストの未使用引数 ARG001)**: テンプレート生成物には再現しない。
+  報告の例(`client`, `signing_key`)は Flask 固有のコードで、テンプレートは
+  Flask を生成しない。生成物は `test_generated_lint.py` が全レンダーパスで
+  ruff を実走させており ARG001 は出ない。生成コードを copy した後の
+  ユーザー編集で起きたものと判断(対応不要)。
+- **#9 (pyproject.toml のコメントが長い)**: **見送り(設計判断)**。コメントは
+  「なぜこの ignore なのか」を生成物だけで完結させるための意図的なスタイルで、
+  詳細を外部ドキュメントへ追い出すと copier update 時のパリティテスト
+  (テンプレート本体と生成物の設定一致)が壊れる。コンフィグの教訓は
+  docs/explanations/template-dev.md に文書化済み。

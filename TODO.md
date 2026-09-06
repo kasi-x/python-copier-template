@@ -472,6 +472,17 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       check-upstream-fork.yml は URL 直 fetch なので解除後もそのまま機能する
       （fork の間は Issues が無効のため、週次 workflow の issue 作成ステップは失敗する。
       気になるなら detach まで該当 workflow を無効化）
+      → **継承タグの危険性を実害として確認（2026-09-06）**: 現時点の最新タグは
+      5.4.0（2026-08-14、DiamondLightSource 由来の内容）で、`copier copy URL` を
+      **`--vcs-ref` 無し**で実行すると copier は最新タグをチェックアウトするため、
+      古い upstream テンプレートが「現行テンプレート」として使われてしまう
+      （BUG.md #1「docs_type に zensical が無い」・#6「component_owner を聞かれる」
+      の2件はどちらもこの罠が原因。`git show 5.4.0:copier.yml` で確認済み）。
+      **detach まで全ドキュメントの URL 生成コマンドは `--vcs-ref=main` 必須**
+      （README / docs/tutorials/create-new.md / adopt-existing.md は対応済み）。
+      孤立例: 新規プロジェクトを作るチュートリアル、example 再生成 CI
+      （`_example.yml` は既に `--vcs-ref=HEAD` 付きで正常）。detach 時に上記タグを
+      削除・打ち直す作業を忘れないこと
 
 ## 12. セキュリティ / コンプライアンス基盤の整備（OpenSSF Scorecard / OSPS 準拠）
 
@@ -712,12 +723,271 @@ Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push �
 - [ ] Periodic（リンクチェック）: 2026-08-26 / 09-02 の赤は旧 tox 版 workflow の
       失敗。現行 lychee 版（085b1579 で投入）は水曜スケジュールが初回実行 →
       初回結果を確認し、赤ならリンク修正
-- [ ] flaky: `test_template_task_runner_just_works` がフル並列実行で 1 回のみ
-      失敗（単独・再実行は pass）。uv キャッシュ競合の疑い。再現時に
-      実行時間/worker 数で切り分ける
-- [ ] ルート `.python-version` が未レンダの Jinja 式のまま（`ros2_pkg` 等の変数は
+- [x] flaky: `test_template_task_runner_just_works` がフル並列実行で 1 回のみ
+      失敗（単独・再実行は pass）→ **診断完了（2026-09-06、サブエージェント調査）**。
+      最有力は pre-commit 共有ストアの hook 環境インストール競合:
+      `repository.py` の `_hook_install` は `py_env-*` を rmtree+再インストールするが
+      クローンと異なり flock が無く、hook `rev` 更新後のコールドウィンドウで
+      32 ワーカーが同一環境を同時構築して 1 ワーカーが部分的なインストールで落ちる
+      （uv キャッシュは競合安全設計のため疑いから除外、git 競合も個別 tmp_path のため除外）。
+      対策として xdist ワーカー毎の `PRE_COMMIT_HOME` 分離を試したが、
+      **コールドインストールが 32 回発生して 48 失敗・7分44秒化したため撤回**
+      （tests/conftest.py に経緯を記載）。発生頻度は低いため現状は共有ストアのまま、
+      flake 時は solo 再実行。pre-commit 本体への報告草稿を
+      upstream-drafts/10 に用意済み
+- [x] ルート `.python-version` が未レンダの Jinja 式のまま（`ros2_pkg` 等の変数は
       ルートに存在しない）。全 uv コマンドで warning が出て CI ログも汚れるので、
       `3.11` 等の固定値にするか削除する
-- [ ] fork の間は Issues が無効のため、週次 workflow の issue 作成ステップが
-      失敗する（節11の v1.0 fork 解除まで。気になるなら該当 workflow を
-      一時無効化）
+      → **解消（2026-09-06）**: ルート `.python-version` は `3.11` に固定。
+      生成物側は `template/.python-version.jinja` がルートへの symlink だったため
+      ros2 の distro 別ピン（humble=3.10 / jazzy=3.12）が壊れていた — symlink を
+      解除して Jinja 式の実ファイルに戻し、ルートと生成物で役割を分離。
+      ros2 テスト2件の失敗も同時に解消
+- [x] ~~fork の間は Issues が無効のため、週次 workflow の issue 作成ステップが
+      失敗する~~ → **解消（2026-09-06）**: リポジトリで Issues / Discussions を
+      有効化した（節16 フェーズ0）。workflow 側のガードは不要
+
+## 15.4. pre-commit 廃止 → GitHub Actions への移行（2026-09-07）
+
+方針決定: pre-commit はテンプレートにも本リポジトリにも残さない。
+開発フローは「**`fix` タスクで自動修正してから commit**(明示的)」に変更し、
+リポジトリ衛生チェックは CI の **`_hygiene.yml`** reusable workflow に集約した。
+
+- [x] **生成物の lint タスクを ruff 直実行に変更**:
+      `lint` = `ruff format --check .` + `ruff check .`(チェックのみ・CI 安全)、
+      旧 `code-fix` を **`fix`** に改名(`ruff check --fix` + `ruff format`)。
+      typos / deptry / vulture / basedpyright は従来どおり `type-check` タスクに残存
+      (pre-commit とは二重だった)
+- [x] **`_hygiene.yml` 新設**(ルートに実体、生成物へ symlink、`{% if not ros2_pkg %}` ゲート):
+      競合マーカー / 10MB超ファイル / EOF改行 / YAML パース(jinja・copier.yml 除外)/
+      **gitleaks**(gitleaks-action@SHA、.gitleaks.toml 引き継ぎ)/
+      **actionlint**(`docker://rhysd/actionlint` を sha256 ダイジェスト固定)/
+      **conventional commits**(uvx conventional-pre-commit==4.4.0 で PR title + 各コミットを検証)/
+      **nbstripout**(ipynb がある時だけ、hashFiles ゲート)/
+      **REUSE**(hashFiles ゲート)/ **CITATION.cff**(cffconvert、hashFiles ゲート)
+- [x] **ci.yml(ルート+生成物)** に hygiene ジョブを追加し required-checks に組み込み
+- [x] **削除**: `template/.pre-commit-config.yaml.jinja`、ルート `.pre-commit-config.yaml`、
+      生成 pyproject dev 依存の `pre-commit`(全 strictness 分岐)、ros2+pixi pixi.toml の
+      依存とタスク、devcontainer の `pre-commit install` と `PRE_COMMIT_HOME`
+- [x] **テキスト同期**: 生成 README(バッジ含む)/ AGENTS.md(check は git 無しで動く旨に
+      更新 = bugs.md #4 の根本解決)/ CONTRIBUTING / PR テンプレート / zizmor.yml・
+      actionlint.yaml のヘッダコメント / questions の help 2件 / ルート README /
+      docs 配下(lint how-to 全面書き直し ほか)
+- [x] **renovate**: pre-commit manager 削除、template renovate.json.jinja に
+      「Hygiene actions」無効化ルール新設(gitleaks-action / rhysd/actionlint /
+      reuse-action / cffconvert — 生成プロジェクトは copier update 経由で更新)
+- [x] **tools/check_upstream.py**: core PyPI floor パターンから pre-commit を除去
+- [x] **テスト**: `test_gitleaks_precommit.py`(実走)→ `test_gitleaks_config.py`(静的:
+      設定リンク・SHA ピン・SealedSecrets 許容範囲が YAML スコープのまま・塩ルール存続);
+      `test_template_no_precommit_hygiene_in_ci` 新設; renovate パリティテストは
+      `docker://` を bare イメージ名に正規化; README バッジテストはバッジ不在を固定;
+      `test_workflow_security.py` は docker:// ステップの sha256 ダイジェスト要件を追加
+- [x] zizmor(生成 `_hygiene.yml` クリーン)/ actionlint(クリーン)/ REUSE lint 準拠を
+      ローカルで確認、フルスイート green
+
+## 15.5. BUG.md / bugs.md / BUGS_AND_IMPROVEMENTS.md の一括処理（2026-09-06）
+
+3つのバグ報告ファイル + TODO 17 の未解決項目を全点検証し、再現するものだけ直した。
+詳細な項目別ステータスは各ファイル内の 2026-09-06 追記を参照。
+
+**テンプレート側で解決できず copier 本体に起因する問題は
+`COPIER_UPSTREAM.md` に寄稿候補として整理した**（unsafe 拒否の UX、exit code
+未ドキュメント、jinja 拡張の依存宣言、answers-file のエラー文面、
+required 質問の一括報告、DirtyLocalWarning、settings trust の発見性）。
+9.18.1 のソースで裏付け取り、upstream の既存 issue との重複も確認済み。
+
+- [x] **web_api + sphinx docs が壊れる**: `docs/conf.py` / `_api.rst` /
+      `reference.md` が `{{ package_name }}` を import しており、web_api
+      （import root = `app`、`<pkg>` は生成されない）で docs build が必ず落ちる
+      → `{{ import_pkg }}` に統一 + オフライン耐性（switcher 確認の
+      `requests.get` を try/except）。テスト追加
+- [x] **micropython + sphinx の組合せが壊れる**: docs_type の choices を静的化した
+      副作用で sphinx が選べてしまい、import できないパッケージの autodoc で
+      docs build が落ちる → render 時に zensical へフォールバック
+      （`sphinx` / `zensical` internal 変数。AGPL 強制上書きと同型）。テスト追加
+- [x] **`_dist.yml` の `--version` 検査が `find | head -1` 推測**:
+      `version-command` input を新設し、生成側 `ci.yml` が `import_pkg` から
+      正確なコマンドを渡す（web_api は CLI entry point が無いため import チェック）。
+      data_science（src/ 直下にパッケージ無し）で旧ヒューリスティックが壊れる件も同時解消
+- [x] **非インタラクティブ生成の根本原因**: copier は unsafe feature ありの
+      テンプレートを `--trust` 無しでは**何も出力せず exit 4** で終了する。
+      README の非インタラクティブ節を `--trust` 必須 +
+      `uvx --with copier-template-extensions` で書き直し、トラブルシュート表付き
+- [x] **全質問に default が付いていることの機械検証**
+      （`test_every_asked_question_has_a_default`。`gitlab_group` だけ無かった
+      — `{{ git_user_name() }}` を追加し `--defaults` + gitlab.com が通るように）
+- [x] **codecov upload を push to main に制限**（`_test.yml`。PR では fork が
+      token 無しで upload 失敗する noise のみ）
+- [x] **`make_switcher.py` に `--ref` オプション**（gh-pages 固定の解除。
+      既定は従来どおり `origin/gh-pages`）
+- [x] **生成物 ruff 設定**: `DTZ007` を recommended の extend-ignore に追加
+      （naive パース → `.replace(tzinfo=...)` 後付パターン。理由コメント付き）+
+      `fixture-parentheses = false` を明示固定（括弧なし `@pytest.fixture` が
+      テンプレートのスタイル。ruff デフォルト反転での silent restyle を防止）
+- [x] **pixi how-to 新設**（`docs/how-to/pixi.md` + nav 登録）:
+      `[tool.pixi.*]` in pyproject の設計、**フラットな dependencies テーブル**
+      （per-package サブテーブルは `invalid character in string` エラーになる）、
+      conda vs PyPI の出し分け、**PyTorch は PyPI index 指定**（conda-forge の
+      ビルド欠け対策。kaggle の uv と同じ発想）、`pixi.toml` からの移行手順
+- [x] **web_api + data_science コンボの `app/` と `src/` の関係**を生成物
+      README（"two trees coexist" 節）と AGENTS.md（callout）に記載。テスト追加
+- [x] **生成物 AGENTS.md に git init 注記**（check/lint は pre-commit 経由で
+      git リポジトリ必須。publish pipeline の鶏と卵問題への回答）
+- [x] **BUGS_AND_IMPROVEMENTS.md（25項目）を全点再確認**し、検証結果を同ファイルに
+      記録: 10件は適用時より前に解決済み（pixi CI、vscode、concurrency、
+      permissions、DLS 言及、docs 出し分け等）、#7/#17/#18/#20/#11/#8 を今回修正、
+      #1/#3/#5/#6/#19/#21〜#25 は誤認または意図的設計、#9'（pyproject のコメント量）
+      のみ見送り（生成物だけで完結させる教訓コメントの意図的スタイルのため）
+
+## 16. 普及・標準化戦略（2026-09-05 調査。GitHub API で外部事実を確認済み）
+
+「多くの人に使われる新しいスタンダードとして維持する」ための対外的な戦略。
+節11(v1.0 fork解除の**手順**)・Strategy.md(内部品質の検知)とは独立の軸 ——
+本節は発見可能性・比較優位・ガバナンスという対外面を扱う。詳しい根拠・比較・
+一次情報源へのリンクは `docs/explanations/vision.md`（今回新設、公開ドキュメント）
+に書いた。ここには実行チェックリストのみ置く。
+
+### 現状（事実。2026-09-05、GitHub API で確認）
+
+| repo | stars | forks | 備考 |
+|---|---|---|---|
+| kasi-x/python-copier-template（本リポジトリ） | 0 | 0 | fork継続中、作成2026-08-12(3週間強)、topics空、has_issues=false、has_discussions=false、homepage未設定、description が upstream 由来のまま |
+| DiamondLightSource/python-copier-template（upstream） | 25 | 10 | issues 66件 open |
+| pawamoy/copier-uv | 157 | 29 | 2024-02〜、単独メンテ・実績あり |
+| scientific-python/cookie | 410 | 79 | Scientific Python コミュニティが背景 |
+| cjolowicz/cookiecutter-hypermodern-python | 1921 | 235 | **2024-05-18 以降 push なし = 実質メンテ終了**、乗り換え先を探しているユーザー層が存在するはず |
+
+**加えて `https://kasi-x.github.io/python-copier-template/`(と `/main/`)は現在 404**——
+README・CONTRIBUTING.md が案内するドキュメントリンクが機能していない状態。
+copier 公式ドキュメントには GitHub topic ベースのテンプレート発見導線があり、
+`copier-template` という topic を付けるとその一覧に載る仕組みがある(現状 topics=[] で未活用)。
+
+### フェーズ0: 今日中に終わる、コード変更不要の修正 → **実施済み(2026-09-06)**
+
+- [x] GitHub Pages を有効化した(`gh api -X POST .../pages -f build_type=workflow`
+      — `_docs.yml` の Actions デプロイフローと一致。次回 push 以降、docs job が
+      実際にサイトを publish する。初回デプロイ後、404 が解消されるかを確認する)
+- [x] Issues / Discussions を有効化した(`gh repo edit --enable-issues
+      --enable-discussions`。fork でもオーナーなら有効化できた)。これにより
+      節15 の「fork の間は週次 workflow の issue 作成が失敗する」も解消
+      (workflow 側のガードは不要になった)
+- [x] GitHub topics を追加: `copier-template` `copier` `python` `project-template`
+      `cookiecutter-alternative` `uv`
+- [x] homepage に docs URL を設定(`https://kasi-x.github.io/python-copier-template/`)
+- [x] description をこのリポジトリ自身の言葉に書き直し(upstream 由来の
+      "Diamond's opinionated ..." から変更)
+
+### フェーズ1: v1.0 独立(節11の手順に、標準化の観点で以下を追加)
+
+- [ ] **detach 前にリポジトリ名を再検討して一度で決める**——現状名
+      "python-copier-template" は upstream と完全同名で、detach 後も検索・引用・
+      会話で混同され続ける。detach 後の rename は星・被リンクの再蓄積を
+      引き起こすため、名前は detach 前に確定させる(候補の軸: 多ジャンル対応/
+      Z3 検証済み/という差別化点を表す語。決めるのは開発者自身の裁量)
+- [ ] detach 後、README・CITATION.cff・codemeta.json・新設予定の NOTICE 相当に
+      DiamondLightSource 由来である旨を明記する(正統性の担保と礼儀。既存の
+      `docs/explanations/why-use-template.md` が python3-pip-skeleton 由来を
+      明記しているのと同じパターンをここにも適用)
+- [ ] detach 直後、Scorecard workflow を `workflow_dispatch` で1回走らせて
+      初期スコアを確認する(private/非公開状態では機能しない旨が既存 TODO に
+      記載済み——public 化後の確認として)
+
+### フェーズ2: 発見可能性・比較優位の明文化
+
+- [x] `docs/explanations/vision.md` を README からもリンクした
+      (新設の "Why this template" 節から。pitch の一行要約つき)
+- [x] README に他テンプレートとの比較を追加した
+      (vision.md の表と重複させず、要約+リンクに留める方針どおり)
+- [ ] awesome-python 系リストへの PR、r/Python・Hacker News(Show HN)・
+      discuss.python.org への投稿を検討する(実行タイミングは detach 後。
+      fork のまま告知すると "0 star のフォーク" という第一印象になり逆効果)
+- [ ] cookiecutter-hypermodern-python(2024-05 以降更新停止、1900+ stars)
+      からの乗り換え層を明示的なターゲットにする——比較記事 or 移行ガイドを書く
+- [ ] Strategy.md の MECE ドリフト検知フレームワーク(発生源5分類×検知タイミング
+      4分類 + Z3 充足検査)を技術記事として英語で書き起こし、docs か外部ブログに
+      公開する。他の copier/cookiecutter 系テンプレートに同種の説明が見当たらない
+      技術的差別化の核心なのに、現状 Strategy.md 止まりで対外発信されていない
+
+### フェーズ3: 信頼・ガバナンス(長期)
+
+- [x] `GOVERNANCE.md` を新設した(BDFL 型の明文化、将来メンテナの追加基準、
+      レビュー基準、upstream との関係)
+- [ ] bus-factor 対策として、second reviewer/co-maintainer 候補を探す
+      (コード変更ではなく運用課題。detach 後の方が依頼しやすい——fork のままだと
+      「誰の何に協力するのか」が伝わりにくい)
+
+### スコープ規律(やらないことリスト——これも標準化戦略の一部)
+
+- [ ] 新規 `project_type` の追加は当面凍結し、既存の組み合わせ(現状
+      library/cli/web_api/data_science/online_judge×5/script/ros2/micropython
+      + レイヤー)の安定化・ドキュメント・テスト強化を優先する。「対応範囲の広さ」
+      は差別化点だが、伸ばし続けると kitchen-sink 化して新規参入者の意思決定
+      コストが上がる——`web_django` を明確に non-goal として拒否する既存パターン
+      (README 参照)を、他の際どい追加候補(GUI 質問票、他言語全般対応 等)にも
+      同様に適用し、`docs/explanations/vision.md`「What this is deliberately not」
+      に追記していく
+
+## 17. 非インタラクティブ生成の改善（2026-09-05 フィードバック）
+
+### 修正済み
+
+- [x] `docs_type` の choices を Jinja テンプレートから静的リストに修正
+      （`questions/_common_b.yml`。動的 choices がバリデーション時に評価されず、
+      `zensical` が拒否される問題を修正）
+- [x] 必須質問 (`package_name`, `description`, `git_platform`) にデフォルト値を追加
+      （`questions/_common_c.yml`。`--defaults` フラグで非インタラクティブ生成が
+      可能になる）
+- [x] README.md に非インタラクティブモードのドキュメントと例を追加
+
+### 残課題（2026-09-06 時点。解消分は下記に降格）
+
+- [ ] 生成物の `dependencies = []` を project_type に応じて自動設定する改善
+      （web_api / data_science は既に設定済み。library の空依存は
+      「依存ゼロで始める」設計として維持するか、質問にするかは要検討）
+
+### 2026-09-06 に解消（節15.5 で対応。詳細はそちら）
+
+- [x] ~~`--data-file` で指定した値が `when` 条件の評価に反映されない~~
+      → 根本原因は `--trust` 漏れ（copier は unsafe feature ありのテンプレートを
+      trust 無しでは生成せず exit 4 で終了）。`--trust` + `--defaults` +
+      `--data-file` の組合せで `when` gating も含めて正常動作することを
+      web_api / pixi / micropython 等で実測。README を書き直し
+- [x] ~~`uvx copier copy` で Jinja 拡張が見つからない~~
+      → `uvx --with copier-template-extensions copier copy --trust ...` が
+      正しい呼び方（`_example.yml` と同じ形）。README に記載
+- [x] ~~非インタラクティブ生成時に全質問の `when` 条件を評価してスキップ~~
+      → 上記と同根。全質問に default があることを機械検証するテストを追加
+      （`gitlab_group` に `{{ git_user_name() }}` を追加して全質問 default 完備）
+- [x] ~~Pixi 依存の正しいフォーマットのドキュメント追加~~
+      → `docs/how-to/pixi.md` 新設（フラットテーブル、エラー例つき）
+- [x] ~~PyTorch 等の conda-forge バージョン競合のガイドライン~~
+      → 同 how-to に `[tool.pixi.pypi-dependencies]` + PyPI index 指定で解説
+- [x] ~~`pixi.toml` から `pyproject.toml` [tool.pixi.*] への移行ガイド~~
+      → 同 how-to に移行手順を記載
+
+### 修正詳細
+
+#### Issue: docs_type バリデーション問題
+
+**症状**: `--data-file` で `docs_type: zensical` を指定すると
+`ValueError: Invalid choice for 'docs_type': 'zensical' is not in ['README', 'sphinx']`
+エラーになる。
+
+**原因**: `choices` に Jinja テンプレート (`{%- if micropython_pkg %}...`) を使用すると、
+バリデーション時に Jinja が評価されず、一部の choices しか認識されない。
+
+**修正**: `choices` を静的リスト `[README, zensical, sphinx, great-docs]` に変更。
+micropython プロジェクトでは sphinx が不要な制限は、テンプレート側で対応
+（`template/{% if docs %}docs{% endif %}.jinja` で条件制御）。
+
+#### Issue: 必須質問のデフォルト値不足
+
+**症状**: `--defaults` フラグを使用しても `package_name`, `description`,
+`git_platform` が "required" エラーになる。
+
+**原因**: これらの質問に `default` が設定されていないため。
+
+**修正**: 各質問にデフォルト値を追加:
+- `package_name`: `my_package`
+- `description`: `A Python project generated from python-copier-template`
+- `git_platform`: `github.com`

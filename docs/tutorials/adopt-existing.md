@@ -2,6 +2,14 @@
 
 You can adopt this template into an existing repo by running `copier copy` in much the same way as in a new project.
 
+!!! warning
+    This repository has not reached its v1.0 detach yet, so the only current
+    release tags are inherited from the upstream project and point at the old,
+    pre-fork template. **Until v1.0, every URL-based `copier copy` here must
+    pass `--vcs-ref=main`** (as the commands below for the general case do).
+    The `1.0.0`-based flow below applies once the fork has been detached and
+    re-tagged (see the repository's TODO, item 11).
+
 This will:
 
 - Ask some questions about the existing project
@@ -29,10 +37,11 @@ git commit -m "Update to python-copier-template x.x.x"
 
 ## If you do not have a skeleton-based project
 
-If you have a project with a different structure then it is best to go straight to the latest release:
+If you have a project with a different structure then it is best to go straight to the current main branch (`--vcs-ref=main` — without it copier picks the latest git tag, which here still points at the old, pre-fork template):
 
 ```shell
-uvx copier copy --trust https://github.com/kasi-x/python-copier-template.git /path/to/existing-project
+uvx --with copier-template-extensions copier copy --trust --vcs-ref=main \
+    https://github.com/kasi-x/python-copier-template.git /path/to/existing-project
 git diff
 # Examine the changes, put back anything you want to keep
 git commit -m "Adopt python-copier-template x.x.x"

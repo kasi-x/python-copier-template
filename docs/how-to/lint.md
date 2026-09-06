@@ -1,33 +1,29 @@
-# Run linting using pre-commit
+# Run linting
 
-Code linting is handled by [ruff](https://docs.astral.sh/ruff) run under [pre-commit](https://pre-commit.com/).
+Code linting and format checks are handled by [ruff](https://docs.astral.sh/ruff) through the task runner's `lint` and `fix` tasks.
 
-## Running pre-commit
+## Running the checks
 
-You can run the above checks on all files with this command:
+The `lint` task is check-only — `ruff format --check .` followed by `ruff check .` — so it changes nothing and also works outside a git repository. You can run it on all files with this command:
 
 ```
 $ task lint
 ```
 
-The devcontainer will also install a pre-commit hook that will run each time you do a `git commit` on just the files that have changed.
+(or `just lint`, `poe lint`, ... depending on your task runner).
 
-If you want to commit with a failing pre-commit check then you have to:
-
-```
-$ git commit --no-verify
-```
+Repository hygiene checks are not run locally: they run in CI via the repository hygiene workflow, which covers secret scanning (gitleaks), workflow linting (actionlint), YAML validity, missing end-of-file newlines, conflict markers, oversized files, conventional commit messages, REUSE lint and CITATION.cff validation.
 
 ## Fixing issues
 
 The typical workflow is:
 
 - Make a code change
-- `git add` it
-- Try to commit
-- Pre-commit will run, and ruff will try and fix any issues it finds
+- Run the `fix` task (`task fix` or `just fix`), which runs `ruff check --fix .` then `ruff format .`
 - If anything changes it will be left in your working copy
-- Review and commit the results
+- Review the changes, then `git add` and commit them
+
+Run `fix` before committing so the `lint` task and CI stay green.
 
 ## VSCode support
 

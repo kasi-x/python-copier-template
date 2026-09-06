@@ -21,7 +21,7 @@ default Python, which is why the `.python-version` is pinned per distro.
 
 The official ROS 2 way: install `ros-{{ '<distro>' }}-*` from the ROS apt
 repositories, then use `colcon` + `rosdep`. The pure-Python dev tooling
-(ruff/pytest/pre-commit) is managed by your chosen package manager (uv,
+(ruff/pytest) is managed by your chosen package manager (uv,
 poetry, or pixi) — one tool for the Python side, one for ROS.
 
 - `package.xml` declares the ROS dependencies; `rosdep install --from-paths .`
@@ -65,7 +65,7 @@ dev dependencies and `[tasks]` for lint/build/test/check. CI uses
   `[build-system]`/`[project]` (with `requires-python` pinned to the distro
   and no `rclpy` in `dependencies` — package.xml owns the ROS deps),
   `uv.lock`/`pixi.lock`, the standard `Dockerfile`, docs and
-  pre-commit all work as usual. C++ packages skip `pyproject.toml`/`setup.py`
+  lint/fix tasks all work as usual. C++ packages skip `pyproject.toml`/`setup.py`
   (the build is CMake).
 - `Dockerfile.ros2` (apt or pixi flavour) and a ROS-aware devcontainer
   (with the `ms-iot.vscode-ros` extension).
