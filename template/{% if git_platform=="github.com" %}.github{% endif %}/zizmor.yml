@@ -14,6 +14,10 @@
 #   - template-injection on _container.yml: its smoke-test renders
 #     `${{ inputs.smoke-command }}`, which ci.yml (same repository) sets to a
 #     fixed literal (`--version` / `--help`), never to an external value.
+#   - self-repository (all workflows): `./.github/workflows/*` is the
+#     established local-reusable-workflow form here and in generated
+#     projects; zizmor v1.30's `$/...` suggestion is cosmetic for this
+#     repository layout.
 
 rules:
   unpinned-uses:
@@ -29,6 +33,10 @@ rules:
       # online_judge / micropython ci.yml jobs use softprops/action-gh-release
       # to publish release notes + firmware/assets on tag.
       - ci.yml
+  self-repository:
+    ignore:
+      - ci.yml
+      - scheduled-check.yml
   template-injection:
     ignore:
       # required-checks-passed renders toJSON(needs) — the workflow's own job

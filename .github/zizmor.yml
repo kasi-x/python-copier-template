@@ -17,6 +17,10 @@
 #   - template-injection on _container.yml: its smoke-test renders
 #     `${{ inputs.smoke-command }}`, which ci.yml (same repository) sets to a
 #     fixed literal (`--version` / `--help`), never to an external value.
+#   - self-repository (all workflows): `./.github/workflows/*` is the
+#     established local-reusable-workflow form here and in generated
+#     projects; zizmor v1.30's `$/...` suggestion is cosmetic for this
+#     repository layout.
 
 rules:
   unpinned-uses:
@@ -33,6 +37,10 @@ rules:
       # softprops/action-gh-release uploads multi-asset releases (docs zip +
       # sdist/wheel) from downloaded artifacts.
       - _release.yml
+  self-repository:
+    ignore:
+      - ci.yml
+      - scheduled-check.yml
   template-injection:
     ignore:
       # required-checks-passed renders toJSON(needs) — the workflow's own job
