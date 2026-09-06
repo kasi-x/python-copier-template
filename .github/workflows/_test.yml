@@ -75,6 +75,10 @@ jobs:
       - name: Install Just
         if: inputs.task_runner == 'just'
         uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+        with:
+          # zizmor unpinned-tools: the just CLI version is pinned and
+          # tracked by the weekly check-upstream drift report
+          just-version: "1.58.0"
 
       - name: Run tests
         env:

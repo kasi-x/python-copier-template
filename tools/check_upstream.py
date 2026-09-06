@@ -247,6 +247,15 @@ def extract_pins() -> list[Pin]:
         floor, ceiling = copier_m.group(1), copier_m.group(2)
         pins.append(Pin(name="copier ceiling (root pyproject.toml)", current=f">={floor},<{ceiling}", checkable=True))
 
+    # just CLI version pinned for setup-just (zizmor unpinned-tools): the
+    # shared reusable workflows install it without renovate coverage, so
+    # the weekly drift report is the only update signal.
+    workflows_src = "\n".join(
+        (TOP / ".github" / "workflows" / name).read_text() for name in ["_tasks.yml", "_test.yml", "_docs.yml"]
+    )
+    just_versions = set(re.findall(r'just-version: "(\d+\.\d+\.\d+)"', workflows_src))
+    pins.append(Pin(name="just version (setup-just)", current=",".join(sorted(just_versions)) or "?", checkable=True))
+
     return pins
 
 
@@ -388,6 +397,8 @@ def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911, C901
         return pypi_latest("copier")
     if name.startswith("Devcontainer base"):
         return _resolve_devcontainer_base(current)
+    if name.startswith("just version"):
+        return github_latest_release("casey/just")
     return None
 
 
@@ -410,6 +421,11 @@ def _is_drift(pin: Pin) -> tuple[bool, str]:
         )
         return drift, msg
     by_exact_match = {
+        "just version": (
+            current == upstream,
+            f"[ok]     {name}: {current}",
+            f"[DRIFT]  {name}: {current} -> official latest {upstream}",
+        ),
         "MicroPython tag": (
             current == upstream,
             f"[ok]     {name}: {current}",
