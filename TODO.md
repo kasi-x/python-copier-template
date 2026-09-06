@@ -717,6 +717,17 @@ Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push �
       `_example.yml` に `--defaults` + `--with copier-template-extensions` +
       `--trust` を追加。テストの update コマンドとは既に揃っていた）
 - [ ] **次の CI run が緑になることの確認**（上記修正の push 後。test 12分前後）
+      → 2026-09-07: 大規模変更(bug修正一式 + pre-commit 廃止)を push 済み。
+      初回ランで2件の新規失敗を処理済み: ①`_hygiene.yml` のEOFチェックが
+      ディレクトリsymlinkでクラッシュ + .jinja 部分テンプレ(意図的に改行なし)を
+      検出 → 除外して修正(987abac7)。②Security が zizmor v1.30 の新監査
+      `unpinned-tools`(setup-just の just-version 未指定)で失敗 → just 1.58.0 に
+      ピン + check_upstream の週次ドリフト報告に追加(87058c2a)。③同 v1.30 の
+      `self-repository` 監査が既存の `./.github/workflows/*` 参照形式全体に発火
+      → 両 zizmor.yml に意図的 ignore を記載(87e3525e)。最終ランの結果確認が残る
+      - [ ] **教訓**: security.yml の zizmor `version: latest` は新監査追加時に
+            全プロジェクトの Security を赤くする。ignore 追加はリポジトリ慣例どおり
+            理由付きで。zizmor バージョンの固定+renovate追従も検討余地
 - [ ] README の CI バッジと実態の乖離に注意: 直近コミットで CI が赤でも
       バッジは古い成功を示し続けた。赤を放置しない運用（push 後の run 確認、
       または merge queue / required checks の見直し）を習慣化する
