@@ -16,7 +16,7 @@
         <link rel="prev" href="../ros2/">
       
       
-        <link rel="next" href="../web-api/">
+        <link rel="next" href="../pixi/">
       
       
         
@@ -437,6 +437,8 @@
   
     
     
+      
+        
       
         
       
@@ -1008,6 +1010,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../web-api/" class="md-nav__link">
         
   
@@ -1112,6 +1141,8 @@
       
         
       
+        
+      
     
     
     
@@ -1165,6 +1196,33 @@
     
   
   Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
 
     
   </span>
@@ -1754,7 +1812,6 @@ Per-board differences (which GPIO the LED is on, etc.) are concentrated in
 <h2 id="setting-up-the-dev-environment">Setting up the dev environment<a class="headerlink" href="#setting-up-the-dev-environment" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w">                              </span><span class="c1"># ruff / pytest / basedpyright / mpremote / pyrefly|ty</span>
 uv<span class="w"> </span>run<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-dev.txt<span class="w"> </span>--target<span class="w"> </span>typings<span class="w">   </span><span class="c1"># port stubs</span>
-pre-commit<span class="w"> </span>install
 </code></pre></div>
 <p>The stubs are installed into <code>typings/</code> (git-ignored) so <code>basedpyright</code> can
 type-check <code>firmware/</code> against MicroPython while <code>tests/</code> and
@@ -1953,13 +2010,13 @@ port without hardware. Adjust the smoke command to the logic you actually run.</
         
         
           
-          <a href="../web-api/" class="md-footer__link md-footer__link--next" aria-label="Next: Web API">
+          <a href="../pixi/" class="md-footer__link md-footer__link--next" aria-label="Next: Pixi">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Web API
+                Pixi
               </div>
             </div>
             <div class="md-footer__button md-icon">

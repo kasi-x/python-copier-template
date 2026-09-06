@@ -27,7 +27,7 @@
     
     
       
-        <title>Run linting using pre-commit - python-copier-template</title>
+        <title>Run linting - python-copier-template</title>
       
     
     
@@ -83,7 +83,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#run-linting-using-pre-commit" class="md-skip">
+        <a href="#run-linting" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Run linting using pre-commit
+              Run linting
             
           </span>
         </div>
@@ -472,6 +472,8 @@
       
         
       
+        
+      
     
     
     
@@ -711,10 +713,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#running-pre-commit" class="md-nav__link">
+  <a href="#running-the-checks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Running pre-commit
+        Running the checks
       </span>
     </span>
   </a>
@@ -975,6 +977,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../web-api/" class="md-nav__link">
         
   
@@ -1079,6 +1108,8 @@
       
         
       
+        
+      
     
     
     
@@ -1132,6 +1163,33 @@
     
   
   Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
 
     
   </span>
@@ -1553,10 +1611,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#running-pre-commit" class="md-nav__link">
+  <a href="#running-the-checks" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Running pre-commit
+        Running the checks
       </span>
     </span>
   </a>
@@ -1603,26 +1661,23 @@
   
 
 
-<h1 id="run-linting-using-pre-commit">Run linting using pre-commit<a class="headerlink" href="#run-linting-using-pre-commit" title="Permanent link">&para;</a></h1>
-<p>Code linting is handled by <a href="https://docs.astral.sh/ruff">ruff</a> run under <a href="https://pre-commit.com/">pre-commit</a>.</p>
-<h2 id="running-pre-commit">Running pre-commit<a class="headerlink" href="#running-pre-commit" title="Permanent link">&para;</a></h2>
-<p>You can run the above checks on all files with this command:</p>
+<h1 id="run-linting">Run linting<a class="headerlink" href="#run-linting" title="Permanent link">&para;</a></h1>
+<p>Code linting and format checks are handled by <a href="https://docs.astral.sh/ruff">ruff</a> through the task runner's <code>lint</code> and <code>fix</code> tasks.</p>
+<h2 id="running-the-checks">Running the checks<a class="headerlink" href="#running-the-checks" title="Permanent link">&para;</a></h2>
+<p>The <code>lint</code> task is check-only — <code>ruff format --check .</code> followed by <code>ruff check .</code> — so it changes nothing and also works outside a git repository. You can run it on all files with this command:</p>
 <div class="highlight"><pre><span></span><code>$ task lint
 </code></pre></div>
-<p>The devcontainer will also install a pre-commit hook that will run each time you do a <code>git commit</code> on just the files that have changed.</p>
-<p>If you want to commit with a failing pre-commit check then you have to:</p>
-<div class="highlight"><pre><span></span><code>$ git commit --no-verify
-</code></pre></div>
+<p>(or <code>just lint</code>, <code>poe lint</code>, ... depending on your task runner).</p>
+<p>Repository hygiene checks are not run locally: they run in CI via the repository hygiene workflow, which covers secret scanning (gitleaks), workflow linting (actionlint), YAML validity, missing end-of-file newlines, conflict markers, oversized files, conventional commit messages, REUSE lint and CITATION.cff validation.</p>
 <h2 id="fixing-issues">Fixing issues<a class="headerlink" href="#fixing-issues" title="Permanent link">&para;</a></h2>
 <p>The typical workflow is:</p>
 <ul>
 <li>Make a code change</li>
-<li><code>git add</code> it</li>
-<li>Try to commit</li>
-<li>Pre-commit will run, and ruff will try and fix any issues it finds</li>
+<li>Run the <code>fix</code> task (<code>task fix</code> or <code>just fix</code>), which runs <code>ruff check --fix .</code> then <code>ruff format .</code></li>
 <li>If anything changes it will be left in your working copy</li>
-<li>Review and commit the results</li>
+<li>Review the changes, then <code>git add</code> and commit them</li>
 </ul>
+<p>Run <code>fix</code> before committing so the <code>lint</code> task and CI stay green.</p>
 <h2 id="vscode-support">VSCode support<a class="headerlink" href="#vscode-support" title="Permanent link">&para;</a></h2>
 <p>The <code>.vscode/settings.json</code> will run ruff formatters on save, but will not try to auto-fix as that does things like removing unused imports which is too intrusive while editing.</p>
 

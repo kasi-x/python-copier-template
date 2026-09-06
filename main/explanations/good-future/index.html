@@ -13,7 +13,7 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../vision/">
       
       
         <link rel="next" href="../structure/">
@@ -435,6 +435,8 @@
   
     
     
+      
+        
       
         
       
@@ -893,6 +895,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/web-api/" class="md-nav__link">
         
   
@@ -999,6 +1028,8 @@
       
         
       
+        
+      
     
     
     
@@ -1052,6 +1083,33 @@
     
   
   Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
 
     
   </span>
@@ -1627,7 +1685,7 @@ harvests, and credentials are git-ignored — commit code, never data.</p>
 <tr>
 <td>no direct HTTP calls</td>
 <td>ruff <code>banned-api</code></td>
-<td><code>task lint</code> (pre-commit)</td>
+<td><code>task lint</code> + CI lint job</td>
 </tr>
 <tr>
 <td>dependency license compliance</td>
@@ -1641,13 +1699,13 @@ harvests, and credentials are git-ignored — commit code, never data.</p>
 </tr>
 <tr>
 <td>citation / SPDX metadata</td>
-<td><code>validate-cff</code> / <code>reuse</code> hooks</td>
-<td><code>task lint</code> (pre-commit)</td>
+<td><code>validate-cff</code> / <code>reuse</code> checks</td>
+<td>CI hygiene workflow</td>
 </tr>
 <tr>
 <td>data governance (DUO/CARE)</td>
 <td><code>data/DUO.md</code> / <code>data/CARE.md</code> sheets + <code>test_qa.py</code> presence asserts + gitleaks <code>deidentification-salt</code></td>
-<td>pytest + <code>task lint</code> (pre-commit)</td>
+<td>pytest + CI hygiene workflow</td>
 </tr>
 <tr>
 <td>See <a href="../../how-to/scraping/">the scraping how-to</a> for the engine choices</td>
@@ -1700,7 +1758,7 @@ harvests, and credentials are git-ignored — commit code, never data.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
+          <a href="../vision/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Vision &amp; Positioning">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -1710,7 +1768,7 @@ harvests, and credentials are git-ignored — commit code, never data.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Overview
+                Vision & Positioning
               </div>
             </div>
           </a>

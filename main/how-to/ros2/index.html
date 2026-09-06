@@ -472,6 +472,8 @@
       
         
       
+        
+      
     
     
     
@@ -1003,6 +1005,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../web-api/" class="md-nav__link">
         
   
@@ -1107,6 +1136,8 @@
       
         
       
+        
+      
     
     
     
@@ -1160,6 +1191,33 @@
     
   
   Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
 
     
   </span>
@@ -1695,7 +1753,7 @@ default Python, which is why the <code>.python-version</code> is pinned per dist
 <h3 id="apt-classic-default">apt (classic, default)<a class="headerlink" href="#apt-classic-default" title="Permanent link">&para;</a></h3>
 <p>The official ROS 2 way: install <code>ros-{{ '&lt;distro&gt;' }}-*</code> from the ROS apt
 repositories, then use <code>colcon</code> + <code>rosdep</code>. The pure-Python dev tooling
-(ruff/pytest/pre-commit) is managed by your chosen package manager (uv,
+(ruff/pytest) is managed by your chosen package manager (uv,
 poetry, or pixi) — one tool for the Python side, one for ROS.</p>
 <ul>
 <li><code>package.xml</code> declares the ROS dependencies; <code>rosdep install --from-paths .</code>
@@ -1734,7 +1792,7 @@ dev dependencies and <code>[tasks]</code> for lint/build/test/check. CI uses
   <code>[build-system]</code>/<code>[project]</code> (with <code>requires-python</code> pinned to the distro
   and no <code>rclpy</code> in <code>dependencies</code> — package.xml owns the ROS deps),
   <code>uv.lock</code>/<code>pixi.lock</code>, the standard <code>Dockerfile</code>, docs and
-  pre-commit all work as usual. C++ packages skip <code>pyproject.toml</code>/<code>setup.py</code>
+  lint/fix tasks all work as usual. C++ packages skip <code>pyproject.toml</code>/<code>setup.py</code>
   (the build is CMake).</li>
 <li><code>Dockerfile.ros2</code> (apt or pixi flavour) and a ROS-aware devcontainer
   (with the <code>ms-iot.vscode-ros</code> extension).</li>

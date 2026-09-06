@@ -552,6 +552,8 @@
       
         
       
+        
+      
     
     
     
@@ -975,6 +977,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/web-api/" class="md-nav__link">
         
   
@@ -1079,6 +1108,8 @@
       
         
       
+        
+      
     
     
     
@@ -1132,6 +1163,33 @@
     
   
   Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
 
     
   </span>
@@ -1607,8 +1665,16 @@
 <p>Once you have followed the <a href=".././installation/">installation</a> tutorial, you can use <code>copier</code> to make a new project from the template:</p>
 <div class="highlight"><pre><span></span><code>git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
-uvx copier copy --trust https://github.com/kasi-x/python-copier-template.git $_
+uvx --with copier-template-extensions copier copy --trust --vcs-ref=main \
+    https://github.com/kasi-x/python-copier-template.git $_
 </code></pre></div>
+<p><code>--vcs-ref=main</code> asks for the current main branch. Without it copier checks
+out the <strong>latest git tag</strong>, and this repository still carries inherited
+upstream tags that point at the old, pre-fork template (they are re-tagged
+at the v1.0 fork detach). <code>--with copier-template-extensions</code> is required
+because the template ships custom Jinja extensions that must be importable
+by copier itself — a bare <code>uvx copier</code> runs in an isolated environment
+without them.</p>
 <p>This will:</p>
 <ul>
 <li>Ask some questions about the project to be created (each area first asks

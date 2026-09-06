@@ -472,6 +472,8 @@
       
         
       
+        
+      
     
     
     
@@ -986,6 +988,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../web-api/" class="md-nav__link">
         
   
@@ -1090,6 +1119,8 @@
       
         
       
+        
+      
     
     
     
@@ -1143,6 +1174,33 @@
     
   
   Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
 
     
   </span>
@@ -1639,7 +1697,7 @@
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>sync
 </code></pre></div></p>
 <p>This will ensure that any new dependencies you add will be placed in the lockfile, and your venv updated to match. It will <em>not</em> update any existing dependencies, unless <code>pyproject.toml</code> requires a later version.</p>
-<p>This command will be run by <a href=".././lint/">pre-commit</a> during a <code>git commit</code> and by CI.</p>
+<p>Run this command before committing — CI runs the tests against the committed lockfile.</p>
 <p>To update all dependencies to their latest versions run:
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span>uv<span class="w"> </span>sync<span class="w"> </span>--upgrade
 </code></pre></div>

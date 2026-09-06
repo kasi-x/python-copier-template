@@ -78,6 +78,11 @@ def main(args=None):
         help="Add this directory to the list of existing directories",
     )
     parser.add_argument(
+        "--ref",
+        default="origin/gh-pages",
+        help="Git ref to list the published builds from (default: origin/gh-pages)",
+    )
+    parser.add_argument(
         "repository",
         help="The GitHub org and repository name: ORG/REPO",
     )
@@ -89,7 +94,7 @@ def main(args=None):
     args = parser.parse_args(args)
 
     # Write the versions file
-    versions = get_versions("origin/gh-pages", args.add)
+    versions = get_versions(args.ref, args.add)
     write_json(args.output, args.repository, versions)
 
 

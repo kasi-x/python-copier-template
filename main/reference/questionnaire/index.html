@@ -470,6 +470,8 @@
       
         
       
+        
+      
     
     
     
@@ -893,6 +895,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/web-api/" class="md-nav__link">
         
   
@@ -997,6 +1026,8 @@
       
         
       
+        
+      
     
     
     
@@ -1050,6 +1081,33 @@
     
   
   Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
 
     
   </span>
@@ -1822,8 +1880,12 @@ present — whether from the base or from the opt-in.</p>
   Kaggle and CTF always ship an <code>AGENTS.md</code> agent guide; AtCoder / LeetCode
   ask <code>oj_allow_ai</code> (default: no) which decides whether <code>AGENTS.md</code> is
   generated; yukicoder / AOJ omit it.</li>
-<li><strong>Polish</strong>: layout (src / flat), Japanese text allowed</li>
-<li><strong>Docs</strong>: README-only / zensical / sphinx / great-docs</li>
+<li><strong>Polish</strong>: layout (src / flat), Japanese text allowed (<code>allow_japanese</code>
+  relaxes line-length 88 → 120 and max-doc-length 150 → 200 so wide multibyte
+  text does not trigger E501/D rules)</li>
+<li><strong>Docs</strong>: README-only / zensical / sphinx / great-docs. For micropython,
+  sphinx is not offered — answering it falls back to zensical (the firmware
+  is not a CPython-importable package, so autodoc has nothing to document)</li>
 <li><strong>Quality</strong>: secondary checker (pyrefly / ty) and strictness
   (none / basic / recommended / full)</li>
 <li><strong>License</strong>: the full choosealicense.com list plus Proprietary/Confidential,

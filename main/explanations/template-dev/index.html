@@ -470,6 +470,8 @@
       
         
       
+        
+      
     
     
     
@@ -893,6 +895,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/web-api/" class="md-nav__link">
         
   
@@ -999,6 +1028,8 @@
       
         
       
+        
+      
     
     
     
@@ -1052,6 +1083,33 @@
     
   
   Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
 
     
   </span>
@@ -1270,6 +1328,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Freshness policy: combinations that cannot stay current
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documented-generation-commands-must-pin-vcs-ref" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Documented generation commands must pin <code>--vcs-ref</code>
       </span>
     </span>
   </a>
@@ -1651,6 +1720,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#documented-generation-commands-must-pin-vcs-ref" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Documented generation commands must pin <code>--vcs-ref</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1679,9 +1759,8 @@ test name is linked so a future change can verify itself.</p>
 <p>Jinja tags at the end of a <code>.jinja</code> source silently add a trailing blank
 line: a file ending in <code>{% include "..." %}</code> or a plain <code>{% endif %}</code> leaves
 its own newline in the output, so the rendered file ends with <code>\n\n</code>. The
-generated project's <code>end-of-file-fixer</code> (pre-commit) then rewrites it on
-first commit, which fails the generated project's CI and produces a dirty
-tree.</p>
+generated project's hygiene workflow then fails CI on the first push with
+its end-of-file newline check.</p>
 <p>Rules:</p>
 <ul>
 <li>A <code>.jinja</code> source that ends in a block tag must trim the tag's trailing
@@ -1819,6 +1898,26 @@ reports drift; the policy below decides whether drift is a bug or accepted:</p>
   no PyPI release) is always a bug — <code>uv sync</code> breaks for that combination.
   A <code>floor X / latest Y</code> gap is a judgment call per the policy above.</li>
 </ul>
+<h2 id="documented-generation-commands-must-pin-vcs-ref">Documented generation commands must pin <code>--vcs-ref</code><a class="headerlink" href="#documented-generation-commands-must-pin-vcs-ref" title="Permanent link">&para;</a></h2>
+<p>Every <code>copier copy</code> command we publish against the template URL passes
+<code>--vcs-ref=main</code> (or a deliberate release ref). Reason: copier checks out the
+<strong>latest git tag</strong> when <code>--vcs-ref</code> is absent, and this fork still carries
+inherited upstream tags — the newest of them (<code>5.4.0</code>) points at the old
+pre-fork DiamondLightSource template. Generating without the flag therefore
+silently asks the old questionnaire and renders the old files, which produced
+two real bug reports ("docs_type rejects zensical", "asks component_owner";
+see BUG.md — both were misdiagnosed twice before the tag mechanism was
+confirmed via <code>git show 5.4.0:copier.yml</code>).</p>
+<p>This stays a hard rule until the v1.0 fork detach re-tags the repository
+(TODO item 11). Enforced by <code>tests/test_generation_docs.py</code>, which scans the
+README and docs/tutorials fenced blocks for URL-based <code>copier copy</code> commands
+without a <code>--vcs-ref=</code> flag.</p>
+<p>The same investigation pattern is worth reusing: when generation behaves
+differently between two invocations that look identical, print
+<code>Worker(...).template.config_data</code> from the Python API — it exposes which
+template source (working tree vs tag clone) and which settings keys copier
+actually resolved, and turned a day of "flaky copier" theories into a
+one-line root cause.</p>
 
 
 
