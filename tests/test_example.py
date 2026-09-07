@@ -212,6 +212,30 @@ def test_template_no_precommit_hygiene_in_ci(tmp_path: Path):
     assert "fix:" in taskfile
 
 
+def test_template_works_outside_git(tmp_path: Path):
+    """Publish pipelines generate first and `git init` later. Without git
+    metadata setuptools_scm used to abort every `uv sync` — the fallback
+    version keeps the workspace usable until the first commit."""
+    run_copy(
+        src_path=str(TOP),
+        dst_path=tmp_path,
+        data={
+            "package_name": "nogit_test",
+            "description": "generated outside git",
+            "git_platform": "github.com",
+            "github_org": "kasi-x",
+            "author_name": "kasi-x",
+            "author_email": "kasi-x@example.com",
+        },
+        vcs_ref="HEAD",
+        unsafe=True,
+        defaults=True,
+    )
+    assert 'fallback_version = "0.0.0"' in (tmp_path / "pyproject.toml").read_text()
+    assert not (tmp_path / ".git").exists()
+    run_pipe("uv sync", cwd=str(tmp_path))
+
+
 def test_template_zensical_docs(tmp_path: Path):
     copy_project(tmp_path, docs_type="zensical")
     pyproject_toml = tmp_path / "pyproject.toml"

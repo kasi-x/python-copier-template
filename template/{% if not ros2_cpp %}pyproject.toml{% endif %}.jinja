@@ -223,6 +223,10 @@ packages = ["app"]
 packages = ["{{ package_name }}", "{{ package_name }}.tools"]
 {% endif %}{% if not micropython_pkg and not oj_code %}[tool.setuptools_scm]
 version_file = "{{ pkg_dir }}/_version.py"
+# Publish pipelines generate first and `git init` later: without git
+# metadata setuptools_scm aborts every uv sync, so fall back to a
+# placeholder until the first commit provides the real version.
+fallback_version = "0.0.0"
 {% if ros2_pkg %}
 # ros2 ament_python: no git-tag versioning; setup.py / package.xml own the version.
 {% endif %}
