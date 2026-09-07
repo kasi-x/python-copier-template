@@ -97,7 +97,9 @@ src = ["tests"]
 # template/ は生成コード。生成先プロジェクト側でチェックされる。
 # .github/pages は共有の CI ヘルパー（zensical 移行後このリポでは未実行）。
 # docs/ は zensical / MkDocs の散文ドキュメント（コードではない）。
-extend-exclude = ["template", ".github/pages", "docs"]
+# *.md は旧 pre-commit フックと同じく対象外（ruff 新版は Markdown 内の
+# Python コードブロックを format するが、例示コードは意図通りに残す）。
+extend-exclude = ["template", ".github/pages", "docs", "*.md"]
 
 [tool.ruff.lint]
 preview = true

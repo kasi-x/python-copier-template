@@ -347,14 +347,21 @@ def _resolve_pypi_floor(name: str, current: str) -> str | None:
     on: `REMOVED` when the floor matches no release, else
     `floor <f> / latest <v>`.
     """
-    pkg = name.rsplit(" ", 1)[-1].rstrip("]")
+    # drop PEP 508 extras from the tracked name: mcp[cli] checks the mcp dist
+    pkg = name.rsplit(" ", 1)[-1].split("[", maxsplit=1)[0]
     floor_m = re.search(r"(\d+(?:\.\d+)*)", current)
     if not floor_m:
         return "unpinned (no floor to check)"
     floor = floor_m.group(1)
-    if not pypi_has_version(pkg, floor):
-        return f"REMOVED floor {floor} matches no PyPI release"
     latest = pypi_latest(pkg)
+    # The floor is a >= constraint: it is satisfiable whenever any release
+    # >= the floor exists, which for a live package means latest >= floor.
+    # (An exact-version check false-positives when the floor version only
+    # shipped as fuller artifacts, e.g. mcp has 2.0.1 but no literal 2.0.)
+    if latest is None:
+        return f"REMOVED floor {floor} matches no PyPI release"
+    if _parse_version(latest) < _parse_version(floor):
+        return f"REMOVED floor {floor} above latest {latest}"
     return f"floor {floor} / latest {latest}"
 
 

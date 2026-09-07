@@ -248,7 +248,7 @@ src = ["{{ 'firmware' if micropython_pkg else pkg_dir }}", "tests"]
 # tools/ は MicroPython の freeze.py（端末依存スクリプト）を、.github/pages は
 # 共有の CI ヘルパーを対象外とする。firmware エントリや ament の test/ は
 # ファイルごと除外せず、per-file-ignores で必要なルールだけ無効化する。
-extend-exclude = ["tools", ".github/pages", "alembic"{% if sphinx %}, "docs"{% endif %}{% if oj_code %}, "**/test"{% endif %}]
+extend-exclude = ["tools", ".github/pages", "alembic"{% if sphinx %}, "docs"{% endif %}{% if oj_code %}, "**/test"{% endif %}, "*.md"]
 line-length = {{ 88 if not allow_japanese else 120 }}
 # 挙動を変える可能性があるため、自動修正は safe-fix に限定する。
 unsafe-fixes = false
