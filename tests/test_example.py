@@ -1350,7 +1350,11 @@ def test_template_task_runner_pixi_native(tmp_path: Path):
     copy_project(tmp_path, package_manager="pixi", task_runner_pixi="pixi")
     assert not (tmp_path / "Taskfile.yml").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert "lint" in pyproject_toml["tool"]["pixi"]["feature"]["dev"]["tasks"]
+    tasks = pyproject_toml["tool"]["pixi"]["feature"]["dev"]["tasks"]
+    # same task set as the other runners, including the typos auto-fix step
+    assert {"lint", "fix", "type-check", "test", "check"} <= set(tasks)
+    assert "typos -w" in tasks["fix"]["cmd"]
+    assert "ruff format --check" in tasks["lint"]["cmd"]
 
 
 def test_template_task_runner_pixi_with_task(tmp_path: Path):
