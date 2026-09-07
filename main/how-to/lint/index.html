@@ -1673,7 +1673,7 @@
 <p>The typical workflow is:</p>
 <ul>
 <li>Make a code change</li>
-<li>Run the <code>fix</code> task (<code>task fix</code> or <code>just fix</code>), which runs <code>ruff check --fix .</code> then <code>ruff format .</code></li>
+<li>Run the <code>fix</code> task (<code>task fix</code> or <code>just fix</code>), which runs <code>ruff check --fix .</code>, <code>ruff format .</code> and (at the recommended/full strictness levels) <code>typos -w .</code> to fix misspellings</li>
 <li>If anything changes it will be left in your working copy</li>
 <li>Review the changes, then <code>git add</code> and commit them</li>
 </ul>
