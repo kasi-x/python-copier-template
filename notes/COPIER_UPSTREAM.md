@@ -180,6 +180,52 @@ copier-org/copier に issue / PR を投げるために、本テンプレート�
 
 ---
 
+## 投稿手順(2026-09-07 準備完了。**投稿はご自身で実行してください**)
+
+**重要 — copier の AI_POLICY.md の要件**:
+- 自律エージェントによる投稿は禁止。**issue/PR の投稿・文言は必ずご自身で**
+  行うこと。
+- 草稿はそのまま貼らず、**ご自身の言葉で整えてから**投稿すること
+  (投稿者は内容を理解し責任を持つ必要がある)。
+- 以下のコマンドは「下準備が済んだ状態」を示すもの。実行前に文面の最終確認を。
+
+### 準備済みのもの
+
+- **PR 用パッチ2本**(copier 9.x の upstream/master から生成、
+  `notes/upstream-drafts/patches/`):
+  - `unsafe-refusal-message-and-exit-codes.patch`
+    = 項目1(拒否メッセージ)+ 項目2(exit codes ドキュメント)。
+    copier 側の `tests/test_unsafe.py` も新文言に更新済み(58 passed 済み)
+  - `answers-file-error-hint.patch` = 項目4(エラー文面にヒント追加)。
+    `tests/test_cli.py` 41 passed 済み
+- **issue 草稿**: notes/upstream-drafts/01〜09(09 は本テンプレートの
+  タグ罠 — copier への UX 改善提案として)
+
+### PR の出し方(パッチ適用 → push → PR)
+
+```sh
+gh repo fork copier-org/copier --clone   # 済(先方の慣例: ブランチは master)
+cd copier
+git am ~/dev/python-copier-template/notes/upstream-drafts/patches/unsafe-refusal-message-and-exit-codes.patch
+git push -u origin unsafe-refusal-message-and-exit-codes
+gh pr create --repo copier-org/copier --base master \
+  --title "State clearly that unsafe-feature refusal writes nothing; document exit codes" \
+  --body  "ご自身の言葉で概要を記入(パッチ内容は tests/test_unsafe.py の文言更新も含む)"
+```
+
+(`answers-file-error-hint.patch` も同様に `git am` → push → PR)
+
+### issue の出し方(草稿ファイルを指定して)
+
+```sh
+gh issue create --repo copier-org/copier \
+  --title "UnsafeTemplateError message should state that generation was refused and nothing was written" \
+  --body-file notes/upstream-drafts/01-unsafe-refusal-message.md
+```
+(02〜09 も同様に `--title` は各 md の1行目、`--body-file` は対応ファイル。
+**投稿前に本文をご自身の言葉に整えること**。10 は copier でなく
+pre-commit/pre-commit 宛て。)
+
 ## 寄稿の進め方(メモ)
 
 1. 投げる順番の推奨: **1+2(同じ PR で文言+docs)→ 4 → 3(a)(b)(docs レシピ)
