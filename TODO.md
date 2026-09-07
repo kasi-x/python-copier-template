@@ -1,5 +1,9 @@
 # TODO
 
+> 2026-09-07: バグ台帳(BUG.md / bugs.md / BUGS_AND_IMPROVEMENTS.md)・
+> Strategy.md・copier 本体への寄稿候補(COPIER_UPSTREAM.md / upstream-drafts/)は
+> ルート整理のため `notes/` へ移動しました。本文中の言及は移動前のパス表記です。
+
 このテンプレートの開発・拡張メモ。各項目は作業時に個別のissue/PRへ分割してよい。
 未公開（pre-publication）のため、後方互換・移行案内・CHANGELOG は考慮しない。
 

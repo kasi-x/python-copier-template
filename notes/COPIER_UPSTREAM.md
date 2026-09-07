@@ -5,7 +5,7 @@ copier-org/copier に issue / PR を投げるために、本テンプレート�
 まとめた。根拠はすべて copier **9.18.1**(本リポジトリ `.venv` 版)のソースで確認済み。
 各項目には、そのまま issue に使える英語タイトル案を付けた。
 
-**そのまま貼れる英語 issue 本文の草稿は `upstream-drafts/` に file 毎に用意済み**
+**そのまま貼れる英語 issue 本文の草稿は `notes/upstream-drafts/` に file 毎に用意済み**
 (01〜09 が本書の項目 1〜9 に対応。再現手順と検証済みの出力を含む)。
 
 先に結論: 動的 `choices` の誤パース(BUG.md #1 で報告された

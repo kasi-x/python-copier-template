@@ -274,7 +274,7 @@ extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
 
 [tool.typos.files]
 # template/ は生成コード。生成先プロジェクト側でチェックされる。
-extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS", "BUGS_AND_IMPROVEMENTS.md"]
+extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS", "notes"]
 
 [tool.vulture]
 paths = ["tests", "tools", "extensions.py"]

@@ -256,6 +256,28 @@ def extract_pins() -> list[Pin]:
     just_versions = set(re.findall(r'just-version: "(\d+\.\d+\.\d+)"', workflows_src))
     pins.append(Pin(name="just version (setup-just)", current=",".join(sorted(just_versions)) or "?", checkable=True))
 
+    # Hygiene workflow pins (added with the pre-commit removal): the gitleaks
+    # action version comment and the actionlint docker image digest are the
+    # only update signals for both -- renovate updates neither (disabled
+    # rule in generated projects, tracked here manually in the root).
+    hygiene_src = (TOP / ".github" / "workflows" / "_hygiene.yml").read_text()
+    gitleaks_m = re.search(r"gitleaks/gitleaks-action@[0-9a-f]{40} # v(\d+\.\d+\.\d+)", hygiene_src)
+    pins.append(
+        Pin(
+            name="gitleaks-action version (_hygiene.yml)",
+            current=gitleaks_m.group(1) if gitleaks_m else "?",
+            checkable=True,
+        )
+    )
+    digest_m = re.search(r"rhysd/actionlint@sha256:([0-9a-f]{64})", hygiene_src)
+    pins.append(
+        Pin(
+            name="actionlint image digest (_hygiene.yml)",
+            current=digest_m.group(1)[:12] if digest_m else "?",
+            checkable=True,
+        )
+    )
+
     return pins
 
 
@@ -379,7 +401,7 @@ def _resolve_devcontainer_base(image: str) -> str:
     return "present" if status == 200 else f"MISSING (HTTP {status})"
 
 
-def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911, C901
+def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911, PLR0912, C901
     """Resolve a single pin. Dispatches on the pin name prefix."""
     name, current = pin.name, pin.current
     if name.startswith("micropython-<port>-stubs"):
@@ -406,6 +428,12 @@ def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911, C901
         return _resolve_devcontainer_base(current)
     if name.startswith("just version"):
         return github_latest_release("casey/just")
+    if name.startswith("gitleaks-action version"):
+        return github_latest_release("gitleaks/gitleaks-action")
+    if name.startswith("actionlint image digest"):
+        data = https_get_json("hub.docker.com", "/v2/repositories/rhysd/actionlint/tags/latest")
+        digest = data.get("digest") if isinstance(data, dict) else None
+        return str(digest).removeprefix("sha256:")[:12] if digest else None
     return None
 
 
@@ -428,6 +456,16 @@ def _is_drift(pin: Pin) -> tuple[bool, str]:
         )
         return drift, msg
     by_exact_match = {
+        "gitleaks-action version": (
+            f"v{current}" == upstream,
+            f"[ok]     {name}: v{current}",
+            f"[DRIFT]  {name}: v{current} -> official latest {upstream}",
+        ),
+        "actionlint image digest": (
+            current == upstream,
+            f"[ok]     {name}: sha256:{current}…",
+            f"[DRIFT]  {name}: image digest changed (latest tag now {upstream})",
+        ),
         "just version": (
             current == upstream,
             f"[ok]     {name}: {current}",

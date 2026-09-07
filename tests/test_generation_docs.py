@@ -38,7 +38,7 @@ def test_documented_copy_commands_pin_a_vcs_ref(doc: Path):
             f"{doc.relative_to(TOP)}: a documented `copier copy` command is "
             "missing `--vcs-ref=`. Without it copier checks out the latest "
             "git tag, which here still points at the inherited pre-fork "
-            "5.4.0 (old upstream template) — see BUG.md and TODO item 11."
+            "5.4.0 (old upstream template) — see notes/BUG.md and TODO item 11."
         )
 
 

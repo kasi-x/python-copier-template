@@ -70,8 +70,9 @@
     },
     {
         'name': 'fix',
-        'desc': 'Auto-fix formatting and lint (run before committing)',
-        'cmd': [run ~ 'ruff check --fix .', run ~ 'ruff format .'],
+        'desc': 'Auto-fix formatting, lint and typos (run before committing)',
+        'cmd': [run ~ 'ruff check --fix .', run ~ 'ruff format .'
+                ~ (' && ' ~ run ~ 'typos -w .' if strictness in ['recommended', 'full'] else '')],
     },
 ] %}
 {% if strictness in ['recommended', 'full'] %}
