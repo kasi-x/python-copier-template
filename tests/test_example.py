@@ -1158,7 +1158,7 @@ def test_template_fair_metadata(tmp_path: Path):
     reuse_toml = (tmp_path / "REUSE.toml").read_text()
     assert 'SPDX-License-Identifier = "Apache-2.0"' in reuse_toml
     hygiene = (tmp_path / ".github" / "workflows" / "_hygiene.yml").read_text()
-    assert "citation-file-format/cffconvert-github-action@" in hygiene
+    assert "uvx cffconvert==2.0.0 --validate" in hygiene
     assert "fsfe/reuse-action@" in hygiene
     assert (tmp_path / "data" / "DUO.md").exists()
     assert (tmp_path / "data" / "CARE.md").exists()
@@ -1214,7 +1214,7 @@ def test_template_fair_restricted_license(tmp_path: Path, restricted_license: st
     # reuse only applies to open-source licenses
     assert not (tmp_path / "REUSE.toml").exists()
     hygiene = (tmp_path / ".github" / "workflows" / "_hygiene.yml").read_text()
-    assert "citation-file-format/cffconvert-github-action@" in hygiene
+    assert "uvx cffconvert==2.0.0 --validate" in hygiene
     assert "fsfe/reuse-action@" in hygiene
 
 
