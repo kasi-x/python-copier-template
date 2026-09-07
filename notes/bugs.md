@@ -49,10 +49,17 @@
   - パイプライン文書にこのワークアラウンドを明記する
   - `just check` を `.git` 未存在時は pre-commit をスキップするようにする
   - `just check-no-git` のような別レシピを用意する
-- **✅ 対応 (2026-09-06)**: 生成物 AGENTS.md の Commands 節に「check/lint は
-  pre-commit を経由するため git リポジトリ外では実行不可。新規ワークスペースは
-  先に `git init`」と明記（エージェントがまっ先に読む場所に置く。スキップする
-  レシピは「check が静かに縮む」問題を生むため作らない）。
+- **✅ 対応 (2026-09-06)**: 生成物 AGENTS.md の Commands 節にチェック実行の案内を追記
+  （エージェントがまっ先に読む場所に置く。スキップするレシピは「check が静かに縮む」
+  問題を生むため作らない）。
+- **✅ 根本解決 (2026-09-07)**: そもそも**生成直後の非 git ワークスペースで
+  `uv sync` が setuptools_scm エラーで即死**するのが本当の原因だった
+  （pre-commit 廃止で lint は git 不要になったが、sync が残っていた）。
+  生成 pyproject の `[tool.setuptools_scm]` に `fallback_version = "0.0.0"` を
+  追加し、git metadata が無くてもプレースホルダバージョンで環境が構築できるように。
+  「生成 → check → git init → 単一コミット → push」の PIPELINE 順序が
+  どの順でも動くようになった。回帰テスト
+  `test_template_works_outside_git`（git init 無しレンダー + 実際の uv sync）で固定。
 
 ## 5. 日本語テキストで E501 (line-too-long) が多発
 
