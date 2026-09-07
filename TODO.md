@@ -875,9 +875,12 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 ### フェーズ0: 今日中に終わる、コード変更不要の修正 → **実施済み(2026-09-06)**
 
-- [x] GitHub Pages を有効化した(`gh api -X POST .../pages -f build_type=workflow`
-      — `_docs.yml` の Actions デプロイフローと一致。次回 push 以降、docs job が
-      実際にサイトを publish する。初回デプロイ後、404 が解消されるかを確認する)
+- [x] GitHub Pages を有効化した → **初回は build_type=workflow で設定したが誤り**。
+      `_docs.yml` は peaceiris/actions-gh-pages で **gh-pages ブランチ**に
+      publish する方式のため、`build_type=legacy` + `source: gh-pages /` に
+      訂正し、`POST .../pages/builds` で初回ビルドを手動トリガー。
+      **https://kasi-x.github.io/python-copier-template/ と /main/ が 200 に
+      なったことを確認(2026-09-07。長期懸案の 404 解消)**
 - [x] Issues / Discussions を有効化した(`gh repo edit --enable-issues
       --enable-discussions`。fork でもオーナーなら有効化できた)。これにより
       節15 の「fork の間は週次 workflow の issue 作成が失敗する」も解消
