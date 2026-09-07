@@ -762,6 +762,24 @@ Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push �
       失敗する~~ → **解消（2026-09-06）**: リポジトリで Issues / Discussions を
       有効化した（節16 フェーズ0）。workflow 側のガードは不要
 
+## 15.6. ランナー実行監査で発見したバグ（2026-09-07）
+
+「lint タスクが各タスクランナーで**実行**できること」を検証した（それまで
+レンダー内容の assert のみで、実行は task/just のみカバー）。即座に3件発見:
+
+- [x] **poe**: `lint` の `&&` 入りコマンドが `cmd` 型（非シェル）で壊れる
+      → `_tasks.jinja` の poe 出力を、単一コマンドでも `&&` を含む場合は
+      `shell` 型にする分岐で修正
+- [x] **非 git ワークスペースで `uv sync` が即死**（前述の fallback_version）も
+      この監査で発見
+- [x] **invoke / duty**: 生成された tasks.py / duties.py 自体が ruff format
+      違反（余分な空行・88超の1行コマンド）→ フォーマッタテンプレートを
+      書き直し（2空行整列・複数行 ctx.run/c.run・E501 ファイル豁免）+
+      `_version.py`（setuptools-scm が単一引用符で生成）を ruff 対象外に
+- [x] **恒久テスト**: `test_task_runner_lint_tasks_execute`（make + poe を実走。
+      invoke/duty は生成プロジェクト自身の ruff が tasks/duties ファイルを
+      検査するためフォーマット面を担保）、pixi ネイティブタスクの内容固定
+
 ## 15.4. pre-commit 廃止 → GitHub Actions への移行（2026-09-07）
 
 方針決定: pre-commit はテンプレートにも本リポジトリにも残さない。

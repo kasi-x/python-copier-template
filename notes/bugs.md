@@ -164,3 +164,127 @@
   詳細を外部ドキュメントへ追い出すと copier update 時のパリティテスト
   (テンプレート本体と生成物の設定一致)が壊れる。コンフィグの教訓は
   docs/explanations/template-dev.md に文書化済み。
+
+---
+
+# 2026-09-08 新規報告（fake_detector 生成セッションから）
+
+`fake_detector` (data_science) を `copier copy` で生成した際、3 ステップ連鎖で失敗した。
+失敗の全体像: **(1) タグ既定で古い設問定義にヒット → (2) HEAD を指定しても trust 無しで
+無言終了 → (3) trust を足して初めて拡張不足が判明**。各ステップの切り分けに
+余計な試行錯誤が発生した。最終的に成功したコマンド:
+
+```sh
+uv tool install copier --with copier-template-extensions --force
+copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
+    ~/dev/python-copier-template ~/dev/fake_detector
+```
+
+## 11. 最新タグと HEAD で質問定義が乖離しており、タグ既定の copier で HEAD 時代の回答が通らない
+
+- **現象**: `copier copy --defaults --data-file answers.yml`（回答は最小限）で
+  生成すると、HEAD の README / questionnaire を読んで書いたはずの回答セットが
+  タグ側で検証に落ち、2 通りのエラーが発生した。
+  - 最小限の回答セット → `ValueError: Question "docker" is required`
+  - `example-answers.yml` と同型のフル回答セット（`docs_type: zensical` を含む）→
+    `ValueError: Invalid choice for 'docs_type': 'zensical' is not in ['README', 'sphinx']`
+- **原因**: copier はローカル git リポジトリのテンプレートを**最新タグ (5.4.0)** で解決する
+  （`--vcs-ref` 未指定時）。5.4.0 時点の copier.yml を `git show 5.4.0:` で確認すると:
+  - `docker` は `default` を持たない無条件質問で、`use_recommended_integrations`
+    ゲートはまだ存在しない → `--defaults` でも埋められず "required" で死ぬ
+  - `docs_type` の choices は `[README, sphinx]` のまま → `zensical` は choices 検証で落ちる
+  一方 HEAD は `5.4.0-55-g5b28f449`（タグから 55 コミット先行、うち questions 関係が 18 コミット）で、
+  integrations ゲート導入・zensical/great-docs 追加済み。README や questionnaire の記述は
+  HEAD ベースなので、「ドキュメントどおりの回答を書いたユーザーほどタグで失敗する」状態。
+- **提案**:
+  - 回帰テスト: example-answers.yml（+ 最小回答セット）を**最新タグ**に対してレンダーし、
+    タグ側の設問定義が古くなったら drift issue を出す CI（upstream drift チェックの質問版）
+  - README の生成コマンド例（クイックスタート節）に、ローカル開発中テンプレートから
+    生成する場合は `--vcs-ref=HEAD` を付ける旨を明記
+  - タグの更新頻度を上げる（あるいは HEAD ベース生成を公式に案内する）
+- **回避策の実績**: `--vcs-ref=HEAD` で解決。このとき `DirtyLocalWarning` が出て
+  未コミット変更（当時 `template/pyproject.toml.jinja` と `tests/test_example.py`）も
+  自動取り込みされる点は挙動として把握しておく必要があった（意図的仕様だが、
+  生成物がワークツリーの途中状態を含み得ることを警告文言だけから読み取るのは難しい）。
+
+## 12. unsafe feature による無言終了が Jinja 拡張不足より先に起き、切り分けが 2 段階になる
+
+- **現象**: `--vcs-ref=HEAD` を付けても出力は `DirtyLocalWarning` と
+  「Template uses potentially unsafe features」の notice だけで dest は空のまま。
+  `--trust` を足して初めて本当の原因
+  `Copier could not load some Jinja extensions: No module named 'copier_template_extensions'`
+  （exit 1）が見えた。
+- **原因**: 積み重なった 2 つの問題。
+  1. 環境の copier が bare `uv tool install copier` で、`copier-template-extensions` が
+     無かった（#10 対応済みの README 記載 `uvx --with copier-template-extensions` を
+     今回は踏まなかった）
+  2. copier 本体の挙動として、trust 未指定の unsafe-feature 終了（#10 記載の exit 4・無言）が
+     拡張チェックより先に走るため、拡張不足のエラーメッセージが最後まで表面化しない
+- 加えて `| tail` 経由で確認していたため exit code が消え、
+  「エラー無しで dest が空」という誤解を招く見た目になった。
+- **提案**:
+  - README: 非インタラクティブ節だけでなく、生成手順の最初の 1 コマンド目から
+    `uvx --with copier-template-extensions` + `--trust` を含む形で提示する
+    （#10 の修正が非インタラクティブ節に留まっているため、素通りする利用者がいる）
+  - FAQ / トラブルシューティングに「dest が空で終わる場合、
+    unsafe features (--trust) と Jinja 拡張の 2 点を順に確認」の項を足す
+
+さらに、生成が通った後でも気になった仕様を 3 〜 5 件。いずれも fake_detector
+(data_science + allow_japanese + torch/f_vec 系依存) での実測に基づく。
+
+## 13. `allow_japanese: true` でも pydocstyle の句点ルール (D400/D403/D415) が無効化されない
+
+- **現象**: 生成直後の `ruff check` が 87 errors で、うち約 70 が日本語 docstring
+  の句点「。」起因（missing-terminal-punctuation D415 / missing-trailing-period
+  D400 / first-word-uncapitalized D403）。`allow_japanese` は line-length と
+  max-doc-length しか緩めておらず、pydocstyle は ASCII の `.` 前提のまま。
+- **傍証**: テンプレート自身が生成する `logging_setup.py` も「。」終わりの日本語
+  docstring だが、こちらは per-file-ignores で `D` 全免除して回避している
+  （=テンプレート内部でも同じ問題を個別免責で握りつぶしている）。
+- **提案**: `allow_japanese: true` のときは extend-ignore に D400/D403/D415 を
+  加えて生成する（line-length 緩和と同じ文脈で適用）。現状は「文字幅は緩めるが
+  文末スタイルは ASCII 前提」という半端な仕様に見える。
+- **fake_detector 側で暫定対応済み**: extend-ignore に 3 ルールを理由コメント付きで追加。
+
+## 14. setuptools-scm 生成物 `_version.py` が ruff 対象で、生成直後から ruff が失敗する
+
+- **現象**: 初回 `ruff check` で `src/fake_detector/_version.py` に
+  unsorted-dunder-all と bad-quotes-inline-string。ユーザーが書かないファイルで、
+  `uv sync` のたびに再生成されるため手直ししても消えない。
+- **提案**: テンプレート既定の ruff extend-exclude に
+  `src/{{ package_name }}/_version.py` を追加（生成物は lint 対象外が自然）。
+- **fake_detector 側で暫定対応済み**: extend-exclude に追加。
+
+## 15. data_science / GPU を謳いながら torch wheel (CPU vs CUDA) の選択をテンプレートが面倒見ない
+
+- **現象**: data_science は GPU Dockerfile / GPU devcontainer を生成するのに、
+  torch の入れ方には一切関与しない。uv で `torch` を足すと Linux は PyPI 既定の
+  CUDA ビルド（nvidia 依存が大量・数 GB）になり、CPU 固定には
+  `[[tool.uv.index]]` + `[tool.uv.sources]` をユーザーが手書きする必要がある。
+  逆に CPU 固定にすると `Dockerfile.gpu` の `uv sync --locked` が GPU コンテナに
+  CPU wheel を入れる不整合が起きる（lock が CPU に張り付くため）。
+- **提案**: data_science 詳細質問に「torch: 使わない / CPU wheel / CUDA (cu126 など)」
+  を追加し、index/sources ブロックと Dockerfile.gpu の整合をテンプレート側で担保する。
+  torch はデータ系プロジェクトでほぼ必ず絡むので、罠を質問に事前吸收する価値が高い。
+- **fake_detector 側で暫定対応済み**: CPU index 固定 + README に CUDA への差し替え手順を注記。
+
+## 16. data_science の `src/{data,features,models,visualization}` スケルトンが src/<pkg> パッケージ構成と並存する
+
+- **現象**: data_science 生成物の `src/` に、`.gitkeep` だけの
+  `data/ features/ models/ visualization/`（Kedro / cookiecutter-data-science 由来の
+  スクリプト置き場）がインストール可能パッケージ `src/<pkg>/` と並んで生成される。
+  使い道の説明がどこにもなく、ここに分析スクリプトを置き始めると
+  deptry / ruff の対象になって依存宣言エラー (DEP001 等) で怒られる。
+- **提案**: (a) README / AGENTS.md に使い道と依存宣言の注意を注記する、
+  (b) 質問で on/off を選べるようにする、の少なくとも一方。
+  パッケージ本体 (src layout) とスクリプト置き場 (flat src) は慣習が混在するので、
+  分離（scripts/ など）も検討の価値あり。
+
+## 17. 生成 pyproject の deptry `per_rule_ignores` に web_api 系の依存名が data_science でも大量に混入する
+
+- **現象**: 生成 pyproject の `per_rule_ignores` が
+  `DEP002=alembic|asgi-correlation-id|asyncpg|click|fastapi|...|wandb` と長大で、
+  data_science プロジェクトが依存しない alembic / slowapi / sqlalchemy / loguru 等も
+  並ぶ。機能への影響はないが、設定の意図が読み取りにくく diff も太る。
+- **提案**: 機能ゲート（web_api / mcp / scraping / sentry / experiment）に応じて
+  ignore リストを組み立て、選択していない機能の名前は生成しない。

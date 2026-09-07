@@ -240,7 +240,7 @@ fallback_version = "0.0.0"
 {% for t in _t.tasks %}
 {% if t.deps is defined %}
 "{{ t.name }}" = { sequence = [{{ t.deps | map('tojson') | join(', ') }}] }
-{% elif t.cmd | length > 1 %}
+{% elif t.cmd | length > 1 or ' && ' in t.cmd[0] %}
 "{{ t.name }}" = { shell = "{{ t.cmd | join(' && ') }}", help = "{{ t.desc }}" }
 {% else %}
 "{{ t.name }}" = { cmd = "{{ t.cmd[0] }}", help = "{{ t.desc }}" }
@@ -252,7 +252,7 @@ src = ["{{ 'firmware' if micropython_pkg else pkg_dir }}", "tests"]
 # tools/ は MicroPython の freeze.py（端末依存スクリプト）を、.github/pages は
 # 共有の CI ヘルパーを対象外とする。firmware エントリや ament の test/ は
 # ファイルごと除外せず、per-file-ignores で必要なルールだけ無効化する。
-extend-exclude = ["tools", ".github/pages", "alembic"{% if sphinx %}, "docs"{% endif %}{% if oj_code %}, "**/test"{% endif %}, "*.md"]
+extend-exclude = ["tools", ".github/pages", "alembic"{% if sphinx %}, "docs"{% endif %}{% if oj_code %}, "**/test"{% endif %}, "*.md", "**/_version.py"]
 line-length = {{ 88 if not allow_japanese else 120 }}
 # 挙動を変える可能性があるため、自動修正は safe-fix に限定する。
 unsafe-fixes = false

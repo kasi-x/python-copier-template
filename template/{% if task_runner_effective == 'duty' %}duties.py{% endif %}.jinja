@@ -1,20 +1,27 @@
 {% import "_tasks.jinja" as _t with context %}"""Development tasks, run via `duty <task>`."""
+# ruff: noqa: E501  # command strings are naturally long
 
 from duty import duty
 from duty.context import Context
-
 {% for t in _t.tasks %}
-
 {% if t.deps is defined %}
 @duty(pre=[{{ t.deps | map('tojson') | join(', ') }}])
 def {{ t.name | replace('-', '_') }}(ctx: Context) -> None:
     """{{ t.desc }}."""
+{%- for cmd in t.cmd %}
+    ctx.run(
+        "{{ cmd }}",
+        title="{{ t.desc }}",
+    )
+{%- endfor %}
 {% else %}
 @duty
 def {{ t.name | replace('-', '_') }}(ctx: Context) -> None:
     """{{ t.desc }}."""
 {%- for cmd in t.cmd %}
-    ctx.run("{{ cmd }}", title="{{ t.desc }}")
+    ctx.run(
+        "{{ cmd }}",
+        title="{{ t.desc }}",
+    )
 {%- endfor %}
-{% endif %}
-{% endfor %}
+{% endif %}{%- endfor -%}
