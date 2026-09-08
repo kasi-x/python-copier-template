@@ -43,7 +43,45 @@ EXTRA_PATHS: list[dict[str, object]] = [
     },
 ]
 
-RENDERED_PATHS = FAST_PATHS + EXTRA_PATHS
+# Package-manager and task-runner variants: their generated pyproject
+# ([tool.pixi.*], [tool.poe.tasks]) and task files (tasks.py / duties.py /
+# Makefile) must satisfy the same ruff config as everything else, and their
+# TOML must parse (the ruff tiers cannot catch invalid TOML).
+MANAGER_PATHS: list[dict[str, object]] = [
+    {"project_type": "library", "package_manager": "poetry"},
+    {"project_type": "library", "package_manager": "pixi"},
+    {"project_type": "cli", "use_recommended_toolchain": False, "task_runner": "poe"},
+    {"project_type": "cli", "use_recommended_toolchain": False, "task_runner": "invoke"},
+    {"project_type": "cli", "use_recommended_toolchain": False, "task_runner": "duty"},
+    {"project_type": "cli", "use_recommended_toolchain": False, "task_runner": "make"},
+]
+
+# Layer and platform variants: opt-in code trees and the GitLab CI output.
+LAYER_PATHS: list[dict[str, object]] = [
+    {"project_type": "cli", "use_recommended_agent": False},
+    {"project_type": "cli", "use_recommended_integrations": False, "include_scraping": True},
+    {
+        "project_type": "cli",
+        "use_recommended_integrations": False,
+        "include_scraping": True,
+        "scraping_engine": "scrapy",
+    },
+    {
+        "project_type": "cli",
+        "use_recommended_integrations": False,
+        "include_scraping": True,
+        "scraping_engine": "memorious",
+    },
+    {
+        "project_type": "cli",
+        "use_recommended_integrations": False,
+        "include_scraping": True,
+        "scraping_engine": "playwright",
+    },
+    {"project_type": "library", "git_platform": "gitlab.com"},
+]
+
+RENDERED_PATHS = FAST_PATHS + EXTRA_PATHS + MANAGER_PATHS + LAYER_PATHS
 
 # The end-of-file and ruff-check tiers above only run BASE + path answers, so
 # `allow_japanese` (and therefore ruff's line-length 88 vs 120) never varies
@@ -206,6 +244,25 @@ def _iter_text_files(root: Path):
             continue
         if path.suffix in _TEXT_SUFFIXES or path.name in _TEXT_SUFFIXES:
             yield path
+
+
+@pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
+def test_generated_toml_parses(tmp_path: Path, answers: dict[str, object]):
+    """pyproject.toml (and pixi.toml for the ros2-pixi flavour) must be valid
+    TOML: ruff only reads it as *config*, so syntax breaks in the poetry /
+    pixi / poe table variants would pass the ruff tiers undetected."""
+    import tomllib
+
+    _render(tmp_path, answers)
+    tomllib.loads((tmp_path / "pyproject.toml").read_text(encoding="utf-8"))
+    pixi_toml = tmp_path / "pixi.toml"
+    if pixi_toml.exists():
+        tomllib.loads(pixi_toml.read_text(encoding="utf-8"))
+    gitlab_ci = tmp_path / ".gitlab-ci.yml"
+    if gitlab_ci.exists():
+        import yaml
+
+        list(yaml.safe_load_all(gitlab_ci.read_text(encoding="utf-8")))
 
 
 @pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])

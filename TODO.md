@@ -22,7 +22,7 @@
     「AI コーディングエージェントの利用可否」が異なり、生成物に AGENTS.md を
     置く/置かないが変わる。これは実行環境軸とは独立した第一級の違い。
   - 逆に、実行環境も AI 規約も同じなら project_type を増やさない。
-    CTF、botter（discord/slack）、data_science の拡充、SRE、FastHTML 等は
+    CTF、botter（discord / slack / LINE / Gmail）、data_science の拡充、SRE、FastHTML 等は
     「既存 project_type の上に載るレイヤー / 亜種」として扱う。増やしたい要求は
     必ず「既存の何の上に載るか」を答えてから設計する。
 - **AI コーディングエージェント向けの指示（AGENTS.md）は、デフォルトで全プロジェクトに置く**
@@ -177,12 +177,74 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
         ENTRYPOINT（`scripts.<name>` = CLI）や既存テスト（`python -m <pkg> --version`）
         と衝突する。常駐物ごとに独立モジュール + 専用 `[project.scripts]` を持つ方が
         CLI / 常駐の二重起動を構造的に防げる
-- [ ] botter 向け（discord / slack）: 新設した常駐レイヤーの platform として
-      discord / slack を実装する
-      - discord.py / nextcord / py-cord と slack-sdk / bolt のどれを推奨1本にするか
-      - .env.example のトークン管理、structlog 連携、Docker での常駐/再起動方針
+- [ ] **botter 向け（discord / slack / LINE / Gmail）: 常駐レイヤーの platform として
+      実装する**（2026-09-08 方針確定: bot も実装する。project_type は増やさない）
+      - 置き場所: `cli` / `web_api` の上に載る opt-in レイヤー（MCP と同型）。
+        library には載せない（import される側に実行可能サーバを載せる動機が薄い。
+        include_mcp と同じ理由）。`include_bot`（bool）+ `use_recommended_bot` ゲート +
+        `bot_platform` 詳細質問（discord / slack / line / gmail / all）の構成を検討
+      - 推奨1本（設計原則5「推奨1本 + No でカスタム」）:
+        discord = **discord.py**（公式感・事例の多さ vs nextcord / py-cord のフォーク事情を調査して決定。
+        pycord 系のメンテ状況・slash command 対応・型スタブ有無で選定）、
+        slack = **bolt**（公式 SDK。slack-sdk 素朴利用との住み分けを明記）、
+        LINE = **line-bot-sdk**（Messaging API。Webhook 受信は web_api 層 or 単体 FastAPI 同梱かを設計）、
+        Gmail = **google-api-python-client + google-auth**（Pub/Sub push or ポーリング。OAuth 認証情報の扱いが他と異なる）
+      - 各 platform は「動く見本 + テスト」必須（specialty 解体の教訓）:
+        最小コマンド応答（ping/pong 相当）+ in-process または fake-transport テスト。
+        空ディレクトリ + 依存だけで終わらせない。web_api の prometheus/rate_limit/cors
+        3スイッチ方式を踏襲し、カタログ化しない（認証・管理UI・キュー等は docs の「後で足せる」）
+      - 起動形態（項目4 の独立起動モジュール方式を踏襲）: `bot_<platform>.py` の `main()` +
+        専用 `[project.scripts]`（例: `bot-discord-<name>`）。`__main__.py` / Docker
+        ENTRYPOINT / `python -m <pkg> --version` テストとは衝突させない
+      - トークン管理: `.env.example` のトークン変数（例: `DISCORD_TOKEN` / `SLACK_BOT_TOKEN` /
+        `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN` / Gmail OAuth JSON パス）+
+        structlog 連携。起動時 env チェック（トークン必須・欠落時は起動拒否）。
+        `.env` は commit しない（MCP の `MCP_ALLOWED_HOSTS` と同型の運用）
+      - ログ: 生成 `logging_setup.py` 経由（`LOG_FORMAT=json` がそのまま効く）
+      - Docker での常駐/再起動方針: `docker=true && include_bot` 時の `bot-serve` タスク
+        （MCP の `mcp-serve` タスクと同型）+ compose service 化・HEALTHCHECK・restart 方針。
+        項目6（web_api の Docker 拡充）と一体で検討
+      - 依存マトリクス: `docs/reference/dependencies.md` に bot platform 別の runtime/dev
+        依存 + entry point + deptry ignores + renovate カテゴリを追記（項目9 のマトリクス維持）
+      - 配線: `bot_effective`（+ platform 別 `bot_discord_effective` 等）を
+        `questions/_internal.yml` に新設し、render を一元化（mcp_effective /
+        scraping_effective と同型）。`use_src_layout` / `pkg_dir` / `import_pkg` /
+        `agents_md_effective` / `.env.example` ゲート / `_tasks.jinja` への影響を確認
+      - docs: `docs/how-to/bot.md`（生成物一覧・トークン取得手順・非対応の明記）+
+        `docs/explanations/long-running.md` に bot を第二の実装例として追記 +
+        zensical nav 登録。README Features の常駐レイヤー節にも bot を追記
+      - テスト: render（platform 別ファイル有無・依存有無・他タイプへの leak 無し）+
+        実実行（fake transport での ping/pong 応答）+ ruff / basedpyright クリーン。
+        `test_internal_variable_references_are_forward_only` / Z3 充足維持
+      - 設計判断メモ（2026-09-08）: LINE Webhook と Gmail push は HTTP 受信口が要るため
+        `web_api` 層との組合せ（base + layer）を第一候補とし、単体 bot でも最小受信
+        （単体 FastAPI 同梱 or ポーリング）を選べる形を検討。Gmail は OAuth 認証情報
+        （credentials.json / token.json）の gitignore・取扱いを CTF の flag* 除外と同型で実装
+      - platform 固有の設計点（実装時に1つずつ潰す）:
+        discord = Gateway intents（Privileged Intents の要否・取得手順）/ slash command 登録
+        （guild 即時 vs global 遅延）/ 429 rate-limit・再接続 backoff の見本化。
+        slack = Socket Mode（WebSocket・ローカル開発容易）vs HTTP（署名検証必須）の選択。
+        推奨は Socket Mode 1本化を検討し、署名検証コードは HTTP 選択時のみ生成。
+        LINE = Webhook 署名検証（`LINE_CHANNEL_SECRET` による HMAC）の必須実装 +
+        `web_api` 併用時の route 設計（単体時は最小 FastAPI 同梱か long-polling か決定）。
+        Gmail = OAuth（credentials.json → token.json リフレッシュ）vs サービスアカウントの選択、
+        Pub/Sub push（HTTP 受信口要）vs ポーリングの選択。token.json / credentials.json は
+        gitignore + gitleaks 対象にし、commit させない（CTF flag* と同型）
+      - 他レイヤーとの組合せ定義: bot × MCP / scraping / web_api / data_science の可否マトリクスを
+        `combinable` / `has_*` / `*_effective` に落とす。MCP 同時有効時は entry point 衝突
+        （`mcp-server-<name>` vs `bot-<platform>-<name>`）と Docker ENTRYPOINT（CLI 既定のままか、
+        `bot-serve` / `mcp-serve` 併記か）を決める。ros2 / micropython / oj_code / script は
+        単独のまま（bot 質問を出さない。MCP / scraping と同型の除外）
+      - パッケージマネージャ横断: bot 依存の pixi（conda-forge 有無・PyPI index 指定要否）/
+        poetry / uv の出し分けを pixi how-to と同型で文書化。`tools/check_upstream.py` に
+        bot SDK 群（discord.py / slack-bolt / line-bot-sdk / google-api-python-client 等）の
+        floor pin を追加し、週次 drift 対象にする（template-dev.md「Hardcoded pins」規約）
+      - セキュリティ baseline 連動: `.env.example` ゲートに bot トークン変数を追加、
+        `.gitleaks.toml` にトークンパターン（`DISCORD_TOKEN` / `SLACK_BOT_TOKEN` /
+        `LINE_CHANNEL_*` / Gmail JSON）の検出可否を検討、test_qa / hygiene の整合を確認。
+        AGENTS.md / 生成 README に bot の起動・停止・再起動手順（`bot-serve` タスク含む）を追記
       - （「常駐レイヤー」の設計と MCP の実装例は docs/explanations と docs/how-to に
-        文書化済み。discord/slack はこの受け皿に載せる platform の実装として将来着手）
+        文書化済み。discord/slack/LINE/Gmail はこの受け皿に載せる platform の実装として着手）
 - [x] 既存の `include_mcp` をこの常駐レイヤーへ統合する（下記5と一体で整理）
       → 既存 include_mcp（mcp_server.py 生成）を常駐レイヤーの最初の実装例と位置づけ、
       docs（how-to / explanations）にその位置づけを文書化した
@@ -1001,10 +1063,149 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 - [x] ~~`pixi.toml` から `pyproject.toml` [tool.pixi.*] への移行ガイド~~
       → 同 how-to に移行手順を記載
 
+## 18. テンプレート構造の簡素化・重複排除（2026-09-08 監査）
+
+肥大化した `template/pyproject.toml.jinja`・`_tasks.jinja` と flat/src 二重ツリー、
+条件分岐の3流儀混在への対処。いずれも render byte-identical 検証つきで進める
+（項目13 の copier.yml 分割時と同型）。
+
+- [ ] **flat / src パッケージツリーの二重化を `{{ pkg_dir }}` 1本化する**
+      - 現状: `<pkg>` 配下の全モジュール（fetcher / crawler / browser_fetch / spider /
+        mcp_server / logging_setup / `__init__` / `__main__` / agent / tools）が
+        src 版と flat 版でファイルごと重複し、100文字超の path ガードが鏡像で存在する
+      - `questions/_internal.yml` の `pkg_dir` / `import_pkg` は既に配置を計算しているため、
+        path 側を `template/{{ pkg_dir }}/fetcher.py` 式に寄せ、真正に置き場が違うもの
+        （`app/` vs `<pkg>`、`firmware/`、`src/utils`）だけ wrapper 残しにする
+- [ ] **OJ 判定の3流儀を1つに統一する**（`not online_judge` / `not (online_judge and not kaggle)` /
+      `project_type not in [...]` が混在。kaggle に Docker は付くが PyPI は付かない等、
+      意図か事故か判別できない）
+      - `oj_bare`（= oj_code 相当）または `no_pkg`（micropython / oj_code 等）系 internal を
+        新設し、docker / pypi / log_library / setuptools / setuptools_scm / testpaths /
+        basedpyright-exclude の全参照を置き換える
+- [ ] **raw / effective 混在を排除し、template 側は effective のみ参照にする**
+      - 例: `include_mcp.when` の `project_type == 'web_api' or include_web_api` と
+        `mcp_effective` の `cli or web_api(effective)` の二重定義、`.env.example` ファイル名の
+        raw/effective 混在、`kaggle` vs `data_science` vs `has_*` の混在使用
+      - 方針: 質問の `when` は raw、render（template 本体・ファイル名・`_tasks.jinja`・
+        Dockerfile・task ブロック）は effective のみ。混在箇所を洗い出して置き換える
+- [ ] **`layout` 除外リスト・`combinable` 三重ガードを一元化する**
+      - `layout.when` / `use_src_layout` / `log_library.when` の除外リストを
+        `needs_layout_choice` 系 internal に集約し、各 `when` から参照する
+      - `include_web_api.when` + `combinable` + `has_web_api` + 各ファイルの `{% if web_api %}`
+        の重なりは「`--data-file` 強制時の leak 防止に三重が必要」という現状理由を
+        `questions/_combo.yml` に文書化するか、`combinable` を `has_*` に畳むか決める
+- [ ] **`dev` 依存ブロックの triplication を base + append 化する**
+      - `template/pyproject.toml.jinja` の `strictness == 'none'` / `'basic'` 分岐は
+        約30行ほぼ逐語重複。`dev_base` + `{% if strictness in ['recommended','full'] %}`
+        append に書き換える
+- [ ] **`run` prefix と python-version 三重定義を `_shared/macros.jinja` に抽出する**
+      - 現状: `run` / `run_x` / `ros_source` が `_tasks.jinja`・`README.md.jinja`・
+        `Dockerfile.jinja` に分散、`requires-python` + classifiers +
+        `[tool.basedpyright]pythonVersion` + ty-checkers `python-version` +
+        `.python-version.jinja` が humble=3.10 / jazzy=3.12 / else=3.11 の三項を重複保持
+      - `run_prefix()` / `python_version()` / `classifiers()` を macro 化し各所から import。
+        `tools/check_upstream.py` の pin 対象に追加（template-dev.md の規約どおり bump 連動）
+- [ ] **黙り上書き（sphinx→zensical、license→AGPL-3.0）を可視化する**
+      - micropython + sphinx の zensical フォールバックと memorious 選択時の AGPL-3.0 強制は
+        現状 silent。ask 順で validator が書ける側は validator 化、書けない側は
+        `_tasks` / CI の警告または `test_example.py` の assert（render 結果と回答の一致）で可視化する
+- [ ] **`git_platform` を先に聞くか `repo_url` / `docs_url` を platform 別にする**
+      （現状: Project Details で後聞きのため `security_policy` / `scorecard` の `when` で
+      絞れず `*_effective` の render 時ガードに迂回し、GitLab でも `repo_url` / `docs_url`
+      が github.com 固定になる）
+- [ ] **`pyproject.toml.jinja` をさらに分割する**（項目13 の確立パターンで）
+      - `dependencies=` の1行20連ゲートと deptry `per_rule_ignores` 文字列組立を
+        `_shared/pyproject-deps.toml.jinja` + `_shared/pyproject-deptry.toml.jinja` に抽出し、
+        本体は構造のみ残す。dep 追加時の編集箇所を1箇所にする
+- [ ] **`_tasks.jinja` を宣言的に安定化する**
+      - `{% set tasks = tasks + [...] %}` の8ブロック変異を `when` 付き単一リストにし、
+        poe / pixi シリアライザ（`&&` 単一コマンドの `shell` / `cmd` ヒューリスティック含む）を
+        単一 macro に統一する。matrix path ごとの task-name 集合を assert する単体テストを追加
+        （`audit` の `check` 外し等の退行を検出）
+- [ ] **`logging_setup` の2行 wrapper 先頭空行を解消する**
+      - template-dev.md の単行 wrapper 規約に反する2行 wrapper が先頭空行を生む既知の残件。
+        単行化して byte-identical 検証する
+
+## 19. テスト・CI の高速化と確実性（2026-09-08 監査）
+
+- [ ] **uv / graphviz / uvx ツールのキャッシュを入れる**
+      - `astral-sh/setup-uv` の cache 有効化 + `.venv` の `actions/cache`、
+        docs run の `apt-get install graphviz` 常駐化、hygiene run の
+        `uvx conventional-pre-commit / nbstripout / cffconvert` 冷起動のキャッシュ
+- [ ] **CI を fast / heavy に分割する**
+      - PR 毎は `test_machine_gate` / `test_copier_structure` / `test_qa` /
+        生成 docs / gitleaks / lint の fast のみ、heavy（`test_example` / typecheck）は
+        `main` / nightly または `paths:` フィルタに。`pytest -m "not slow"` markers +
+        `make_venv` 系の `--dist loadfile` グルーピング、事前 sync 済み base venv 再利用を検討
+- [ ] **`timeout-minutes` を全 workflow に付ける**（例: test 60 / docs 20 / hygiene 10）、
+      matrix 復活時は `fail-fast`、タグ時の `_docs.yml: sleep 60` を `concurrency` で解消する
+- [ ] **network 系テストの扱いを見直す**
+      - `test_example_repo_updates`（example リポジトリの clone + `copier update` + diff）は
+        ローカル `--vcs-ref=HEAD` diff に置き換えるか `scheduled-check` 専用に移す
+      - `z3` の `importorskip` 黙り skip をやめ、必須化または skip 件数を assert する
+      - `hypothesis` は現状 `tests/` でゼロ使用（deptry 除外で延命）。property test を
+        `_tokenize_when` / questionnaire parser に書くか、依存から外すか決める
+- [ ] **setup 重複を composite action 化し、runner 分岐を統一する**
+      - `_tasks.yml` / `_test.yml` / `_docs.yml` / `_dist.yml` の
+        checkout(fetch-depth:0) + setup-uv/pixi/poetry + setup-task/just 約30行を
+        `setup-runner` composite action に抽出する
+      - `_test` / `_docs` が `task/just/make/poe/pixi` のみ対応で `invoke/duty` が
+        `Unknown task runner` になる分岐漏れを修正（template 側に loud-fail か対応追加）
+      - `test_task_runner_just_works` 並みに `invoke` / `duty` の実走テストを追加する
+        （poe `cmd &&` / make tab バグはまさに未実走から漏れた）
+- [ ] **未検証の組合せ・経路を埋める**
+      - テンプレ本体 CI は 3.11 / ubuntu-latest のみ。生成 matrix（3.11-3.14）/
+        windows-macos / pixi・poetry venv 経路は render のみ
+      - `torch` 系 render（data_science / kaggle）を typecheck 除外のままにしない
+        （重いなりの nightly 化等）。`ros2-cpp`（pyproject 無し）の lint/typecheck/fmt 除外も整理
+      - `tools/check_upstream.py` の network モード、`generate_license_template.py`、
+        `_dist` / `_container` / `_pypi` / `_release` / `_example` workflow 群の未実行を
+        いずれかの CI で叩く。`example-answers.yml` に `use_recommended_agent` 経路が無い点も補う
+      - `audit` タスク（network のため `check` 外し）は木曜 root audit 以外の検証が無い。
+        schedule 検証の有無を明記する
+
+## 20. Docs・導入UX の改善（2026-09-08 監査）
+
+- [ ] **コピペで通る導入導線にする**
+      - `tutorials/installation.md` に `--with copier-template-extensions` を足す
+        （現状 bare `uvx copier --version` の次頁で `No module named ...` になる）
+      - `tutorials/adopt-existing.md:28` の skeleton 経路に `--with` を足す
+        （:43 非 skeleton 経路との不整合。どちらか一方が壊れている）
+      - `--vcs-ref=main` の理由説明3箇所の矛盾を解消する（README は「v1.0 で re-tag 済み」、
+        adopt-existing は「v1.0 未到達で必須」）。単一の version-status 注記に集約し TODO-11 漏れを消す
+      - 3 flag（`--with` / `--trust` / `--vcs-ref`）を隠す wrapper script / alias を検討する
+- [ ] **欠落・孤児ページを解消する**
+      - 生成 README が link する `{{docs_url}}/how-to/run-container` に対応する
+        `docs/how-to/run-container.md` を書く（または生成 link を既存 how-to に付け替える。
+        現状 Docker 生成物は全て404 link を ship している）
+      - `docs/explanations/structure.md` の孤児を `explanations.md` index に登録する
+- [ ] **README Features / mermaid と questionnaire の drift を解消する**
+      - `docs/reference/questionnaire.md` 側にはある CTF / scraping /
+        `use_recommended_scraping` / `scraping_engine` / `license_check` /
+        `oj_category=ctf` / 新 security 意味が、README Features + mermaid に無い。
+        questionnaire を正として README を再生成する
+      - ついでに toolchain default 矛盾を解消する（help は推奨 `uv + just`、
+        README は `Task (default)`）。mermaid は quickstart の後に移すか折りたたむ
+- [ ] **生成ドキュメントを堅くする**
+      - 生成 `CONTRIBUTING.md.jinja`（30行・外部 how-to URL 依存・`_commit.split` pin 脆弱）を
+        `AGENTS.md` と同じコマンドブロック内蔵型にし、offline でも作業可能にする。
+        `copier update` での AGENTS.md / CONTRIBUTING.md 乖離を防ぐ
+      - 生成 README の `<details> Platform-specific setup` の Linux/macOS vs Windows
+        同一コマンド並列（noise）を差分化または削除、`**pkg** is a Python package that ...`
+        プレースホルダの ship しやすさに対処（validator / コメント誘導）、docs 無効時の
+        `See ... (.github/CONTRIBUTING.md)` 弱代替を手当てする
+- [ ] **質問票の小粒改善**
+      - `project_type=web_django` の罠選択肢（選ぶと abort）を choices から外し、文書ポインタにする
+      - `license` help の40行 SPDX ダンプを端末向けに短縮（全文は docs 参照）
+      - `example-answers.yml`（全 gate-off 網羅 fixture）を `create-new.md` +
+        `reference/questionnaire.md` から non-interactive 起点として link する
+      - `create-new.md` の commit 手順 `uv sync` 固定を runner 対応に
+        （`uv sync` / `pixi install` / `poetry install` / ros2 / micropython 分岐）
+      - README 先頭に5行 TL;DR quickstart + prerequisites（uv / git init）を置く
+
 ### 修正詳細
 
 #### Issue: docs_type バリデーション問題
-
 **症状**: `--data-file` で `docs_type: zensical` を指定すると
 `ValueError: Invalid choice for 'docs_type': 'zensical' is not in ['README', 'sphinx']`
 エラーになる。
@@ -1027,3 +1228,29 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
 - `package_name`: `my_package`
 - `description`: `A Python project generated from python-copier-template`
 - `git_platform`: `github.com`
+
+## 21. copier 本体への機能提案・fork 運用（2026-09-08 新設）
+
+`notes/COPIER_UPSTREAM.md` + `notes/upstream-drafts/`（報告済み9件・パッチ2本凍結）は
+そのまま残し、*新規*の機能提案と fork 作業場は `copier-fork/` に集約する。
+二重管理にしない: 既報9件の再記述は `copier-fork/` に持ち込まない。
+
+- [x] **`copier-fork/` 作業場を新設する**（2026-09-08）
+      - `copier-fork/README.md`（hub: 新旧二拠点の整理・非目標・workflow）
+      - `copier-fork/FEATURES.md`（新規機能 F1〜F7 + Research。重複する既報9件は拡張参照のみ）
+      - `copier-fork/patches/README.md`（命名 `<area>-<slug>.patch`・作成/検証手順）
+      - `copier-fork/scripts/{fork-setup,sync-upstream,verify-patch}.sh`
+       （fork 作成・upstream 同期・`git apply --check` 検証。`bash -n` 済み）
+      - 非目標の明記: upstream コードの vendoring なし（patch は quoted context のみ）、
+        生成物への混入なし（`template/` 外のため `copier.yml` 除外不要）
+- [ ] **fork を作成し、F3（missing 一括報告）から着手する**
+      - `copier-fork/scripts/fork-setup.sh` で fork（先方慣例ブランチは `master`）。
+        ベースラインは copier 9.18.1（本リポジトリ `.venv` 版）。以降は
+        `sync-upstream.sh` で追従し、FEATURES.md の行番号参照を更新する
+      - 着手順序（小→大）: F3 → F5 → F6 → F1/F2/F4/F7（Discussion 先行）。
+        文言系（F3/F5）は既報1/2/4 の PR と同型の単発 PR として出しやすい
+      - PR 前に upstream `CONTRIBUTING.md` 通りに該当テストを回す
+        （F3 なら answers 系、F5 なら VCS 系）。`verify-patch.sh` で事前検査
+- [ ] **投稿は手動で行う**（copier の `AI_POLICY.md` 要件。エージェント投稿禁止）
+      - 草稿は貼らず自分の言葉に整える。`gh` コマンド例は `notes/COPIER_UPSTREAM.md`
+        「投稿手順」節を正とする（`copier-fork/` に複写しない）
