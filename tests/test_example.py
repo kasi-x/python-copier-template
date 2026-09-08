@@ -1346,22 +1346,6 @@ def test_template_task_runner_poe(tmp_path: Path):
     assert any(d.startswith("poethepoet") for d in dev)
 
 
-@pytest.mark.parametrize(
-    "runner,cmd",
-    [("make", "make lint"), ("poe", "uv run --locked poe lint")],
-)
-def test_task_runner_lint_tasks_execute(runner: str, cmd: str, tmp_path: Path):
-    """The lint task must actually EXECUTE for the non-uv-tooling runners.
-    Both of these broke silently: poe's `cmd` entry is not a shell (the
-    embedded `&&` in lint was passed to ruff as an argument) and make
-    depends on tab indentation — neither is caught by render-only asserts.
-    Invoke and duty are covered by the generated project's own ruff run
-    (format-clean task files)."""
-    copy_project(tmp_path, use_recommended_toolchain=False, task_runner=runner)
-    run = make_venv(tmp_path)
-    run(cmd)
-
-
 def test_template_task_runner_pixi_native(tmp_path: Path):
     copy_project(tmp_path, package_manager="pixi", task_runner_pixi="pixi")
     assert not (tmp_path / "Taskfile.yml").exists()

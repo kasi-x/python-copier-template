@@ -1,0 +1,10 @@
+#!/bin/sh
+# Opt-in fast gate before pushing: the tiers that catch the regression
+# classes of 2026-09 (render conformance, ledger/docs guards, repo QA) in
+# a few seconds. The full suite still runs in CI.
+# Enable once with: git config core.hooksPath .githooks
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+.venv/bin/ruff format --check . >/dev/null
+.venv/bin/ruff check . >/dev/null
+uv run --locked pytest tests/test_machine_gate.py tests/test_generation_docs.py tests/test_qa.py tests/test_task_runners.py tests/test_generated_lint.py -q

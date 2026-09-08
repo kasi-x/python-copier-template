@@ -325,6 +325,14 @@ suppress-dummy-args = false
 suppress-none-returning = false
 
 [tool.ruff.lint.per-file-ignores]
+{%- if task_runner_effective == 'invoke' %}
+# invoke タスク定義: コマンド文字列が必然的に長くなるため E501 を豁免
+# (ファイルレベル noqa だと行境界次第で RUF100 未使用が発火するため設定側で扱う)
+"tasks.py" = ["E501"]
+{%- elif task_runner_effective == 'duty' %}
+# duty タスク定義: 同上
+"duties.py" = ["E501"]
+{%- endif %}
 # By default, private member access is allowed in tests
 # See https://github.com/kasi-x/python-copier-template/issues/154
 # Remove this line to forbid private member access in tests
