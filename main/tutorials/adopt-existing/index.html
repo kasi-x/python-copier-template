@@ -480,6 +480,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="If you do not have a skeleton-based project">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keep-your-own-files-infra-only-adoption" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Keep your own files (infra-only adoption)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1630,6 +1647,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="If you do not have a skeleton-based project">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keep-your-own-files-infra-only-adoption" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Keep your own files (infra-only adoption)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1702,6 +1736,22 @@ git<span class="w"> </span>diff
 <span class="c1"># Examine the changes, put back anything you want to keep</span>
 git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Adopt python-copier-template x.x.x"</span>
 </code></pre></div>
+<h3 id="keep-your-own-files-infra-only-adoption">Keep your own files (infra-only adoption)<a class="headerlink" href="#keep-your-own-files-infra-only-adoption" title="Permanent link">&para;</a></h3>
+<p>To add only the infrastructure (CI workflows, hygiene, quality tooling
+recipes) and keep your existing <code>README.md</code>, <code>LICENSE</code>, <code>pyproject.toml</code>
+and <code>.gitignore</code>, protect them with <code>--skip</code>:</p>
+<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span>main<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--skip<span class="w"> </span>README.md<span class="w"> </span>--skip<span class="w"> </span>LICENSE<span class="w"> </span>--skip<span class="w"> </span>pyproject.toml<span class="w"> </span>--skip<span class="w"> </span>.gitignore<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>/path/to/existing-project
+git<span class="w"> </span>diff
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"chore: adopt python-copier-template (infra only)"</span>
+</code></pre></div>
+<p>Your own files are left untouched; everything you do not have yet (CI
+workflows, <code>.gitleaks.toml</code>, <code>AGENTS.md</code>, ...) is added. Wire the task
+entries from <code>justfile</code> / <code>Taskfile.yml</code> into your own setup, and add the
+dev dependencies the adoption flow prints. A first-class
+<code>existing_project</code> answer (protect-by-default without <code>--skip</code>) is
+specified in <code>notes/SPEC-adoption.md</code> for a future release.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Copier does not touch any already existing files that do not conflict with the ones in the template. Therefore, you may end up with files in your project you no longer need such as old github workflows. These would need to be manually deleted.</p>
