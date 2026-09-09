@@ -1814,7 +1814,7 @@ the workflows.</p>
 <p>The generated <code>[tool.ruff]</code> / <code>[tool.basedpyright]</code> / <code>[tool.pytest]</code>
 sections intentionally differ from this repo's own <code>pyproject.toml</code>:
 different lint targets (generated <code>pkg_dir</code> + <code>tests</code> vs this repo's
-<code>tests</code> + <code>tools</code> + <code>extensions.py</code>) and different jobs (generated
+<code>tests</code> + <code>tools</code>) and different jobs (generated
 projects ship a library; this repo ships a template). Shared choices stay
 in sync: ruff <code>ALL</code> + preview rules, line-length 120, single-line isort,
 <code>pyproject-fmt</code> keep-full-version, typos 3-letter ignore. If you change a
