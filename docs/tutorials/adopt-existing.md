@@ -47,6 +47,27 @@ git diff
 git commit -m "Adopt python-copier-template x.x.x"
 ```
 
+### Keep your own files (infra-only adoption)
+
+To add only the infrastructure (CI workflows, hygiene, quality tooling
+recipes) and keep your existing `README.md`, `LICENSE`, `pyproject.toml`
+and `.gitignore`, protect them with `--skip`:
+
+```shell
+uvx copier copy --trust --vcs-ref=main \
+    --skip README.md --skip LICENSE --skip pyproject.toml --skip .gitignore \
+    https://github.com/kasi-x/python-copier-template.git /path/to/existing-project
+git diff
+git commit -m "chore: adopt python-copier-template (infra only)"
+```
+
+Your own files are left untouched; everything you do not have yet (CI
+workflows, `.gitleaks.toml`, `AGENTS.md`, ...) is added. Wire the task
+entries from `justfile` / `Taskfile.yml` into your own setup, and add the
+dev dependencies the adoption flow prints. A first-class
+`existing_project` answer (protect-by-default without `--skip`) is
+specified in `notes/SPEC-adoption.md` for a future release.
+
 !!! note
     Copier does not touch any already existing files that do not conflict with the ones in the template. Therefore, you may end up with files in your project you no longer need such as old github workflows. These would need to be manually deleted.
 
