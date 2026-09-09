@@ -66,11 +66,16 @@ agents can close the loop without parsing prose.
 
 ## F4. Extension dependency declaration (`_requires` sketch)
 
-Status: proposed (extends `notes/` item 3c and draft `03`).
+Status: partially obsolete (2026-09-09) — this template removed its only
+`_jinja_extensions` consumer (copier-template-extensions) and now generates
+with a bare `uvx copier copy --trust ...`. The `_requires` sketch stays
+valid for templates that genuinely need third-party extensions, but it is
+no longer on this template's own critical path.
 
-Problem: `_jinja_extensions` must be importable by copier itself, but the
-template has no key to declare that. Isolated runners (`uvx copier copy`)
-die with `ExtensionNotFoundError` and no actionable hint.
+Problem (as filed): `_jinja_extensions` must be importable by copier
+itself, but the template has no key to declare that. Isolated runners
+(`uvx copier copy`) die with `ExtensionNotFoundError` and no actionable
+hint.
 
 Proposal: a `copier.yml` key sketch (e.g. `_requires: [package-spec, ...]`)
 that copier validates and reports precisely ("this template needs

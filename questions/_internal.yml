@@ -223,7 +223,7 @@ care:
 
 license_year:
     type: str
-    default: "{{ current_year() }}"
+    default: "{{ now().year }}"
     when: false
 
 pkg_dir:

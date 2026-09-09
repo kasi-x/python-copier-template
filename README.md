@@ -298,8 +298,7 @@ flowchart TD
   editor indentation and line endings
 - A `.env.example` with the environment variables the project understands
   (`.env` is git-ignored and auto-loaded by direnv / the compose stack)
-- Author/GitHub-org questions default from local `git config`/`gh` (via a
-  `copier-template-extensions`-loaded `extensions.py`); override at any prompt
+- Author/GitHub-org questions have plain defaults (override at any prompt)
 - A task runner of your choice ([Task](https://taskfile.dev) (default) /
   [just](https://just.systems) / [poethepoet](https://github.com/nat-n/poethepoet) /
   [Make](https://www.gnu.org/software/make/), or pixi's native tasks) driving
@@ -415,10 +414,7 @@ You can see the template in action in the
 
 ## Create a new project
 
-We recommend invoking copier via `uvx`. Because the template ships custom
-Jinja extensions, `copier-template-extensions` must be importable by copier
-itself — a bare `uvx copier` runs in an isolated environment and cannot see
-it, so inject it with `--with`. `--vcs-ref=main` matters too: without it,
+We recommend invoking copier via `uvx`. `--vcs-ref=main` matters: without it,
 copier checks out the **latest git tag** instead of the current main branch,
 and this repository still carries inherited upstream tags that point at the
 old, pre-fork template (they are re-tagged at the v1.0 fork detach):
@@ -426,11 +422,11 @@ old, pre-fork template (they are re-tagged at the v1.0 fork detach):
 ```
 git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
-uvx --with copier-template-extensions copier copy --trust --vcs-ref=main \
+uvx copier copy --trust --vcs-ref=main \
     https://github.com/kasi-x/python-copier-template.git $_
 ```
 
-(`--trust` is required: the template uses custom Jinja extensions and
+(`--trust` is required: the template uses
 post-generation tasks (the web_django guard and the REUSE `LICENSES/` copy).
 Without it copier refuses to generate anything and exits with status 4.)
 
@@ -452,7 +448,7 @@ github_org: my-org
 EOF
 
 # Generate project
-uvx --with copier-template-extensions copier copy --trust --defaults \
+uvx copier copy --trust --defaults \
     --vcs-ref=main --data-file answers.yml /path/to/my-project
 ```
 
@@ -471,8 +467,6 @@ Notes:
 
 **Troubleshooting:**
 
-- `No module named 'copier_template_extensions'` → run copier with
-  `uvx --with copier-template-extensions copier ...`
 - Exit status 4, nothing generated → you omitted `--trust`
 - "Question X is required" → add X to your answers file (see
   `questions/*.yml` for every question and its default)

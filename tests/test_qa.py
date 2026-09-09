@@ -3,16 +3,11 @@
 Aqua.jl tests the *quality* of a Julia package's metadata and public API:
 dependency integrity, absence of undefined imports, and public-API
 consistency. This repo is not a pip package — it is the copier template
-itself — so the same ideas apply to the code that *runs* during generation
-(``extensions.py``) and the maintenance tooling (``tools/``):
+itself — so the same ideas apply to the maintenance tooling (``tools/``):
 
-- every importable module under ``extensions.py`` and ``tools/`` imports
-  cleanly;
+- every module under ``tools/`` imports cleanly;
 - those modules only import stdlib or dependencies declared in the repo's
-  own ``pyproject.toml``;
-- the public names ``copier.yml`` references as question defaults
-  (``git_user_name()`` etc.) actually exist — a dangling reference would
-  abort every generation.
+  own ``pyproject.toml``.
 
 The template sources in ``template/`` are deliberately not scanned: they are
 rendered by copier, not imported here, and are validated downstream in the
@@ -28,9 +23,12 @@ from pathlib import Path
 TOP = Path(__file__).resolve().parent.parent
 PYPROJECT = TOP / "pyproject.toml"
 
-# Modules that run inside `copier copy` / maintenance scripts.
+# Maintenance-script modules (tools/ has no __init__.py by design: it is a
+# script directory, not a package. Import it via an explicit path hook so
+# tests can import tools.* without changing the shipped layout).
+
+# Modules that run as maintenance scripts.
 QA_MODULES = [
-    "extensions",
     *sorted(
         str(p.relative_to(TOP)).removesuffix(".py").replace("/", ".")
         for p in (TOP / "tools").rglob("*.py")
@@ -53,7 +51,9 @@ def _declared_dev_deps() -> set[str]:
 
 
 def test_every_qa_module_imports() -> None:
-    """extensions.py and every tools/ module must import cleanly."""
+    """Every tools/ module must import cleanly."""
+    if str(TOP) not in sys.path:
+        sys.path.insert(0, str(TOP))
     for name in QA_MODULES:
         importlib.import_module(name)
 
@@ -81,19 +81,23 @@ def test_qa_modules_only_import_declared_or_stdlib() -> None:
                 )
 
 
-def test_copier_question_defaults_reference_real_functions() -> None:
-    """The globals copier.yml depends on are registered by the extensions.
+def test_no_custom_jinja_extensions_needed() -> None:
+    """Generation needs no custom Jinja extensions.
 
-    copier.yml loads GitExtension / CurrentYearExtension via
-    ``_jinja_extensions``; the author questions' ``default:`` call
-    ``git_user_name()``, ``git_user_email()`` and ``github_username()``, and
-    the LICENSE year uses ``current_year()``. These are registered onto a
-    jinja2 Environment when copier instantiates the extensions — if a
-    referenced global were missing, every generation would abort.
+    Regression guard for the copier-template-extensions removal: copier.yml
+    must not declare ``_jinja_extensions`` entries, and the questionnaire
+    must not reference the old ``extensions.py`` globals (git_user_name,
+    git_user_email, github_username, current_year, cuda_hint). Generation
+    uses only copier builtins (now/today) and jinja2-ansible-filters
+    (regex_search, to_nice_yaml) shipped with copier itself.
     """
-    import extensions
-    from jinja2 import Environment
+    from copier._template import load_template_config
 
-    env = Environment(extensions=[extensions.GitExtension, extensions.CurrentYearExtension])
-    for name in ("git_user_name", "git_user_email", "github_username", "current_year"):
-        assert callable(env.globals.get(name)), f"copier.yml default references missing global {name!r}"
+    config = load_template_config(TOP / "copier.yml")
+    assert config.get("_jinja_extensions", []) == []
+
+    old_globals = ("git_user_name", "git_user_email", "github_username", "current_year", "cuda_hint")
+    for path in [TOP / "copier.yml", *(TOP / "questions").glob("*.yml")]:
+        text = path.read_text(encoding="utf-8")
+        for name in old_globals:
+            assert name not in text, f"{path.name} still references removed global {name!r}"

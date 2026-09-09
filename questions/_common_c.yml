@@ -81,16 +81,14 @@ github_org:
         Set to your GitHub username (e.g. kasi-x) for a personal repo,
         or the name of an organisation you belong to.
     when: "{{ git_platform == 'github.com' }}"
-    default: "{{ github_username() }}"
+    default: my-org
 
 gitlab_group:
     type: str
     help: |
         GitLab group (or username) that will contain this repo.
     when: "{{ git_platform == 'gitlab.com' }}"
-    # Smart default from local git config, like github_org: the prompt shows
-    # it and the user can override; --defaults stays fully non-interactive.
-    default: "{{ git_user_name() }}"
+    default: my-group
 
 repo_name:
     type: str
@@ -114,11 +112,11 @@ distribution_name:
 author_name:
     type: str
     help: Your full name
-    default: "{{ git_user_name() }}"
+    default: Your Name
     placeholder: FirstName LastName
 
 author_email:
     type: str
     help: Your email address
-    default: "{{ git_user_email() }}"
+    default: you@example.com
     placeholder: email@example.com

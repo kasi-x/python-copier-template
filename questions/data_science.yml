@@ -24,7 +24,6 @@ use_gpu:
         Will you run GPU workloads?
         If yes, an NVIDIA CUDA Dockerfile and devcontainer are prepared.
         Recommended (and the default) for data_science projects.
-        {{ cuda_hint() }}
     default: true
 
 data_reusable:

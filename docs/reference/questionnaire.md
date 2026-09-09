@@ -149,5 +149,6 @@ Answering **No** to an area gate reveals its detailed questions:
 ## Project details
 
 Finally the project details are asked: package name, description, git
-platform, and author. The author name/email and GitHub org default from your
-local `git config` / `gh` where available, and can be overridden at any prompt.
+platform, and author. The author name/email and GitHub org have plain
+placeholder defaults — answer each prompt with your own values (or pass
+them via `--data-file` for non-interactive generation).

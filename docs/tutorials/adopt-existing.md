@@ -40,7 +40,7 @@ git commit -m "Update to python-copier-template x.x.x"
 If you have a project with a different structure then it is best to go straight to the current main branch (`--vcs-ref=main` — without it copier picks the latest git tag, which here still points at the old, pre-fork template):
 
 ```shell
-uvx --with copier-template-extensions copier copy --trust --vcs-ref=main \
+uvx copier copy --trust --vcs-ref=main \
     https://github.com/kasi-x/python-copier-template.git /path/to/existing-project
 git diff
 # Examine the changes, put back anything you want to keep

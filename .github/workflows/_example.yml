@@ -33,7 +33,7 @@ jobs:
           git init /tmp/example
           # --defaults answers questions added after example-answers.yml was
           # written (e.g. new opt-in layers) without an interactive session.
-          uvx --with copier-template-extensions copier copy \
+          uvx copier copy \
             --trust \
             --defaults \
             --data-file example-answers.yml \

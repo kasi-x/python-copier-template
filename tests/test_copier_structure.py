@@ -52,8 +52,8 @@ CANONICAL_GATES = [
     "use_recommended_security",
 ]
 
-# Copier/Jinja built-ins and the custom extension globals (extensions.py) that
-# may appear in `{{ }}` expressions without being copier.yml keys.
+# Copier/Jinja built-ins that may appear in `{{ }}` expressions without
+# being copier.yml keys.
 ALLOWED_NON_KEYS = {
     "_copier_answers",
     "_copier_conf",
@@ -63,10 +63,6 @@ ALLOWED_NON_KEYS = {
     "_dst_path",
     "_copier_templates_dir",
     "_copier_subdirectory",
-    "git_user_name",
-    "git_user_email",
-    "github_username",
-    "current_year",
     "now",
     "today",
     # Jinja / copier built-in filters and tests used in the questionnaire.

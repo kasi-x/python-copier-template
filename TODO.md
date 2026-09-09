@@ -1166,14 +1166,13 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 ## 20. Docs・導入UX の改善（2026-09-08 監査）
 
-- [ ] **コピペで通る導入導線にする**
-      - `tutorials/installation.md` に `--with copier-template-extensions` を足す
-        （現状 bare `uvx copier --version` の次頁で `No module named ...` になる）
-      - `tutorials/adopt-existing.md:28` の skeleton 経路に `--with` を足す
-        （:43 非 skeleton 経路との不整合。どちらか一方が壊れている）
+- [ ] **コピペで通る導入導線にする**（2026-09-09 更新: `--with` は不要になった。
+      copier-template-extensions 依存を排除したため残りは `--trust` / `--vcs-ref` の2 flag）
+      - ~~tutorials/installation.md に `--with` を足す~~ → 不要（依存排除で解消）
+      - `tutorials/adopt-existing.md:28` の skeleton 経路と :43 非 skeleton 経路の不整合を解消する
       - `--vcs-ref=main` の理由説明3箇所の矛盾を解消する（README は「v1.0 で re-tag 済み」、
         adopt-existing は「v1.0 未到達で必須」）。単一の version-status 注記に集約し TODO-11 漏れを消す
-      - 3 flag（`--with` / `--trust` / `--vcs-ref`）を隠す wrapper script / alias を検討する
+      - 2 flag（`--trust` / `--vcs-ref`）を隠す wrapper script / alias を検討する
 - [ ] **欠落・孤児ページを解消する**
       - 生成 README が link する `{{docs_url}}/how-to/run-container` に対応する
         `docs/how-to/run-container.md` を書く（または生成 link を既存 how-to に付け替える。

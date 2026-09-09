@@ -11,7 +11,6 @@ requires-python = ">=3.11"
 dev = [
     "basedpyright>=1.39.9,<1.40",
     "copier>=9,<10",
-    "copier-template-extensions>=0.3.3,<0.4",
     "coverage>=7.15.4,<8",
     "deptry>=0.25.1,<0.26",
     "hypothesis>=6.130.0,<7.0",
@@ -33,12 +32,14 @@ dev = [
 ]
 
 [tool.setuptools]
-# This repo is the copier template itself, not a library: the only importable
-# Python at the root is the copier extension loader (extensions.py) and the
-# empty package marker (__init__.py). Explicitly list them so setuptools does
-# not try flat-layout auto-discovery and trip over site/ (docs build output)
+# This repo is the copier template itself, not a library: there is no
+# importable Python at the root (generation no longer needs custom Jinja
+# extensions). Explicitly list nothing so setuptools does not try
+# flat-layout auto-discovery and trip over site/ (docs build output)
 # or template/ (the copier source tree) when editable-installing under xdist.
-py-modules = ["extensions"]
+# (tools/ is a script directory without __init__.py; tests import it via
+# an explicit sys.path hook in tests/test_qa.py.)
+py-modules = []
 packages = []
 
 [tool.setuptools_scm]
@@ -53,7 +54,7 @@ testpaths = "tests"
 
 [tool.basedpyright]
 pythonVersion = "3.11"
-include = ["tests", "tools", "extensions.py"]
+include = ["tests", "tools"]
 exclude = [
     "**/node_modules",
     "**/__pycache__",
@@ -85,7 +86,7 @@ reportImplicitStringConcatenation = false # コメントを挟んだ意図的な
 [tool.pyrefly]
 python-version = "3.11"
 search-path = ["tests", "tools", "."]
-project-includes = ["tests", "tools", "extensions.py"]
+project-includes = ["tests", "tools"]
 project-excludes = [".venv", "template", ".github/pages"]  # .github/pages はこのリポでは未実行の共有 CI ヘルパー
 preset = "default"
 
@@ -277,9 +278,7 @@ extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
 extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS", "notes"]
 
 [tool.vulture]
-paths = ["tests", "tools", "extensions.py"]
-# copier.yml の _jinja_extensions から文字列で参照される Jinja Extension クラス。
-ignore_names = ["GitExtension", "CurrentYearExtension"]
+paths = ["tests", "tools"]
 min_confidence = 60
 
 [tool.deptry]
@@ -294,11 +293,10 @@ keep-full-version = true
 no-generate-python-version-classifiers = true
 
 [tool.coverage.run]
-# extensions.py は copier の run_copy 内で in-process 実行され、tools/* は
-# subprocess 実行される。template/ の生成コードは生成先プロジェクト側で
+# tools/* は subprocess 実行され、template/ の生成コードは生成先プロジェクト側で
 # 計測されるので source には含めない。
 patch = ["subprocess"]
-source = ["extensions.py", "tools"]
+source = ["tools"]
 # プロジェクトローカルのデータファイル（生成物へ出している設定と同じ）。
 # pytest-xdist (-n auto) の各 worker が共有 /tmp で競合しないよう parallel 化し、
 # pytest-cov が最後にマージする。
