@@ -1,0 +1,15 @@
+# Adoption mode: applying the template onto an EXISTING project. When true,
+# the adopter's own files (README, LICENSE, pyproject, .gitignore,
+# .python-version, src/tests scaffolding, task-runner files) are protected —
+# the render skips them entirely — while missing infrastructure (CI,
+# hygiene, quality tooling) is still added. Spec: notes/SPEC-adoption.md.
+
+existing_project:
+    type: bool
+    default: false
+    help: |
+        Apply this template to an EXISTING project?
+        Yes: your README, LICENSE, pyproject.toml, .gitignore,
+        .python-version and source scaffolding are protected — only files
+        you do not have yet are added, plus the CI / quality
+        infrastructure. No: full scaffold for a fresh project.

@@ -55,6 +55,10 @@ project_type:
         - micropython
     default: library
 ---
+# Adoption mode: asked right after project_type so an adopter answers it
+# before any area gate (its effect is render-time file protection only).
+!include questions/adoption.yml
+---
 # Genre follow-up questions (asked right after project_type, before the
 # cross-cutting gates). Each include is its own YAML document: two
 # `!include` tags in one document would collide as the same mapping key.
@@ -103,6 +107,9 @@ _tasks:
     - command: >-
         python -c "import sys; print('Django is not supported by this template. Use FastAPI / Litestar / Flask instead, or the upstream cookiecutter-django template: https://github.com/cookiecutter/cookiecutter-django'); sys.exit(1)"
       when: "{{ project_type == 'web_django' }}"
+    - command: >-
+        python -c "print('Adopt mode: your own files (README.md, LICENSE, pyproject.toml, .gitignore, .python-version, src/tests) were protected and not touched.'); print('Added infrastructure: .github/workflows, .gitleaks.toml, renovate.json, AGENTS.md and more — see git status.'); print('Wire the tooling into your own pyproject.toml, e.g.: uv add --dev ruff pytest pytest-cov typos deptry vulture basedpyright'); print('Task entry points to copy: see justfile / Taskfile.yml.'); print('Update later with: uvx copier update --trust --vcs-ref=main')"
+      when: "{{ existing_project }}"
     - >-
         {% if reuse_effective %}
         python -c "import pathlib, shutil; pathlib.Path('LICENSES').mkdir(exist_ok=True); shutil.copy('LICENSE', 'LICENSES/{{ license_effective }}.txt')"

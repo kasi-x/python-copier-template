@@ -63,6 +63,7 @@ ALLOWED_NON_KEYS = {
     "_dst_path",
     "_copier_templates_dir",
     "_copier_subdirectory",
+    "strftime",
     "now",
     "today",
     # Jinja / copier built-in filters and tests used in the questionnaire.

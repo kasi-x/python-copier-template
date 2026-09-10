@@ -58,6 +58,7 @@ MANAGER_PATHS: list[dict[str, object]] = [
 
 # Layer and platform variants: opt-in code trees and the GitLab CI output.
 LAYER_PATHS: list[dict[str, object]] = [
+    {"project_type": "cli", "existing_project": True},
     {"project_type": "cli", "use_recommended_agent": False},
     {"project_type": "cli", "use_recommended_integrations": False, "include_scraping": True},
     {
@@ -254,7 +255,10 @@ def test_generated_toml_parses(tmp_path: Path, answers: dict[str, object]):
     import tomllib
 
     _render(tmp_path, answers)
-    tomllib.loads((tmp_path / "pyproject.toml").read_text(encoding="utf-8"))
+    # adopt mode protects the pyproject: an existing one is never written,
+    # so there is nothing to parse for that path.
+    if (tmp_path / "pyproject.toml").exists():
+        tomllib.loads((tmp_path / "pyproject.toml").read_text(encoding="utf-8"))
     pixi_toml = tmp_path / "pixi.toml"
     if pixi_toml.exists():
         tomllib.loads(pixi_toml.read_text(encoding="utf-8"))

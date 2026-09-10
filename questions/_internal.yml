@@ -223,7 +223,8 @@ care:
 
 license_year:
     type: str
-    default: "{{ now().year }}"
+    # strftime filter (copier-native): now() is deprecated for removal.
+    default: "{{ '%Y' | strftime }}"
     when: false
 
 pkg_dir:

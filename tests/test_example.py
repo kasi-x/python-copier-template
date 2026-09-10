@@ -212,6 +212,48 @@ def test_template_no_precommit_hygiene_in_ci(tmp_path: Path):
     assert "fix:" in taskfile
 
 
+def test_template_adopt_mode_protects_existing_files(tmp_path: Path):
+    """Adopt mode (existing_project: true) must leave the adopter's own
+    files byte-identical while still adding the missing infrastructure
+    (SPEC-adoption.md U2 / phases P1)."""
+    (tmp_path / "README.md").write_text("# my own readme\n")
+    (tmp_path / "LICENSE").write_text("my own license\n")
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "existing"\n')
+    (tmp_path / ".gitignore").write_text("my own ignore\n")
+    (tmp_path / ".python-version").write_text("3.12\n")
+    pkg = tmp_path / "src" / "existing_pkg"
+    pkg.mkdir(parents=True)
+    (pkg / "__init__.py").write_text('"""My package."""\n')
+
+    copy_project(tmp_path, existing_project=True)
+
+    # protected files remain byte-identical
+    assert (tmp_path / "README.md").read_text() == "# my own readme\n"
+    assert (tmp_path / "LICENSE").read_text() == "my own license\n"
+    assert (tmp_path / "pyproject.toml").read_text() == '[project]\nname = "existing"\n'
+    assert (tmp_path / ".gitignore").read_text() == "my own ignore\n"
+    assert (tmp_path / ".python-version").read_text() == "3.12\n"
+    assert (pkg / "__init__.py").read_text() == '"""My package."""\n'
+    # the runner files are protected too (the adopter keeps their tooling)
+    assert not (tmp_path / "justfile").exists()
+    # infrastructure is still added
+    for infra in (
+        ".github/workflows/ci.yml",
+        ".github/workflows/_hygiene.yml",
+        ".gitleaks.toml",
+        "renovate.json",
+        "AGENTS.md",
+        "cliff.toml",
+        "docs",
+    ):
+        assert (tmp_path / infra).exists(), f"missing infra: {infra}"
+    # answers recorded -> future copier update works
+    answers = (tmp_path / ".copier-answers.yml").read_text()
+    assert "existing_project: true" in answers
+    # the adoption report ships in the template's own post-gen tasks
+    assert "Adopt mode:" in (TOP / "copier.yml").read_text()
+
+
 def test_template_works_outside_git(tmp_path: Path):
     """Publish pipelines generate first and `git init` later. Without git
     metadata setuptools_scm used to abort every `uv sync` — the fallback
@@ -1852,14 +1894,14 @@ def test_example_repo_updates(tmp_path: Path):
 
 
 def test_gitignore_same():
-    # template/.gitignore.jinja is conditional (data_science / kaggle /
+    # the gated .gitignore template is conditional (data_science / kaggle /
     # ros2 blocks render per project type); the root .gitignore is the
     # union of every conditional branch, so the template repo itself
     # ignores everything any generated project could produce.
     # Compare normalized line sets (jinja tags stripped) in both
     # directions: exact parity catches stale root-only lines (e.g. a
     # removed input//exp/) and missing template lines, which a one-way
-    # substring check would hide. template/.gitignore.jinja shares its
+    # substring check would hide. the gated .gitignore template shares its
     # CTF / scraping bodies via {% include %} (_shared/gitignore-*.jinja),
     # so those are inlined before normalizing.
     def normalized(path: Path) -> set[str]:
@@ -1874,7 +1916,7 @@ def test_gitignore_same():
             lines.add(stripped)
         return lines
 
-    template = normalized(TOP / "template" / ".gitignore.jinja")
+    template = normalized(TOP / "template" / "{% if not existing_project %}.gitignore{% endif %}.jinja")
     root = normalized(TOP / ".gitignore")
     assert template - root == set(), f"missing from root .gitignore: {sorted(template - root)}"
     assert root - template == set(), f"stale in root .gitignore: {sorted(root - template)}"
