@@ -1,11 +1,13 @@
+#!/usr/bin/env python3
 """Make switcher.json to allow docs to switch between different versions."""
 
 import json
 import logging
 from argparse import ArgumentParser
 from pathlib import Path
-from subprocess import CalledProcessError
-from subprocess import check_output
+from subprocess import CalledProcessError, check_output
+
+logger = logging.getLogger(__name__)
 
 
 def report_output(stdout: bytes, label: str) -> list[str]:
@@ -34,7 +36,7 @@ def get_versions(ref: str, add: str | None) -> list[str]:
         builds = set(get_branch_contents(ref))
     except CalledProcessError:
         builds = set()
-        logging.warning("Cannot get %s contents", ref)
+        logger.warning("Cannot get %s contents", ref)
 
     # Add and remove from the list of builds
     if add:
