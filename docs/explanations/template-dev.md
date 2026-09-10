@@ -163,6 +163,19 @@ reports drift; the policy below decides whether drift is a bug or accepted:
   no PyPI release) is always a bug — `uv sync` breaks for that combination.
   A `floor X / latest Y` gap is a judgment call per the policy above.
 
+## Jinja tags inside YAML block scalars must stay indented
+
+`_tasks` commands that embed conditional jinja (`{% if docs %}...{% endif %}`)
+must keep the tags at the SAME indentation as the block-scalar content
+(col 0 breaks out of the `|` scalar and `copier.yml` fails to parse with
+`found character '%'`). The rendered tag line becomes an empty line inside
+the shell script — harmless. Verified by rendering with
+`load_template_config` (machine gate) plus an actual `copier copy`.
+
+The same lesson applies to answer-driven file protection: conditional
+presence is expressed on the FILE NAME (`{% if x %}name{% endif %}.jinja`),
+never by jinja in `_skip_if_exists` (config values are not rendered).
+
 ## Documented generation commands must pin `--vcs-ref`
 
 Every `copier copy` command we publish against the template URL passes

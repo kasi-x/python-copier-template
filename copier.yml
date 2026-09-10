@@ -110,6 +110,19 @@ _tasks:
     - command: >-
         python -c "print('Adopt mode: your own files (README.md, LICENSE, pyproject.toml, .gitignore, .python-version, src/tests) were protected and not touched.'); print('Added infrastructure: .github/workflows, .gitleaks.toml, renovate.json, AGENTS.md and more — see git status.'); print('Wire the tooling into your own pyproject.toml, e.g.: uv add --dev ruff pytest pytest-cov typos deptry vulture basedpyright'); print('Task entry points to copy: see justfile / Taskfile.yml.'); print('Update later with: uvx copier update --trust --vcs-ref=main')"
       when: "{{ existing_project }}"
+    - command: |
+        echo "Fresh project — suggested next steps:"
+        echo '  * git add -A && git commit -m "chore: scaffold from python-copier-template"'
+        echo '  * git remote add origin {{ repo_url }}.git && git push -u origin main'
+        {% if docs %}
+        echo '  * after the first docs job succeeds, enable GitHub Pages:'
+        echo '    Settings → Pages → Deploy from a branch → gh-pages (root)'
+        {% endif %}
+        {% if pypi %}
+        echo '  * PyPI: create a trusted publisher for this repo (docs/how-to/pypi)'
+        {% endif %}
+        echo '  * branch protection: Settings → Branches (require the CI checks)'
+      when: "{{ not existing_project }}"
     - >-
         {% if reuse_effective %}
         python -c "import pathlib, shutil; pathlib.Path('LICENSES').mkdir(exist_ok=True); shutil.copy('LICENSE', 'LICENSES/{{ license_effective }}.txt')"
