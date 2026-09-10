@@ -71,6 +71,14 @@ specified in `notes/SPEC-adoption.md` for a future release.
 !!! note
     Copier does not touch any already existing files that do not conflict with the ones in the template. Therefore, you may end up with files in your project you no longer need such as old github workflows. These would need to be manually deleted.
 
+!!! note
+    Updating a project that was generated from an older template version:
+    if your recorded template version still declared Jinja extensions
+    (versions before the extensions removal), run your first
+    `copier update` with
+    `uvx --with copier-template-extensions copier update --trust ...`
+    once — later updates need nothing extra.
+
 ## Getting started with your new structure
 
 You can now read [Setup Repository](../how-to/setup-repo.md), [Developer Installation](../how-to/dev-install.md), and then follow some of the other [How-to Guides](../how-to.md).

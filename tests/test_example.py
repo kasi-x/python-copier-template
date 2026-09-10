@@ -1875,7 +1875,11 @@ def test_example_repo_updates(tmp_path: Path):
     run("git config user.email 'you@example.com'")
     run("git config user.name 'Your Name'")
     run("git commit -am 'Update src'")
-    run(f"uvx copier update --defaults --vcs-ref=HEAD --trust --data-file {TOP}/example-answers.yml")
+    # Transitional --with: the example repo's recorded template version still
+    # declares the jinja extensions removed from HEAD, so this one update
+    # needs the package importable. Drop once the example repo has been
+    # regenerated from a post-removal template.
+    run(f"uvx --with copier-template-extensions copier update --defaults --vcs-ref=HEAD --trust --data-file {TOP}/example-answers.yml")
     output = run(
         # Git directory expected to be different
         "diff -ur --exclude=.git --exclude=.venv --exclude='*.egg-info' --exclude=_version.py "
