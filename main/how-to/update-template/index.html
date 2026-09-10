@@ -1644,6 +1644,13 @@
 <p>To track changes to the upstream template, run</p>
 <div class="highlight"><pre><span></span><code>uvx copier update --trust
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>One-time migration: if your project's recorded template version predates
+the Jinja-extension removal, run the first update with
+<code>uvx --with copier-template-extensions copier update --trust</code> — after
+that single update, plain <code>uvx copier update --trust</code> works again.</p>
+</div>
 <p>This will fetch the latest tagged release of the template, and apply any changes to your working copy. It will prompt for answers again, giving your previous answers as the defaults.</p>
 <p>It will stage all the changes for commit, but there may be merge conflicts that need fixing first, find them with</p>
 <div class="highlight"><pre><span></span><code>git diff --check

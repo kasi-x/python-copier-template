@@ -1756,6 +1756,15 @@ specified in <code>notes/SPEC-adoption.md</code> for a future release.</p>
 <p class="admonition-title">Note</p>
 <p>Copier does not touch any already existing files that do not conflict with the ones in the template. Therefore, you may end up with files in your project you no longer need such as old github workflows. These would need to be manually deleted.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Updating a project that was generated from an older template version:
+if your recorded template version still declared Jinja extensions
+(versions before the extensions removal), run your first
+<code>copier update</code> with
+<code>uvx --with copier-template-extensions copier update --trust ...</code>
+once — later updates need nothing extra.</p>
+</div>
 <h2 id="getting-started-with-your-new-structure">Getting started with your new structure<a class="headerlink" href="#getting-started-with-your-new-structure" title="Permanent link">&para;</a></h2>
 <p>You can now read <a href="../../how-to/setup-repo/">Setup Repository</a>, <a href="../../how-to/dev-install/">Developer Installation</a>, and then follow some of the other <a href="../../how-to/">How-to Guides</a>.</p>
 
