@@ -52,22 +52,8 @@ jobs:
         # graphviz release enter the cache.
         run: echo "APT_CACHE_WEEK=$(date +%G-W%V)" >> "$GITHUB_ENV"
 
-      - name: Restore cached graphviz debs
-        # /var/cache/apt/archives is root-owned and the cache action runs
-        # unprivileged, so keep the cache in a workspace dir and point apt
-        # at it in the install step below. restore-keys falls back to last
-        # week's entry, so a version bump downloads only the diff once per
-        # rotation.
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: .apt-cache
-          key: apt-graphviz-${{ runner.os }}-${{ env.APT_CACHE_WEEK }}
-          restore-keys: apt-graphviz-${{ runner.os }}-
-
       - name: Install system packages
-        run: |
-          sudo mkdir -p "$PWD/.apt-cache/partial"
-          sudo apt-get -o Dir::Cache::archives="$PWD/.apt-cache" install graphviz
+        run: sudo apt-get install graphviz
 
       - name: Install uv
         if: hashFiles('pixi.lock', 'poetry.lock') == ''
