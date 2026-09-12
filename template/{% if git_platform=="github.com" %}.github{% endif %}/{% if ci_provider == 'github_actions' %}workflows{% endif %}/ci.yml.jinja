@@ -103,10 +103,13 @@ jobs:
       postgres-password: postgres
       postgres-db: test
 {% endif %}
+{# No `if: always()` on this reusable-call job: GitHub fails the whole
+   workflow at startup when a reusable-workflow job with always() runs
+   alongside another reusable call (reproduced against the example repo).
+   The image simply builds only after tests succeed. #}
 {% if docker %}{% raw %}
   container:
     needs: test
-    if: always()
     uses: ./.github/workflows/_container.yml
     with:
       publish: ${{ needs.test.result == 'success' }}

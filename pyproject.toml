@@ -15,6 +15,7 @@ dev = [
     "deptry>=0.25.1,<0.26",
     "hypothesis>=6.130.0,<7.0",
     "jinja2>=3.1.6,<4",
+    "mcp[cli]>=2.0,<3",
     "mkdocstrings[python]",
     "pip-audit>=2.9.0,<3.0",
     "pyproject-fmt>=2.27.0,<3.0",
@@ -24,7 +25,9 @@ dev = [
     "pytest-mock>=3.14.0,<4.0",
     "pytest-timeout>=2.4.0,<2.5",
     "pytest-xdist>=3.8.0,<3.9",
+    "pyyaml>=6.0,<7",
     "ruff>=0.16.2,<0.17",
+    "tomlkit>=0.13,<1",
     "typos>=1.49.0,<1.50",
     "vulture>=2.14.0,<3.0",
     "z3-solver>=4.13.0,<5",
@@ -280,10 +283,14 @@ extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", 
 [tool.vulture]
 paths = ["tests", "tools"]
 min_confidence = 60
+# Entry points whose callers vulture cannot see: the MCP tools in
+# tools/mcp_server.py are invoked by MCP hosts (same idea as @app.route),
+# and pytest discovers fixtures by name.
+ignore_decorators = ["*tool*", "*resource*", "*fixture*"]
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template,DEP004=jinja2"
+per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template,DEP004=jinja2|copier|yaml|mcp|tomlkit"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
 # tests/ は pytest の暗黙パッケージ import (test_example) があり依存検査と相性が悪い。
 exclude = ["template", "tests", "docs", ".venv", ".pixi", ".tox", "build", "dist"]

@@ -9,6 +9,7 @@ Practical step-by-step guides for the more experienced user.
 - [Check a Change Without the Full Suite](how-to/test-loop.md)
 - [Run a Batch of Generation Requests](how-to/batch.md)
 - [Inspect a Target Before Applying the Template](how-to/detect.md)
+- [Adopt Into an Existing Project](how-to/adopt.md)
 - [Linting and Formatting](how-to/lint.md)
 - [Static Analysis](how-to/static-analysis.md)
 - [Strict Mode](how-to/strict-mode.md)

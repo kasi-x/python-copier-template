@@ -193,6 +193,11 @@ git diff                                   # 差分確認フローに従う
 
 ## 12. 非目標
 
-- 既存 pyproject へのセクション自動マージ(TOML 編集は壊れやすい。レポート案内に留める)
+- 既存 pyproject への**セクション単位の**自動マージ(TOML 編集は壊れやすい。レポート案内に留める)
+      - 2026-09-13 追記: **依存関係だけは加算マージする**(`tools/pyproject_deps.py`。
+        `tools/adopt.py` が adopt 後に呼ぶ)。既存の宣言は一切書き換えず、無い名前だけを
+        追加し、specifier が違う場合は「相手のものを残して差分を報告」する。
+        extras / markers や `[project]`・`[tool.poetry]` を持たないファイルは推測せず報告のみ。
+        `--no-deps` で無効化できる。
 - copier 以外の適用手段(cookiecutter 等)の対応
 - 既存コードの解析による質問の自動回答

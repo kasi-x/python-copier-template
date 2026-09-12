@@ -1285,6 +1285,13 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
 `foreign` は **中断（exit 3）**: 相手テンプレートの `_src_path` を提示し、破棄して採用する場合のみ
 `--takeover` を要求する。
 
+adopt は **`tools/adopt.py`**（トランザクション付き）が担う: `detect.skip` を `skip_if_exists` に渡して衝突を作らず、
+描画後に既存ファイルの内容とファイル/ディレクトリ集合を検証し、破れていれば元に戻す（実測でバイト一致）。
+`--ref` は「最新タグが同じ質問集合を持つときだけタグ」を動的に判断する。`task adopt DIR=... CLI_ARGS="--dry-run"`。
+既存 `pyproject.toml` への**依存関係の加算マージ**は実装済み（`tools/pyproject_deps.py`: 無い名前だけ追加、
+既存 specifier は不変、差分は報告、tomlkit でレイアウト保持、`--no-deps` で無効化、失敗時は adopt ごとロールバック）。
+セクション単位の TOML 再編成は SPEC §12 の非目標のまま。
+
 adopt の衝突は **`detect` が `skip` を出し、`copier copy ... --skip <path>` で無傷にする**方式に決着した
 （実測: フラグ無しは `conflict` → exit 1 で half-written、`--overwrite` は置換、`--skip` は
 `--overwrite --skip` と同一のファイル集合で既存を無傷に保つ）。レポートは実行可能なコマンドを印字する。

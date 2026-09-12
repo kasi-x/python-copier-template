@@ -41,6 +41,22 @@ with `--skip` for every collision produces exactly the same file set as
 `--overwrite` would — with your files intact. Adding `--overwrite` on top
 only widens the blast radius to collisions nobody listed.
 
+## The short version
+
+If you would rather not assemble the flags yourself, one command does the
+plan, the apply and the rollback:
+
+```shell
+uv run --locked python tools/adopt.py /path/to/existing-project --dry-run
+uv run --locked python tools/adopt.py /path/to/existing-project
+```
+
+It skips the collisions for you, picks the revision (the latest tag only when
+that tag carries this questionnaire), and undoes everything if any existing
+file changed anyway — see
+[Adopt Into an Existing Project](../how-to/adopt.md). The rest of this page
+explains what those commands are doing and why.
+
 ## Before you start: inspect the target
 
 Run the detection tool first. It reports which operation fits (fresh copy /
@@ -136,19 +152,23 @@ git commit -m "chore: adopt python-copier-template (infra only)"
 ```
 
 Your own files are left untouched; everything you do not have yet (CI
-workflows, `.gitleaks.toml`, `AGENTS.md`, ...) is added. Wire the task
-entries from `justfile` / `Taskfile.yml` into your own setup, and add the
-dev dependencies the adoption flow prints.
+workflows, `.gitleaks.toml`, `AGENTS.md`, ...) is added. The task entries
+from `justfile` / `Taskfile.yml` are yours to copy into your own setup.
 
 The first-class alternative is the `existing_project` answer
-(`--data existing_project=true`), which protects those same files by
-default instead of listing each `--skip`; see `notes/SPEC-adoption.md`.
+(`--data existing_project=true`), which protects those files by default
+instead of listing each `--skip`, and adds the dependencies the template
+would have generated to your `pyproject.toml` (missing names only — see
+[Adopt Into an Existing Project](../how-to/adopt.md)); the `tools/adopt.py`
+driver above wraps exactly that, plus the rollback.
 
 !!! note
-    Adopting adds files; it does not remove or merge. Files of yours that the
-    template does not ship — an old workflow the template has no counterpart
-    for, a differently named CI job — stay exactly as they were, so delete or
-    merge them yourself after reviewing `git status`.
+    Adopting adds files; it does not remove or merge your files. (The one
+    exception is `pyproject.toml`, where the template's *dependencies* are
+    added — never a requirement of yours.) Files that the template does not
+    ship — an old workflow with no counterpart, a differently named CI job —
+    stay exactly as they were, so delete or merge them yourself after
+    reviewing `git status`.
 
 !!! note
     Updating a project that was generated from an older template version:

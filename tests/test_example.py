@@ -1384,9 +1384,14 @@ def test_template_scorecard_opt_in(tmp_path: Path):
 
 def test_template_poetry(tmp_path: Path):
     copy_project(tmp_path, package_manager="poetry")
-    assert (tmp_path / "poetry.lock").exists()
+    # poetry.lock is NOT shipped: a placeholder lock makes poetry install
+    # fail on lock inconsistency. The first `poetry install` generates it.
+    assert not (tmp_path / "poetry.lock").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert "tool" in pyproject_toml and "poetry" in pyproject_toml["tool"]
+    # poetry cannot interpret a setuptools-scm dynamic version: static
+    # version for poetry projects
+    assert pyproject_toml["project"]["version"] == "0.1.0"
+    assert "version" not in pyproject_toml["project"].get("dynamic", [])
     readme = (tmp_path / "README.md").read_text()
     # only the uv-tested matrix gets the full "3.11 | 3.12 | 3.13 | 3.14" range
     assert "Python-3.11-3776AB" in readme

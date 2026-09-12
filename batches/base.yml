@@ -1,0 +1,15 @@
+# Shared "Project Details" answers for batch/smoke.jsonl.
+#
+# Each request in the batch merges its own inline `answers` on top of this
+# file, so a line only has to state what makes it different (project_type,
+# layer opt-ins, ...). Mirrors the BASE answers used by
+# tests/test_recommended_path.py so the batch and the pytest fast paths
+# exercise the same questionnaire entries.
+package_name: smoke_example
+description: An example project
+git_platform: github.com
+github_org: kasi-x
+author_name: kasi-x
+author_email: kashimiya.exe@gmail.com
+repo_name: smoke-example
+distribution_name: smoke-example
