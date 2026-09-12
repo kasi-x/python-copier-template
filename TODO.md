@@ -1299,7 +1299,14 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
 - [ ] **W1: `copier update` 適合マトリクス + 質問票 diff ガード**
       - fixture answers × リリース済み ref で「旧 ref 生成 → HEAD へ update → conflict なし・生成物 check 緑」
       - 「質問の改名/削除/既定変更には `_migrations` 追記必須」を最終リリースタグとの diff で強制
-- [ ] **W2: タスク定義の宣言的モデル化**（`_tasks.jinja` の 8 ブロック mutation 廃止、byte-identical 検証つき）
+- [x] **W2: タスク定義の宣言的モデル化**（byte-identical 検証つき）
+      → **実装済み（2026-09-13、sub agent）**: 単一宣言リスト + inline guard
+      （mutation 廃止）、`cmd`→`run` リネーム、poe の文字列スニッフィング廃止、
+      AGENTS.md コマンド表をモデルから導出。byte-identical 検証は 23 レンダー
+      1684 ファイル + strictness none/basic 4 ケース 316 ファイルで全ハッシュ一致。
+      test_task_runners は全7ランナーの厳密タスク集合比較 + make/poe 実走に強化。
+      残す polish: シリアライザの macro 集約（test_copier_structure の
+      スキャナ許可リストへの macro/endmacro 追加が前提。未着手）
 - [ ] **W3: Z3 の証人で質問票の全葉を実行検証**（エンジンは `tools/batch.py`、fast/heavy の 2 tier）
 - [ ] **W4: サポートマトリクスの宣言と長尾の整理**（`support.yml`、W3 の後）
 - [ ] **W5: ドキュメントを質問票から生成**（`tools/gen_docs.py --check` を CI に。README Features / mermaid の drift 解消を含む）
