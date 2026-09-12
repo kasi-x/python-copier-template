@@ -65,7 +65,9 @@ jobs:
           restore-keys: apt-graphviz-${{ runner.os }}-
 
       - name: Install system packages
-        run: sudo apt-get -o Dir::Cache::archives="$PWD/.apt-cache" install graphviz
+        run: |
+          sudo mkdir -p "$PWD/.apt-cache/partial"
+          sudo apt-get -o Dir::Cache::archives="$PWD/.apt-cache" install graphviz
 
       - name: Install uv
         if: hashFiles('pixi.lock', 'poetry.lock') == ''
