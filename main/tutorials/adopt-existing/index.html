@@ -1912,10 +1912,13 @@ workflows, <code>.gitleaks.toml</code>, <code>AGENTS.md</code>, ...) is added. T
 from <code>justfile</code> / <code>Taskfile.yml</code> are yours to copy into your own setup.</p>
 <p>The first-class alternative is the <code>existing_project</code> answer
 (<code>--data existing_project=true</code>), which protects those files by default
-instead of listing each <code>--skip</code>, and adds the dependencies the template
-would have generated to your <code>pyproject.toml</code> (missing names only — see
-<a href="../../how-to/adopt/">Adopt Into an Existing Project</a>); the <code>tools/adopt.py</code>
-driver above wraps exactly that, plus the rollback.</p>
+instead of listing each <code>--skip</code>, and merges what the template generated into
+the files you kept — dependencies and <code>[tool.*]</code> lint settings in
+<code>pyproject.toml</code>, missing <code>.gitignore</code> patterns, missing Makefile/justfile
+recipes, and a <code>copier-ci.yml</code> beside your own workflow. The
+<code>tools/adopt.py</code> driver above wraps exactly that, plus the rollback; see
+<a href="../../how-to/adopt/">Adopt Into an Existing Project</a> for what is merged and
+what is deliberately left to you.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Adopting adds files; it does not remove or merge your files. (The one
