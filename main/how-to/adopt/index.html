@@ -1678,10 +1678,15 @@ never rewritten, and one that cannot be done safely is reported instead.</p>
 </tr>
 <tr>
 <td><code>Taskfile.yml</code></td>
-<td>reported only (YAML: appending text is not a thing)</td>
+<td>reported, and appended when you approve it (see below)</td>
 </tr>
 </tbody>
 </table>
+<p><code>Taskfile.yml</code> is YAML, where appending indented blocks is only valid when
+<code>tasks:</code> is the file's last top-level key — so it is offered as a question
+rather than merged silently, and after writing it is verified by re-parsing:
+every task that was there must still be there, unchanged, or the write is
+undone. When <code>tasks:</code> is <em>not</em> the last key, the list stays a report.</p>
 <p>The CI caller keeps the <strong>read-only checks</strong> (<code>lint</code> from <code>_tasks.yml</code>,
 <code>test</code>, <code>hygiene</code>) and deliberately drops <code>dist</code>, <code>release</code> and <code>docs</code>: those
 build artifacts, publish releases, or push GitHub Pages, and a second
@@ -1796,6 +1801,14 @@ FAILED: InteractiveSessionError: Interactive session required: Consider using `-
 <tr>
 <td><code>--dry-run</code></td>
 <td>Plan only; write nothing.</td>
+</tr>
+<tr>
+<td><code>--yes</code></td>
+<td>Apply without the confirmation prompt.</td>
+</tr>
+<tr>
+<td><code>--ask</code></td>
+<td>Confirm even when stdin is not a terminal.</td>
 </tr>
 <tr>
 <td><code>--ref REF</code></td>
