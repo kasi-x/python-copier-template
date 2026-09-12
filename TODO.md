@@ -1291,8 +1291,11 @@ adopt は **`tools/adopt.py`**（トランザクション付き）が担う: `de
 **加算マージ**は実装済み（`tools/pyproject_merge.py` + `tools/file_merge.py`、`--no-merge` で無効化）:
 `pyproject.toml` の deps / `[tool.*]`（ruff・typos 等。既存値は不変、このプロジェクト名やパスを含む値は報告のみ）、
 `.gitignore` のパターン、`Makefile`/`justfile` のレシピ、既存 `ci.yml` がある場合は読み取り専用ジョブだけの
-`copier-ci.yml` 併置。`Taskfile.yml` は YAML なので報告のみ。検証（追記は prefix 保持、キーは消えない）に
-破れがあれば adopt 全体をロールバックする。セクション単位の TOML 再編成は SPEC §12 の非目標のまま。
+`copier-ci.yml` 併置。`Taskfile.yml` は YAML なので、`tasks:` が最後のトップレベルキーのときだけ「追記してよいか」を質問し、
+承認時に追記（書いた後に再パースして既存タスク不変を検証）。反映前に **対話で確認**する（`[Y]es / [n]o（render のみ）/ [c]ancel（全体ロールバック）`）。
+続けて「名前やパスを含むため無条件にはコピーしなかった `[tool.*]` の値」を1つずつ確認し、承認されたものだけ書く
+（値は回答から生成されるので `src/<自分のpkg>` が提案される）。TTY が無ければプロンプトを出さず自動計画を適用（CI/MCP はブロックしない）。
+検証（追記は prefix 保持、キーは消えない）に破れがあれば adopt 全体をロールバックする。セクション単位の TOML 再編成は SPEC §12 の非目標のまま。
 
 adopt の衝突は **`detect` が `skip` を出し、`copier copy ... --skip <path>` で無傷にする**方式に決着した
 （実測: フラグ無しは `conflict` → exit 1 で half-written、`--overwrite` は置換、`--skip` は

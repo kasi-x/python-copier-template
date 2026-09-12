@@ -29,6 +29,8 @@ from dataclasses import field
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 TOP = Path(__file__).resolve().parent.parent
 
 GITIGNORE_HEADER = "# Added by python-copier-template (tools/adopt.py)"
@@ -145,24 +147,65 @@ def merge_recipes(target_path: Path, source_path: Path, kind: str, *, apply: boo
     return result
 
 
-def merge_taskfile(target_path: Path, source_path: Path) -> TextMerge:
-    """Report the tasks a YAML task file is missing; appending text is not safe."""
+def _tasks_are_the_last_block(target_text: str) -> bool:
+    """True when `tasks:` is the final top-level key, so blocks can be appended."""
+    top_level = [line for line in target_text.splitlines() if line and not line[0].isspace() and ":" in line]
+    return bool(top_level) and top_level[-1].split(":")[0].strip() == "tasks"
+
+
+def _taskfile_tasks(text: str) -> dict[str, Any]:
+    try:
+        document = yaml.safe_load(text) or {}
+    except yaml.YAMLError:
+        return {}
+    tasks = document.get("tasks") if isinstance(document, dict) else None
+    return tasks if isinstance(tasks, dict) else {}
+
+
+def merge_taskfile(target_path: Path, source_path: Path, *, append: bool = False) -> TextMerge:
+    """Report the tasks a YAML task file is missing — and append them when asked.
+
+    YAML is not append-friendly in general, so this is report-only unless the
+    caller approves: `tasks:` must be the target's last top-level key, and the
+    edit is verified by re-parsing (every task that was there must still be
+    there, unchanged, and the new ones must parse). Anything else stays a
+    report.
+    """
     result = TextMerge(path=str(target_path), kind="taskfile")
     if not source_path.is_file():
         result.notes.append(f"{source_path} does not exist; nothing to merge")
         return result
     pattern = re.compile(r"^  (?P<name>[A-Za-z0-9_.-]+):")
-    declared = set(_recipe_blocks(target_path.read_text(encoding="utf-8"), pattern)) if target_path.is_file() else set()
+    target_text = target_path.read_text(encoding="utf-8") if target_path.is_file() else ""
+    declared = set(_recipe_blocks(target_text, pattern))
     blocks = _recipe_blocks(source_path.read_text(encoding="utf-8"), pattern)
-    missing = sorted(name for name in blocks if name not in declared)
+    missing = {name: block for name, block in blocks.items() if name not in declared}
     if not missing:
         result.notes.append("every template task is already present")
         return result
-    result.reported = missing
-    result.notes.append(
-        "these are YAML tasks, so they are reported rather than appended: "
-        "copy the ones you want from the generated Taskfile.yml"
-    )
+    if not append or not _tasks_are_the_last_block(target_text):
+        result.reported = sorted(missing)
+        if not append:
+            reason = "reported rather than appended"
+        elif not _tasks_are_the_last_block(target_text):
+            reason = "not appended: tasks: is not the last block in the file"
+        else:
+            reason = "not appended"
+        result.notes.append(f"these are YAML tasks, {reason}; copy the ones you want from the generated Taskfile.yml")
+        return result
+
+    before = _taskfile_tasks(target_text)
+    appended = target_text if target_text.endswith("\n") else target_text + "\n"
+    appended += "\n".join(blocks[name] for name in sorted(missing)) + "\n"
+    target_path.write_text(appended, encoding="utf-8")
+    after = _taskfile_tasks(appended)
+    if not all(name in after and after[name] == value for name, value in before.items()):
+        target_path.write_text(target_text, encoding="utf-8")
+        result.notes.append("appending the tasks changed an existing one; undone")
+        result.reported = sorted(missing)
+        return result
+    result.added = sorted(missing)
+    result.applied = True
     return result
 
 
@@ -231,14 +274,21 @@ def merge_ci_caller(target: Path, source_ci: Path, *, apply: bool = True) -> Tex
     return result
 
 
-def merge_text_file(target_path: Path, source_path: Path, kind: str, *, apply: bool = True) -> TextMerge:
+def merge_text_file(
+    target_path: Path,
+    source_path: Path,
+    kind: str,
+    *,
+    apply: bool = True,
+    append_yaml: bool = False,
+) -> TextMerge:
     """Dispatch to the merge for `kind` (`gitignore`, `makefile`, `justfile`, `taskfile`)."""
     if kind == "gitignore":
         return merge_gitignore(target_path, source_path, apply=apply)
     if kind in ("makefile", "justfile"):
         return merge_recipes(target_path, source_path, kind, apply=apply)
     if kind == "taskfile":
-        return merge_taskfile(target_path, source_path)
+        return merge_taskfile(target_path, source_path, append=append_yaml and apply)
     msg = f"unknown kind: {kind!r}"
     raise FileMergeError(msg)
 

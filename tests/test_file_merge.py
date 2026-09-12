@@ -141,6 +141,43 @@ def test_taskfile_is_reported_not_appended(tmp_path: Path):
     assert any("reported rather than appended" in note for note in result.notes)
 
 
+def test_taskfile_appends_when_approved(tmp_path: Path):
+    """YAML is not append-friendly in general, so this needs approval — and then it parses."""
+    target = tmp_path / "Taskfile.yml"
+    target.write_text("version: '3'\n\ntasks:\n  mine:\n    desc: mine\n    cmds:\n      - echo mine\n")
+    source = tmp_path / "source.yml"
+    source.write_text("version: '3'\n\ntasks:\n  lint:\n    desc: lint\n    cmds:\n      - ruff check .\n")
+
+    reported = file_merge.merge_taskfile(target, source)
+    assert reported.reported == ["lint"] and not reported.applied
+    assert "lint" not in target.read_text()
+
+    applied = file_merge.merge_taskfile(target, source, append=True)
+
+    assert applied.added == ["lint"] and applied.applied
+    document = yaml.safe_load(target.read_text())
+    assert set(document["tasks"]) == {"mine", "lint"}
+    assert document["tasks"]["mine"]["desc"] == "mine", "their task is unchanged"
+    assert file_merge.original_is_preserved(
+        b"version: '3'\n\ntasks:\n  mine:\n    desc: mine\n    cmds:\n      - echo mine\n", target.read_bytes()
+    )
+
+
+def test_taskfile_is_not_appended_when_tasks_are_not_last(tmp_path: Path):
+    """Appending would land inside the wrong block, so it stays a report."""
+    target = tmp_path / "Taskfile.yml"
+    target.write_text("version: '3'\n\ntasks:\n  mine:\n    cmds:\n      - echo mine\n\noutput: dot\n")
+    source = tmp_path / "source.yml"
+    source.write_text("version: '3'\n\ntasks:\n  lint:\n    cmds:\n      - ruff check .\n")
+    before = target.read_text()
+
+    result = file_merge.merge_taskfile(target, source, append=True)
+
+    assert not result.applied and result.reported == ["lint"]
+    assert target.read_text() == before
+    assert any("not the last block" in note for note in result.notes)
+
+
 def test_ci_caller_keeps_only_the_read_only_jobs():
     caller, kept, dropped = file_merge.ci_caller(CI_SOURCE)
 

@@ -52,7 +52,8 @@ uv run --locked python tools/adopt.py /path/to/existing-project
 ```
 
 It skips the collisions for you, picks the revision (the latest tag only when
-that tag carries this questionnaire), and undoes everything if any existing
+that tag carries this questionnaire), shows what it would add to the files you
+already have and asks before writing, and undoes everything if any existing
 file changed anyway — see
 [Adopt Into an Existing Project](../how-to/adopt.md). The rest of this page
 explains what those commands are doing and why.

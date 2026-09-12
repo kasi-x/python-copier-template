@@ -203,7 +203,7 @@ MERGE_KINDS = {".gitignore": "gitignore", "justfile": "justfile", "Makefile": "m
 
 
 def plan_merges(target: Path, data: dict[str, Any], ref: str) -> dict[str, Any]:
-    """Compute every merge without writing, for a dry run."""
+    """Compute every merge without writing, for a dry run and the prompts."""
     source = render_fresh_source(data, ref)
     try:
         dependencies = pyproject_merge.merge_dependencies(
@@ -218,7 +218,7 @@ def plan_merges(target: Path, data: dict[str, Any], ref: str) -> dict[str, Any]:
         files = [
             file_merge.merge_text_file(target / name, source / name, kind, apply=False).as_dict()
             for name, kind in MERGE_KINDS.items()
-            if (target / name).is_file()
+            if (target / name).is_file() and (source / name).is_file()
         ]
         return {"dependencies": dependencies.as_dict(), "tool_config": config.as_dict(), "files": files}
     finally:
@@ -251,7 +251,13 @@ def _merge_identity(data: dict[str, Any], source: Path) -> tuple[str, ...]:
     return tuple(sorted(token for token in tokens if token))
 
 
-def merge_generated_files(run: _Run, adoption: Adoption, *, approved: frozenset[str] = frozenset()) -> None:
+def merge_generated_files(
+    run: _Run,
+    adoption: Adoption,
+    *,
+    approved: frozenset[str] = frozenset(),
+    approved_files: frozenset[str] = frozenset(),
+) -> None:
     """Merge what the template generated into the files the adopter already had."""
     target_pyproject = run.target / "pyproject.toml"
     before_pyproject = run.backup.get("pyproject.toml") or (
@@ -273,7 +279,7 @@ def merge_generated_files(run: _Run, adoption: Adoption, *, approved: frozenset[
         problem = merge_problem(target_pyproject, before_pyproject)
         if problem:
             raise _MergeError(problem)
-        _merge_text_files(run, adoption, source)
+        _merge_text_files(run, adoption, source, approved_files=approved_files)
         _merge_ci_caller(run, adoption, source)
     finally:
         shutil.rmtree(source, ignore_errors=True)
@@ -283,14 +289,16 @@ class _MergeError(Exception):
     """A merge broke the add-only contract; the caller rolls the run back."""
 
 
-def _merge_text_files(run: _Run, adoption: Adoption, source: Path) -> None:
+def _merge_text_files(
+    run: _Run, adoption: Adoption, source: Path, *, approved_files: frozenset[str] = frozenset()
+) -> None:
     """Append the missing entries of the line-oriented files, keeping backups."""
     for name, kind in MERGE_KINDS.items():
         target_file = run.target / name
-        if not target_file.is_file():
+        if not target_file.is_file() or not (source / name).is_file():
             continue
         before = run.backup.setdefault(name, target_file.read_bytes())
-        result = file_merge.merge_text_file(target_file, source / name, kind)
+        result = file_merge.merge_text_file(target_file, source / name, kind, append_yaml=name in approved_files)
         adoption.files_merged.append(result.as_dict())
         adoption.notes.extend(result.notes)
         if result.applied and not file_merge.original_is_preserved(before, target_file.read_bytes()):
@@ -305,7 +313,8 @@ def _note_runner_mismatch(run: _Run, adoption: Adoption, source: Path) -> None:
         if kind == "gitignore" or not (run.target / name).is_file():
             continue
         if not (source / name).is_file():
-            rendered = ", ".join(sorted(candidate for candidate in MERGE_KINDS if (source / candidate).is_file()))
+            runners = [candidate for candidate, candidate_kind in MERGE_KINDS.items() if candidate_kind != "gitignore"]
+            rendered = ", ".join(sorted(candidate for candidate in runners if (source / candidate).is_file()))
             adoption.notes.append(
                 f"your {name} was kept, but these answers render {rendered or 'no task runner'}; "
                 f"re-run with --data task_runner=<runner> for that runner's entries"
@@ -448,7 +457,7 @@ def adopt(  # noqa: PLR0913  WHYNOT: the keyword-only options are the operation'
 
 def _finish_with_merges(run: _Run, adoption: Adoption, ask: Callable[[str], str] | None) -> None:
     """Confirm the merge plan (when asked), apply it, or take the run back."""
-    confirmation = _confirm_merges(run, adoption, ask)
+    confirmation = _confirm_merges(run, ask)
     if confirmation.cancel:
         _undo_merges(run, adoption, "cancelled at the confirmation prompt")
         adoption.cancelled = True
@@ -459,7 +468,7 @@ def _finish_with_merges(run: _Run, adoption: Adoption, ask: Callable[[str], str]
         adoption.notes.append("merges skipped: your files were left as they were")
         return
     try:
-        merge_generated_files(run, adoption, approved=confirmation.approved)
+        merge_generated_files(run, adoption, approved=confirmation.approved, approved_files=confirmation.files)
     except _MergeError as exc:
         _undo_merges(run, adoption, str(exc))
 
@@ -471,9 +480,10 @@ class Confirmation:
     cancel: bool = False
     merge: bool = True
     approved: frozenset[str] = frozenset()
+    files: frozenset[str] = frozenset()
 
 
-def _confirm_merges(run: _Run, adoption: Adoption, ask: Callable[[str], str] | None) -> Confirmation:
+def _confirm_merges(run: _Run, ask: Callable[[str], str] | None) -> Confirmation:
     """Show what would be merged and ask; returns the answer.
 
     Without an `ask` callback this is a no-op: the automatic plan is applied,
@@ -493,18 +503,48 @@ def _confirm_merges(run: _Run, adoption: Adoption, ask: Callable[[str], str] | N
         return Confirmation(cancel=True)
     if answer == "no":
         return Confirmation(merge=False)
+    approved_files = _ask_about_task_files(plan, ask)
+    approved_values = _ask_about_values(plan, ask)
+    return Confirmation(approved=frozenset(approved_values), files=frozenset(approved_files))
+
+
+def _ask_about_task_files(plan: dict[str, Any], ask: Callable[[str], str]) -> set[str]:
+    """Ask about the YAML task files: appending tasks is a real edit."""
     approved: set[str] = set()
+    for entry in plan["files"]:
+        if entry.get("kind") != "taskfile" or not entry.get("reported"):
+            continue
+        name = Path(entry["path"]).name
+        if ask(f"append these tasks to your {name}: {', '.join(entry['reported'][:8])}? [Y]es / [n]o") == "yes":
+            approved.add(name)
+    return approved
+
+
+def _ask_about_values(plan: dict[str, Any], ask: Callable[[str], str]) -> set[str]:
+    """Ask, one by one, about the values that name this project."""
+    approved: set[str] = set()
+    approve_rest = False
     for line in plan["tool_config"]["needs_your_value"]:
-        if ask(f"add {line}") == "yes":
-            approved.add(line.split(" (template:")[0])
-    return Confirmation(approved=frozenset(approved))
+        key_path = line.split(" (template:")[0]
+        if approve_rest:
+            approved.add(key_path)
+            continue
+        answer = ask(f"add {line}? [Y]es / [n]o / [a]ll:")
+        if answer == "all":
+            approve_rest = True
+            approved.add(key_path)
+        elif answer == "yes":
+            approved.add(key_path)
+    return approved
 
 
 _MERGE_QUESTION = """\
 these files the template also generates already exist, and this is what would
 be added to them (nothing of yours is rewritten):
 
-{plan}"""
+{plan}
+
+Apply? [Y]es / [n]o (render only) / [c]ancel:"""
 
 
 def _undo_merges(run: _Run, adoption: Adoption, problem: str) -> None:
@@ -605,7 +645,7 @@ def _prompter(args: argparse.Namespace) -> Callable[[str], str] | None:
         print(question)
         while True:
             try:
-                answer = input("apply? [Y]es / [n]o (render only) / [c]ancel: ").strip().lower()
+                answer = input().strip().lower()
             except EOFError:
                 print("(no input; taking that as cancel)")
                 return "cancel"
@@ -615,6 +655,8 @@ def _prompter(args: argparse.Namespace) -> Callable[[str], str] | None:
                 return "no"
             if answer in ("c", "cancel"):
                 return "cancel"
+            if answer in ("a", "all"):
+                return "all"
 
     return confirm
 
@@ -675,13 +717,11 @@ def _merge_summary_from(plan: dict[str, Any]) -> list[str]:
         more = f" and {len(tables) - 3} more" if len(tables) > 3 else ""
         lines.append(f"pyproject.toml tool config -> {len(tables)} table(s): {shown}{more}")
     for entry in plan.get("files", []):
-        if entry.get("applied"):
-            detail = ", ".join(entry["added"][:6]) + ("..." if len(entry["added"]) > 6 else "")
+        detail = ", ".join(entry.get("added", [])[:6]) + ("..." if len(entry.get("added", [])) > 6 else "")
+        if detail:
             lines.append(f"{Path(entry['path']).name} -> {detail}")
         elif entry.get("reported"):
-            lines.append(f"{Path(entry['path']).name} -> reported, not written: {', '.join(entry['reported'][:6])}")
-        elif entry.get("notes"):
-            lines.append(f"{Path(entry['path']).name} -> {entry['notes'][0]}")
+            lines.append(f"{Path(entry['path']).name} -> not written: {', '.join(entry['reported'][:6])}")
     return lines
 
 
@@ -698,13 +738,11 @@ def _merge_summary(adoption: Adoption) -> list[str]:
         more = f" and {len(tables) - 3} more" if len(tables) > 3 else ""
         lines.append(f"pyproject.toml tool config -> {len(tables)} table(s): {shown}{more}")
     for entry in adoption.files_merged:
-        if entry["applied"]:
-            detail = ", ".join(entry["added"][:6]) + ("..." if len(entry["added"]) > 6 else "")
+        detail = ", ".join(entry["added"][:6]) + ("..." if len(entry["added"]) > 6 else "")
+        if detail:
             lines.append(f"{Path(entry['path']).name} -> {detail}")
         elif entry["reported"]:
-            lines.append(f"{Path(entry['path']).name} -> reported, not written: {', '.join(entry['reported'][:6])}")
-        elif entry["notes"]:
-            lines.append(f"{Path(entry['path']).name} -> {entry['notes'][0]}")
+            lines.append(f"{Path(entry['path']).name} -> not written: {', '.join(entry['reported'][:6])}")
     return lines
 
 

@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
@@ -198,6 +199,120 @@ def test_adoption_merges_tool_config_but_not_project_paths(tmp_path: Path):
     assert "src/" not in text.split("[dependency-groups]")[0].split("[tool.ruff.lint]")[1][:200]
     assert any("tool.ruff.line-length" in line for line in result.tool_config["kept"])
     assert result.tool_config["needs_your_value"], "path-shaped values are reported, not copied"
+
+
+def test_confirmation_yes_applies_the_merges(tmp_path: Path):
+    project = make_project(tmp_path)
+    (project / ".gitignore").write_text("*.pyc\n")
+
+    result = adopt.adopt(project, ref="HEAD", ask=lambda _question: "yes")
+
+    assert result.ok and not result.cancelled
+    assert "__pycache__" in (project / ".gitignore").read_text()
+
+
+def test_confirmation_no_keeps_the_render_and_skips_the_merges(tmp_path: Path):
+    project = make_project(tmp_path)
+    (project / ".gitignore").write_text("*.pyc\n")
+
+    result = adopt.adopt(project, ref="HEAD", ask=lambda _question: "no")
+
+    assert result.ok and not result.cancelled
+    assert (project / ".gitignore").read_text() == "*.pyc\n", "their file is untouched"
+    assert (project / ".gitleaks.toml").exists(), "the render still happened"
+    assert any("merges skipped" in note for note in result.notes)
+
+
+def test_confirmation_cancel_rolls_the_render_back(tmp_path: Path):
+    project = make_project(tmp_path)
+    before = tree(project)
+
+    result = adopt.adopt(project, ref="HEAD", ask=lambda _question: "cancel")
+
+    assert result.cancelled and not result.ok and result.error is None
+    assert tree(project) == before, "nothing of the adoption is left behind"
+    assert any("cancelled" in note for note in result.notes)
+
+
+def test_confirmation_can_approve_a_project_specific_value(tmp_path: Path):
+    """The values the merge refuses to copy blind are exactly what to ask about."""
+    project = make_project(tmp_path)
+    (project / "src" / "legacy").mkdir(parents=True)
+    (project / "src" / "legacy" / "__init__.py").write_text("")
+    (project / "pyproject.toml").write_text('[project]\nname = "legacy"\nversion = "0"\ndependencies = []\n')
+
+    asked: list[str] = []
+
+    def answer(question: str) -> str:
+        asked.append(question)
+        return "yes"
+
+    result = adopt.adopt(project, ref="HEAD", ask=answer)
+
+    assert result.ok
+    assert any("tool.basedpyright.include" in question for question in asked), asked[:3]
+    text = (project / "pyproject.toml").read_text()
+    assert "src/legacy" in text, "the approved value is the adapted one, for their layout"
+    assert "src/my_package" not in text
+
+
+def test_confirmation_all_approves_every_remaining_value(tmp_path: Path):
+    """One "all" answers the rest of the project-specific questions."""
+    project = make_project(tmp_path)
+    (project / "src" / "legacy").mkdir(parents=True)
+    (project / "src" / "legacy" / "__init__.py").write_text("")
+    (project / "pyproject.toml").write_text('[project]\nname = "legacy"\nversion = "0"\ndependencies = []\n')
+
+    asked: list[str] = []
+
+    def answer(question: str) -> str:
+        asked.append(question)
+        return "all" if question.startswith("add ") else "yes"
+
+    result = adopt.adopt(project, ref="HEAD", ask=answer)
+
+    assert result.ok
+    value_questions = [question for question in asked if question.startswith("add ")]
+    assert len(value_questions) == 1, "everything after the first 'all' is approved without asking"
+    text = (project / "pyproject.toml").read_text()
+    assert "src/legacy" in text
+    assert "testpaths" in text, "later values were approved too"
+
+
+def test_confirmation_can_approve_appending_to_the_taskfile(tmp_path: Path):
+    """The task list is offered and, once approved, appended."""
+    project = make_project(tmp_path)
+    (project / "Taskfile.yml").write_text("version: '3'\n\ntasks:\n  mine:\n    cmds:\n      - echo mine\n")
+
+    asked: list[str] = []
+
+    def answer(question: str) -> str:
+        asked.append(question)
+        return "yes"
+
+    result = adopt.adopt(
+        project,
+        ref="HEAD",
+        ask=answer,
+        answers={"use_recommended_toolchain": False, "package_manager": "uv", "task_runner": "task"},
+    )
+
+    assert result.ok
+    assert any("append these tasks to your Taskfile.yml" in question for question in asked)
+    document = yaml.safe_load((project / "Taskfile.yml").read_text())
+    assert "mine" in document["tasks"], "their task survives"
+    assert "lint" in document["tasks"], "the approved tasks were appended"
+
+
+def test_taskfile_is_left_alone_without_approval(tmp_path: Path):
+    project = make_project(tmp_path)
+    (project / "Taskfile.yml").write_text("version: '3'\n\ntasks:\n  mine:\n    cmds:\n      - echo mine\n")
+    before = (project / "Taskfile.yml").read_text()
+
+    result = adopt.adopt(project, ref="HEAD", ask=lambda _question: "no")
+
+    assert result.ok
+    assert (project / "Taskfile.yml").read_text() == before
 
 
 def test_adoption_does_not_merge_when_asked_not_to(tmp_path: Path):

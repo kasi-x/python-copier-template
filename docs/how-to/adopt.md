@@ -51,7 +51,13 @@ never rewritten, and one that cannot be done safely is reported instead.
 | `.gitignore` | the template's patterns you do not have, appended under a comment |
 | `Makefile` / `justfile` | the recipes/targets you do not have, body included, appended |
 | `.github/workflows/ci.yml` | nothing — a second workflow, `copier-ci.yml`, is added next to it |
-| `Taskfile.yml` | reported only (YAML: appending text is not a thing) |
+| `Taskfile.yml` | reported, and appended when you approve it (see below) |
+
+`Taskfile.yml` is YAML, where appending indented blocks is only valid when
+`tasks:` is the file's last top-level key — so it is offered as a question
+rather than merged silently, and after writing it is verified by re-parsing:
+every task that was there must still be there, unchanged, or the write is
+undone. When `tasks:` is *not* the last key, the list stays a report.
 
 The CI caller keeps the **read-only checks** (`lint` from `_tasks.yml`,
 `test`, `hygiene`) and deliberately drops `dist`, `release` and `docs`: those
@@ -134,6 +140,8 @@ FAILED: InteractiveSessionError: Interactive session required: Consider using `-
 | Option | Meaning |
 | --- | --- |
 | `--dry-run` | Plan only; write nothing. |
+| `--yes` | Apply without the confirmation prompt. |
+| `--ask` | Confirm even when stdin is not a terminal. |
 | `--ref REF` | Revision to expand (default: judged from the tags). `HEAD` = this working tree. |
 | `--answers FILE` | Copier answers file — `tools/detect.py --answers` writes one for the target. |
 | `--data k=v` | Extra answer, repeatable; effective YAML value (`k=true`, `k=[a, b]`). |
