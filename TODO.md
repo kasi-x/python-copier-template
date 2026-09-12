@@ -1304,7 +1304,13 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
 - [ ] **W4: サポートマトリクスの宣言と長尾の整理**（`support.yml`、W3 の後）
 - [ ] **W5: ドキュメントを質問票から生成**（`tools/gen_docs.py --check` を CI に。README Features / mermaid の drift 解消を含む）
 - [ ] **W6: 導入のワンコマンド化**（wrapper CLI + presets。`detect` / `adopt` を呼び、`web_django` を choices から削除）
-- [ ] **W7: CI 衛生**（全 workflow に `timeout-minutes`、setup-uv / .venv / apt / uvx のキャッシュ、
+- [x] **W7: CI 衛生**（全 workflow に `timeout-minutes`、setup-uv / .venv / apt / uvx のキャッシュ、
+      → **実装済み（2026-09-13）**: timeout-minutes 18ファイル付与、setup-uv enable-cache、
+      .venv actions/cache、graphviz deb キャッシュ(※)、`sleep 60` → concurrency 置換。
+      ※graphviz deb キャッシュは **自己毒化するため撤去**: apt が `.apt-cache/partial` を
+      root で作り、非特権のキャッシュ保存が EACCES で落ち、毒されたキャッシュが以後の
+      全ランに復元され docs ジョブを連鎖的に赤化(2回連続で docs 失敗の実害)。
+      graphviz install は数秒のため cache なしで運用。
       `_docs.yml` の `sleep 60` を `concurrency` 化）
 - [ ] **W9: テスト実行コストの削減**（marker 化 + レンダ結果キャッシュ。実測値は PLAN §W9）
 - [x] **W-P の残り**: `_load_questions` の `tools/questionnaire` 委譲 → **実質完了と判断（2026-09-09）**。
