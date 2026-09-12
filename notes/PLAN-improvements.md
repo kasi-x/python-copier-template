@@ -436,36 +436,20 @@ extras/markers は推測せず報告。`--no-deps` で無効化。マージは�
 
 ---
 
-### W9（並列可）— テスト実行コストの削減
+### W7（並列可・小）— CI 衛生（timeout とキャッシュ）
 
-- **依存**: W3（`witness.yml` と fast/heavy の分割方針を共有）。**所有権の注意**:
-  本 WP は `tests/test_example.py`（現在ユーザーが編集中）に触るため、着手は
-  その編集が落ち着いてから。それまで `task test-fast` / `task test-heavy`（実装済み）で凌ぐ。
-- **根拠（実測 2026-09-13、16 コア・warm）**: フル 37s / `task test-fast`（`test_example.py` と
-  `test_generated_typecheck.py` を除外）17s / `batch --only` 1 ケース 2s。`--durations=25` の上位は
-  すべて venv 構築つきテスト:
-  `test_template_defaults` 24.3s / `test_template_include_scraping_runs` 20.7s /
-  `test_template_web_api_runs_in_process` 16.3s / `test_template_mcp_runs_in_process` 14.8s /
-  `test_example_repo_updates` 13.4s（network）。
+- **依存**: なし。
+- **所有**: `.github/workflows/*.yml` のうち `_tasks.yml` を**除く**全ファイル、`Taskfile.yml`。
+- **Target**: D7。
 - **Change**:
-  1. `pyproject.toml` に `markers = ["heavy", "network"]` を登録し、`make_venv` /
-     `uv sync` / network を使うテストへ `@pytest.mark.heavy` を付ける（`-m "not heavy"` が
-     `task test-fast` の file 除外より正確になる）。
-  2. **レンダ結果のキャッシュ**: `(answers のハッシュ, テンプレートの指紋)` をキーに
-     セッション共有の一時ディレクトリへ render し、複数テストが同じ組合せを再レンダーしない
-     （`test_generated_lint.py` / `test_pyproject_fmt.py` は 23 組合せを別々に render している）。
-     テンプレートの指紋はファイル名+内容のハッシュ（dirty な作業ツリーを正しく無効化する）。
-  3. **venv の再利用**: 生成物の dev 依存は組合せ間でほぼ同一なので、`uv sync` を
-     `UV_PROJECT_ENVIRONMENT` 共有 + `--inexact` で 1 つに寄せられないか計測してから決める
-     （安易な共有は依存差で偽陽性を生む）。
-  4. `task test` は現状維持（フル）。CI は PR で `-m "not heavy"`、nightly でフル。
+  1. 全 workflow に `timeout-minutes` を付与（test 60 / docs 20 / hygiene 10 / それ以外 15）。
+  2. `astral-sh/setup-uv` の `enable-cache: true`、`.venv` の `actions/cache`、
+     `_docs.yml` の `apt-get install graphviz` と `uvx` 冷起動のキャッシュ。
+  3. `_docs.yml:30` の `sleep 60` を `concurrency` で置換。
 - **Acceptance**:
-  - `uv run --locked pytest -m "not heavy"` が `task test-fast` と同じ集合を選ぶ（件数一致）。
-  - キャッシュ導入後、`test_generated_lint.py` + `test_pyproject_fmt.py` の wall time が
-    半減以上（前後を `--durations` で示す）。
-  - ヘビー tier を外しても、レンダー内容の検証は 1 件も失われない（`--collect-only` の差分で示す）。
-- **非目標**: `test_example.py` の実行テスト（venv + 実走）を render のみに置換すること。
-  それは検証の意味を落とす。削るのはコストであって被覆ではない。
+  - `grep -rl timeout-minutes .github/workflows | wc -l` が全ファイル数と一致。
+  - `uv run --locked pytest tests/test_workflow_security.py` が緑（SHA pin / permissions の既存規約を壊さない）。
+- **非目標**: workflow の分割（fast/heavy）は W3 の `witness.yml` と競合するため W3 完了後に検討。
 
 ---
 
@@ -518,20 +502,77 @@ extras/markers は推測せず報告。`--no-deps` で無効化。マージは�
 
 ---
 
-### W7（並列可・小）— CI 衛生（timeout とキャッシュ）
+### W9（並列可）— テスト実行コストの削減
 
-- **依存**: なし。
-- **所有**: `.github/workflows/*.yml` のうち `_tasks.yml` を**除く**全ファイル、`Taskfile.yml`。
-- **Target**: D7。
+- **依存**: W3（`witness.yml` と fast/heavy の分割方針を共有）。**所有権の注意**:
+  本 WP は `tests/test_example.py`（現在ユーザーが編集中）に触るため、着手は
+  その編集が落ち着いてから。それまで `task test-fast` / `task test-heavy`（実装済み）で凌ぐ。
+- **根拠（実測 2026-09-13、16 コア・warm）**: フル 37s / `task test-fast`（`test_example.py` と
+  `test_generated_typecheck.py` を除外）17s / `batch --only` 1 ケース 2s。`--durations=25` の上位は
+  すべて venv 構築つきテスト:
+  `test_template_defaults` 24.3s / `test_template_include_scraping_runs` 20.7s /
+  `test_template_web_api_runs_in_process` 16.3s / `test_template_mcp_runs_in_process` 14.8s /
+  `test_example_repo_updates` 13.4s（network）。
 - **Change**:
-  1. 全 workflow に `timeout-minutes` を付与（test 60 / docs 20 / hygiene 10 / それ以外 15）。
-  2. `astral-sh/setup-uv` の `enable-cache: true`、`.venv` の `actions/cache`、
-     `_docs.yml` の `apt-get install graphviz` と `uvx` 冷起動のキャッシュ。
-  3. `_docs.yml:30` の `sleep 60` を `concurrency` で置換。
+  1. `pyproject.toml` に `markers = ["heavy", "network"]` を登録し、`make_venv` /
+     `uv sync` / network を使うテストへ `@pytest.mark.heavy` を付ける（`-m "not heavy"` が
+     `task test-fast` の file 除外より正確になる）。
+  2. **レンダ結果のキャッシュ**: `(answers のハッシュ, テンプレートの指紋)` をキーに
+     セッション共有の一時ディレクトリへ render し、複数テストが同じ組合せを再レンダーしない
+     （`test_generated_lint.py` / `test_pyproject_fmt.py` は 23 組合せを別々に render している）。
+     テンプレートの指紋はファイル名+内容のハッシュ（dirty な作業ツリーを正しく無効化する）。
+  3. **venv の再利用**: 生成物の dev 依存は組合せ間でほぼ同一なので、`uv sync` を
+     `UV_PROJECT_ENVIRONMENT` 共有 + `--inexact` で 1 つに寄せられないか計測してから決める
+     （安易な共有は依存差で偽陽性を生む）。
+  4. `task test` は現状維持（フル）。CI は PR で `-m "not heavy"`、nightly でフル。
 - **Acceptance**:
-  - `grep -rl timeout-minutes .github/workflows | wc -l` が全ファイル数と一致。
-  - `uv run --locked pytest tests/test_workflow_security.py` が緑（SHA pin / permissions の既存規約を壊さない）。
-- **非目標**: workflow の分割（fast/heavy）は W3 の `witness.yml` と競合するため W3 完了後に検討。
+  - `uv run --locked pytest -m "not heavy"` が `task test-fast` と同じ集合を選ぶ（件数一致）。
+  - キャッシュ導入後、`test_generated_lint.py` + `test_pyproject_fmt.py` の wall time が
+    半減以上（前後を `--durations` で示す）。
+  - ヘビー tier を外しても、レンダー内容の検証は 1 件も失われない（`--collect-only` の差分で示す）。
+- **非目標**: `test_example.py` の実行テスト（venv + 実走）を render のみに置換すること。
+  それは検証の意味を落とす。削るのはコストであって被覆ではない。
+
+---
+
+### W10（並列可）— Python タスクファイルへの追記
+
+- **依存**: なし。**所有**: `tools/file_merge.py`、`tests/test_file_merge.py`、`tools/adopt.py`（`MERGE_KINDS` の拡張のみ）。
+- **背景**: `tasks.py`（invoke）/ `duties.py`（duty）は現在**報告のみ**。`Taskfile.yml` と同じ「提案 → 承認 → 追記」に
+  載せられるが、Python は YAML 以上に慎重さが要る（必要な import と `@task` / `@duty` デコレータの文脈が要る）。
+- **Change**:
+  1. `merge_python_tasks(target, source, *, append=False)`: `ast` で関数定義とトップレベル import を読み、
+     欠けているタスク関数だけを**末尾に追記**（元のコードは不変）。デコレータ名（`@task` / `@duty`）が
+     ファイル内で import 済みでなければ**追記せず報告**（import を勝手に足すと実行時に壊れる）。
+  2. 追記後に `ast.parse` で再検証し、元からあった関数定義が全て同一（ソース断片の比較）であることを確認。
+     破れば元に戻す。
+  3. `adopt` の確認ループに `Taskfile.yml` と同じ問いを載せる（`Confirmation.files` を流用）。
+- **Acceptance**:
+  - 既存 `tasks.py` + 承認 → 欠けていたタスク関数だけが追記され、`ast.parse` が通り、既存関数はバイト単位で不変。
+  - デコレータ未 import → 追記せず、必要な import を注記として報告。
+  - 未承認 → ファイルはバイト不変。
+- **非目標**: クラスベースのタスク定義（`invoke` の `Collection`）への追記、既存関数の書き換え。
+
+---
+
+### W11（並列可）— 既存 CI へのジョブ単位マージ
+
+- **依存**: W2（タスク名の宣言的モデルがあると検証が楽）だが単独でも可。
+- **所有**: `tools/file_merge.py`（`ci_caller` の隣）、`tests/test_file_merge.py`、`tools/adopt.py`（`_merge_ci_caller`）。
+- **背景**: 既存 `ci.yml` がある adopt では、テンプレートの読み取り専用ジョブ（`lint` / `test` / `hygiene`）を
+  `copier-ci.yml` として**併置**している。これはワークフローが 2 本になる（トリガが重複する）妥協で、
+  本来は相手の `ci.yml` にジョブを足したい。
+- **Change**:
+  1. `merge_ci_jobs(target_ci, source_ci, *, append=False)`: 相手の `jobs:` に**未使用名のジョブだけ**を追記。
+     追記位置は `Taskfile.yml` と同じ「キー追加が安全な位置」判定（YAML のインデント規約）で決める。
+  2. 追記後に YAML として再パースし、既存ジョブが全て同一（`repr` 比較）であることを検証。破れば元に戻す。
+  3. `publish` 系（`dist` / `release` / `pypi` / `docs`）は**追記しない**（二重 publish の禁止。現行 `ci_caller` と同じ判断）。
+  4. 併置（`copier-ci.yml`）と追記のどちらにするかを対話で選べるようにする（既定は併置 = 非破壊）。
+- **Acceptance**:
+  - 既存 `ci.yml` + 承認 → 相手のジョブが残ったまま `lint` / `test` / `hygiene` が追加され、YAML として妥当。
+  - ジョブ名が衝突 → そのジョブは追記せず報告（既存を壊さない）。
+  - 未承認 → バイト不変（現行の `copier-ci.yml` 併置のまま）。
+- **非目標**: `on:` トリガの書き換え、既存ジョブの編集、publish 系ジョブの複製。
 
 ---
 
@@ -551,6 +592,8 @@ extras/markers は推測せず報告。`--no-deps` で無効化。マージは�
 | `support.yml` | W4 | W5 は読むだけ |
 | `tools/detect.py`, `tests/test_detect.py` | 実装済み | W6 は import して使う。W8 は参照のみ |
 | `tools/adopt.py`, `tests/test_adopt.py` | 実装済み | W6 の wrapper CLI はこれを呼ぶ（`--ref` 判断とロールバックを再実装しない） |
+| `tools/file_merge.py`（Python タスク追記部分） | W10 | 承認ループは `Confirmation.files` を流用 |
+| `tools/file_merge.py`（CI ジョブ追記部分） | W11 | `ci_caller` と同居。既定は現行の併置のまま |
 | `tools/pyproject_merge.py`, `tools/file_merge.py` と各テスト | 実装済み | adopt の加算マージ専用。W5 の docs 生成とは独立 |
 | `tools/questionnaire.py`, `tools/mcp_server.py` と各テスト | 実装済み | W-P の残り（`_load_questions` 委譲）、W5 は `load_questions()` を使う |
 | `Taskfile.yml` の test-fast / test-heavy / mcp | 実装済み | W9 は marker 化のみ |
@@ -564,6 +607,7 @@ extras/markers は推測せず報告。`--no-deps` で無効化。マージは�
 | B | **W1**、**W2**、**W3**、**W7** | W1: W0 / W2: なし / W3: W-P + W0 / W7: なし |
 | — | ~~W8~~ 完了（`--skip` 方式） | — |
 | C | （追加）**W9** | `tests/test_example.py` の編集が落ち着いてから（W3 と分割方針を共有） |
+| C | （追加）**W10**、**W11** | 各 `Acceptance` のとおり。`tools/file_merge.py` の別関数なので相互に並列可 |
 | C | **W4**、**W5**、**W6** | W4: W2 + W3 / W5: W-P + W0 / W6: W0 |
 
 同一 Wave 内はファイル所有権が排他なので同時に流してよい（README は W5 が単独所有）。

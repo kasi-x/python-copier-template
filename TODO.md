@@ -1128,6 +1128,10 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 ## 19. テスト・CI の高速化と確実性（2026-09-08 監査）
 
+> 2026-09-13 追記: `task test-fast`（venv/network を外す）/ `task test-heavy`（重い方のみ）を追加した（節22 §W9）。
+> marker 化とレンダ結果キャッシュ、CI 側の fast/heavy 分割は未着手で下記は有効。単一ケースの調査は
+> `task batch CLI_ARGS="--only X --prepare --shell"`（数秒）で pytest を経由しない。
+
 - [ ] **uv / graphviz / uvx ツールのキャッシュを入れる**
       - `astral-sh/setup-uv` の cache 有効化 + `.venv` の `actions/cache`、
         docs run の `apt-get install graphviz` 常駐化、hygiene run の
@@ -1165,6 +1169,11 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
         schedule 検証の有無を明記する
 
 ## 20. Docs・導入UX の改善（2026-09-08 監査）
+
+> 2026-09-13 追記: 導入の実務（モード判定・衝突一覧・加算マージ・対話確認・ロールバック）は
+> `tools/detect.py` / `tools/adopt.py` として実装し、`docs/how-to/{detect,adopt}.md` と
+> `docs/tutorials/adopt-existing.md` を実測ベースに書き直した（節22）。README の TL;DR、
+> Features/mermaid の drift 解消、wrapper CLI（§W6）、孤児ページは下記のまま未着手。
 
 - [ ] **コピペで通る導入導線にする**（2026-09-09 更新: `--with` は不要になった。
       copier-template-extensions 依存を排除したため残りは `--trust` / `--vcs-ref` の2 flag）
@@ -1254,69 +1263,74 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
       - 草稿は貼らず自分の言葉に整える。`gh` コマンド例は `notes/COPIER_UPSTREAM.md`
         「投稿手順」節を正とする（`copier-fork/` に複写しない）
 
-## 22. 劇的改善の作業分解（2026-09-11 監査 → 委託用）
+## 22. 劇的改善：実装済みの道具と残タスク（2026-09-11 監査 → 2026-09-13 更新）
 
-詳細な委託仕様（Target / Change / Acceptance / 所有権 / wave）は
-**`notes/PLAN-improvements.md`** を正とする。この節はチェックボックスのみを持つ。
+委託用の詳細仕様（Target / Change / Acceptance / 所有権 / wave / 共有コントラクト §C1〜C9）は
+**`notes/PLAN-improvements.md`** を正とする。この節は「何が動いていて、何が残っているか」を持つ。
 
-動機（実測）: 最新タグ `5.4.0` は inherited upstream の内容で fork の機能を 1 つも含まず
-（`git show 5.4.0:copier.yml` に fork 機能 0 回、HEAD は 69 commits 先）、
-既定の `copier copy` は `Invalid choice for 'docs_type': 'zensical'` と
-`Question "author_name" is required` で失敗する。全テストが `vcs_ref="HEAD"` 固定のため
-この欠陥を検出できない。加えて実行検証は 10 構成のみ（質問空間 ≳378）、
-`.github/workflows` に `timeout-minutes` が 0 件。
+動機（実測・再掲）: 最新タグ `5.4.0` は inherited upstream の内容で fork の機能を 1 つも含まず
+（`git show 5.4.0:copier.yml` に fork 機能 0 回、HEAD は 69 commits 先）、既定の `copier copy` は
+`Invalid choice for 'docs_type': 'zensical'` と `Question "author_name" is required` で失敗する。
+全テストが `vcs_ref="HEAD"` 固定のためこの欠陥を検出できない。加えて実行検証は 10 構成のみ
+（質問空間 ≳378）、`.github/workflows` に `timeout-minutes` が 0 件。
 
-- [ ] **W-P: 質問票パーサの抽出**（`tools/questionnaire.py`。W3/W5 の前提）
-- [ ] **W0: fork detach と既定経路の是正**（タグ削除は不可逆 → 番号を実測してからユーザー承認）
+### 22.1 実装済み: テンプレートを扱う道具（`tools/`）
+
+| 道具 | 何をするか | 入口 | テスト |
+|---|---|---|---|
+| `tools/detect.py` | 対象のモード判定（`fresh` / `adopt` / `update` / `foreign`）、既存資産の棚卸し、`COLLISIONS`（= `skip`）、実行可能な adopt コマンドの印字。保護条件は `template/` のパス名条件から**実行時導出**（HEAD と作業ツリーの差でも正しい）。形状質問は推測しない（SPEC §12） | `task detect DIR=... CLI_ARGS="--json"` | 22 |
+| `tools/adopt.py` | **トランザクション付き adopt**: 計画 → 対話確認 → 適用 → 検証 → 破れれば全体ロールバック。`--ref` は「最新タグが同じ質問集合を持つときだけタグ、でなければ既定ブランチ」を動的判定 | `task adopt DIR=... CLI_ARGS="--dry-run"` | 22 |
+| `tools/pyproject_merge.py` | `pyproject.toml` への加算マージ（deps / `[dependency-groups]` / `[tool.*]`）。既存値は不変、tomlkit でレイアウト保持、ビルド・環境テーブルは対象外 | adopt から | 15 |
+| `tools/file_merge.py` | `.gitignore` / `Makefile` / `justfile` の追記、`Taskfile.yml`（`tasks:` が最後のキーのときだけ承認つき追記）、既存 `ci.yml` がある場合の `copier-ci.yml` 併置 | adopt から | 12 |
+| `tools/batch.py` | JSONL の生成リクエストを順に実行して**判定**（`expect` / `commands`）。`--prepare` で環境構築、`--shell` で調査ループ | `task batch FILE=... CLI_ARGS=...` | 15 |
+| `tools/questionnaire.py` | 質問票をデータとして読む（`!include` 解決済みの実質問順、`choices_template` 対応、`_` 設定は分離） | CLI / MCP | 9 |
+| `tools/mcp_server.py` | 上記を MCP tool として公開（`template_status` / `list_questions` / `inspect_project` / `adopt_project` / `render_project` / `list_batch_requests` / `run_batch`）。stdio の stdout を汚さない（render は fd 1→2） | `task mcp` | 12 |
+
+テスト 3 段速も導入済み: `task test-fast`（venv/network を外す）/ `task test`（フル）/
+`task batch CLI_ARGS="--only X --prepare --shell"`（1 ケース）。詳細は `docs/how-to/test-loop.md`。
+関連 docs: `docs/how-to/{detect,adopt,batch,test-loop}.md`、`docs/tutorials/adopt-existing.md`。
+
+### 22.2 残タスク
+
+- [ ] **W0: fork detach と既定経路の是正**（最優先・不可逆 → タグ番号を実測してからユーザー承認）
+      - 継承タグを削除し HEAD に新タグを 1 つだけ打つ。`--vcs-ref` 前提の記述（README / adopt-existing /
+        `tests/test_generation_docs.py`）を撤去し、「引数なし `copier copy` が fork の質問票を出す」テストに置換
+      - 次タグは PEP440 で `5.4.0` より大きくする（`1.0.0` は `UserMessageError` で update 不能。下記 22.3）
 - [ ] **W1: `copier update` 適合マトリクス + 質問票 diff ガード**
-- [ ] **W2: タスク定義の宣言的モデル化**（`_tasks.jinja` の 8 ブロック mutation 廃止・byte-identical 検証付き）
-- [ ] **W3: Z3 の証人で質問票の全葉を実行検証**（fast/heavy の 2 tier）
-      - 実行エンジンは実装済み: `tools/batch.py`（JSONL → 判定。§C6 / `docs/how-to/batch.md`）
-- [ ] **W4: サポートマトリクスの宣言と長尾の整理**（W3 の後）
-- [ ] **W5: ドキュメントを質問票から生成**（`tools/gen_docs.py --check` を CI に）
-- [ ] **W6: 導入のワンコマンド化**（wrapper + presets、`web_django` を choices から削除）
-- [ ] **W7: CI 衛生**（`timeout-minutes` 全付与 + キャッシュ）
-- [x] **W8: adopt モードの T1 衝突ポリシー**（解決: `detect.skip` → `copier copy --skip <path>`。実測 + 回帰テスト済み）
+      - fixture answers × リリース済み ref で「旧 ref 生成 → HEAD へ update → conflict なし・生成物 check 緑」
+      - 「質問の改名/削除/既定変更には `_migrations` 追記必須」を最終リリースタグとの diff で強制
+- [ ] **W2: タスク定義の宣言的モデル化**（`_tasks.jinja` の 8 ブロック mutation 廃止、byte-identical 検証つき）
+- [ ] **W3: Z3 の証人で質問票の全葉を実行検証**（エンジンは `tools/batch.py`、fast/heavy の 2 tier）
+- [ ] **W4: サポートマトリクスの宣言と長尾の整理**（`support.yml`、W3 の後）
+- [ ] **W5: ドキュメントを質問票から生成**（`tools/gen_docs.py --check` を CI に。README Features / mermaid の drift 解消を含む）
+- [ ] **W6: 導入のワンコマンド化**（wrapper CLI + presets。`detect` / `adopt` を呼び、`web_django` を choices から削除）
+- [ ] **W7: CI 衛生**（全 workflow に `timeout-minutes`、setup-uv / .venv / apt / uvx のキャッシュ、
+      `_docs.yml` の `sleep 60` を `concurrency` 化）
+- [ ] **W9: テスト実行コストの削減**（marker 化 + レンダ結果キャッシュ。実測値は PLAN §W9）
+- [ ] **W-P の残り**: `tests/test_copier_structure.py` の `_load_questions` を `tools/questionnaire` へ委譲（重複排除）。
+      読み取り側は実装済み
+- [ ] **W10（新）**: `tasks.py` / `duties.py` への追記。現状は報告のみ。Python なので「関数を追記 + 必要な import が
+      無ければ報告」の形にし、`Taskfile.yml` と同じ承認ループに載せる
+- [ ] **W11（新）**: 既存 `ci.yml` への**ジョブ単位マージ**。現状は `copier-ci.yml` 併置で回避している。
+      ジョブ名が空いているときだけ承認つきで追記する（YAML 追記の安全性判定は `Taskfile.yml` の実装を流用）
 
-適用前の判定は実装済み: **`tools/detect.py`**（`docs/how-to/detect.md`）。fresh / adopt / update / foreign を
-判定し、既存資産の棚卸しと「adopt で置換されるファイル（COLLISIONS）」を列挙する。
-保護条件は `template/` のパス名条件から実行時に導出するので、HEAD と作業ツリーの差でも正しい。
-形状質問（`project_type` / `include_*` 等）は推測しない（SPEC §12）。
-`foreign` は **中断（exit 3）**: 相手テンプレートの `_src_path` を提示し、破棄して採用する場合のみ
-`--takeover` を要求する。
+### 22.3 既知の罠（W0 が踏む・copier 9.18.1 で実測再現済み）
 
-adopt は **`tools/adopt.py`**（トランザクション付き）が担う: `detect.skip` を `skip_if_exists` に渡して衝突を作らず、
-描画後に既存ファイルの内容とファイル/ディレクトリ集合を検証し、破れていれば元に戻す（実測でバイト一致）。
-`--ref` は「最新タグが同じ質問集合を持つときだけタグ」を動的に判断する。`task adopt DIR=... CLI_ARGS="--dry-run"`。
-**加算マージ**は実装済み（`tools/pyproject_merge.py` + `tools/file_merge.py`、`--no-merge` で無効化）:
-`pyproject.toml` の deps / `[tool.*]`（ruff・typos 等。既存値は不変、このプロジェクト名やパスを含む値は報告のみ）、
-`.gitignore` のパターン、`Makefile`/`justfile` のレシピ、既存 `ci.yml` がある場合は読み取り専用ジョブだけの
-`copier-ci.yml` 併置。`Taskfile.yml` は YAML なので、`tasks:` が最後のトップレベルキーのときだけ「追記してよいか」を質問し、
-承認時に追記（書いた後に再パースして既存タスク不変を検証）。反映前に **対話で確認**する（`[Y]es / [n]o（render のみ）/ [c]ancel（全体ロールバック）`）。
-続けて「名前やパスを含むため無条件にはコピーしなかった `[tool.*]` の値」を1つずつ確認し、承認されたものだけ書く
-（値は回答から生成されるので `src/<自分のpkg>` が提案される）。TTY が無ければプロンプトを出さず自動計画を適用（CI/MCP はブロックしない）。
-検証（追記は prefix 保持、キーは消えない）に破れがあれば adopt 全体をロールバックする。セクション単位の TOML 再編成は SPEC §12 の非目標のまま。
-
-adopt の衝突は **`detect` が `skip` を出し、`copier copy ... --skip <path>` で無傷にする**方式に決着した
-（実測: フラグ無しは `conflict` → exit 1 で half-written、`--overwrite` は置換、`--skip` は
-`--overwrite --skip` と同一のファイル集合で既存を無傷に保つ）。レポートは実行可能なコマンドを印字する。
-
-エージェント向けの面も実装済み:
-- **`tools/questionnaire.py`** — `!include` を解決した実質問順の質問票（`type`/`default`/`when`/`help`/`choices`、`_` 設定は分離）
-- **`tools/mcp_server.py`** — `template_status` / `list_questions` / `inspect_project` / `render_project` /
-  `list_batch_requests` / `run_batch` を MCP tool として公開（`task mcp`、stdio / streamable-http）
-- **テスト 3 段速**: `task test-fast`（venv/network を外す 17s）/ `task test`（フル 37s）/
-  `task batch CLI_ARGS="--only X --prepare --shell"`（1 ケース 2s）。詳細は `docs/how-to/test-loop.md`
-- 減速の実測と残作業は **W9**（marker 化・レンダ結果キャッシュ。`tests/test_example.py` の編集が落ち着いてから）
-
-既知の罠（W0 が踏む・copier 9.18.1 で実測再現済み）: 次タグは PEP440 で `5.4.0` より
-大きくする必要がある（例 `6.0.0`）。`1.0.0` を打つと、現 HEAD で生成済みのプロジェクト
-（answers の `_commit: 5.4.0-69-ge2a210e1` → version `5.4.0.post69.dev0+e2a210e1`）に対し
+次タグは PEP440 で `5.4.0` より大きくする必要がある（例 `6.0.0`）。`1.0.0` を打つと、現 HEAD で生成済みの
+プロジェクト（answers の `_commit: 5.4.0-69-ge2a210e1` → version `5.4.0.post69.dev0+e2a210e1`）に対し
 `_main.py:1368-1371` が `UserMessageError` を **raise** し、`copier update` が一切通らなくなる:
-`You are downgrading from 5.4.0.post69.dev0+e2a210e1 to 1.0.0. Downgrades are not supported.`
+
+```
+You are downgrading from 5.4.0.post69.dev0+e2a210e1 to 1.0.0. Downgrades are not supported.
+```
+
 さらに、同一 commit に複数のバージョンタグを残すと dunamai が低い方を選び偽のダウングレードになるため、
 **継承タグは削除し、HEAD のバージョンタグは 1 つだけ**にする。
-`_template.py:421` の migration 選択は `new >= migration.version > old` なので、既存の `2.0.0`
-エントリは既存ユーザーには発火しない（正常）。受け入れ条件は「HEAD 生成物を新タグへ
-`copier update` して `_commit` が前進すること」を実測すること。
-再現手順と詳細は `notes/PLAN-improvements.md` の W0 を参照。
+`_template.py:421` の migration 選択は `new >= migration.version > old` なので、既存の `2.0.0` エントリは
+既存ユーザーには発火しない（正常）。受け入れ条件は「HEAD 生成物を新タグへ `copier update` して `_commit` が
+前進すること」を実測すること。再現手順と詳細は `notes/PLAN-improvements.md` の W0 を参照。
+
+dirty なテンプレートでは `copier update` が成立しない点も実測済み（copier が clone 内に合成コミットを作り、
+その describe がレンダ毎に変わるため「ダウングレード」と判定される）。`tools/batch.py` はこれを
+`update-precondition`（clean tree 必須）として実装し、`tests/test_example.py` の adopt-update テストも
+clean clone から render する形に修正済み。
