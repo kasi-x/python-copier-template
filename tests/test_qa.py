@@ -18,6 +18,7 @@ import ast
 import importlib
 import sys
 import tomllib
+from importlib.metadata import packages_distributions
 from pathlib import Path
 
 TOP = Path(__file__).resolve().parent.parent
@@ -59,24 +60,39 @@ def test_every_qa_module_imports() -> None:
 
 
 def test_qa_modules_only_import_declared_or_stdlib() -> None:
-    """Imports in QA modules are stdlib or declared dev-dependencies."""
-    declared = _declared_dev_deps()
+    """Imports in QA modules are stdlib or declared dev-dependencies.
+
+    An import name is not always its distribution name (``yaml`` ships in
+    ``PyYAML``), so the installed environment's own mapping resolves it --
+    the same job ``deptry --package-module-name-map`` does.
+    """
+    declared = {name.lower() for name in _declared_dev_deps()}
     stdlib = set(sys.stdlib_module_names)
+    # tools/ modules import each other (`tools` is their namespace, and the
+    # bare module names work when they are run as scripts): that is internal
+    # wiring, not an undeclared dependency.
+    internal = {"tools", *(name.rsplit(".", 1)[-1].lower() for name in QA_MODULES)}
+    provided = {
+        module: {d.replace("-", "_").lower() for d in dists} for module, dists in packages_distributions().items()
+    }
+
+    def is_declared(module: str) -> bool:
+        if module.lower() in internal:
+            return True
+        return module.replace("-", "_").lower() in declared or bool(provided.get(module, set()) & declared)
+
     for name in QA_MODULES:
         path = TOP / f"{name.replace('.', '/')}.py"
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
-                for alias in node.names:
-                    top = alias.name.split(".")[0]
-                    assert top in stdlib or top.replace("-", "_") in declared, (
-                        f"{path}: imports {top!r} which is neither stdlib nor declared"
-                    )
-            elif isinstance(node, ast.ImportFrom) and node.module:
-                top = node.module.split(".")[0]
-                if top == "__future__":
-                    continue
-                assert top in stdlib or top.replace("-", "_") in declared, (
+                imported = [alias.name.split(".")[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module and node.module.split(".")[0] != "__future__":
+                imported = [node.module.split(".")[0]]
+            else:
+                continue
+            for top in imported:
+                assert top in stdlib or is_declared(top), (
                     f"{path}: imports {top!r} which is neither stdlib nor declared"
                 )
 

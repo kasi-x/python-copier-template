@@ -1253,3 +1253,58 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
 - [ ] **投稿は手動で行う**（copier の `AI_POLICY.md` 要件。エージェント投稿禁止）
       - 草稿は貼らず自分の言葉に整える。`gh` コマンド例は `notes/COPIER_UPSTREAM.md`
         「投稿手順」節を正とする（`copier-fork/` に複写しない）
+
+## 22. 劇的改善の作業分解（2026-09-11 監査 → 委託用）
+
+詳細な委託仕様（Target / Change / Acceptance / 所有権 / wave）は
+**`notes/PLAN-improvements.md`** を正とする。この節はチェックボックスのみを持つ。
+
+動機（実測）: 最新タグ `5.4.0` は inherited upstream の内容で fork の機能を 1 つも含まず
+（`git show 5.4.0:copier.yml` に fork 機能 0 回、HEAD は 69 commits 先）、
+既定の `copier copy` は `Invalid choice for 'docs_type': 'zensical'` と
+`Question "author_name" is required` で失敗する。全テストが `vcs_ref="HEAD"` 固定のため
+この欠陥を検出できない。加えて実行検証は 10 構成のみ（質問空間 ≳378）、
+`.github/workflows` に `timeout-minutes` が 0 件。
+
+- [ ] **W-P: 質問票パーサの抽出**（`tools/questionnaire.py`。W3/W5 の前提）
+- [ ] **W0: fork detach と既定経路の是正**（タグ削除は不可逆 → 番号を実測してからユーザー承認）
+- [ ] **W1: `copier update` 適合マトリクス + 質問票 diff ガード**
+- [ ] **W2: タスク定義の宣言的モデル化**（`_tasks.jinja` の 8 ブロック mutation 廃止・byte-identical 検証付き）
+- [ ] **W3: Z3 の証人で質問票の全葉を実行検証**（fast/heavy の 2 tier）
+      - 実行エンジンは実装済み: `tools/batch.py`（JSONL → 判定。§C6 / `docs/how-to/batch.md`）
+- [ ] **W4: サポートマトリクスの宣言と長尾の整理**（W3 の後）
+- [ ] **W5: ドキュメントを質問票から生成**（`tools/gen_docs.py --check` を CI に）
+- [ ] **W6: 導入のワンコマンド化**（wrapper + presets、`web_django` を choices から削除）
+- [ ] **W7: CI 衛生**（`timeout-minutes` 全付与 + キャッシュ）
+- [x] **W8: adopt モードの T1 衝突ポリシー**（解決: `detect.skip` → `copier copy --skip <path>`。実測 + 回帰テスト済み）
+
+適用前の判定は実装済み: **`tools/detect.py`**（`docs/how-to/detect.md`）。fresh / adopt / update / foreign を
+判定し、既存資産の棚卸しと「adopt で置換されるファイル（COLLISIONS）」を列挙する。
+保護条件は `template/` のパス名条件から実行時に導出するので、HEAD と作業ツリーの差でも正しい。
+形状質問（`project_type` / `include_*` 等）は推測しない（SPEC §12）。
+`foreign` は **中断（exit 3）**: 相手テンプレートの `_src_path` を提示し、破棄して採用する場合のみ
+`--takeover` を要求する。
+
+adopt の衝突は **`detect` が `skip` を出し、`copier copy ... --skip <path>` で無傷にする**方式に決着した
+（実測: フラグ無しは `conflict` → exit 1 で half-written、`--overwrite` は置換、`--skip` は
+`--overwrite --skip` と同一のファイル集合で既存を無傷に保つ）。レポートは実行可能なコマンドを印字する。
+
+エージェント向けの面も実装済み:
+- **`tools/questionnaire.py`** — `!include` を解決した実質問順の質問票（`type`/`default`/`when`/`help`/`choices`、`_` 設定は分離）
+- **`tools/mcp_server.py`** — `template_status` / `list_questions` / `inspect_project` / `render_project` /
+  `list_batch_requests` / `run_batch` を MCP tool として公開（`task mcp`、stdio / streamable-http）
+- **テスト 3 段速**: `task test-fast`（venv/network を外す 17s）/ `task test`（フル 37s）/
+  `task batch CLI_ARGS="--only X --prepare --shell"`（1 ケース 2s）。詳細は `docs/how-to/test-loop.md`
+- 減速の実測と残作業は **W9**（marker 化・レンダ結果キャッシュ。`tests/test_example.py` の編集が落ち着いてから）
+
+既知の罠（W0 が踏む・copier 9.18.1 で実測再現済み）: 次タグは PEP440 で `5.4.0` より
+大きくする必要がある（例 `6.0.0`）。`1.0.0` を打つと、現 HEAD で生成済みのプロジェクト
+（answers の `_commit: 5.4.0-69-ge2a210e1` → version `5.4.0.post69.dev0+e2a210e1`）に対し
+`_main.py:1368-1371` が `UserMessageError` を **raise** し、`copier update` が一切通らなくなる:
+`You are downgrading from 5.4.0.post69.dev0+e2a210e1 to 1.0.0. Downgrades are not supported.`
+さらに、同一 commit に複数のバージョンタグを残すと dunamai が低い方を選び偽のダウングレードになるため、
+**継承タグは削除し、HEAD のバージョンタグは 1 つだけ**にする。
+`_template.py:421` の migration 選択は `new >= migration.version > old` なので、既存の `2.0.0`
+エントリは既存ユーザーには発火しない（正常）。受け入れ条件は「HEAD 生成物を新タグへ
+`copier update` して `_commit` が前進すること」を実測すること。
+再現手順と詳細は `notes/PLAN-improvements.md` の W0 を参照。

@@ -1,6 +1,6 @@
 # 仕様: 既存プロジェクトへの柔軟な展開(Adopt モード)
 
-ステータス: **提案(未実装)** — 実装は下記フェーズに分割して TODO 経由で進める。
+ステータス: **P1/P2 実装済み(2026-09-08)**。残すは運用フィードバック次第。
 検証環境: copier 9.18.1(ソース参照は /tmp/copier クローンの実コード)。
 
 ## 1. 目的と背景
@@ -185,7 +185,11 @@ git diff                                   # 差分確認フローに従う
 - **P0(即時・無変更)**: adopt-existing.md に `--skip` スペル(§8 フェーズ0)を追記。
 - **P1**: `existing_project` 回答 + T2 ファイル名条件 + 採用レポート task +
   テスト(§10 の1〜3)。
-- **P2**: `adopt_protect` multiselect + docs 保護の検討 + update テスト(§10 の4)。
+- **P2(実装済み)**: `adopt_protect` multiselect(type: str + multiselect: true)、
+      docs 選択肢追加(`docs` 保護)、update 相互運用テスト(§10 の4)。
+      実装メモ: copier の multiselect は `type: str` + `multiselect: true`
+      (type: multiselect は UnsupportedTypeError)、辞書 choices の検証値は
+      ラベル側になるため条件トークンと一致するリスト形式を採用。
 
 ## 12. 非目標
 

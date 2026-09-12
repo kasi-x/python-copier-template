@@ -254,6 +254,48 @@ def test_template_adopt_mode_protects_existing_files(tmp_path: Path):
     assert "Adopt mode:" in (TOP / "copier.yml").read_text()
 
 
+def test_template_adopt_mode_update_interop(tmp_path: Path):
+    """An adopt-mode project can run copier update: the recorded answers
+    (including adopt_protect) do not break the update mechanics, protected
+    files stay untouched, and the adoption report task does not re-run
+    (SPEC-adoption.md §10.4)."""
+    # the adopter owns a minimal pyproject and README (protected, never
+    # rewritten)
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "existing"\nversion = "0.1.0"\n')
+    (tmp_path / "README.md").write_text("# my own readme\n")
+    # Render from a CLEAN clone of the template: copier commits a dirty local
+    # template into a synthetic commit and records its describe in _commit;
+    # that describe changes on every render, so copier judges the next update
+    # a downgrade (same rule tools/batch.py enforces as an update
+    # precondition). A clean clone has a stable, resolvable describe.
+    clean_tpl = tmp_path / "tpl"
+    run_pipe(f"git clone -q {str(TOP)!r} {clean_tpl}")
+    run_pipe(f"git init -q {tmp_path}")
+
+    # the adopter owns a minimal pyproject and README (protected, never
+    # rewritten)
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "existing"\nversion = "0.1.0"\n')
+    (tmp_path / "README.md").write_text("# my own readme\n")
+
+    answers = yaml.safe_load((TOP / "example-answers.yml").read_text())
+    answers["existing_project"] = True
+    run_copy(
+        src_path=str(clean_tpl),
+        dst_path=tmp_path,
+        data=answers,
+        vcs_ref="HEAD",
+        unsafe=True,
+        defaults=True,
+    )
+
+    run = make_venv(tmp_path)
+    readme_before = (tmp_path / "README.md").read_text()
+    assert (tmp_path / "pyproject.toml").read_text().startswith("[project]")
+    run("uvx copier update --defaults --vcs-ref=HEAD --trust")
+    assert (tmp_path / "README.md").read_text() == readme_before
+    assert (tmp_path / "pyproject.toml").exists()
+
+
 def test_template_works_outside_git(tmp_path: Path):
     """Publish pipelines generate first and `git init` later. Without git
     metadata setuptools_scm used to abort every `uv sync` — the fallback
@@ -1922,7 +1964,11 @@ def test_gitignore_same():
             lines.add(stripped)
         return lines
 
-    template = normalized(TOP / "template" / "{% if not existing_project %}.gitignore{% endif %}.jinja")
+    template = normalized(
+        TOP
+        / "template"
+        / "{% if not existing_project or 'gitignore' not in adopt_protect %}.gitignore{% endif %}.jinja"
+    )
     root = normalized(TOP / ".gitignore")
     assert template - root == set(), f"missing from root .gitignore: {sorted(template - root)}"
     assert root - template == set(), f"stale in root .gitignore: {sorted(root - template)}"

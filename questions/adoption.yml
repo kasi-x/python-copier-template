@@ -13,3 +13,18 @@ existing_project:
         .python-version and source scaffolding are protected — only files
         you do not have yet are added, plus the CI / quality
         infrastructure. No: full scaffold for a fresh project.
+
+# Phase 2: fine-tune WHICH of your own files stay protected. CHANGELOG.md is
+# always protected (see _skip_if_exists in copier.yml) and the task-runner
+# files (justfile / Taskfile / Makefile / tasks.py / duties.py) are always
+# skipped in adopt mode, so neither is a choice here.
+adopt_protect:
+    type: str
+    multiselect: true
+    default: [readme, license, pyproject, gitignore, python_version, scaffold]
+    # entries map to the per-file render conditions in template/ file names
+    choices: [readme, license, pyproject, gitignore, python_version, scaffold, docs]
+    when: "{{ existing_project }}"
+    help: |
+        Which of your own files should stay protected (never written)?
+        Deselect an entry to let the template (re)write that file.
