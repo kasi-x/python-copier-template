@@ -461,6 +461,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#what-copier-does-with-the-files-you-already-have" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What copier does with the files you already have
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-start-inspect-the-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you start: inspect the target
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#if-you-have-a-skeleton-based-project" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -472,15 +494,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#if-you-do-not-have-a-skeleton-based-project" class="md-nav__link">
+  <a href="#without-the-detection-tool" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        If you do not have a skeleton-based project
+        Without the detection tool
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="If you do not have a skeleton-based project">
+    <nav class="md-nav" aria-label="Without the detection tool">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1628,6 +1650,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#what-copier-does-with-the-files-you-already-have" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What copier does with the files you already have
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-you-start-inspect-the-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you start: inspect the target
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#if-you-have-a-skeleton-based-project" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1639,15 +1683,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#if-you-do-not-have-a-skeleton-based-project" class="md-nav__link">
+  <a href="#without-the-detection-tool" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        If you do not have a skeleton-based project
+        Without the detection tool
       </span>
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="If you do not have a skeleton-based project">
+    <nav class="md-nav" aria-label="Without the detection tool">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1709,33 +1753,117 @@ re-tagged (see the repository's TODO, item 11).</p>
 <p>This will:</p>
 <ul>
 <li>Ask some questions about the existing project</li>
-<li>Expand the template with the answers given</li>
-<li>Ask if you would like to overwrite conflicting files (always choose yes)</li>
+<li>Expand the template with the answers given, protecting your own files</li>
+<li>Add the infrastructure you do not have yet (CI, hygiene, quality tooling)</li>
 <li>Record the answers in the project so they can be used in later updates</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Copier will <em>overwrite</em> files with the template files. Please check the changes using <code>git diff</code> and put back anything you would like to keep from the existing project files.</p>
+<p>Adoption protects <em>your</em> files, not the template's canonical ones. Read the
+next two sections before running anything: the conflict row in the table
+is the difference between "added" and "replaced".</p>
 </div>
+<h2 id="what-copier-does-with-the-files-you-already-have">What copier does with the files you already have<a class="headerlink" href="#what-copier-does-with-the-files-you-already-have" title="Permanent link">&para;</a></h2>
+<p>This is the part that decides whether an adoption is safe, and it is worth
+knowing exactly (all measured against copier 9.18.1):</p>
+<table>
+<thead>
+<tr>
+<th>Your file</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Named by <code>existing_project</code> / <code>adopt_protect</code> (README, LICENSE, pyproject.toml, .gitignore, .python-version, source scaffolding, <code>docs/</code> if you protect it)</td>
+<td>Not rendered at all — yours is untouched</td>
+</tr>
+<tr>
+<td><code>CHANGELOG.md</code></td>
+<td>Never overwritten (<code>_skip_if_exists</code>), whatever the mode</td>
+</tr>
+<tr>
+<td>Task-runner files in adopt mode (<code>justfile</code>, <code>Taskfile.yml</code>, <code>Makefile</code>, <code>tasks.py</code>, <code>duties.py</code>)</td>
+<td>Not rendered at all</td>
+</tr>
+<tr>
+<td>Anything else that already exists (<code>.github/workflows/ci.yml</code>, <code>.gitleaks.toml</code>, <code>renovate.json</code>, <code>cliff.toml</code>, ...)</td>
+<td><strong>Conflict</strong>: copier stops with <code>Interactive session required: Consider using --overwrite</code> and exits 1 — <em>after</em> writing every file it had already rendered</td>
+</tr>
+<tr>
+<td>The same, with <code>--overwrite</code></td>
+<td>Replaced by the template's version</td>
+</tr>
+<tr>
+<td>The same, with <code>--skip &lt;path&gt;</code></td>
+<td>Left alone, and everything else is still added</td>
+</tr>
+</tbody>
+</table>
+<p>The last row is the one to use. <code>--skip</code> needs no <code>--overwrite</code>, and a run
+with <code>--skip</code> for every collision produces exactly the same file set as
+<code>--overwrite</code> would — with your files intact. Adding <code>--overwrite</code> on top
+only widens the blast radius to collisions nobody listed.</p>
+<h2 id="before-you-start-inspect-the-target">Before you start: inspect the target<a class="headerlink" href="#before-you-start-inspect-the-target" title="Permanent link">&para;</a></h2>
+<p>Run the detection tool first. It reports which operation fits (fresh copy /
+adoption / update of a project this template already generated), what your
+project already has, and the collisions above — as a ready-to-run command:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>python<span class="w"> </span>tools/detect.py<span class="w"> </span>/path/to/existing-project
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>mode: adopt
+
+kept (your files; adopt mode does not write them)
+  .gitignore  CHANGELOG.md  LICENSE  README.md  pyproject.toml
+
+COLLISIONS (exist and adopt mode would replace them -- keep them with --skip)
+  .github/workflows/ci.yml
+  renovate.json
+
+next (keep your files, add the rest):
+  python tools/detect.py &lt;path&gt; --answers answers.yml
+  copier copy --trust --defaults --vcs-ref=&lt;ref&gt; --data-file answers.yml \
+    --skip .github/workflows/ci.yml --skip renovate.json &lt;TEMPLATE_URL&gt; &lt;path&gt;
+</code></pre></div>
+<p>Copy those two lines. <code>--answers</code> writes a <code>--data-file</code> holding
+<code>existing_project: true</code>, the protection list for the files you actually
+have, and the Project Details that have exactly one answer on disk — it does
+not guess the questionnaire's shape questions
+(<a href="../../how-to/detect/">details</a>). Pass one <code>--skip</code> per collision: a path the
+template would not render for your answers is harmless, so an over-long
+<code>--skip</code> list is safe.</p>
+<p>Then review the result the way you would any merge:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>diff<span class="w">          </span><span class="c1"># delete the files you do not want, keep yours</span>
+git<span class="w"> </span>status<span class="w">        </span><span class="c1"># untracked additions: CI, hygiene, AGENTS.md, ...</span>
+git<span class="w"> </span>add<span class="w"> </span>-A<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"chore: adopt python-copier-template"</span>
+</code></pre></div>
+<p>Later updates: <code>copier update --trust</code> and review the diff (see
+<a href="../../how-to/update-template/">Update Template</a>).</p>
 <h2 id="if-you-have-a-skeleton-based-project">If you have a skeleton-based project<a class="headerlink" href="#if-you-have-a-skeleton-based-project" title="Permanent link">&para;</a></h2>
-<p>If you have a <a href="https://github.com/kasi-x/python3-pip-skeleton">python3-pip-skeleton</a> based project then it is best to adopt the <code>1.0.0</code> release of this template, then <code>copier update</code> to get to the latest. This is because <code>copier update</code> will try and merge file changes across renames done between releases, while <code>copier copy</code> cannot. This looks like:</p>
-<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span><span class="m">1</span>.0.0<span class="w"> </span>/path/to/existing-project
+<p>If you have a <a href="https://github.com/kasi-x/python3-pip-skeleton">python3-pip-skeleton</a> based project then it is best to adopt the <em>first</em> release of this template (the tag the fork detach creates, see the warning above), then <code>copier update</code> to get to the latest. This is because <code>copier update</code> will try and merge file changes across renames done between releases, while <code>copier copy</code> cannot. This looks like:</p>
+<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span>&lt;first-release-tag&gt;<span class="w"> </span>/path/to/existing-project
 git<span class="w"> </span>diff
 <span class="c1"># Examine the changes, put back anything you want to keep</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Adopt python-copier-template 1.0.0"</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Adopt python-copier-template &lt;first-release-tag&gt;"</span>
 uvx<span class="w"> </span>copier<span class="w"> </span>update<span class="w"> </span>/path/to/existing-project<span class="w"> </span>--trust
 git<span class="w"> </span>diff
 <span class="c1"># Examine the changes, resolve any merge conflicts</span>
 git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Update to python-copier-template x.x.x"</span>
 </code></pre></div>
-<h2 id="if-you-do-not-have-a-skeleton-based-project">If you do not have a skeleton-based project<a class="headerlink" href="#if-you-do-not-have-a-skeleton-based-project" title="Permanent link">&para;</a></h2>
-<p>If you have a project with a different structure then it is best to go straight to the current main branch (<code>--vcs-ref=main</code> — without it copier picks the latest git tag, which here still points at the old, pre-fork template):</p>
-<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span>main<span class="w"> </span><span class="se">\</span>
+<h2 id="without-the-detection-tool">Without the detection tool<a class="headerlink" href="#without-the-detection-tool" title="Permanent link">&para;</a></h2>
+<p>The recipe <code>detect</code> prints, by hand: answer <code>existing_project=true</code> so your
+own files are protected, and <code>--skip</code> every file you want to keep that the
+template also ships (check the template's tree, or run <code>detect</code> — it lists
+them):</p>
+<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span>main<span class="w"> </span>--data<span class="w"> </span><span class="nv">existing_project</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--skip<span class="w"> </span>.github/workflows/ci.yml<span class="w"> </span>--skip<span class="w"> </span>renovate.json<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>/path/to/existing-project
 git<span class="w"> </span>diff
 <span class="c1"># Examine the changes, put back anything you want to keep</span>
 git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Adopt python-copier-template x.x.x"</span>
 </code></pre></div>
+<p>Without those <code>--skip</code> flags copier stops at the first one of those files
+(<code>Interactive session required</code>), so a half-written destination is the
+failure mode to expect — not a silent replacement.</p>
 <h3 id="keep-your-own-files-infra-only-adoption">Keep your own files (infra-only adoption)<a class="headerlink" href="#keep-your-own-files-infra-only-adoption" title="Permanent link">&para;</a></h3>
 <p>To add only the infrastructure (CI workflows, hygiene, quality tooling
 recipes) and keep your existing <code>README.md</code>, <code>LICENSE</code>, <code>pyproject.toml</code>
@@ -1749,12 +1877,16 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <p>Your own files are left untouched; everything you do not have yet (CI
 workflows, <code>.gitleaks.toml</code>, <code>AGENTS.md</code>, ...) is added. Wire the task
 entries from <code>justfile</code> / <code>Taskfile.yml</code> into your own setup, and add the
-dev dependencies the adoption flow prints. A first-class
-<code>existing_project</code> answer (protect-by-default without <code>--skip</code>) is
-specified in <code>notes/SPEC-adoption.md</code> for a future release.</p>
+dev dependencies the adoption flow prints.</p>
+<p>The first-class alternative is the <code>existing_project</code> answer
+(<code>--data existing_project=true</code>), which protects those same files by
+default instead of listing each <code>--skip</code>; see <code>notes/SPEC-adoption.md</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Copier does not touch any already existing files that do not conflict with the ones in the template. Therefore, you may end up with files in your project you no longer need such as old github workflows. These would need to be manually deleted.</p>
+<p>Adopting adds files; it does not remove or merge. Files of yours that the
+template does not ship — an old workflow the template has no counterpart
+for, a differently named CI job — stay exactly as they were, so delete or
+merge them yourself after reviewing <code>git status</code>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
