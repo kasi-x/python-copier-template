@@ -199,7 +199,14 @@ def _plan_data(detection: detect.Detection, answers: dict[str, Any]) -> dict[str
 
 
 # The template files an adopter commonly already has, and how to merge each.
-MERGE_KINDS = {".gitignore": "gitignore", "justfile": "justfile", "Makefile": "makefile", "Taskfile.yml": "taskfile"}
+MERGE_KINDS = {
+    ".gitignore": "gitignore",
+    "justfile": "justfile",
+    "Makefile": "makefile",
+    "Taskfile.yml": "taskfile",
+    "tasks.py": "python_tasks",
+    "duties.py": "python_tasks",
+}
 
 
 def plan_merges(target: Path, data: dict[str, Any], ref: str) -> dict[str, Any]:
@@ -220,6 +227,9 @@ def plan_merges(target: Path, data: dict[str, Any], ref: str) -> dict[str, Any]:
             for name, kind in MERGE_KINDS.items()
             if (target / name).is_file() and (source / name).is_file()
         ]
+        ci_plan = _plan_ci_jobs(target, source)
+        if ci_plan is not None:
+            files.append(ci_plan)
         return {"dependencies": dependencies.as_dict(), "tool_config": config.as_dict(), "files": files}
     finally:
         shutil.rmtree(source, ignore_errors=True)
@@ -280,7 +290,7 @@ def merge_generated_files(
         if problem:
             raise _MergeError(problem)
         _merge_text_files(run, adoption, source, approved_files=approved_files)
-        _merge_ci_caller(run, adoption, source)
+        _merge_ci_caller(run, adoption, source, approved_files=approved_files)
     finally:
         shutil.rmtree(source, ignore_errors=True)
 
@@ -298,7 +308,7 @@ def _merge_text_files(
         if not target_file.is_file() or not (source / name).is_file():
             continue
         before = run.backup.setdefault(name, target_file.read_bytes())
-        result = file_merge.merge_text_file(target_file, source / name, kind, append_yaml=name in approved_files)
+        result = file_merge.merge_text_file(target_file, source / name, kind, append=name in approved_files)
         adoption.files_merged.append(result.as_dict())
         adoption.notes.extend(result.notes)
         if result.applied and not file_merge.original_is_preserved(before, target_file.read_bytes()):
@@ -321,13 +331,45 @@ def _note_runner_mismatch(run: _Run, adoption: Adoption, source: Path) -> None:
             )
 
 
-def _merge_ci_caller(run: _Run, adoption: Adoption, source: Path) -> None:
-    """Add the template's checks as copier-ci.yml when the adopter has their own."""
-    if not (run.target / ".github/workflows/ci.yml").is_file():
+def _merge_ci_caller(
+    run: _Run, adoption: Adoption, source: Path, *, approved_files: frozenset[str] = frozenset()
+) -> None:
+    """Add the template's checks beside their workflow — or into it, when approved.
+
+    The default is the non-destructive placement (`copier-ci.yml`). Appending
+    to their ci.yml happens only for a plan entry the human approved; when the
+    append turns out to be unsafe (or there was nothing to append), the run
+    falls back to the placement, so the checks are offered either way.
+    """
+    target_ci = run.target / ".github/workflows/ci.yml"
+    if not target_ci.is_file():
         return
-    result = file_merge.merge_ci_caller(run.target, source / ".github/workflows/ci.yml")
+    source_ci = source / ".github/workflows/ci.yml"
+    if "ci.yml" in approved_files and source_ci.is_file():
+        before = run.backup.setdefault(".github/workflows/ci.yml", target_ci.read_bytes())
+        result = file_merge.merge_ci_jobs(target_ci, source_ci, append=True)
+        adoption.files_merged.append(result.as_dict())
+        adoption.notes.extend(result.notes)
+        if result.applied:
+            if not file_merge.original_is_preserved(before, target_ci.read_bytes()):
+                msg = "merging .github/workflows/ci.yml rewrote existing content"
+                raise _MergeError(msg)
+            return
+        if not result.reported:
+            return  # nothing was missing: their workflow already carries the checks
+        adoption.notes.append("your ci.yml could not take the jobs; copier-ci.yml was added alongside instead")
+    result = file_merge.merge_ci_caller(run.target, source_ci)
     adoption.files_merged.append(result.as_dict())
     adoption.notes.extend(result.notes)
+
+
+def _plan_ci_jobs(target: Path, source: Path) -> dict[str, Any] | None:
+    """The plan for their ci.yml: the read-only jobs that could be appended to it."""
+    target_ci = target / ".github/workflows/ci.yml"
+    source_ci = source / ".github/workflows/ci.yml"
+    if not target_ci.is_file() or not source_ci.is_file():
+        return None
+    return file_merge.merge_ci_jobs(target_ci, source_ci, append=False).as_dict()
 
 
 def _snapshot(target: Path, risky: list[str]) -> dict[str, bytes]:
@@ -504,18 +546,39 @@ def _confirm_merges(run: _Run, ask: Callable[[str], str] | None) -> Confirmation
     if answer == "no":
         return Confirmation(merge=False)
     approved_files = _ask_about_task_files(plan, ask)
+    approved_files |= _ask_about_ci_jobs(plan, ask)
     approved_values = _ask_about_values(plan, ask)
     return Confirmation(approved=frozenset(approved_values), files=frozenset(approved_files))
 
 
+# The file kinds where appending means a real edit of the adopter's task list.
+TASK_APPEND_KINDS = ("taskfile", "python_tasks")
+
+
 def _ask_about_task_files(plan: dict[str, Any], ask: Callable[[str], str]) -> set[str]:
-    """Ask about the YAML task files: appending tasks is a real edit."""
+    """Ask about the task files (Taskfile.yml, tasks.py, duties.py): appending tasks is a real edit."""
     approved: set[str] = set()
     for entry in plan["files"]:
-        if entry.get("kind") != "taskfile" or not entry.get("reported"):
+        if entry.get("kind") not in TASK_APPEND_KINDS or not entry.get("reported"):
             continue
         name = Path(entry["path"]).name
         if ask(f"append these tasks to your {name}: {', '.join(entry['reported'][:8])}? [Y]es / [n]o") == "yes":
+            approved.add(name)
+    return approved
+
+
+def _ask_about_ci_jobs(plan: dict[str, Any], ask: Callable[[str], str]) -> set[str]:
+    """Ask where the template's read-only jobs go: into their ci.yml, or beside it."""
+    approved: set[str] = set()
+    for entry in plan["files"]:
+        if entry.get("kind") != "ci_jobs" or not entry.get("reported"):
+            continue
+        name = Path(entry["path"]).name
+        answer = ask(
+            f"append these jobs to your {name}: {', '.join(entry['reported'][:8])}? "
+            "[Y]es / [n]o (copier-ci.yml alongside instead)"
+        )
+        if answer == "yes":
             approved.add(name)
     return approved
 

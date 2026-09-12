@@ -57,6 +57,7 @@ jobs:
     needs: [hygiene, lint, test, docs]
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check all required jobs passed
         run: |

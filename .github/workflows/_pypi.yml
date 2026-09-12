@@ -7,6 +7,7 @@ permissions:
 jobs:
   upload:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: release
 
     steps:

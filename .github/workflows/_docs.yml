@@ -16,6 +16,21 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Serialize docs builds within this repository. A commit and its release
+    # tag are often pushed together, which starts two ci.yml runs; both
+    # would build docs and force-push gh-pages, colliding on the branch.
+    # This replaces the old `sleep 60` head-start, which was a guess (a
+    # build longer than the sleep still raced). One docs job runs at a
+    # time; the next is pending (and a superseded pending publish being
+    # replaced by a newer run is fine). cancel-in-progress must stay false:
+    # never cancel a publish mid-flight. Do NOT use github.workflow in the
+    # group -- inside a reusable workflow it resolves to the CALLER's name,
+    # which would collide with the caller's own concurrency group.
+    concurrency:
+      group: docs-publish-${{ github.repository }}
+      cancel-in-progress: false
 
     # Job-level grant: the caller (ci.yml) sets contents: write for the docs
     # job, but a reusable workflow's own top-level permissions cap it back to
@@ -25,10 +40,6 @@ jobs:
       contents: write
 
     steps:
-      - name: Avoid git conflicts when tag and branch pushed at same time
-        if: github.ref_type == 'tag'
-        run: sleep 60
-
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,12 +47,33 @@ jobs:
           # Need this to get version number from last tag
           fetch-depth: 0
 
+      - name: Rotate the apt cache key weekly
+        # Cache entries are immutable; the weekly key is what lets a new
+        # graphviz release enter the cache.
+        run: echo "APT_CACHE_WEEK=$(date +%G-W%V)" >> "$GITHUB_ENV"
+
+      - name: Restore cached graphviz debs
+        # /var/cache/apt/archives is root-owned and the cache action runs
+        # unprivileged, so keep the cache in a workspace dir and point apt
+        # at it in the install step below. restore-keys falls back to last
+        # week's entry, so a version bump downloads only the diff once per
+        # rotation.
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .apt-cache
+          key: apt-graphviz-${{ runner.os }}-${{ env.APT_CACHE_WEEK }}
+          restore-keys: apt-graphviz-${{ runner.os }}-
+
       - name: Install system packages
-        run: sudo apt-get install graphviz
+        run: sudo apt-get -o Dir::Cache::archives="$PWD/.apt-cache" install graphviz
 
       - name: Install uv
         if: hashFiles('pixi.lock', 'poetry.lock') == ''
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          # Explicit true (not the "auto" default) so tag-push runs also
+          # cache: "auto" disables caching on tag pushes.
+          enable-cache: true
 
       - name: Install pixi
         if: hashFiles('pixi.lock') != ''

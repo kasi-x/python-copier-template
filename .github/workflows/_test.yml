@@ -45,6 +45,7 @@ env:
 jobs:
   run:
     runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -54,9 +55,26 @@ jobs:
           # Need this to get version number from last tag
           fetch-depth: 0
 
+      - name: Restore cached .venv
+        # uv-only projects (the pixi/poetry installs below are skipped under
+        # the same condition). Keyed on the lockfile + pinned python so a
+        # dependency or interpreter change rebuilds from scratch;
+        # restore-keys falls back to the previous venv and `uv run --locked`
+        # re-syncs just the delta (cheap thanks to setup-uv's own cache).
+        if: hashFiles('pixi.lock', 'poetry.lock') == ''
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ inputs.python-version || 'default' }}-${{ hashFiles('uv.lock', '.python-version') }}
+          restore-keys: venv-${{ runner.os }}-${{ inputs.python-version || 'default' }}-
+
       - name: Install uv
         if: hashFiles('pixi.lock', 'poetry.lock') == ''
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          # Explicit true (not the "auto" default) so tag-push runs also
+          # cache: "auto" disables caching on tag pushes.
+          enable-cache: true
 
       - name: Install pixi
         if: hashFiles('pixi.lock') != ''

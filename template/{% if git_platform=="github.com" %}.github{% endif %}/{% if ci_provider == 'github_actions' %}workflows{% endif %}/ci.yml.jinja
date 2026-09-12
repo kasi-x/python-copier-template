@@ -180,6 +180,10 @@ jobs:
     if: github.ref_type == 'tag'
     uses: ./.github/workflows/_pypi.yml
     permissions:
+      # _pypi.yml declares top-level contents: read (artifact download);
+      # without this grant the reusable call is rejected at startup and the
+      # whole workflow fails with 0 jobs.
+      contents: read
       id-token: write
   {% endif %}
   release:

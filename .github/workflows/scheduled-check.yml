@@ -39,6 +39,7 @@ jobs:
     needs: [lint, test, docs]
     if: always() && contains(needs.*.result, 'failure')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       issues: write
     steps:

@@ -9,6 +9,7 @@ permissions:
 jobs:
   create_issue:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       issues: write
     steps:
