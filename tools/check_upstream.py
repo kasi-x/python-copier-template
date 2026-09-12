@@ -47,7 +47,8 @@ TOP = Path(__file__).resolve().parent.parent
 QUESTIONS_DIR = TOP / "questions"
 TEMPLATE_DIR = TOP / "template"
 PYPROJECT_JINJA = TEMPLATE_DIR / (
-    "{% if (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp %}pyproject.toml{% endif %}.jinja"
+    "{% if (not existing_project or 'pyproject' not in adopt_protect) "
+    "and not ros2_cpp %}pyproject.toml{% endif %}.jinja"
 )
 GPU_DOCKERFILE = TEMPLATE_DIR / ("{% if use_gpu_effective %}Dockerfile.gpu{% endif %}.jinja")
 COMPOSE_JINJA = TEMPLATE_DIR / ("{% if web_api and docker %}compose.local.yml{% endif %}.jinja")
