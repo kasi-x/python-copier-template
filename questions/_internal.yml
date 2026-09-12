@@ -208,7 +208,10 @@ license_check_effective:
 
 reuse_effective:
     type: bool
-    default: "{{ fair and not proprietary }}"
+    # adopt mode protects the adopter's own LICENSE (no LICENSE file is
+    # rendered), so REUSE scaffolding -- which references that LICENSE --
+    # would ship broken; skip it there.
+    default: "{{ fair and not proprietary and not existing_project }}"
     when: false
 
 duo:
