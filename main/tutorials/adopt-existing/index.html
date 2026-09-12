@@ -472,6 +472,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-short-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The short version
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#before-you-start-inspect-the-target" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1661,6 +1672,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-short-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The short version
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#before-you-start-inspect-the-target" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1804,6 +1826,17 @@ knowing exactly (all measured against copier 9.18.1):</p>
 with <code>--skip</code> for every collision produces exactly the same file set as
 <code>--overwrite</code> would — with your files intact. Adding <code>--overwrite</code> on top
 only widens the blast radius to collisions nobody listed.</p>
+<h2 id="the-short-version">The short version<a class="headerlink" href="#the-short-version" title="Permanent link">&para;</a></h2>
+<p>If you would rather not assemble the flags yourself, one command does the
+plan, the apply and the rollback:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>python<span class="w"> </span>tools/adopt.py<span class="w"> </span>/path/to/existing-project<span class="w"> </span>--dry-run
+uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>python<span class="w"> </span>tools/adopt.py<span class="w"> </span>/path/to/existing-project
+</code></pre></div>
+<p>It skips the collisions for you, picks the revision (the latest tag only when
+that tag carries this questionnaire), and undoes everything if any existing
+file changed anyway — see
+<a href="../../how-to/adopt/">Adopt Into an Existing Project</a>. The rest of this page
+explains what those commands are doing and why.</p>
 <h2 id="before-you-start-inspect-the-target">Before you start: inspect the target<a class="headerlink" href="#before-you-start-inspect-the-target" title="Permanent link">&para;</a></h2>
 <p>Run the detection tool first. It reports which operation fits (fresh copy /
 adoption / update of a project this template already generated), what your
@@ -1875,18 +1908,22 @@ git<span class="w"> </span>diff
 git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"chore: adopt python-copier-template (infra only)"</span>
 </code></pre></div>
 <p>Your own files are left untouched; everything you do not have yet (CI
-workflows, <code>.gitleaks.toml</code>, <code>AGENTS.md</code>, ...) is added. Wire the task
-entries from <code>justfile</code> / <code>Taskfile.yml</code> into your own setup, and add the
-dev dependencies the adoption flow prints.</p>
+workflows, <code>.gitleaks.toml</code>, <code>AGENTS.md</code>, ...) is added. The task entries
+from <code>justfile</code> / <code>Taskfile.yml</code> are yours to copy into your own setup.</p>
 <p>The first-class alternative is the <code>existing_project</code> answer
-(<code>--data existing_project=true</code>), which protects those same files by
-default instead of listing each <code>--skip</code>; see <code>notes/SPEC-adoption.md</code>.</p>
+(<code>--data existing_project=true</code>), which protects those files by default
+instead of listing each <code>--skip</code>, and adds the dependencies the template
+would have generated to your <code>pyproject.toml</code> (missing names only — see
+<a href="../../how-to/adopt/">Adopt Into an Existing Project</a>); the <code>tools/adopt.py</code>
+driver above wraps exactly that, plus the rollback.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Adopting adds files; it does not remove or merge. Files of yours that the
-template does not ship — an old workflow the template has no counterpart
-for, a differently named CI job — stay exactly as they were, so delete or
-merge them yourself after reviewing <code>git status</code>.</p>
+<p>Adopting adds files; it does not remove or merge your files. (The one
+exception is <code>pyproject.toml</code>, where the template's <em>dependencies</em> are
+added — never a requirement of yours.) Files that the template does not
+ship — an old workflow with no counterpart, a differently named CI job —
+stay exactly as they were, so delete or merge them yourself after
+reviewing <code>git status</code>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
