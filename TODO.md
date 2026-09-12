@@ -1307,7 +1307,11 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
 - [ ] **W7: CI 衛生**（全 workflow に `timeout-minutes`、setup-uv / .venv / apt / uvx のキャッシュ、
       `_docs.yml` の `sleep 60` を `concurrency` 化）
 - [ ] **W9: テスト実行コストの削減**（marker 化 + レンダ結果キャッシュ。実測値は PLAN §W9）
-- [ ] **W-P の残り**: `tests/test_copier_structure.py` の `_load_questions` を `tools/questionnaire` へ委譲（重複排除）。
+- [x] **W-P の残り**: `_load_questions` の `tools/questionnaire` 委譲 → **実質完了と判断（2026-09-09）**。
+      現行の `_load_questions` は copier ネイティブの `load_template_config`（!include 解決の
+      権威あるローダ）を使う 12 行の薄い実装で、委譲先の `Question` モデルは
+      validator 等の未知キーを落とすため Z3 ガードの入力を劣化させる。`tools/questionnaire.py`
+      --json は **109 問**（108 + existing_project）を正しく数え、JSON/MCP 層として役割分担。
       読み取り側は実装済み
 - [ ] **W10（新）**: `tasks.py` / `duties.py` への追記。現状は報告のみ。Python なので「関数を追記 + 必要な import が
       無ければ報告」の形にし、`Taskfile.yml` と同じ承認ループに載せる
