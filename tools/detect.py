@@ -323,6 +323,17 @@ def protection_facts(target: Path) -> dict[str, bool]:
     }
 
 
+def _layout(target: Path) -> str | None:
+    """`src` when the package tree lives under src/, `flat` when it is at the root."""
+    if any(target.glob("src/*/__init__.py")):
+        return "src"
+    if any(
+        entry.parent == target and (entry.parent / "__init__.py").is_file() for entry in target.glob("*/__init__.py")
+    ):
+        return "flat"
+    return None
+
+
 def derive_answers(target: Path, notes: list[str]) -> dict[str, Any]:
     """Project Details that have exactly one answer on disk.
 
@@ -343,6 +354,10 @@ def derive_answers(target: Path, notes: list[str]) -> dict[str, Any]:
                 notes.append(f"several import packages found ({scaffold}); package_name derived from {candidate!r}")
         else:
             notes.append(f"import package {candidate!r} is not a valid identifier; package_name not derived")
+
+    layout = _layout(target)
+    if layout:
+        derived["layout"] = layout
 
     description = project.get("description")
     if isinstance(description, str) and description:

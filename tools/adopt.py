@@ -46,11 +46,14 @@ template owns the project and --takeover was not given).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
+import shutil
 import sys
 import tempfile
 import tomllib
+from collections.abc import Callable
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
@@ -64,7 +67,8 @@ if str(TOP) not in sys.path:
 
 from tools import batch  # noqa: E402
 from tools import detect  # noqa: E402
-from tools import pyproject_deps  # noqa: E402
+from tools import file_merge  # noqa: E402
+from tools import pyproject_merge  # noqa: E402
 
 QUESTION_LINE = re.compile(r"^([a-z][a-z0-9_]*):\s*$", re.MULTILINE)
 CONFIG_FILES = ("copier.yml", "copier.yaml")
@@ -108,6 +112,10 @@ class Adoption:
     error: str | None = None
     notes: list[str] = field(default_factory=list)
     deps: dict[str, Any] | None = None
+    tool_config: dict[str, Any] | None = None
+    files_merged: list[dict[str, Any]] = field(default_factory=list)
+    cancelled: bool = False
+    declined: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         """Serializable form used by --json and the MCP tool."""
@@ -127,6 +135,10 @@ class Adoption:
             "error": self.error,
             "notes": self.notes,
             "deps": self.deps,
+            "tool_config": self.tool_config,
+            "files_merged": self.files_merged,
+            "cancelled": self.cancelled,
+            "declined": self.declined,
         }
 
 
@@ -186,51 +198,127 @@ def _plan_data(detection: detect.Detection, answers: dict[str, Any]) -> dict[str
     return data
 
 
-def _declared_requirements(document: dict[str, Any]) -> dict[str, str]:
-    """Canonical name -> requirement string, across the tables a merge writes."""
-    found: dict[str, str] = {}
-    for keys in (
-        ("project", "dependencies"),
-        ("dependency-groups", "dev"),
-        ("tool", "poetry", "dependencies"),
-    ):
-        node: Any = document
-        for key in keys:
-            node = node.get(key) if isinstance(node, dict) else None
-        if isinstance(node, list):
-            items = [(str(entry), str(entry)) for entry in node if isinstance(entry, str)]
-        elif isinstance(node, dict):
-            items = [(str(name), str(value)) for name, value in node.items()]
-        else:
-            continue
-        for name, raw in items:
-            found.setdefault(pyproject_deps.canonical(name), raw)
-    return found
+# The template files an adopter commonly already has, and how to merge each.
+MERGE_KINDS = {".gitignore": "gitignore", "justfile": "justfile", "Makefile": "makefile", "Taskfile.yml": "taskfile"}
 
 
-def merge_template_dependencies(
-    target: Path, data: dict[str, Any], ref: str, *, apply: bool
-) -> pyproject_deps.MergeResult | None:
-    """Merge the generated project's dependencies into the adopter's pyproject.
+def plan_merges(target: Path, data: dict[str, Any], ref: str) -> dict[str, Any]:
+    """Compute every merge without writing, for a dry run."""
+    source = render_fresh_source(data, ref)
+    try:
+        dependencies = pyproject_merge.merge_dependencies(
+            target / "pyproject.toml", source / "pyproject.toml", apply=False
+        )
+        config = pyproject_merge.merge_tool_config(
+            target / "pyproject.toml",
+            source / "pyproject.toml",
+            identity=_merge_identity(data, source),
+            apply=False,
+        )
+        files = [
+            file_merge.merge_text_file(target / name, source / name, kind, apply=False).as_dict()
+            for name, kind in MERGE_KINDS.items()
+            if (target / name).is_file()
+        ]
+        return {"dependencies": dependencies.as_dict(), "tool_config": config.as_dict(), "files": files}
+    finally:
+        shutil.rmtree(source, ignore_errors=True)
 
-    The generated file is rendered into a temporary directory (the adopter's
-    own pyproject is protected, so the adopt render never produced one); only
-    the missing names are then added, through tools/pyproject_merge.py.
+
+def render_fresh_source(data: dict[str, Any], ref: str) -> Path:
+    """Render a *fresh* project into a temp dir and return where it landed.
+
+    In adopt mode the template does not render the protected files at all, so
+    asking what the template would have generated means asking for the fresh
+    scaffold. The caller owns the returned directory's lifetime.
     """
-    target_pyproject = target / "pyproject.toml"
-    if not target_pyproject.is_file():
-        return None
-    with tempfile.TemporaryDirectory(prefix="adopt-deps-") as tmp:
-        # A *fresh* render: in adopt mode the template does not render
-        # pyproject.toml at all (it is the adopter's file), so asking for the
-        # generated dependency set means asking for the fresh scaffold.
-        fresh = {**data, "existing_project": False, "adopt_protect": []}
-        with batch.report_stream_only():
-            batch.render(str(TOP), Path(tmp), fresh, ref)
-        source = Path(tmp) / "pyproject.toml"
-        if not source.is_file():
-            return None
-        return pyproject_deps.merge_dependencies(target_pyproject, source, apply=apply)
+    directory = Path(tempfile.mkdtemp(prefix="adopt-merge-"))
+    fresh = {**data, "existing_project": False, "adopt_protect": []}
+    with batch.report_stream_only():
+        batch.render(str(TOP), directory, fresh, ref)
+    return directory
+
+
+def _merge_identity(data: dict[str, Any], source: Path) -> tuple[str, ...]:
+    """Tokens that mark a value as *this project's*, not a tool preference."""
+    tokens = {
+        str(data.get(key, ""))
+        for key in ("package_name", "repo_name", "distribution_name", "github_org", "gitlab_group")
+    }
+    if (source / "pyproject.toml").is_file():
+        with contextlib.suppress(tomllib.TOMLDecodeError, KeyError, OSError):
+            tokens.add(str(tomllib.loads((source / "pyproject.toml").read_text(encoding="utf-8"))["project"]["name"]))
+    return tuple(sorted(token for token in tokens if token))
+
+
+def merge_generated_files(run: _Run, adoption: Adoption, *, approved: frozenset[str] = frozenset()) -> None:
+    """Merge what the template generated into the files the adopter already had."""
+    target_pyproject = run.target / "pyproject.toml"
+    before_pyproject = run.backup.get("pyproject.toml") or (
+        target_pyproject.read_bytes() if target_pyproject.is_file() else None
+    )
+    source = render_fresh_source(run.data, run.ref)
+    try:
+        merged = pyproject_merge.merge_dependencies(target_pyproject, source / "pyproject.toml")
+        adoption.deps = merged.as_dict()
+        adoption.notes.extend(merged.notes)
+        config = pyproject_merge.merge_tool_config(
+            target_pyproject,
+            source / "pyproject.toml",
+            identity=_merge_identity(run.data, source),
+            approved=approved,
+        )
+        adoption.tool_config = config.as_dict()
+        adoption.notes.extend(config.notes)
+        problem = merge_problem(target_pyproject, before_pyproject)
+        if problem:
+            raise _MergeError(problem)
+        _merge_text_files(run, adoption, source)
+        _merge_ci_caller(run, adoption, source)
+    finally:
+        shutil.rmtree(source, ignore_errors=True)
+
+
+class _MergeError(Exception):
+    """A merge broke the add-only contract; the caller rolls the run back."""
+
+
+def _merge_text_files(run: _Run, adoption: Adoption, source: Path) -> None:
+    """Append the missing entries of the line-oriented files, keeping backups."""
+    for name, kind in MERGE_KINDS.items():
+        target_file = run.target / name
+        if not target_file.is_file():
+            continue
+        before = run.backup.setdefault(name, target_file.read_bytes())
+        result = file_merge.merge_text_file(target_file, source / name, kind)
+        adoption.files_merged.append(result.as_dict())
+        adoption.notes.extend(result.notes)
+        if result.applied and not file_merge.original_is_preserved(before, target_file.read_bytes()):
+            msg = f"merging {name} rewrote existing content"
+            raise _MergeError(msg)
+    _note_runner_mismatch(run, adoption, source)
+
+
+def _note_runner_mismatch(run: _Run, adoption: Adoption, source: Path) -> None:
+    """Tell the adopter when their runner file is not the one the answers picked."""
+    for name, kind in MERGE_KINDS.items():
+        if kind == "gitignore" or not (run.target / name).is_file():
+            continue
+        if not (source / name).is_file():
+            rendered = ", ".join(sorted(candidate for candidate in MERGE_KINDS if (source / candidate).is_file()))
+            adoption.notes.append(
+                f"your {name} was kept, but these answers render {rendered or 'no task runner'}; "
+                f"re-run with --data task_runner=<runner> for that runner's entries"
+            )
+
+
+def _merge_ci_caller(run: _Run, adoption: Adoption, source: Path) -> None:
+    """Add the template's checks as copier-ci.yml when the adopter has their own."""
+    if not (run.target / ".github/workflows/ci.yml").is_file():
+        return
+    result = file_merge.merge_ci_caller(run.target, source / ".github/workflows/ci.yml")
+    adoption.files_merged.append(result.as_dict())
+    adoption.notes.extend(result.notes)
 
 
 def _snapshot(target: Path, risky: list[str]) -> dict[str, bytes]:
@@ -286,7 +374,8 @@ def adopt(  # noqa: PLR0913  WHYNOT: the keyword-only options are the operation'
     skip: list[str] | None = None,
     takeover: bool = False,
     dry_run: bool = False,
-    merge_deps: bool = True,
+    merge_generated: bool = True,
+    ask: Callable[[str], str] | None = None,
 ) -> Adoption:
     """Plan (and unless `dry_run`, apply) an adoption of `target`."""
     detection = detect.detect(target, takeover=takeover)
@@ -314,14 +403,11 @@ def adopt(  # noqa: PLR0913  WHYNOT: the keyword-only options are the operation'
 
     data = _plan_data(detection, answers or {})
     if dry_run:
-        adoption.ok = True
-        adoption.unchanged = detection.kept
-        adoption.notes.append(f"dry run: would render {len(detection.added)} new file(s)")
-        if merge_deps:
-            plan = merge_template_dependencies(target, data, resolved_ref, apply=False)
-            if plan is not None:
-                adoption.deps = plan.as_dict()
-                adoption.notes.extend(plan.notes)
+        _plan_only(target, data, resolved_ref, adoption, detection)
+        if not merge_generated:
+            adoption.deps = None
+            adoption.tool_config = None
+            adoption.files_merged = []
         return adoption
 
     backup = _snapshot(target, [*detection.kept, *detection.collisions])
@@ -354,40 +440,104 @@ def adopt(  # noqa: PLR0913  WHYNOT: the keyword-only options are the operation'
     adoption.applied = True
     adoption.created = created
     adoption.unchanged = sorted(backup)
-    if merge_deps:
+    if merge_generated:
         run = _Run(target=target, backup=backup, data=data, ref=resolved_ref, created=created, before_dirs=before_dirs)
-        _apply_dependency_merge(run, adoption)
+        _finish_with_merges(run, adoption, ask)
     return adoption
 
 
-def _apply_dependency_merge(run: _Run, adoption: Adoption) -> None:
-    """Merge the generated dependencies in, or take the whole run back.
+def _finish_with_merges(run: _Run, adoption: Adoption, ask: Callable[[str], str] | None) -> None:
+    """Confirm the merge plan (when asked), apply it, or take the run back."""
+    confirmation = _confirm_merges(run, adoption, ask)
+    if confirmation.cancel:
+        _undo_merges(run, adoption, "cancelled at the confirmation prompt")
+        adoption.cancelled = True
+        adoption.error = None
+        adoption.notes.append("cancelled: the render was rolled back too")
+        return
+    if not confirmation.merge:
+        adoption.notes.append("merges skipped: your files were left as they were")
+        return
+    try:
+        merge_generated_files(run, adoption, approved=confirmation.approved)
+    except _MergeError as exc:
+        _undo_merges(run, adoption, str(exc))
 
-    The merge may only add requirements; `merge_problem` proves that, and a
-    violation undoes the merge *and* the render, so a failed adoption still
-    means "the project is exactly as it was".
+
+@dataclass(frozen=True)
+class Confirmation:
+    """The human's answer to the merge plan."""
+
+    cancel: bool = False
+    merge: bool = True
+    approved: frozenset[str] = frozenset()
+
+
+def _confirm_merges(run: _Run, adoption: Adoption, ask: Callable[[str], str] | None) -> Confirmation:
+    """Show what would be merged and ask; returns the answer.
+
+    Without an `ask` callback this is a no-op: the automatic plan is applied,
+    which is what a non-interactive caller (CI, an MCP tool) wants. With one,
+    the questions are the plan itself and then, one by one, the values that
+    were *not* copied because they name the generated project -- those are the
+    decisions a human should make.
     """
-    target_pyproject = run.target / "pyproject.toml"
-    before_pyproject = run.backup.get("pyproject.toml") or (
-        target_pyproject.read_bytes() if target_pyproject.is_file() else None
-    )
-    merged = merge_template_dependencies(run.target, run.data, run.ref, apply=True)
-    if merged is None:
-        return
-    adoption.deps = merged.as_dict()
-    adoption.notes.extend(merged.notes)
-    problem = merge_problem(target_pyproject, before_pyproject)
-    if not problem:
-        return
-    if before_pyproject is not None:
-        target_pyproject.write_bytes(before_pyproject)
+    if ask is None:
+        return Confirmation()
+    plan = plan_merges(run.target, run.data, run.ref)
+    lines = _merge_summary_from(plan)
+    if not lines:
+        return Confirmation()
+    answer = ask(_MERGE_QUESTION.format(plan="\n".join(lines)))
+    if answer == "cancel":
+        return Confirmation(cancel=True)
+    if answer == "no":
+        return Confirmation(merge=False)
+    approved: set[str] = set()
+    for line in plan["tool_config"]["needs_your_value"]:
+        if ask(f"add {line}") == "yes":
+            approved.add(line.split(" (template:")[0])
+    return Confirmation(approved=frozenset(approved))
+
+
+_MERGE_QUESTION = """\
+these files the template also generates already exist, and this is what would
+be added to them (nothing of yours is rewritten):
+
+{plan}"""
+
+
+def _undo_merges(run: _Run, adoption: Adoption, problem: str) -> None:
+    """Restore every merged file, then take the whole run back.
+
+    The merges may only add; when one of them breaks that (a dropped key, a
+    rewritten line), the render goes too: a failed adoption still means "the
+    project is exactly as it was".
+    """
+    for relative, content in run.backup.items():
+        path = run.target / relative
+        if path.is_file() and path.read_bytes() != content:
+            path.write_bytes(content)
     _roll_back(run.target, run.backup, run.created, run.before_dirs)
     adoption.ok = False
     adoption.applied = False
-    adoption.error = f"dependency merge failed and was rolled back: {problem}"
-    adoption.restored = [*adoption.restored, "pyproject.toml"]
+    adoption.error = f"merge failed and was rolled back: {problem}"
+    adoption.restored = sorted(run.backup)
     adoption.removed = run.created
     adoption.notes.append("rolled back: the project is unchanged")
+
+
+def _plan_only(target: Path, data: dict[str, Any], ref: str, adoption: Adoption, detection: detect.Detection) -> None:
+    """Fill in a dry-run result: what would be rendered, and what merged."""
+    adoption.ok = True
+    adoption.unchanged = detection.kept
+    adoption.notes.append(f"dry run: would render {len(detection.added)} new file(s)")
+    plan = plan_merges(target, data, ref)
+    adoption.deps = plan["dependencies"]
+    adoption.tool_config = plan["tool_config"]
+    adoption.files_merged = plan["files"]
+    for section in (plan["dependencies"], plan["tool_config"]):
+        adoption.notes.extend(section["notes"])
 
 
 def merge_problem(target_pyproject: Path, before: bytes | None) -> str | None:
@@ -406,8 +556,8 @@ def merge_problem(target_pyproject: Path, before: bytes | None) -> str | None:
         before_document = tomllib.loads(before.decode("utf-8"))
     except tomllib.TOMLDecodeError:
         return None
-    after = _declared_requirements(after_document)
-    for name, raw in _declared_requirements(before_document).items():
+    after = pyproject_merge.declared_values(after_document)
+    for name, raw in pyproject_merge.declared_values(before_document).items():
         if name not in after:
             return f"{name} was dropped"
         if after[name] != raw:
@@ -439,6 +589,36 @@ def _load_answers(path: Path | None) -> dict[str, Any]:
     return dict(loaded or {})
 
 
+def _prompter(args: argparse.Namespace) -> Callable[[str], str] | None:
+    """The confirmation prompt, or None when nobody is there to answer it.
+
+    `--yes` (and any non-interactive run) applies the automatic plan: a tool
+    that blocks on stdin in CI or inside an MCP session is worse than one that
+    does the safe thing and says so. `--ask` forces the prompt.
+    """
+    if args.yes or args.dry_run:
+        return None
+    if not args.ask and not sys.stdin.isatty():
+        return None
+
+    def confirm(question: str) -> str:
+        print(question)
+        while True:
+            try:
+                answer = input("apply? [Y]es / [n]o (render only) / [c]ancel: ").strip().lower()
+            except EOFError:
+                print("(no input; taking that as cancel)")
+                return "cancel"
+            if answer in ("", "y", "yes"):
+                return "yes"
+            if answer in ("n", "no"):
+                return "no"
+            if answer in ("c", "cancel"):
+                return "cancel"
+
+    return confirm
+
+
 def render_report(adoption: Adoption) -> str:
     """Human-readable plan and outcome."""
     lines = [
@@ -449,7 +629,9 @@ def render_report(adoption: Adoption) -> str:
     if adoption.skip:
         lines.append(f"skip:   {' '.join(adoption.skip)}")
     lines.append("")
-    if not adoption.applied and adoption.error is None:
+    if adoption.cancelled:
+        lines.append("cancelled -- nothing was applied")
+    elif not adoption.applied and adoption.error is None:
         lines.append("dry run -- nothing written")
     elif adoption.error is not None:
         lines.append(f"FAILED: {adoption.error}")
@@ -461,6 +643,11 @@ def render_report(adoption: Adoption) -> str:
         lines.append(
             f"adopted: {len(adoption.created)} file(s) added, {len(adoption.unchanged)} existing file(s) untouched"
         )
+    merged = _merge_summary(adoption)
+    if merged:
+        heading = "merged into your files" if adoption.applied else "would merge into your files"
+        lines += ["", heading]
+        lines.extend(f"  {line}" for line in merged)
     if adoption.notes:
         lines.append("")
         lines.extend(f"  {note}" for note in adoption.notes)
@@ -472,6 +659,53 @@ def render_report(adoption: Adoption) -> str:
             "  git status   # untracked additions: CI, hygiene, AGENTS.md, ...",
         ]
     return "\n".join(lines)
+
+
+def _merge_summary_from(plan: dict[str, Any]) -> list[str]:
+    """The same summary, computed from a plan (used by the prompt and dry runs)."""
+    lines: list[str] = []
+    dependencies = plan.get("dependencies") or {}
+    if dependencies.get("added"):
+        added = [f"{section}: {', '.join(names)}" for section, names in dependencies["added"].items()]
+        lines.append(f"pyproject.toml dependencies -> {'; '.join(added)}")
+    config = plan.get("tool_config") or {}
+    if config.get("added"):
+        tables = sorted(config["added"])
+        shown = ", ".join(f"[{table}]" for table in tables[:3])
+        more = f" and {len(tables) - 3} more" if len(tables) > 3 else ""
+        lines.append(f"pyproject.toml tool config -> {len(tables)} table(s): {shown}{more}")
+    for entry in plan.get("files", []):
+        if entry.get("applied"):
+            detail = ", ".join(entry["added"][:6]) + ("..." if len(entry["added"]) > 6 else "")
+            lines.append(f"{Path(entry['path']).name} -> {detail}")
+        elif entry.get("reported"):
+            lines.append(f"{Path(entry['path']).name} -> reported, not written: {', '.join(entry['reported'][:6])}")
+        elif entry.get("notes"):
+            lines.append(f"{Path(entry['path']).name} -> {entry['notes'][0]}")
+    return lines
+
+
+def _merge_summary(adoption: Adoption) -> list[str]:
+    """One line per file the merge step touched, for the review step."""
+    lines: list[str] = []
+    if adoption.deps:
+        added = [f"{section}: {', '.join(names)}" for section, names in adoption.deps["added"].items()]
+        if added:
+            lines.append(f"pyproject.toml dependencies -> {'; '.join(added)}")
+    if adoption.tool_config and adoption.tool_config["added"]:
+        tables = sorted(adoption.tool_config["added"])
+        shown = ", ".join(f"[{table}]" for table in tables[:3])
+        more = f" and {len(tables) - 3} more" if len(tables) > 3 else ""
+        lines.append(f"pyproject.toml tool config -> {len(tables)} table(s): {shown}{more}")
+    for entry in adoption.files_merged:
+        if entry["applied"]:
+            detail = ", ".join(entry["added"][:6]) + ("..." if len(entry["added"]) > 6 else "")
+            lines.append(f"{Path(entry['path']).name} -> {detail}")
+        elif entry["reported"]:
+            lines.append(f"{Path(entry['path']).name} -> reported, not written: {', '.join(entry['reported'][:6])}")
+        elif entry["notes"]:
+            lines.append(f"{Path(entry['path']).name} -> {entry['notes'][0]}")
+    return lines
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -487,7 +721,9 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     )
     parser.add_argument("--takeover", action="store_true", help="replace a foreign template's answers file")
     parser.add_argument("--dry-run", action="store_true", help="plan only; write nothing")
-    parser.add_argument("--no-deps", action="store_true", help="do not merge the template's dependencies")
+    parser.add_argument("--yes", action="store_true", help="apply without the confirmation prompt")
+    parser.add_argument("--ask", action="store_true", help="confirm even when stdin is not a terminal")
+    parser.add_argument("--no-merge", action="store_true", help="do not merge anything into the files you already have")
     parser.add_argument("--json", action="store_true", help="print the result as JSON")
     return parser.parse_args(argv)
 
@@ -506,7 +742,8 @@ def main(argv: list[str] | None = None) -> int:
             skip=args.skip,
             takeover=args.takeover,
             dry_run=args.dry_run,
-            merge_deps=not args.no_deps,
+            merge_generated=not args.no_merge,
+            ask=_prompter(args),
         )
     except OwnershipError as exc:
         print(str(exc), file=sys.stderr)

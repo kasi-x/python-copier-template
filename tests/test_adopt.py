@@ -154,11 +154,57 @@ def test_runtime_dependencies_of_a_layer_are_merged(tmp_path: Path):
     assert "fastapi" in (project / "pyproject.toml").read_text()
 
 
-def test_adoption_does_not_merge_dependencies_when_asked_not_to(tmp_path: Path):
+def test_adoption_merges_gitignore_makefile_and_ci(tmp_path: Path):
+    """The files an adopter usually already has are merged, not skipped."""
+    project = make_project(tmp_path)
+    (project / ".gitignore").write_text("*.pyc\n# mine\ncustom/\n")
+    (project / "Makefile").write_text("mine:\n\techo mine\n")
+    workflows = project / ".github" / "workflows"
+    (workflows / "ci.yml").write_text("# MY OWN CI\n")
+
+    result = adopt.adopt(
+        project,
+        ref="HEAD",
+        answers={"use_recommended_toolchain": False, "package_manager": "uv", "task_runner": "make"},
+    )
+
+    assert result.ok
+    merged = {entry["path"]: entry for entry in result.files_merged}
+    assert any(path.endswith(".gitignore") for path in merged)
+    assert set(merged).intersection({str(project / ".gitignore"), str(project / "Makefile")})
+
+    assert (project / ".gitignore").read_text().startswith("*.pyc\n# mine\ncustom/\n")
+    assert ".pytest_cache/" in (project / ".gitignore").read_text()
+    assert (project / "Makefile").read_text().startswith("mine:\n\techo mine\n")
+    assert "check:" in (project / "Makefile").read_text()
+    assert (workflows / "ci.yml").read_text() == "# MY OWN CI\n", "their workflow is never rewritten"
+    caller = workflows / "copier-ci.yml"
+    assert caller.is_file() and "Copier CI" in caller.read_text()
+    assert "name: my-ci" not in caller.read_text()
+
+
+def test_adoption_merges_tool_config_but_not_project_paths(tmp_path: Path):
+    project = make_project(tmp_path)
+    (project / "pyproject.toml").write_text(
+        '[project]\nname = "legacy"\nversion = "0"\n\n[tool.ruff]\nline-length = 100\n'
+    )
+
+    result = adopt.adopt(project, ref="HEAD")
+
+    assert result.ok and result.tool_config is not None
+    text = (project / "pyproject.toml").read_text()
+    assert "line-length = 100" in text, "their setting survives"
+    assert "[tool.ruff.lint]" in text and 'select = ["ALL"]' in text
+    assert "src/" not in text.split("[dependency-groups]")[0].split("[tool.ruff.lint]")[1][:200]
+    assert any("tool.ruff.line-length" in line for line in result.tool_config["kept"])
+    assert result.tool_config["needs_your_value"], "path-shaped values are reported, not copied"
+
+
+def test_adoption_does_not_merge_when_asked_not_to(tmp_path: Path):
     project = make_project(tmp_path)
     before = (project / "pyproject.toml").read_text()
 
-    result = adopt.adopt(project, ref="HEAD", merge_deps=False)
+    result = adopt.adopt(project, ref="HEAD", merge_generated=False)
 
     assert result.ok and result.deps is None
     assert (project / "pyproject.toml").read_text() == before
@@ -213,12 +259,12 @@ def test_refuses_a_foreign_template_until_takeover(tmp_path: Path):
 
 def test_main_exit_codes(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     project = make_project(tmp_path)
-    assert adopt.main([str(project), "--ref", "HEAD", "--dry-run", "--no-deps"]) == 0
+    assert adopt.main([str(project), "--ref", "HEAD", "--dry-run", "--no-merge"]) == 0
     assert "dry run" in capsys.readouterr().out
 
     # an uncovered collision: exit 1, and the project is back to its old self
     before = tree(project)
-    assert adopt.main([str(project), "--ref", "HEAD", "--no-deps", "--skip", "nothing-actually-collides"]) == 1
+    assert adopt.main([str(project), "--ref", "HEAD", "--no-merge", "--skip", "nothing-actually-collides"]) == 1
     assert "FAILED" in capsys.readouterr().out
     assert tree(project) == before
 

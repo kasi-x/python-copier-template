@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Merge the template's dependencies into an adopter's pyproject.toml.
+"""Merge the template's dependencies and tool config into an adopter's pyproject.toml.
 
 The template generates a `pyproject.toml` with the runtime and dev
-dependencies a project needs; when it is adopted into an existing project
-that file is protected (it is the adopter's), so those dependencies used to
-end up only in the adoption report — "wire these up yourself". This module
-does the additive half of that by hand instead:
+dependencies a project needs, plus the tool config that makes its checks pass
+(ruff, typos, pytest, coverage, ...); when it is adopted into an existing
+project that file is protected (it is the adopter's), so all of it used to end
+up only in the adoption report — "wire these up yourself". This module does
+the additive half of that by hand instead:
 
 - **add what is missing, never touch what is there.** A dependency the
   adopter already declares keeps its own specifier, even when the template
@@ -16,9 +17,16 @@ does the additive half of that by hand instead:
   (`[project]` for PEP 621, `[tool.poetry]` for the legacy Poetry layout),
   or when it does not parse.
 
+For `[tool.*]` tables the same rule applies key by key, with one extra
+exclusion: a value that names *this* project (a `src/<pkg>` path, the
+package's import path, the distribution name) is not a setting to copy into
+somebody else's file, so it is reported instead. That is what keeps
+`basedpyright.include = ["src/probe"]` out of an adopter whose source lives
+somewhere else, while `ruff.lint.select = ["ALL"]` still gets merged.
+
 That is the boundary this stays on: no reconciliation of conflicting
 constraints, no section-level rewriting of the adopter's configuration --
-just the missing names, appended.
+just the missing names and keys, appended.
 
 Usage (normally through tools/adopt.py, which is the transactional caller):
 
@@ -33,6 +41,7 @@ import re
 import tomllib
 from dataclasses import dataclass
 from dataclasses import field
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -273,12 +282,211 @@ def merge_dependencies(target_path: Path, source_path: Path, *, apply: bool = Tr
     return result
 
 
+BUILD_TOOLS = frozenset(
+    {
+        "setuptools",
+        "setuptools_scm",
+        "uv",
+        "pixi",
+        "poetry",
+        "pdm",
+        "hatch",
+        "flit",
+        "maturin",
+        "cibuildwheel",
+    }
+)
+
+
+@dataclass
+class ConfigMerge:
+    """What the tool-config merge added, kept, and refused to copy."""
+
+    added: dict[str, list[str]] = field(default_factory=dict)
+    kept: list[str] = field(default_factory=list)
+    needs_your_value: list[str] = field(default_factory=list)
+    skipped_tables: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
+    applied: bool = False
+
+    def as_dict(self) -> dict[str, Any]:
+        """Serializable form used by --json and tools/adopt.py."""
+        return {
+            "added": self.added,
+            "kept": self.kept,
+            "needs_your_value": self.needs_your_value,
+            "skipped_tables": self.skipped_tables,
+            "notes": self.notes,
+            "applied": self.applied,
+        }
+
+
+def _mentions_identity(text: str, identity: tuple[str, ...]) -> bool:
+    return any(token and token in text for token in identity)
+
+
+def _is_project_specific(key: str, value: Any, identity: tuple[str, ...]) -> bool:
+    """True when a value describes the generated project rather than the tool."""
+    if _mentions_identity(key, identity):
+        return True
+    items = value if isinstance(value, list) else [value]
+    for item in items:
+        if not isinstance(item, str):
+            continue
+        if _mentions_identity(item, identity) or "/" in item:
+            return True
+    return False
+
+
+def _leaf_items(table: Any) -> list[tuple[str, Any]]:
+    return [(str(key), value) for key, value in table.items()]
+
+
+@dataclass(frozen=True)
+class _ConfigContext:
+    """What the recursion needs to know about the adopter's project."""
+
+    table_path: str
+    identity: tuple[str, ...]
+    result: ConfigMerge
+    approved: frozenset[str] = frozenset()
+
+
+def _merge_config_table(target_table: Any, source_table: Any, path: str, context: _ConfigContext) -> None:
+    for key, value in _leaf_items(source_table):
+        key_path = f"{path}.{key}"
+        if isinstance(value, dict):
+            if key in BUILD_TOOLS:
+                if path == "tool":
+                    context.result.skipped_tables.append(key_path)
+                continue
+            if key not in target_table:
+                target_table[key] = tomlkit.table()
+            _merge_config_table(target_table[key], value, key_path, replace(context, table_path=key_path))
+            continue
+        _merge_config_key(target_table, key, value, key_path, context)
+
+
+def _merge_config_key(target_table: Any, key: str, value: Any, key_path: str, context: _ConfigContext) -> None:
+    """Add one leaf key, or explain why it was not copied."""
+    if key_path not in context.approved and _is_project_specific(key_path, value, context.identity):
+        context.result.needs_your_value.append(f"{key_path} (template: {value!r})")
+        return
+    if key not in target_table:
+        target_table[key] = value
+        context.result.added.setdefault(context.table_path, []).append(key)
+        return
+    existing = target_table[key]
+    if repr(existing) == repr(value):
+        return
+    if isinstance(existing, list) and isinstance(value, list):
+        extra = [str(item) for item in value if item not in existing]
+        detail = f"{key_path}: kept yours; template also has {extra}"
+        missing = [str(item) for item in existing if item not in value]
+        if missing:
+            detail += f"; yours only: {missing}"
+        context.result.kept.append(detail)
+        return
+    context.result.kept.append(f"{key_path}: kept {existing!r} (template: {value!r})")
+
+
+def merge_tool_config(
+    target_path: Path,
+    source_path: Path,
+    *,
+    identity: tuple[str, ...] = (),
+    approved: frozenset[str] = frozenset(),
+    apply: bool = True,
+) -> ConfigMerge:
+    """Add the template's missing `[tool.*]` keys to `target_path`.
+
+    Only keys the target does not have are written; a key it does have is
+    reported, never rewritten. Values that name the generated project are
+    reported too (see `_is_project_specific`), and tables that describe how a
+    project is built or resolved are skipped: their values encode this
+    template's layout and index choices, not a lint preference.
+    """
+    result = ConfigMerge()
+    if not target_path.is_file() or not source_path.is_file():
+        return result
+    try:
+        document = tomlkit.parse(target_path.read_text(encoding="utf-8"))
+        source = tomllib.loads(source_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001  WHYNOT: tomlkit and tomllib raise their own parse errors; the caller reports them.
+        result.notes.append(f"tool config not merged ({exc})")
+        return result
+    source_tool = source.get("tool")
+    if not isinstance(source_tool, dict) or not source_tool:
+        return result
+    if not isinstance(document.get("tool"), dict):
+        document["tool"] = tomlkit.table()
+    _merge_config_table(
+        document["tool"],
+        source_tool,
+        "tool",
+        _ConfigContext(table_path="tool", identity=tuple(identity), result=result, approved=approved),
+    )
+    if result.skipped_tables:
+        result.notes.append(
+            "not merged (build/environment config; wire by hand if you want it): " + ", ".join(result.skipped_tables)
+        )
+    if not result.added and not result.kept and not result.needs_your_value:
+        result.notes.append("no tool config to add")
+    if apply and (result.added or result.notes):
+        target_path.write_text(tomlkit.dumps(document), encoding="utf-8")
+        result.applied = True
+    return result
+
+
+def declared_values(document: dict[str, Any]) -> dict[str, str]:
+    """Every requirement and `[tool.*]` leaf value, as path -> repr.
+
+    Used to verify an edit: everything in here must still be there, unchanged,
+    after the merge.
+    """
+    found: dict[str, str] = {}
+    for keys in (
+        ("project", "dependencies"),
+        ("dependency-groups", "dev"),
+        ("tool", "poetry", "dependencies"),
+        ("tool", "poetry", "dev-dependencies"),
+    ):
+        node: Any = document
+        for key in keys:
+            node = node.get(key) if isinstance(node, dict) else None
+        if isinstance(node, list):
+            for entry in node:
+                if isinstance(entry, str):
+                    found.setdefault(f"{'.'.join(keys)}::{canonical(entry)}", entry)
+        elif isinstance(node, dict):
+            for name, value in node.items():
+                found.setdefault(f"{'.'.join(keys)}::{canonical(str(name))}", repr(value))
+
+    tool = document.get("tool")
+    if isinstance(tool, dict):
+        _collect_leaves(tool, "tool", found)
+    return found
+
+
+def _collect_leaves(table: dict[str, Any], path: str, found: dict[str, str]) -> None:
+    for key, value in table.items():
+        key_path = f"{path}.{key}"
+        if isinstance(value, dict):
+            _collect_leaves(value, key_path, found)
+        else:
+            found.setdefault(key_path, repr(value))
+
+
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Add the template's missing dependencies to a pyproject.toml.")
     parser.add_argument("--target", type=Path, required=True, help="the adopter's pyproject.toml")
     parser.add_argument(
         "--source", type=Path, required=True, help="the generated pyproject.toml to take dependencies from"
     )
+    parser.add_argument(
+        "--identity", action="append", default=None, help="name/path token to treat as project-specific"
+    )
+    parser.add_argument("--tool-config", action="store_true", help="merge [tool.*] keys as well as dependencies")
     parser.add_argument("--dry-run", action="store_true", help="report without writing")
     parser.add_argument("--json", action="store_true", help="print the result as JSON")
     return parser.parse_args(argv)
@@ -288,8 +496,16 @@ def main(argv: list[str] | None = None) -> int:
     """Entry point: merge (or report) and print what happened."""
     args = _parse_args(argv)
     result = merge_dependencies(args.target, args.source, apply=not args.dry_run)
+    config = None
+    if args.tool_config:
+        config = merge_tool_config(
+            args.target, args.source, identity=tuple(args.identity or ()), apply=not args.dry_run
+        )
     if args.json:
-        print(json.dumps(result.as_dict(), indent=2))
+        payload = result.as_dict()
+        if config is not None:
+            payload["tool_config"] = config.as_dict()
+        print(json.dumps(payload, indent=2))
         return 0
     print(f"{args.target}: {result.style}")
     for section, names in result.added.items():
@@ -300,7 +516,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  differs: {line}")
     for note in result.notes:
         print(f"  note: {note}")
+    _print_config(config)
     return 0
+
+
+def _print_config(config: ConfigMerge | None) -> None:
+    if config is None:
+        return
+    for table, keys in config.added.items():
+        print(f"  added [{table}]: {', '.join(keys)}")
+    for line in config.kept:
+        print(f"  kept: {line}")
+    for line in config.needs_your_value:
+        print(f"  needs your value: {line}")
+    for note in config.notes:
+        print(f"  note: {note}")
 
 
 if __name__ == "__main__":

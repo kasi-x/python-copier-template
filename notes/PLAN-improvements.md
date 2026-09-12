@@ -551,7 +551,7 @@ extras/markers は推測せず報告。`--no-deps` で無効化。マージは�
 | `support.yml` | W4 | W5 は読むだけ |
 | `tools/detect.py`, `tests/test_detect.py` | 実装済み | W6 は import して使う。W8 は参照のみ |
 | `tools/adopt.py`, `tests/test_adopt.py` | 実装済み | W6 の wrapper CLI はこれを呼ぶ（`--ref` 判断とロールバックを再実装しない） |
-| `tools/pyproject_deps.py`, `tests/test_pyproject_deps.py` | 実装済み | adopt の依存マージ専用。W5 の docs 生成とは独立 |
+| `tools/pyproject_merge.py`, `tools/file_merge.py` と各テスト | 実装済み | adopt の加算マージ専用。W5 の docs 生成とは独立 |
 | `tools/questionnaire.py`, `tools/mcp_server.py` と各テスト | 実装済み | W-P の残り（`_load_questions` 委譲）、W5 は `load_questions()` を使う |
 | `Taskfile.yml` の test-fast / test-heavy / mcp | 実装済み | W9 は marker 化のみ |
 | adopt の T1 ファイル（`.github` 系 / `.gitlab-ci.yml`）と `questions/adoption.yml` | 変更不要（W8 は `--skip` 方式で決着。触るなら質問追加時のみ） | W6 の `choices` 変更とは別ファイル |

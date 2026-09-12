@@ -157,6 +157,102 @@ def test_optional_extras_are_not_invented(tmp_path: Path):
     assert any("optional extras not merged" in note and "experiment" in note for note in result.notes)
 
 
+TOOL_SOURCE = """\
+[project]
+name = "probe"
+dependencies = ["structlog"]
+
+[tool.ruff]
+line-length = 88
+src = ["src/probe", "tests"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+extend-ignore = ["D10", "T20"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*" = ["S101"]
+"src/probe/_version.py" = ["ALL"]
+
+[tool.typos]
+locale = "en-us"
+
+[tool.setuptools_scm]
+version_file = "src/probe/_version.py"
+"""
+
+
+def test_tool_config_merges_generic_keys(tmp_path: Path):
+    target = write(
+        tmp_path,
+        "pyproject.toml",
+        '[project]\nname = "legacy"\n\n[tool.ruff]\nline-length = 100\n\n[tool.typos]\nlocale = "en-gb"\n',
+    )
+    source = write(tmp_path, "source.toml", TOOL_SOURCE)
+
+    result = pyproject_merge.merge_tool_config(target, source, identity=("probe",))
+
+    assert "tool.ruff.lint" in result.added
+    assert "select" in result.added["tool.ruff.lint"]
+    assert any("tool.ruff.line-length" in line and "100" in line for line in result.kept)
+    assert any("tool.typos.locale" in line for line in result.kept)
+    parsed = tomllib.loads(target.read_text())
+    assert parsed["tool"]["ruff"]["line-length"] == 100, "their setting is untouched"
+    assert parsed["tool"]["ruff"]["lint"]["select"] == ["ALL"]
+    assert parsed["tool"]["typos"]["locale"] == "en-gb"
+
+
+def test_tool_config_reports_project_specific_values(tmp_path: Path):
+    """Values naming this project must not be copied into someone else's file."""
+    target = write(tmp_path, "pyproject.toml", '[project]\nname = "legacy"\n')
+    source = write(tmp_path, "source.toml", TOOL_SOURCE)
+
+    result = pyproject_merge.merge_tool_config(target, source, identity=("probe",))
+
+    assert any("tool.ruff.src" in line for line in result.needs_your_value)
+    assert any("per-file-ignores" in line and "_version.py" in line for line in result.needs_your_value)
+    parsed = tomllib.loads(target.read_text())
+    assert "src" not in parsed["tool"]["ruff"], "the template's paths stay out"
+    assert "src/probe/_version.py" not in target.read_text()
+    assert "tests/**/*" in parsed["tool"]["ruff"]["lint"]["per-file-ignores"], "generic patterns do merge"
+
+
+def test_tool_config_skips_build_tables(tmp_path: Path):
+    target = write(tmp_path, "pyproject.toml", '[project]\nname = "legacy"\n')
+    source = write(tmp_path, "source.toml", TOOL_SOURCE)
+
+    result = pyproject_merge.merge_tool_config(target, source, identity=("probe",))
+
+    assert result.skipped_tables == ["tool.setuptools_scm"]
+    assert "setuptools_scm" not in target.read_text()
+    assert any("build/environment config" in note for note in result.notes)
+
+
+def test_tool_config_merge_is_idempotent_and_reports_lists(tmp_path: Path):
+    target = write(
+        tmp_path,
+        "pyproject.toml",
+        '[project]\nname = "legacy"\n\n[tool.ruff.lint]\nextend-ignore = ["E501"]\n',
+    )
+    source = write(tmp_path, "source.toml", TOOL_SOURCE)
+
+    first = pyproject_merge.merge_tool_config(target, source, identity=("probe",))
+    once = target.read_text()
+    second = pyproject_merge.merge_tool_config(target, source, identity=("probe",))
+
+    assert target.read_text() == once
+    assert not second.added
+    assert any("extend-ignore" in line and "D10" in line for line in first.kept), "the missing codes are named"
+
+
+def test_declared_values_covers_tool_leaves():
+    document = tomllib.loads(TOOL_SOURCE)
+    values = pyproject_merge.declared_values(document)
+    assert values["tool.ruff.line-length"] == "88"
+    assert values["tool.ruff.lint.select"] == "['ALL']"
+    assert any(key.startswith("project.dependencies::") for key in values)
+
+
 def test_cli_reports_and_applies(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     target = write(tmp_path, "pyproject.toml", '[project]\nname = "x"\ndependencies = []\n')
     source = write(tmp_path, "source.toml", SOURCE)
@@ -167,3 +263,7 @@ def test_cli_reports_and_applies(tmp_path: Path, capsys: pytest.CaptureFixture[s
 
     assert pyproject_merge.main(["--target", str(target), "--source", str(source)]) == 0
     assert "structlog" in target.read_text()
+
+    # --tool-config adds the [tool.*] keys too
+    assert pyproject_merge.main(["--target", str(target), "--source", str(source), "--tool-config"]) == 0
+    assert "[tool.ruff.lint]" not in target.read_text(), "SOURCE has no tool tables"

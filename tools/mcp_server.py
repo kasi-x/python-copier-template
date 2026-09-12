@@ -143,7 +143,7 @@ def adopt_project(
     ref: str | None = None,
     answers: dict[str, Any] | None = None,
     dry_run: bool = True,
-    merge_deps: bool = True,
+    merge: bool = True,
 ) -> dict[str, Any]:
     """Adopt the template into an existing project, transactionally.
 
@@ -153,11 +153,15 @@ def adopt_project(
     which dependencies `deps` would add to the project's pyproject.toml. Call
     it first.
 
-    `merge_deps` (default true) merges the dependencies the template would
-    have generated into the adopter's pyproject.toml: only names it does not
-    already declare are added, an existing pin is never rewritten (a
-    difference is reported in `deps.differing`), and the rest of the file is
-    left alone. Pass false to leave the file untouched.
+    `merge` (default true) adds what the template generated to the files the
+    project already has, always additively: dependencies and `[tool.*]` keys
+    in pyproject.toml (an existing value is never rewritten — a difference
+    lands in `deps.differing` / `tool_config.kept`, and a value that names
+    *this* project, like `src/<pkg>`, is reported in
+    `tool_config.needs_your_value` instead of copied), missing `.gitignore`
+    patterns, missing Makefile/justfile recipes, and the template's
+    read-only CI as a second `copier-ci.yml` when `ci.yml` is taken. Pass
+    false to touch nothing but the render.
 
     With `dry_run=False` the adoption is verified: if any existing file
     changed or disappeared -- a collision the plan did not cover -- the run is
@@ -178,7 +182,7 @@ def adopt_project(
                 ref=ref,
                 answers=answers or {},
                 dry_run=dry_run,
-                merge_deps=merge_deps,
+                merge_generated=merge,
             )
     except adopt.OwnershipError as exc:
         raise ToolError(str(exc)) from exc

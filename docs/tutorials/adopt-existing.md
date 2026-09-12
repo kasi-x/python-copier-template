@@ -157,10 +157,13 @@ from `justfile` / `Taskfile.yml` are yours to copy into your own setup.
 
 The first-class alternative is the `existing_project` answer
 (`--data existing_project=true`), which protects those files by default
-instead of listing each `--skip`, and adds the dependencies the template
-would have generated to your `pyproject.toml` (missing names only — see
-[Adopt Into an Existing Project](../how-to/adopt.md)); the `tools/adopt.py`
-driver above wraps exactly that, plus the rollback.
+instead of listing each `--skip`, and merges what the template generated into
+the files you kept — dependencies and `[tool.*]` lint settings in
+`pyproject.toml`, missing `.gitignore` patterns, missing Makefile/justfile
+recipes, and a `copier-ci.yml` beside your own workflow. The
+`tools/adopt.py` driver above wraps exactly that, plus the rollback; see
+[Adopt Into an Existing Project](../how-to/adopt.md) for what is merged and
+what is deliberately left to you.
 
 !!! note
     Adopting adds files; it does not remove or merge your files. (The one

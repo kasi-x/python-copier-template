@@ -166,6 +166,7 @@ async def test_adopt_project_plans_then_applies(client: Client, tmp_path: Path):
     assert plan["ok"] and plan["applied"] is False
     assert plan["skip"] == [".github/workflows/ci.yml"]
     assert plan["deps"]["added"]["dev"], "the plan includes the dependency merge"
+    assert plan["tool_config"] is not None, "and the tool-config merge"
     assert (tmp_path / "README.md").read_text() == "# mine\n"
 
     applied = await call(client, "adopt_project", {"path": str(tmp_path), "ref": "HEAD", "dry_run": False})
