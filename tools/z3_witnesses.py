@@ -26,9 +26,10 @@ are encoded as Z3 constraints:
   `combinable` internals from questions/_internal.yml are inlined there).
   copier.yml stays the source of truth: every question is loaded with
   copier's own loader, a gate/include with no projection is an error, and
-  each projected branch a leaf takes is cross-checked against the existing
-  encoder (tests/test_copier_structure.py:491 `_when_expr_satisfiable`,
-  imported -- never modified; see that file's lines 427-489 for the parser).
+  each projected branch a leaf takes is cross-checked against the shared
+  encoder (tools/when_model.py `when_expr_satisfiable`; its grammar and its
+  blind spots are documented there, and tests/test_when_model.py is the
+  differential test that pins its verdicts to real Jinja evaluation).
 
 Everything else stays at its copier default (tools/batch.py renders with
 `defaults=True`): the detail questions an off gate reveals keep their
@@ -54,12 +55,10 @@ declared layout: the artifact set that shape must produce, and no unrendered
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from types import ModuleType
 from typing import Any
 from typing import cast
 
@@ -68,7 +67,10 @@ import z3
 from jinja2 import Template
 
 TOP = Path(__file__).resolve().parent.parent
-STRUCTURE_TESTS = TOP / "tests" / "test_copier_structure.py"
+if str(TOP) not in sys.path:  # tests import tools/ the same way (no root package)
+    sys.path.insert(0, str(TOP))
+
+from tools import when_model  # noqa: E402
 
 # The Project Details every leaf pins, so fixtures stay self-consistent
 # (validators, URLs): mirrors tests/test_recommended_path.py:25-34.
@@ -214,25 +216,13 @@ class Space:
         return [self.pt, self.oj_category, self.oj_kind, *self.gates.values(), *self.includes.values()]
 
 
-def _structure_module() -> ModuleType:
-    """Load tests/test_copier_structure.py -- the project's Z3 encoder lives there."""
-    spec = importlib.util.spec_from_file_location("_witness_structure", STRUCTURE_TESTS)
-    if spec is None or spec.loader is None:
-        msg = f"cannot import {STRUCTURE_TESTS}"
-        raise SystemExit(msg)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module  # dataclasses/pickling resolve their module through sys.modules
-    spec.loader.exec_module(module)
-    return module
-
-
-def _static_choices(structure: ModuleType, questions: dict[str, dict], name: str) -> list[str]:
-    """A question's choice values, mapping form normalized (tests/...:473-489, §C2)."""
+def _static_choices(questions: dict[str, dict], name: str) -> list[str]:
+    """A question's choice values, mapping form normalized (when_model.static_str_choices, §C2)."""
     choices = questions[name].get("choices")
     values = (
         [str(value) for value in choices.values()]
         if isinstance(choices, dict)
-        else [str(value) for value in structure._static_str_choices(questions[name])]  # noqa: SLF001
+        else [str(value) for value in when_model.static_str_choices(questions[name])]
     )
     if not values:
         msg = f"question {name!r} has no static choices; the leaf space needs a fixed domain"
@@ -331,24 +321,6 @@ def _bool(expr: object) -> z3.BoolRef:
     return cast("z3.BoolRef", expr)
 
 
-def _when_domains(structure: ModuleType, questions: dict[str, dict], pt_domain: list[str]) -> dict[str, list[str]]:
-    """Str domains for the imported encoder, built like its own test (lines 652-670)."""
-    referenced: set[str] = set()
-    for question in questions.values():
-        when = question.get("when")
-        if isinstance(when, str):
-            referenced |= structure._jinja_identifiers(when)  # noqa: SLF001
-    domains: dict[str, list[str]] = {"project_type": pt_domain}
-    for name in sorted(referenced):
-        question = questions.get(name)
-        if question is None or question.get("type") == "bool":
-            continue
-        values = structure._static_str_choices(question)  # noqa: SLF001
-        if values:
-            domains[name] = values
-    return domains
-
-
 def _models(space: Space) -> list[dict[Any, Any]]:
     """Enumerate every satisfying model, blocking each one as it is found."""
     found: list[dict[Any, Any]] = []
@@ -400,7 +372,6 @@ def _expect(project_type: str, oj_kind: str, include: str | None, gate_off: str 
 
 
 def _leaf(
-    structure: ModuleType,
     questions: dict[str, dict],
     space: Space,
     values: dict[Any, Any],
@@ -410,11 +381,11 @@ def _leaf(
     project_type = space.pt_domain[values[space.pt].as_long()]
     off = [name for name, gate in space.gates.items() if not z3.is_true(values[gate])]
     on = [name for name, include in space.includes.items() if z3.is_true(values[include])]
-    # The projected branch must also be satisfiable for the project's own
-    # encoder -- the questionnaire, not this tool, has the last word.
+    # The projected branch must also be satisfiable for the shared encoder --
+    # the questionnaire, not this tool, has the last word.
     for name in [*off, *on]:
         when = questions[name].get("when")
-        if isinstance(when, str) and not structure._when_expr_satisfiable(when, domains, z3):  # noqa: SLF001
+        if isinstance(when, str) and not when_model.when_expr_satisfiable(when, domains, z3):
             msg = f"branch {name!r} projected as reachable but its when {when!r} is unsatisfiable"
             raise SystemExit(msg)
 
@@ -448,15 +419,12 @@ def _leaf(
 
 def build() -> tuple[dict[str, Any], list[Leaf]]:
     """Return the declared leaf space and its enumerated leaves."""
-    structure = _structure_module()
-    questions, _order = structure._load_questions()  # noqa: SLF001
-    pt_domain = [
-        value for value in _static_choices(structure, questions, "project_type") if value not in EXCLUDED_PROJECT_TYPES
-    ]
-    oj_categories = _static_choices(structure, questions, "oj_category")
+    questions, _order = when_model.load_questions()
+    pt_domain = [value for value in _static_choices(questions, "project_type") if value not in EXCLUDED_PROJECT_TYPES]
+    oj_categories = _static_choices(questions, "oj_category")
     space = _build_space(questions, pt_domain, oj_categories)
-    domains = _when_domains(structure, questions, pt_domain)
-    leaves = [_leaf(structure, questions, space, values, domains) for values in _models(space)]
+    domains = when_model.str_domains(questions, pt_domain)
+    leaves = [_leaf(questions, space, values, domains) for values in _models(space)]
     leaves.sort(key=lambda leaf: leaf.id)
     ids = [leaf.id for leaf in leaves]
     if len(ids) != len(set(ids)):

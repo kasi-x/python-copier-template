@@ -46,7 +46,6 @@ from __future__ import annotations
 import contextlib
 import fcntl
 import hashlib
-import importlib.util
 import json
 import os
 import re
@@ -57,7 +56,6 @@ import time
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
-from types import ModuleType
 from typing import Any
 
 import pytest
@@ -67,6 +65,7 @@ if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools
     sys.path.insert(0, str(TOP))
 
 from tools import batch  # noqa: E402
+from tools import when_model  # noqa: E402
 
 # Imported so pytest can inject the session render cache (it lives in
 # render_cache.py, not conftest.py: the template renders conftest.py into every
@@ -77,7 +76,6 @@ from render_cache import render_cache as render_cache  # noqa: E402, PLC0414
 WITNESSES = TOP / "tests" / "matrix" / "witnesses.jsonl"
 COVERAGE = TOP / "tests" / "matrix" / "witnesses.json"
 GENERATOR = TOP / "tools" / "z3_witnesses.py"
-STRUCTURE_TESTS = TOP / "tests" / "test_copier_structure.py"
 
 # The ledger is written by several xdist workers at once (every verdict merges
 # into it) and rewritten on every run, so both the read-modify-write lock and
@@ -115,11 +113,18 @@ FULL_SAMPLE: tuple[str, ...] = (
 )
 
 # Per-leaf timeouts: the full tier is bounded by PLAN-improvements §W3's 550s,
-# and the batch runner renders 205 projects serially (no venv, ~1.5s each) so
-# it needs the wider budget.
+# and the batch runner renders 205 projects (no venv, ~0.6-1.5s each) so it
+# needs the wider budget.
 FULL_TIMEOUT = 550
 BATCH_TIMEOUT = 1800
 GENERATOR_TIMEOUT = 300
+
+# tools/batch.py --jobs for the whole-JSONL run: the requests are independent
+# (each renders into its own directory), so the 205-leaf verdict is bounded by
+# the slowest worker instead of the sum. Capped because this test is itself one
+# of pytest-xdist's `-n auto` workers: 8 keeps the runner at ~8x while leaving
+# the machine to its siblings, and `--jobs 1` stays the serial fallback.
+BATCH_JOBS = min(8, os.cpu_count() or 1)
 
 # How long test_witness_coverage waits for sibling xdist workers to record the
 # leaves that neither this session nor the committed ledger has a verdict for.
@@ -247,7 +252,8 @@ def witness_results(tmp_path_factory: pytest.TempPathFactory) -> ResultStore:
 
     pytest hands each xdist worker its own basetemp (``<controller>/popen-gwN``
     under the usual ``-n auto``), so the shared store lives in its parent --
-    the same trick tests/render_cache.py uses for its cache.
+    the ledger, unlike tests/render_cache.py's on-disk render cache, is
+    per-run state.
     """
     base = tmp_path_factory.getbasetemp()
     worker = os.environ.get("PYTEST_XDIST_WORKER")
@@ -312,16 +318,6 @@ def test_witness_leaves_match_the_generator() -> None:
     )
 
 
-def _structure_module() -> ModuleType:
-    """Load tests/test_copier_structure.py -- the project's Z3 encoder lives there."""
-    spec = importlib.util.spec_from_file_location("_witness_matrix_structure", STRUCTURE_TESTS)
-    assert spec is not None and spec.loader is not None, f"cannot import {STRUCTURE_TESTS}"
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
 def _conditional_answers(leaf: Witness) -> list[str]:
     """The answers that assert a conditional branch (gate off, or layer on)."""
     return sorted(
@@ -343,10 +339,9 @@ def test_witness_leaves_are_reachable() -> None:
     name them.
     """
     z3 = pytest.importorskip("z3")
-    structure = _structure_module()
-    questions, _order = structure._load_questions()  # noqa: SLF001
-    domains = structure._sweep_str_domains(questions)  # noqa: SLF001
-    project_types = structure._static_str_choices(questions["project_type"])  # noqa: SLF001
+    questions, _order = when_model.load_questions()
+    domains = when_model.str_domains(questions)
+    project_types = when_model.static_str_choices(questions["project_type"])
 
     uncovered: list[str] = []
     for leaf in LEAVES:
@@ -359,7 +354,7 @@ def test_witness_leaves_are_reachable() -> None:
                 uncovered.append(f"{leaf.id}: answers {name}, which the questionnaire no longer declares")
                 continue
             when = question.get("when")
-            if isinstance(when, str) and not structure._when_expr_satisfiable(when, domains, z3):  # noqa: SLF001
+            if isinstance(when, str) and not when_model.when_expr_satisfiable(when, domains, z3):
                 uncovered.append(
                     f"{leaf.id}: answers {name}={leaf.answers[name]!r}, but its when {when!r} can never hold"
                 )
@@ -545,7 +540,7 @@ def test_witness_batch_runner_executes_every_leaf(witness_results: ResultStore):
     ``-m full`` run records what the real engine saw.
     """
     proc = _run_python(
-        ["tools/batch.py", str(WITNESSES.relative_to(TOP)), "--json"],
+        ["tools/batch.py", str(WITNESSES.relative_to(TOP)), "--json", "--jobs", str(BATCH_JOBS)],
         timeout=BATCH_TIMEOUT,
     )
     assert proc.returncode in (0, 1), (
