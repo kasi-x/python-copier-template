@@ -35,98 +35,110 @@ plus the list of what this template deliberately does *not* try to be.
 
 The template asks a few questions and generates a project tailored to your answers.
 
-**Recommended settings, per area** (`use_recommended_agent`,
-`use_recommended_toolchain`, `use_recommended_data_science`,
-`use_recommended_polish`, `use_recommended_docs`, `use_recommended_quality`,
-`use_recommended_license`, `use_recommended_integrations`,
-`use_recommended_web_api`, `use_recommended_security`)
-- Besides the essentials (project type, package name, author, ...), each
-  customisable area of the template — AI-agent scaffolding, toolchain,
-  data-science options (GPU, DUO/CARE data governance), online-judge kind,
-  web-API stack, layout & style, docs, type-checking & strictness, license &
-  FAIR metadata, deployment & integrations (including the logging library),
-  security & compliance (SHA-pinned CI, SECURITY.md, zizmor) — asks a single
-  "use the recommended settings?" question first (default: yes), with the
-  recommendation spelled out in its help text.
-- Answer **yes** and the area is configured from its defaults without
-  asking anything else; answer **no** and the detailed question(s) for that
-  area are asked (package manager choice, CI provider, GPU, cloud provider,
-  and so on).
+**Recommended settings, per area.** Besides the essentials (project type,
+package name, author, ...), each customisable area asks a single "use the
+recommended settings?" question first (default: yes), with the recommendation
+spelled out in its help text. Answer **yes** and that area is configured from
+its recommended defaults without asking anything else; answer **no** and the
+detailed question(s) for that area are asked — [the questionnaire
+reference](docs/reference/questionnaire.md) lists every one.
+
+<!-- BEGIN GENERATED: features-areas (tools/gen_docs.py --write) -->
+| Area gate | Recommended default | Asked when |
+|---|---|---|
+| `use_recommended_agent` | yes — a plain library / CLI without agent tooling. | library / cli |
+| `use_recommended_toolchain` | uv (package manager) + just (task runner). | not ros2 + pixi |
+| `use_recommended_data_science` | GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer). | the data_science layer is present |
+| `use_recommended_polish` | src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings. | all |
+| `use_recommended_docs` | zensical (Zensical, an MkDocs fork with mkdocstrings). | all |
+| `use_recommended_quality` | basedpyright (primary) + pyrefly (additional static analysis), strictness "recommended" (ruff ALL rules, typos/vulture/deptry/pip-audit). | all |
+| `use_recommended_license` | MIT license, no FAIR research-software metadata (CITATION.cff / REUSE). | all |
+| `use_recommended_integrations` | no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP support, GitHub Actions for CI, structlog for logging. | all |
+| `use_recommended_web_api` | a FastAPI app in a top-level `app/` package (no library <pkg>): async SQLAlchemy 2.0 + Alembic + Postgres, a demo CRUD router, request-id logging (asgi-correlation-id), a BackgroundTasks example, and /health + /docs endpoints. | the web_api layer is present |
+| `use_recommended_security` | minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that runs inside type-check. | all |
+<!-- END GENERATED: features-areas -->
 
 The branches below follow the order the questions are actually asked in
 (`copier.yml`); each gate's Yes/No branches rejoin before the next gate:
 
+<!-- BEGIN GENERATED: features-mermaid (tools/gen_docs.py --write) -->
 ```mermaid
 flowchart TD
     Start([Start]) --> PT[project_type]
-    PT -->|ros2| RQ["ask: pkg_language, ros_distro,<br/>ros2_package_manager"]
-    PT -->|micropython| MQ["ask: micropython_port"]
-    PT -->|library / cli| G0{use_recommended_agent?}
-    RQ --> G1{use_recommended_toolchain?}
-    MQ --> G1
-    PT -->|other| G1
-
-    G0 -->|Yes| D0["no agent scaffold"]
-    G0 -->|No| A0["ask: agent (pydantic-ai) scaffold"]
-    D0 --> G1
-    A0 --> G1
-
-    G1 -->|Yes| D1["uv + just<br/>(pixi if ros2+pixi)"]
-    G1 -->|No| A1["ask: package_manager, task_runner"]
-    D1 --> OJ{project_type == online_judge?}
-    A1 --> OJ
-
-    OJ -->|Yes| OQ["ask: oj_kind (kaggle / atcoder / leetcode / yukicoder / aoj)"]
-    OJ -->|No| CB["ask: include_data_science, include_web_api<br/>(combinable bases only)"]
-    OQ --> CB
-
-    CB --> DS{data_science layer?}
-    DS -->|Yes| G2{use_recommended_data_science?}
-    DS -->|No| M1((•))
-    G2 -->|Yes| D2["GPU: yes · no DUO/CARE"]
-    G2 -->|No| A2["ask: use_gpu, data_reusable → DUO sheet<br/>ask: data_ethics → CARE statement"]
-    D2 --> M1
-    A2 --> M1
-    M1 --> G3{use_recommended_polish?}
-
-    G3 -->|Yes| D3["src layout · English docstrings"]
-    G3 -->|No| A3["ask: layout, allow_japanese"]
-    D3 --> G4{use_recommended_docs?}
-    A3 --> G4
-
-    G4 -->|Yes| D4["zensical"]
-    G4 -->|No| A4["ask: docs_type"]
-    D4 --> G5{use_recommended_quality?}
-    A4 --> G5
-
-    G5 -->|Yes| D5["basedpyright + pyrefly · strictness: recommended"]
-    G5 -->|No| A5["ask: type_checker, strictness"]
-    D5 --> G6{use_recommended_license?}
-    A5 --> G6
-
-    G6 -->|Yes| D6["MIT · no FAIR metadata"]
-    G6 -->|No| A6["ask: license, fair, author_orcid"]
-    D6 --> G7{use_recommended_integrations?}
-    A6 --> G7
-
-    G7 -->|Yes| D7["no Docker/PyPI/cloud/Sentry/MCP · CI: GitHub Actions · structlog"]
-    G7 -->|No| A7["ask: docker, pypi, cloud_provider, include_sentry,<br/>include_mcp (cli / web_api / +API layer), ci_provider, log_library"]
-    D7 --> WA{web_api layer?}
-    A7 --> WA
-
-    WA -->|Yes| G8{use_recommended_web_api?}
-    WA -->|No| G9{use_recommended_security?}
-    G8 -->|Yes| D8["FastAPI + async SQLAlchemy + Alembic + Postgres<br/>demo CRUD · request-id · /health + /docs"]
-    G8 -->|No| A8["ask: prometheus, rate_limit, cors"]
-    D8 --> G9
-    A8 --> G9
-
-    G9 -->|Yes| D9["SHA-pinned actions · zizmor · SECURITY.md · test_qa.py"]
-    G9 -->|No| A9["ask: security_policy, scorecard"]
-    D9 --> PD["Project details: package_name · description · git platform · author"]
-    A9 --> PD
+    PT -->|ros2| Q0["ask: pkg_language (python / cpp), ros_distro (humble / jazzy),<br/>ros2_package_manager (apt / pixi)"]
+    PT -->|micropython| Q1["ask: micropython_port (esp32 / esp8266 / rp2 / stm32 / samd / unix /<br/>windows / mimxrt)"]
+    PT -->|library / cli| G_agent{"use_recommended_agent?<br/>(library / cli)"}
+    PT -->|other| G_toolchain{"use_recommended_toolchain?<br/>(not ros2 + pixi)"}
+    Q0 --> G_toolchain
+    Q1 --> G_toolchain
+    G_agent -->|Yes| G_agent_yes["a plain library / CLI without agent tooling."]
+    G_agent -->|No| G_agent_no["add a runnable pydantic-ai example: a prompts/ directory, a typed tools/ package…"]
+    G_agent_yes --> G_toolchain
+    G_agent_no --> G_toolchain
+    G_toolchain -->|Yes| G_toolchain_yes["uv (package manager) + just (task runner)."]
+    G_toolchain -->|No| G_toolchain_no["ask: package_manager, task_runner, task_runner_pixi"]
+    G_toolchain_yes --> D2
+    G_toolchain_no --> D2
+    D2{"online_judge?"}
+    D2 -->|Yes| Q6["ask: oj_category (data_science / competitive_coding / ctf), oj_kind<br/>(kaggle / atcoder / leetcode / yukicoder / aoj / ctf),<br/>oj_allow_ai (atcoder / leetcode)"]
+    Q6 --> INC
+    D2 -->|No| INC
+    INC["ask: include_data_science, include_web_api, include_ctf,<br/>include_scraping<br/>(each only for the bases it combines with)"]
+    INC --> L3{"include_scraping?"}
+    L3 -->|Yes| G_scraping{"use_recommended_scraping?<br/>(a cli base answers Yes to include_scraping)"}
+    L3 -->|No| L4
+    G_scraping -->|Yes| G_scraping_yes["httpx — a polite stdlib-robots fetcher"]
+    G_scraping -->|No| G_scraping_no["ask: scraping_engine"]
+    G_scraping_yes --> L4
+    G_scraping_no --> L4
+    L4{"data science layer?"}
+    L4 -->|Yes| G_data_science{"use_recommended_data_science?<br/>(the data_science layer is present)"}
+    L4 -->|No| G_polish
+    G_data_science -->|Yes| G_data_science_yes["GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer)."]
+    G_data_science -->|No| G_data_science_no["ask: use_gpu"]
+    G_data_science_yes --> G_polish
+    G_data_science_no --> G_polish
+    G_polish{"use_recommended_polish?"}
+    G_polish -->|Yes| G_polish_yes["src/ layout (library/cli), no Japanese"]
+    G_polish -->|No| G_polish_no["ask: layout, allow_japanese"]
+    G_polish_yes --> G_docs
+    G_polish_no --> G_docs
+    G_docs{"use_recommended_docs?"}
+    G_docs -->|Yes| G_docs_yes["zensical (Zensical, an MkDocs fork with mkdocstrings)."]
+    G_docs -->|No| G_docs_no["ask: docs_type"]
+    G_docs_yes --> G_quality
+    G_docs_no --> G_quality
+    G_quality{"use_recommended_quality?"}
+    G_quality -->|Yes| G_quality_yes["basedpyright (primary) + pyrefly"]
+    G_quality -->|No| G_quality_no["ask: type_checker, strictness"]
+    G_quality_yes --> G_license
+    G_quality_no --> G_license
+    G_license{"use_recommended_license?"}
+    G_license -->|Yes| G_license_yes["MIT license, no FAIR research-software metadata (CITATION.cff / REUSE)."]
+    G_license -->|No| G_license_no["ask: license, fair, author_orcid"]
+    G_license_yes --> G_integrations
+    G_license_no --> G_integrations
+    G_integrations{"use_recommended_integrations?"}
+    G_integrations -->|Yes| G_integrations_yes["no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP…"]
+    G_integrations -->|No| G_integrations_no["ask: docker, pypi, cloud_provider, aws_services, include_sentry,<br/>include_mcp, ci_provider, log_library"]
+    G_integrations_yes --> L5
+    G_integrations_no --> L5
+    L5{"web api layer?"}
+    L5 -->|Yes| G_web_api{"use_recommended_web_api?<br/>(the web_api layer is present)"}
+    L5 -->|No| G_security
+    G_web_api -->|Yes| G_web_api_yes["a FastAPI app in a top-level app/ package"]
+    G_web_api -->|No| G_web_api_no["ask: prometheus, rate_limit, cors"]
+    G_web_api_yes --> G_security
+    G_web_api_no --> G_security
+    G_security{"use_recommended_security?"}
+    G_security -->|Yes| G_security_yes["minimal CI permissions, GitHub Actions pinned to commit SHAs"]
+    G_security -->|No| G_security_no["ask: license_check, security_policy, scorecard"]
+    G_security_yes --> PD
+    G_security_no --> PD
+    PD["Project details: package_name, description, git_platform, github_org,<br/>gitlab_group, repo_name, distribution_name, author_name,<br/>author_email"]
     PD --> End([Generate project])
 ```
+<!-- END GENERATED: features-mermaid -->
 
 **Package management** (`package_manager`)
 - **uv** — fast, pure Python package manager (default)
@@ -299,10 +311,16 @@ flowchart TD
 - A `.env.example` with the environment variables the project understands
   (`.env` is git-ignored and auto-loaded by direnv / the compose stack)
 - Author/GitHub-org questions have plain defaults (override at any prompt)
-- A task runner of your choice ([Task](https://taskfile.dev) (default) /
-  [just](https://just.systems) / [poethepoet](https://github.com/nat-n/poethepoet) /
-  [Make](https://www.gnu.org/software/make/), or pixi's native tasks) driving
-  lint / type-check / test / docs — one shared task definition, invoked by CI too
+<!-- BEGIN GENERATED: features-task-runner (tools/gen_docs.py --write) -->
+- A task runner of your choice ([Just](https://just.systems) (default) /
+  [Task&nbsp;(go-task)](https://taskfile.dev) / [poethepoet](https://github.com/nat-n/poethepoet) /
+  [Make](https://www.gnu.org/software/make/) / [pyinvoke](https://www.pyinvoke.org) /
+  [duty](https://duty.readthedocs.io)) driving lint / type-check / test / docs — one shared task
+  definition, invoked by CI too. With `package_manager` = pixi, the choices are
+  [pixi&nbsp;(native&nbsp;tasks)](https://pixi.sh) (default) /
+  [Task&nbsp;(go-task)](https://taskfile.dev) / [Just](https://just.systems) /
+  [Make](https://www.gnu.org/software/make/) (poethepoet is not offered there).
+<!-- END GENERATED: features-task-runner -->
 - [zensical](https://zens.python.dev), [sphinx](https://www.sphinx-doc.org) or
   [great-docs](https://posit-dev.github.io/great-docs/) for docs
 - README badge row: CI, coverage, license, a Python-version badge matching
