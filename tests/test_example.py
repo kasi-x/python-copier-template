@@ -1939,47 +1939,6 @@ def test_dots_in_package_name(tmp_path: Path):
     copy_project(tmp_path, repo_name="dots.in.name")
 
 
-@pytest.mark.heavy
-@pytest.mark.network
-def test_example_repo_updates(tmp_path: Path):
-    generated_path = tmp_path / "generated"
-    example_url = "https://github.com/kasi-x/python-copier-template-example.git"
-    example_path = tmp_path / "example"
-    copy_project(generated_path)
-    run_pipe(f"git clone {example_url} {example_path}")
-    with Path(example_path / ".copier-answers.yml").open() as f:
-        d = yaml.safe_load(f)
-    d["_src_path"] = str(TOP)
-    with Path(example_path / ".copier-answers.yml").open("w") as f:
-        yaml.dump(d, f)
-    run = functools.partial(run_pipe, cwd=str(example_path))
-    run("git config user.email 'you@example.com'")
-    run("git config user.name 'Your Name'")
-    run("git commit -am 'Update src'")
-    # Transitional --with: the example repo's recorded template version still
-    # declares the jinja extensions removed from HEAD, so this one update
-    # needs the package importable. Drop once the example repo has been
-    # regenerated from a post-removal template.
-    run(
-        f"uvx --with copier-template-extensions copier update --defaults --vcs-ref=HEAD --trust --data-file {TOP}/example-answers.yml"
-    )
-    output = run(
-        # Git directory expected to be different
-        "diff -ur --exclude=.git --exclude=.venv --exclude='*.egg-info' --exclude=_version.py "
-        # uv lock expected to be different
-        "--exclude=uv.lock "
-        # The commit hash is different for some reason
-        "--ignore-matching-lines='^_commit: ' "
-        # If we tag an existing commit that has been pushed to main, then the copier
-        # update on the old commit id will be generated with the new tag name, which
-        # means the link will not be updated. As this only affects the example repo
-        # which is the only thing that points to main then we ignore it
-        "--ignore-matching-lines='^For more information on common tasks like setting' "
-        f"{generated_path} {example_path}"
-    )
-    assert not output, output
-
-
 def test_gitignore_same():
     # the gated .gitignore template is conditional (data_science / kaggle /
     # ros2 blocks render per project type); the root .gitignore is the

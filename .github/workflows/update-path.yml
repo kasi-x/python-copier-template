@@ -1,0 +1,48 @@
+name: Update path
+
+# `copier update` is the path a generated project takes after a release, and it
+# only runs in the field: a template change can render fine and still break the
+# merge onto an existing project. This workflow replays it.
+#
+# Both steps are offline: the guard and the matrix resolve their refs (the
+# newest release tag and HEAD) from this checkout, so the only network use is
+# the environment install.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update-path:
+    name: questionnaire guard + copier update matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Both steps resolve refs with git: the guard needs the release tags
+          # (its default --base) and the matrix needs the tag's commit.
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          # Explicit true (not the "auto" default) so tag-push runs also cache.
+          enable-cache: true
+
+      - name: Guard the questionnaire against unmerged answer changes
+        # Exits 1 with a [MISSING MIGRATION] line per removal/rename/default
+        # change that has no _migrations entry yet.
+        run: uv run --locked python tools/check_questionnaire_diff.py
+
+      - name: Replay copier update from the release tag to HEAD
+        run: uv run --locked pytest -q tests/test_update_path.py
