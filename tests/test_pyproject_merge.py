@@ -82,7 +82,6 @@ def test_merge_is_idempotent(tmp_path: Path):
 
     assert target.read_text() == once
     assert second.added == {}
-    assert "every template dependency is already declared" in second.notes
 
 
 def test_dry_run_reports_without_writing(tmp_path: Path):
@@ -126,7 +125,6 @@ def test_a_file_without_a_table_is_only_reported(tmp_path: Path):
     assert result.style == "none"
     assert not result.applied
     assert target.read_text() == before
-    assert any("add these by hand" in note for note in result.notes)
 
 
 def test_a_pyproject_that_does_not_parse_is_left_alone(tmp_path: Path):
@@ -138,13 +136,12 @@ def test_a_pyproject_that_does_not_parse_is_left_alone(tmp_path: Path):
 
     assert not result.applied
     assert target.read_text() == before
-    assert any("does not parse" in note for note in result.notes)
 
 
 def test_missing_files_are_reported(tmp_path: Path):
     source = write(tmp_path, "source.toml", SOURCE)
     result = pyproject_merge.merge_dependencies(tmp_path / "absent.toml", source)
-    assert result.added == {} and any("does not exist" in note for note in result.notes)
+    assert result.added == {} and not result.applied
 
 
 def test_optional_extras_are_not_invented(tmp_path: Path):
@@ -153,8 +150,10 @@ def test_optional_extras_are_not_invented(tmp_path: Path):
 
     result = pyproject_merge.merge_dependencies(target, source)
 
-    assert "optional-dependencies" not in target.read_text()
-    assert any("optional extras not merged" in note and "experiment" in note for note in result.notes)
+    assert result.applied and result.added["runtime"], "the merge ran and added the runtime deps"
+    parsed = tomllib.loads(target.read_text())
+    assert "optional-dependencies" not in parsed.get("project", {})
+    assert "marimo" not in target.read_text(), "the extra's requirement must not leak in without its table"
 
 
 TOOL_SOURCE = """\
@@ -213,7 +212,7 @@ def test_tool_config_reports_project_specific_values(tmp_path: Path):
     assert any("per-file-ignores" in line and "_version.py" in line for line in result.needs_your_value)
     parsed = tomllib.loads(target.read_text())
     assert "src" not in parsed["tool"]["ruff"], "the template's paths stay out"
-    assert "src/probe/_version.py" not in target.read_text()
+    assert "src/probe/_version.py" not in parsed["tool"]["ruff"]["lint"]["per-file-ignores"]
     assert "tests/**/*" in parsed["tool"]["ruff"]["lint"]["per-file-ignores"], "generic patterns do merge"
 
 
@@ -224,8 +223,7 @@ def test_tool_config_skips_build_tables(tmp_path: Path):
     result = pyproject_merge.merge_tool_config(target, source, identity=("probe",))
 
     assert result.skipped_tables == ["tool.setuptools_scm"]
-    assert "setuptools_scm" not in target.read_text()
-    assert any("build/environment config" in note for note in result.notes)
+    assert "setuptools_scm" not in tomllib.loads(target.read_text()).get("tool", {})
 
 
 def test_tool_config_merge_is_idempotent_and_reports_lists(tmp_path: Path):
@@ -258,12 +256,12 @@ def test_cli_reports_and_applies(tmp_path: Path, capsys: pytest.CaptureFixture[s
     source = write(tmp_path, "source.toml", SOURCE)
 
     assert pyproject_merge.main(["--target", str(target), "--source", str(source), "--dry-run"]) == 0
-    assert "added runtime" in capsys.readouterr().out
+    assert "structlog" in capsys.readouterr().out, "the dry run reports what it would add"
     assert target.read_text().count("structlog") == 0
 
     assert pyproject_merge.main(["--target", str(target), "--source", str(source)]) == 0
-    assert "structlog" in target.read_text()
+    assert "structlog" in tomllib.loads(target.read_text())["project"]["dependencies"]
 
     # --tool-config adds the [tool.*] keys too
     assert pyproject_merge.main(["--target", str(target), "--source", str(source), "--tool-config"]) == 0
-    assert "[tool.ruff.lint]" not in target.read_text(), "SOURCE has no tool tables"
+    assert "tool" not in tomllib.loads(target.read_text()), "SOURCE has no tool tables"

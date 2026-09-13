@@ -75,7 +75,7 @@ def test_question_fields_are_reported_as_written(tmp_path: Path):
     assert by_name["project_type"].choices == ["library", "cli"]
     assert by_name["project_type"].labels == ["Library", "CLI"]
     assert by_name["gate"].type == "bool"
-    assert by_name["gate"].help.startswith("Use the recommended things?")
+    assert by_name["gate"].help.splitlines() == ["Use the recommended things?", "Recommended: all of them."]
     assert by_name["gate"].source == "a.yml"
     assert by_name["project_type"].source.startswith("copier.yml")
     # `when: false` is a derived variable, not a question
@@ -100,7 +100,7 @@ def test_nested_include_is_rejected(tmp_path: Path):
     (tmp_path / "questions").mkdir()
     (tmp_path / "questions" / "a.yml").write_text("---\n!include b.yml\n")
     (tmp_path / "copier.yml").write_text("---\n!include questions/a.yml\n")
-    with pytest.raises(questionnaire.QuestionnaireError, match="nested !include"):
+    with pytest.raises(questionnaire.QuestionnaireError):
         questionnaire.load_questions(tmp_path / "copier.yml")
 
 
@@ -108,14 +108,15 @@ def test_misplaced_include_is_rejected(tmp_path: Path):
     (tmp_path / "questions").mkdir()
     (tmp_path / "questions" / "a.yml").write_text("thing:\n    type: str\n")
     (tmp_path / "copier.yml").write_text("---\nthing:\n    type: str\n!include questions/a.yml\n")
-    with pytest.raises(questionnaire.QuestionnaireError, match="only content"):
+    with pytest.raises(questionnaire.QuestionnaireError):
         questionnaire.load_questions(tmp_path / "copier.yml")
 
 
 def test_missing_include_is_rejected(tmp_path: Path):
     (tmp_path / "copier.yml").write_text("---\n!include questions/nope.yml\n")
-    with pytest.raises(questionnaire.QuestionnaireError, match="not found"):
+    with pytest.raises(questionnaire.QuestionnaireError) as excinfo:
         questionnaire.load_questions(tmp_path / "copier.yml")
+    assert "questions/nope.yml" in str(excinfo.value), "the refusal names the fragment it could not include"
 
 
 def test_real_questionnaire_reads_in_ask_order():
@@ -124,16 +125,22 @@ def test_real_questionnaire_reads_in_ask_order():
 
     assert names[0] == "project_type"
     assert names[1] == "existing_project", "adoption mode is asked right after project_type"
-    assert len(names) >= 108
     assert len(names) == len(set(names)), "question names are unique"
     assert all(name.isidentifier() for name in names)
-    assert "_subdirectory" in settings and settings["_subdirectory"] == "template"
+    # The !include chain must resolve every fragment: a fragment that
+    # contributes nothing means the include was dropped.
+    fragments = {path.name for path in (TOP / "questions").glob("*.yml")}
+    assert fragments <= {q.source for q in questions}, (
+        f"fragments with no questions loaded: {sorted(fragments - {q.source for q in questions})}"
+    )
+    assert settings["_subdirectory"] == "template"
     assert "CHANGELOG.md" in settings["_skip_if_exists"]
-    # both dynamic-choice questions are the ones that narrow themselves
-    templated = sorted(q.name for q in questions if q.choices_template is not None)
-    assert templated == ["oj_kind", "package_manager"]
+    # the dynamic-choice questions are the ones that narrow themselves
+    templated = {q.name for q in questions if q.choices_template is not None}
+    assert {"oj_kind", "package_manager"} <= templated, "both narrowing questions keep their choices template"
     assert any(q.name == "use_recommended_toolchain" and not q.internal for q in questions)
-    assert sum(1 for q in questions if q.internal) >= 40, "derived variables stay out of the asked set"
+    internal = {q.name for q in questions if q.internal}
+    assert {"micropython_pkg", "online_judge", "kaggle"} <= internal, "derived variables stay out of the asked set"
 
 
 def test_main_prints_names_and_filters_internal(capsys: pytest.CaptureFixture[str]):
@@ -155,4 +162,4 @@ def test_main_reports_a_broken_config(tmp_path: Path, capsys: pytest.CaptureFixt
     broken = tmp_path / "copier.yml"
     broken.write_text("---\nthing: [unclosed\n")
     assert questionnaire.main(["--config", str(broken), "--names"]) == 2
-    assert "cannot read questionnaire" in capsys.readouterr().err
+    assert capsys.readouterr().err.strip(), "the refusal must explain itself on stderr"

@@ -16,8 +16,10 @@ generated project (see the generated ``tests/test_qa.py``).
 
 import ast
 import importlib
+import re
 import sys
 import tomllib
+from collections.abc import Iterator
 from importlib.metadata import packages_distributions
 from pathlib import Path
 
@@ -101,19 +103,42 @@ def test_no_custom_jinja_extensions_needed() -> None:
     """Generation needs no custom Jinja extensions.
 
     Regression guard for the copier-template-extensions removal: copier.yml
-    must not declare ``_jinja_extensions`` entries, and the questionnaire
-    must not reference the old ``extensions.py`` globals (git_user_name,
+    must not declare ``_jinja_extensions`` entries, and no questionnaire
+    template may reference the old ``extensions.py`` globals (git_user_name,
     git_user_email, github_username, current_year, cuda_hint). Generation
     uses only copier builtins (now/today) and jinja2-ansible-filters
     (regex_search, to_nice_yaml) shipped with copier itself.
+
+    The guard reads the questionnaire's Jinja expressions rather than its
+    raw text: YAML comments are gone by the time it looks, and a comment (or
+    a help string) that merely *mentions* a removed global is fine, while a
+    default that references one is the bug.
     """
     from copier._template import load_template_config
 
     config = load_template_config(TOP / "copier.yml")
     assert config.get("_jinja_extensions", []) == []
 
-    old_globals = ("git_user_name", "git_user_email", "github_username", "current_year", "cuda_hint")
-    for path in [TOP / "copier.yml", *(TOP / "questions").glob("*.yml")]:
-        text = path.read_text(encoding="utf-8")
-        for name in old_globals:
-            assert name not in text, f"{path.name} still references removed global {name!r}"
+    removed = {"git_user_name", "git_user_email", "github_username", "current_year", "cuda_hint"}
+    referenced = {
+        name
+        for expression in _jinja_expressions(config)
+        for name in removed
+        if re.search(rf"\b{re.escape(name)}\b", expression)
+    }
+    assert not referenced, f"questionnaire still references removed globals: {sorted(referenced)}"
+
+
+_JINJA_TAG = re.compile(r"\{\{.*?\}\}|\{%.*?%\}", re.DOTALL)
+
+
+def _jinja_expressions(value: object) -> Iterator[str]:
+    """Every Jinja tag in the resolved questionnaire, however deeply nested."""
+    if isinstance(value, str):
+        yield from _JINJA_TAG.findall(value)
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from _jinja_expressions(item)
+    elif isinstance(value, list | tuple):
+        for item in value:
+            yield from _jinja_expressions(item)

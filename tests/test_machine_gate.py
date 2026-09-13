@@ -58,8 +58,9 @@ def test_resolved_questionnaire_loads():
     """Copier's own loader resolves the questionnaire (!include chain)."""
     data = load_template_config(COPIER_YML)
     questions = {k: v for k, v in data.items() if not k.startswith("_") and isinstance(v, dict)}
-    assert "project_type" in questions
-    assert len(questions) > 30, f"suspiciously few questions: {len(questions)}"
+    # One question from copier.yml itself plus one from each include chain
+    # kind: a dropped !include would silently shrink the questionnaire.
+    assert {"project_type", "existing_project", "oj_kind", "micropython_port"} <= questions.keys()
 
 
 def test_shared_partials_are_all_consumed():

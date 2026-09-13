@@ -1,83 +1,92 @@
-"""Static checks for the secret-scanning setup.
+"""Behavioural checks for the secret-scanning setup.
 
 pre-commit used to run gitleaks locally; scanning now happens in CI via the
 hygiene workflow (`gitleaks/gitleaks-action`), which reads `.gitleaks.toml`.
-These tests guard the wiring that the old behavioral tests exercised:
-the config exists in both the repo and the template output, the gitleaks
-action is present and SHA-pinned, and the SealedSecrets allowlist + the
-de-identification salt rule survive config refactors (the behavioral
-versions of those checks are in CI now).
+These tests exercise that config the way gitleaks does — parse it, compile the
+rule regexes and run them against sample secrets — plus the wiring the old
+tests covered: the config ships into generated projects, the action runs
+SHA-pinned, and the SealedSecrets allowlist stays scoped to YAML.
 """
 
+import re
+import tomllib
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
 
 TOP = Path(__file__).resolve().parent.parent
 GITLEAKS_TOML = TOP / ".gitleaks.toml"
+TEMPLATE_LINK = TOP / "template" / ".gitleaks.toml"
 HYGIENE = TOP / ".github" / "workflows" / "_hygiene.yml"
 
 
-def test_gitleaks_config_exists_in_template_output():
-    """Every generated project keeps the root `.gitleaks.toml` (symlinked
-    into the template) that the hygiene workflow's gitleaks step reads."""
-    template_link = TOP / "template" / ".gitleaks.toml"
-    assert template_link.is_symlink(), (
-        "template/.gitleaks.toml must stay a symlink to the root config so "
-        "generated projects ship the same secret-scanning rules"
+def config() -> dict[str, Any]:
+    return tomllib.loads(GITLEAKS_TOML.read_text(encoding="utf-8"))
+
+
+def rule(rule_id: str) -> dict[str, Any]:
+    """The configured rule with this id (gitleaks fails on duplicates too)."""
+    entries = [entry for entry in config()["rules"] if entry["id"] == rule_id]
+    assert len(entries) == 1, f"expected exactly one {rule_id!r} rule, got {len(entries)}"
+    return entries[0]
+
+
+def test_gitleaks_config_ships_into_generated_projects():
+    """Generated projects scan with the same rules as this repo."""
+    assert TEMPLATE_LINK.is_file(), "the template must ship .gitleaks.toml"
+    assert TEMPLATE_LINK.read_text(encoding="utf-8") == GITLEAKS_TOML.read_text(encoding="utf-8"), (
+        "template/.gitleaks.toml must stay in sync with the root config"
     )
-    assert template_link.resolve() == GITLEAKS_TOML.resolve()
 
 
 def test_hygiene_workflow_runs_gitleaks_sha_pinned():
-    workflow = HYGIENE.read_text()
-    assert "gitleaks/gitleaks-action@" in workflow
-    # Pin the exact digest-style SHA the repo's workflow-security policy
-    # requires (40 hex chars, version comment follows).
-    import re
-
-    match = re.search(r"gitleaks/gitleaks-action@([0-9a-f]{40})", workflow)
-    assert match, "gitleaks action must be pinned to a 40-char SHA"
-    assert "# v" in workflow.split("gitleaks/gitleaks-action@")[1][:80]
+    workflow = yaml.safe_load(HYGIENE.read_text(encoding="utf-8"))
+    refs = [
+        step["uses"]
+        for job in workflow["jobs"].values()
+        for step in (job.get("steps") or [])
+        if str(step.get("uses", "")).startswith("gitleaks/gitleaks-action")
+    ]
+    assert refs, "the hygiene workflow must run gitleaks"
+    assert all(re.fullmatch(r"gitleaks/gitleaks-action@[0-9a-f]{40}", ref) for ref in refs), refs
 
 
 def test_sealed_secrets_allowlist_stays_yaml_scoped():
     """The generic-api-key allowlist for long Ag… tokens must stay limited to
     YAML files — broadening it to all files would silence real leaks (the
     scenario the old behavioral gitleaks tests covered)."""
-    config = GITLEAKS_TOML.read_text()
-    assert "[[rules.allowlists]]" in config
-    assert "Ag[A-Za-z0-9+/]{500,}" in config
-    paths_line = next(line for line in config.splitlines() if line.startswith("paths = "))
-    assert "ya?ml" in paths_line, f"allowlist must stay YAML-scoped: {paths_line}"
+    allowlists = rule("generic-api-key").get("allowlists") or []
+    assert allowlists, "the Ag… allowlist must exist"
+
+    token = "Ag" + "A" * 600
+    assert any(re.search(pattern, f"key: {token}") for entry in allowlists for pattern in entry["regexes"]), (
+        "the allowlist must actually cover a long Ag… token"
+    )
+    for entry in allowlists:
+        paths = [re.compile(pattern) for pattern in entry.get("paths") or ()]
+        assert paths, "an allowlist without `paths` applies to every file"
+        assert any(pattern.fullmatch("secrets.yaml") for pattern in paths), entry
+        assert not any(pattern.fullmatch("src/config.json") for pattern in paths), entry
 
 
-@pytest.mark.parametrize(
-    "rule_id,fragment",
-    [
-        ("deidentification-salt", "deidentification_salt"),
-        ("deidentification-salt", "pseudonym_salt"),
-        ("deidentification-salt", "secret_salt"),
-    ],
-)
-def test_deidentification_salt_rule_survives(rule_id: str, fragment: str):
-    """The privacy rule guarding data/DEIDENTIFICATION.md must keep matching
-    every salt naming variant."""
-    config = GITLEAKS_TOML.read_text()
-    assert f'id = "{rule_id}"' in config
-    assert fragment in config
-
-
-def test_hygiene_workflow_steps_are_gated():
+@pytest.mark.parametrize("artifact", ["**/*.ipynb", "REUSE.toml", "CITATION.cff"])
+def test_hygiene_workflow_steps_are_gated(artifact: str):
     """The optional hygiene steps self-gate via hashFiles so a generated
     project only runs what it ships."""
-    workflow = yaml.safe_load(HYGIENE.read_text())
-    steps = workflow["jobs"]["hygiene"]["steps"]
-    by_name = {step.get("name"): step for step in steps if "name" in step}
-    reuse = by_name["REUSE compliance"]
-    cff = by_name["Validate CITATION.cff"]
-    notebooks = by_name["Jupyter notebooks are stripped of outputs"]
-    assert reuse["if"] == "hashFiles('REUSE.toml') != ''"
-    assert cff["if"] == "hashFiles('CITATION.cff') != ''"
-    assert notebooks["if"] == "hashFiles('**/*.ipynb') != ''"
+    workflow = yaml.safe_load(HYGIENE.read_text(encoding="utf-8"))
+    conditions = [str(step.get("if", "")) for step in workflow["jobs"]["hygiene"]["steps"]]
+    assert any(f"hashFiles('{artifact}')" in condition for condition in conditions), (
+        f"no hygiene step is gated on {artifact}"
+    )
+
+
+@pytest.mark.parametrize("fragment", ["secret_salt", "deidentification_salt", "pseudonym_salt"])
+def test_deidentification_salt_rule_matches_every_naming_variant(fragment: str):
+    """The privacy rule guarding data/DEIDENTIFICATION.md must keep matching
+    every salt naming variant — and not the prose that documents the policy."""
+    pattern = re.compile(rule("deidentification-salt")["regex"])
+    assert pattern.search(f'{fragment} = "hunter2"'), f"{fragment} = ... must be caught"
+    assert pattern.search(f"{fragment}='hunter2'"), f"{fragment}='...' must be caught"
+    assert not pattern.search(f"# {fragment} is never committed"), "prose must not trip the rule"

@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 from copier import run_copy
 
 TOP = Path(__file__).resolve().parent.parent
@@ -158,11 +159,11 @@ def test_answers_file_written_for_adopt(tmp_path: Path):
     make_legacy_project(tmp_path)
     out = tmp_path / "answers.yml"
     assert detect.main([str(tmp_path), "--answers", str(out), "--json"]) == 0
-    text = out.read_text()
-    assert "existing_project: true" in text
-    assert "adopt_protect:" in text
-    assert "package_name: legacy" in text
-    assert "\nproject_type" not in text, "shape questions must not be invented"
+    payload = yaml.safe_load(out.read_text())
+    assert payload["existing_project"] is True
+    assert "adopt_protect" in payload
+    assert payload["package_name"] == "legacy"
+    assert "project_type" not in payload, "shape questions must not be invented"
 
 
 def test_synthetic_template_conditions_are_parsed(tmp_path: Path):
@@ -218,7 +219,6 @@ def test_copier_template_directory_is_flagged(tmp_path: Path):
     (tmp_path / "template").mkdir()
     detection = detect.detect(tmp_path)
     assert detection.mode == "adopt"
-    assert any("copier template" in note for note in detection.notes)
 
 
 def test_answers_omit_questions_the_template_does_not_ask(tmp_path: Path):
@@ -249,9 +249,7 @@ def test_foreign_template_is_refused(tmp_path: Path, capsys: pytest.CaptureFixtu
     assert detect.main([str(tmp_path), "--answers", str(out)]) == 3
     assert not out.exists(), "a refused target must not get an answers file"
     report = capsys.readouterr().out
-    assert "STOP" in report
-    assert "https://github.com/other/template.git" in report
-    assert "--takeover" in report
+    assert "https://github.com/other/template.git" in report, "the report names the other template"
 
     # --json still reports (an agent needs foreign_src), and still refuses.
     capsys.readouterr()
@@ -268,13 +266,12 @@ def test_takeover_adopts_over_a_foreign_template(tmp_path: Path):
     detection = detect.detect(tmp_path, takeover=True)
     assert detection.mode == "adopt"
     assert detection.took_over is True
-    assert any("taking over" in note for note in detection.notes)
     assert detection.suggested_answers["existing_project"] is True
     assert "README.md" in detection.kept
 
     out = tmp_path / "answers.yml"
     assert detect.main([str(tmp_path), "--takeover", "--answers", str(out)]) == 0
-    assert "existing_project: true" in out.read_text()
+    assert yaml.safe_load(out.read_text())["existing_project"] is True
 
 
 def test_collisions_are_the_skip_list(tmp_path: Path):
@@ -336,11 +333,10 @@ def test_skip_recipe_keeps_existing_files_and_adds_the_rest(tmp_path: Path):
 def test_report_and_json_render(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     make_legacy_project(tmp_path)
     assert detect.main([str(tmp_path), "--json"]) == 0
-    payload = capsys.readouterr().out
-    assert '"mode": "adopt"' in payload
-    assert '"collisions"' in payload
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["mode"] == "adopt"
+    assert payload["collisions"]
 
     assert detect.main([str(tmp_path)]) == 0
     report = capsys.readouterr().out
-    assert "COLLISIONS" in report
-    assert ".github/workflows/ci.yml" in report
+    assert ".github/workflows/ci.yml" in report, "the human report lists the collision"

@@ -1,12 +1,13 @@
 """Session-wide cache of copier renders, for this repo's own test suite.
 
-test_generated_lint.py and test_pyproject_fmt.py need the same (answers,
-template) combinations over and over (each of test_generated_lint's four
-parametrized tiers re-renders every path), and a copier render dominates a
-case (~1.3s of ~1.7s: copier clones the template, evaluates every .jinja
-source, then renames it). The cache renders each combination once per session
-and copies that tree into the requesting test's tmp_path, so every assertion
-still sees its own, byte-identical render -- the repeats are what go away.
+test_generated_lint.py, test_pyproject_fmt.py and test_workflow_security.py
+need the same (answers, template) combinations over and over (each of
+test_generated_lint's four parametrized tiers re-renders every path), and a
+copier render dominates a case (~1.3s of ~1.7s: copier clones the template,
+evaluates every .jinja source, then renames it). The cache renders each
+combination once per session and copies that tree into the requesting test's
+tmp_path, so every assertion still sees its own, byte-identical render -- the
+repeats are what go away.
 
 This deliberately does not live in conftest.py: the template renders the
 repo's conftest.py into every generated project (the

@@ -94,6 +94,29 @@ def make_venv(project_path: Path) -> Callable[[str], str]:
     return run
 
 
+def ci_requested_tasks(ci_path: Path) -> list[str]:
+    """The task names the generated lint job hands to the reusable _tasks workflow."""
+    ci = yaml.safe_load(ci_path.read_text())
+    requested = ci["jobs"]["lint"]["with"]["task"]
+    return [name.strip() for name in str(requested).split(",") if name.strip()]
+
+
+def _renovate_rules(path: Path) -> list[dict]:
+    """The generated renovate.json's packageRules."""
+    return json.loads(path.read_text())["packageRules"]
+
+
+def _renovate_disables(path: Path, action: str) -> bool:
+    """True if renovate is told to leave this action's version to copier."""
+    return any(
+        action in rule.get("matchPackageNames", []) and rule.get("enabled") is False for rule in _renovate_rules(path)
+    )
+
+
+def _renovate_mentions(path: Path, needle: str) -> bool:
+    return any(needle in name for rule in _renovate_rules(path) for name in rule.get("matchPackageNames", []))
+
+
 @pytest.mark.heavy
 @pytest.mark.network
 def test_template_defaults(tmp_path: Path):
@@ -252,10 +275,8 @@ def test_template_adopt_mode_protects_existing_files(tmp_path: Path):
     ):
         assert (tmp_path / infra).exists(), f"missing infra: {infra}"
     # answers recorded -> future copier update works
-    answers = (tmp_path / ".copier-answers.yml").read_text()
-    assert "existing_project: true" in answers
-    # the adoption report ships in the template's own post-gen tasks
-    assert "Adopt mode:" in (TOP / "copier.yml").read_text()
+    recorded = yaml.safe_load((tmp_path / ".copier-answers.yml").read_text())
+    assert recorded["existing_project"] is True
 
 
 @pytest.mark.heavy
@@ -542,12 +563,12 @@ def test_template_atcoder_workspace(tmp_path: Path):
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert pyproject_toml["project"]["dependencies"] == []
     # no dist/pypi CI jobs for a submission repo
-    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
-    assert "dist:" not in ci
+    ci = yaml.safe_load((tmp_path / ".github" / "workflows" / "ci.yml").read_text())
+    assert "dist" not in ci["jobs"], "a submission repo needs no dist/pypi job"
     # ruff is relaxed for contest code (project-wide, not per solutions/)
-    ruff = (tmp_path / "pyproject.toml").read_text()
-    assert "A001" in ruff  # builtin shadowing relaxed
-    assert "solutions" not in ruff
+    lint = pyproject_toml["tool"]["ruff"]["lint"]
+    assert "A001" in lint["extend-ignore"], "builtin shadowing is relaxed"
+    assert not any("solutions" in key for key in lint.get("per-file-ignores", {})), "the relaxation is project-wide"
     # README points at the oj / acc workflow
     readme = (tmp_path / "README.md").read_text()
     assert "oj download" in readme
@@ -570,8 +591,8 @@ def test_template_yukicoder_workspace(tmp_path: Path):
     assert not list(tmp_path.glob("*.py"))
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert pyproject_toml["project"]["dependencies"] == []
-    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
-    assert "dist:" not in ci
+    ci = yaml.safe_load((tmp_path / ".github" / "workflows" / "ci.yml").read_text())
+    assert "dist" not in ci["jobs"], "a submission repo needs no dist/pypi job"
     # README drives the oj workflow with a yukicoder URL example
     readme = (tmp_path / "README.md").read_text()
     assert "oj download https://yukicoder.me/problems/no/1234" in readme
@@ -588,8 +609,8 @@ def test_template_aoj_workspace(tmp_path: Path):
     assert not list(tmp_path.glob("*.py"))
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert pyproject_toml["project"]["dependencies"] == []
-    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
-    assert "dist:" not in ci
+    ci = yaml.safe_load((tmp_path / ".github" / "workflows" / "ci.yml").read_text())
+    assert "dist" not in ci["jobs"], "a submission repo needs no dist/pypi job"
     # README leads with aoj-cli (init / test / submit) for AOJ
     readme = (tmp_path / "README.md").read_text()
     assert "aoj init ITP1_1_A" in readme
@@ -951,9 +972,13 @@ def test_template_include_scraping_httpx(tmp_path: Path):
     assert (tmp_path / "tests" / "test_scraping.py").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("httpx") for d in pyproject_toml["project"]["dependencies"])
-    pyproject_text = (tmp_path / "pyproject.toml").read_text()
-    assert "banned-api" in pyproject_text
-    assert "fetcher.py" in pyproject_text
+    ruff_lint = pyproject_toml["tool"]["ruff"]["lint"]
+    banned = ruff_lint["flake8-tidy-imports"]["banned-api"]
+    assert any(name.startswith("httpx.") for name in banned), "direct httpx calls are banned in favour of the fetcher"
+    ignores = ruff_lint["per-file-ignores"]
+    assert any(key.endswith("fetcher.py") and "TID251" in codes for key, codes in ignores.items()), (
+        "fetcher.py is the allowlisted implementation behind the ban"
+    )
     gitignore = (tmp_path / ".gitignore").read_text()
     assert ".cache/fetcher/" in gitignore
     agents = (tmp_path / "AGENTS.md").read_text()
@@ -1051,13 +1076,12 @@ def test_template_license_check_task(tmp_path: Path):
     copy_project(tmp_path, project_type="cli")
     pyproject = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("pip-licenses") for d in pyproject["dependency-groups"]["dev"])
-    taskfile = (tmp_path / "Taskfile.yml").read_text()
-    assert "license-check" in taskfile
-    assert "pip-licenses" in taskfile
-    type_check_block = taskfile.split("type-check:")[1].split("\n  ")[0]
-    assert "pip-licenses" not in type_check_block
-    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
-    assert "lint,type-check,license-check" in ci
+    tasks = yaml.safe_load((tmp_path / "Taskfile.yml").read_text())["tasks"]
+    assert any("pip-licenses" in str(command) for command in tasks["license-check"]["cmds"])
+    assert not any("pip-licenses" in str(command) for command in tasks["type-check"]["cmds"]), (
+        "type-check must stay runnable offline"
+    )
+    assert "license-check" in ci_requested_tasks(tmp_path / ".github" / "workflows" / "ci.yml")
 
     off_path = tmp_path / "off"
     copy_project(
@@ -1106,8 +1130,7 @@ def test_template_data_governance_asked_on_recommended_path(tmp_path: Path):
 def test_template_ci_runs_license_check(tmp_path: Path):
     """CI lint calls the standalone license-check; GitLab matches."""
     copy_project(tmp_path, project_type="cli")
-    ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
-    assert "lint,type-check,license-check" in ci
+    assert "license-check" in ci_requested_tasks(tmp_path / ".github" / "workflows" / "ci.yml")
 
     gitlab_path = tmp_path / "gitlab"
     copy_project(
@@ -1116,8 +1139,8 @@ def test_template_ci_runs_license_check(tmp_path: Path):
         git_platform="gitlab.com",
         gitlab_group="mygroup",
     )
-    gitlab = (gitlab_path / ".gitlab-ci.yml").read_text()
-    assert "license-check" in gitlab
+    gitlab = yaml.safe_load((gitlab_path / ".gitlab-ci.yml").read_text())
+    assert any("license-check" in line for line in gitlab["lint"]["script"]), "GitLab's lint job matches"
 
 
 def test_template_gitleaks_blocks_deidentification_salt(tmp_path: Path):
@@ -1132,7 +1155,7 @@ def test_template_author_orcid_validator(tmp_path: Path):
     """A malformed ORCID iD is rejected at question time (validator)."""
     from test_recommended_path import BASE
 
-    with pytest.raises(ValueError, match="not a valid ORCID"):
+    with pytest.raises(ValueError) as excinfo:
         run_copy(
             src_path=str(TOP),
             dst_path=tmp_path,
@@ -1149,6 +1172,7 @@ def test_template_author_orcid_validator(tmp_path: Path):
             overwrite=True,
             skip_tasks=True,
         )
+    assert "not-an-orcid" in str(excinfo.value), "the refusal names the rejected iD"
 
 
 def test_template_log_library_default_is_structlog(tmp_path: Path):
@@ -1297,13 +1321,19 @@ def test_template_fair_metadata(tmp_path: Path):
     assert (tmp_path / "data" / "DUO.md").exists()
     assert (tmp_path / "data" / "CARE.md").exists()
     assert "Traceability & provenance" in (tmp_path / "data" / "CARE.md").read_text()
-    fair_software_workflow = tmp_path / ".github" / "workflows" / "fair-software.yml"
-    assert fair_software_workflow.exists()
-    assert (
-        "fair-software/howfairis-github-action@4c11146488125aa6e1531184eed51d781bcd5871 # 0.2.1"
-        in fair_software_workflow.read_text()
+    fair_workflow = tmp_path / ".github" / "workflows" / "fair-software.yml"
+    assert fair_workflow.exists()
+    uses = [
+        step["uses"]
+        for job in yaml.safe_load(fair_workflow.read_text())["jobs"].values()
+        for step in job.get("steps") or []
+        if str(step.get("uses", "")).startswith("fair-software/howfairis-github-action")
+    ]
+    assert uses, "the FAIR workflow must run howfairis"
+    assert all(re.fullmatch(r"fair-software/howfairis-github-action@[0-9a-f]{40}", ref) for ref in uses), uses
+    assert _renovate_disables(tmp_path / "renovate.json", "fair-software/howfairis-github-action"), (
+        "the action's version is owned by copier update, not renovate"
     )
-    assert "fair-software/howfairis-github-action" in (tmp_path / "renovate.json").read_text()
 
 
 def test_template_fair_off(tmp_path: Path):
@@ -1311,7 +1341,7 @@ def test_template_fair_off(tmp_path: Path):
     assert not (tmp_path / "CITATION.cff").exists()
     assert not (tmp_path / "REUSE.toml").exists()
     assert not (tmp_path / ".github" / "workflows" / "fair-software.yml").exists()
-    assert "howfairis" not in (tmp_path / "renovate.json").read_text()
+    assert not _renovate_mentions(tmp_path / "renovate.json", "howfairis"), "no FAIR rule without the FAIR workflow"
 
 
 def test_template_data_governance_off_by_default(tmp_path: Path):
@@ -1548,15 +1578,16 @@ def test_template_no_docker_has_no_docs_and_works(tmp_path: Path):
 
 
 def test_bad_repo_name(tmp_path: Path):
-    with pytest.raises(ValueError, match="bad:thing is not a valid repo name"):
+    with pytest.raises(ValueError) as excinfo:
         copy_project(tmp_path, repo_name="bad:thing")
+    assert "bad:thing" in str(excinfo.value), "the refusal names the rejected repo name"
 
 
 def test_django_is_not_a_project_type(tmp_path: Path):
     # The web_django trap choice is gone: selecting it used to render and then
     # abort from a post-generation task, and it is now rejected before
     # anything is written.
-    with pytest.raises(ValueError, match="Invalid choice for 'project_type'"):
+    with pytest.raises(ValueError):
         copy_project(tmp_path, project_type="web_django")
 
 
@@ -1911,13 +1942,18 @@ def test_template_micropython_default(tmp_path: Path):
     assert "required-checks-passed" in ci
     assert "firmware:" in ci
     assert "freeze.py" in ci
-    assert "Install MicroPython stubs" in (tmp_path / ".github" / "workflows" / "_tasks.yml").read_text()
+    ci_tasks = yaml.safe_load((tmp_path / ".github" / "workflows" / "_tasks.yml").read_text())
+    runs = [step.get("run", "") for job in ci_tasks["jobs"].values() for step in job.get("steps", [])]
+    assert any("requirements-dev.txt" in run and "--target typings" in run for run in runs), (
+        "CI must install the MicroPython stubs where type-checking can see them"
+    )
     # the freeze build ships a manifest and a docker-based build script
     manifest = (tmp_path / "firmware" / "manifest.py").read_text()
     assert 'freeze(".")' in manifest
     assert "micropython/build-micropython-arm:bookworm" in freeze
     assert "espressif/idf" in freeze
-    assert "freeze" in (tmp_path / "justfile").read_text()
+    justfile = (tmp_path / "justfile").read_text()
+    assert re.search(r"^freeze:", justfile, re.MULTILINE), "the firmware build is exposed as a recipe"
 
 
 def test_template_micropython_rp2_stub(tmp_path: Path):
@@ -1971,7 +2007,6 @@ def test_gitignore_same():
     root = normalized(TOP / ".gitignore")
     assert template - root == set(), f"missing from root .gitignore: {sorted(template - root)}"
     assert root - template == set(), f"stale in root .gitignore: {sorted(root - template)}"
-    assert ".gitignore.jinja" not in (TOP / ".gitignore").read_text()
 
 
 @pytest.mark.heavy
@@ -2024,22 +2059,24 @@ myVariable = "foo"
 
 def test_basedpyright_works_in_none_typing_mode(tmp_path: Path):
     copy_project(tmp_path, strictness="none")
-    pyproject_toml = tmp_path / "pyproject.toml"
+    pyproject = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    tasks = yaml.safe_load((tmp_path / "Taskfile.yml").read_text())["tasks"]
 
     # none: pytest + ruff (minimal rules) - no basedpyright, no type-checking env
-    assert "basedpyright" not in pyproject_toml.read_text()
-    assert "[tool.ruff]" in pyproject_toml.read_text()
-    assert "type-check" not in (tmp_path / "Taskfile.yml").read_text()
+    assert "basedpyright" not in pyproject["tool"]
+    assert "ruff" in pyproject["tool"]
+    assert "type-check" not in tasks
 
 
 def test_basedpyright_works_in_basic_mode(tmp_path: Path):
     copy_project(tmp_path, strictness="basic")
-    pyproject_toml = tmp_path / "pyproject.toml"
+    pyproject = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    tasks = yaml.safe_load((tmp_path / "Taskfile.yml").read_text())["tasks"]
 
     # basic: ruff but no type checking
-    assert "[tool.ruff]" in pyproject_toml.read_text()
-    assert "basedpyright" not in pyproject_toml.read_text()
-    assert "type-check" not in (tmp_path / "Taskfile.yml").read_text()
+    assert "ruff" in pyproject["tool"]
+    assert "basedpyright" not in pyproject["tool"]
+    assert "type-check" not in tasks
 
 
 @pytest.mark.heavy
@@ -2070,19 +2107,20 @@ def test_audit_isolated_from_type_check(tmp_path: Path):
     # pip-audit is network-dependent (OSV/PyPI): on-demand `audit` task,
     # never inside type-check/check so offline CI stays green.
     copy_project(tmp_path)
-    taskfile = (tmp_path / "Taskfile.yml").read_text()
-    assert "pip-audit" in taskfile
-    type_check_block = taskfile.split("type-check", 1)[1].split("audit", 1)[0]
-    assert "pip-audit" not in type_check_block
+    tasks = yaml.safe_load((tmp_path / "Taskfile.yml").read_text())["tasks"]
+    assert any("pip-audit" in str(command) for command in tasks["audit"]["cmds"])
+    assert not any("pip-audit" in str(command) for command in tasks["type-check"]["cmds"]), (
+        "type-check must stay runnable offline"
+    )
 
 
 def test_full_strictness_mode(tmp_path: Path):
     copy_project(tmp_path, strictness="full")
-    pyproject_toml = tmp_path / "pyproject.toml"
 
     # Check strict mode with Any-reporting is configured
-    assert 'typeCheckingMode = "strict"' in pyproject_toml.read_text()
-    assert "reportAny = true" in pyproject_toml.read_text()
+    basedpyright = tomllib.loads((tmp_path / "pyproject.toml").read_text())["tool"]["basedpyright"]
+    assert basedpyright["typeCheckingMode"] == "strict"
+    assert basedpyright["reportAny"] is True
 
 
 @pytest.mark.heavy

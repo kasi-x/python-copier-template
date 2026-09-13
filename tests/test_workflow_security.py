@@ -10,8 +10,10 @@ checks from drifting in this repo's own CI:
 - `uses:` references are pinned to a 40-character commit SHA rather than a
   mutable tag.
 
-These are static, offline assertions over `.github/workflows/*.yml`, in the
-same spirit as test_copier_structure.py / test_micropython_maintenance.py.
+All but the renovate contract are static, offline assertions over
+`.github/workflows/*.yml`, in the same spirit as test_copier_structure.py /
+test_micropython_maintenance.py; the renovate contract parses a real render
+of `template/renovate.json.jinja` (see render_cache.py).
 """
 
 import json
@@ -19,6 +21,13 @@ import re
 from pathlib import Path
 
 import yaml
+
+from render_cache import RenderCache
+
+# Imported so pytest can inject the fixture (the cache lives here, not in
+# conftest.py: the template renders that file into generated projects).
+from render_cache import render_cache as render_cache  # noqa: PLC0414
+from test_recommended_path import BASE
 
 TOP = Path(__file__).absolute().parent.parent
 WORKFLOWS_DIR = TOP / ".github" / "workflows"
@@ -173,7 +182,7 @@ def test_uses_are_pinned_to_full_sha():
                 )
 
 
-def test_renovate_baseline_matches_generated_template():
+def test_renovate_baseline_matches_generated_template(tmp_path: Path, render_cache: RenderCache):
     """Root and generated renovate.json share the update baseline.
 
     Both must extend the same presets (recommended + digest pinning +
@@ -181,11 +190,14 @@ def test_renovate_baseline_matches_generated_template():
     per-manager rules intentionally differ: the root groups non-major
     action updates (its digests are renovate-tracked), while generated
     projects disable template-owned actions per category (updates flow
-    through copier update). This test pins that contract so neither side
-    drifts silently.
+    through copier update). This test pins that contract on the parsed
+    documents -- the generated one comes from a real render, so a jinja
+    branch (docker/pypi/docs/...) that emits invalid JSON fails here too.
     """
     root = json.loads((TOP / "renovate.json").read_text(encoding="utf-8"))
-    template_src = (TOP / "template" / "renovate.json.jinja").read_text(encoding="utf-8")
+    render_cache.render(tmp_path, {**BASE, "project_type": "library"})
+    generated = json.loads((tmp_path / "renovate.json").read_text(encoding="utf-8"))
+
     for preset in (
         "config:recommended",
         ":configMigration",
@@ -193,12 +205,17 @@ def test_renovate_baseline_matches_generated_template():
         "helpers:pinGitHubActionDigests",
     ):
         assert preset in root["extends"], f"root renovate.json lost {preset}"
-        assert preset in template_src, f"generated renovate.json.jinja lost {preset}"
-    assert root["lockFileMaintenance"]["automerge"] is True
-    assert root["vulnerabilityAlerts"]["automerge"] is True
-    assert '"automerge": true' in template_src
-    # generated template disables template-owned actions per category
-    assert template_src.count('"enabled": false') >= 4
+        assert preset in generated["extends"], f"generated renovate.json lost {preset}"
+    for name, document in (("root", root), ("generated", generated)):
+        assert document["lockFileMaintenance"]["automerge"] is True, name
+        assert document["vulnerabilityAlerts"]["automerge"] is True, name
+    # generated: template-owned actions are disabled per category, so copier
+    # update (not renovate) owns their versions
+    disabled = [rule for rule in generated["packageRules"] if rule.get("enabled") is False]
+    assert any("actions/checkout" in rule.get("matchPackageNames", []) for rule in disabled), (
+        "generated renovate.json must disable the template-owned core actions"
+    )
+    assert len(disabled) >= 4, "one disabling rule per dependency category"
     # root keeps digest-tracked actions grouped, not disabled
-    group_rules = [r for r in root["packageRules"] if r.get("groupName") == "GitHub Actions"]
+    group_rules = [rule for rule in root["packageRules"] if rule.get("groupName") == "GitHub Actions"]
     assert group_rules, "root renovate.json lost the GitHub Actions group rule"

@@ -659,8 +659,8 @@ def test_every_question_when_is_z3_satisfiable():
 
     str_domains: dict[str, list[str]] = {"project_type": pt_domain}
     for name in sorted(referenced - {"project_type", "true", "false", "not", "and", "or", "in"}):
+        assert name in questions, f"when expression references unknown variable {name!r}"
         q = questions[name]
-        assert q is not None, f"when expression references unknown variable {name!r}"
         if q.get("type") == "bool":
             continue  # free bool
         values = _static_str_choices(q)

@@ -14,6 +14,7 @@ task-check tests in test_example.py would only catch after a full uv sync.
 import shutil
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -187,10 +188,10 @@ def test_generated_project_is_ruff_format_clean_per_line_length(
     by these explicit variants.
     """
     _render(render_cache, tmp_path, answers)
-    pyproject = (tmp_path / "pyproject.toml").read_text()
-    expected_length = "120" if answers["allow_japanese"] else "88"
-    assert f"line-length = {expected_length}" in pyproject, (
-        f"expected line-length {expected_length} in generated pyproject.toml"
+    expected_length = 120 if answers["allow_japanese"] else 88
+    pyproject = tomllib.loads((tmp_path / "pyproject.toml").read_text(encoding="utf-8"))
+    assert pyproject["tool"]["ruff"]["line-length"] == expected_length, (
+        "the rendered ruff config must carry the allow_japanese line length"
     )
     proc = _run_ruff_format_check(tmp_path)
     assert proc.returncode == 0, (
@@ -249,8 +250,6 @@ def test_generated_toml_parses(tmp_path: Path, render_cache: RenderCache, answer
     """pyproject.toml (and pixi.toml for the ros2-pixi flavour) must be valid
     TOML: ruff only reads it as *config*, so syntax breaks in the poetry /
     pixi / poe table variants would pass the ruff tiers undetected."""
-    import tomllib
-
     _render(render_cache, tmp_path, answers)
     # adopt mode protects the pyproject: an existing one is never written,
     # so there is nothing to parse for that path.

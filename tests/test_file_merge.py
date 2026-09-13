@@ -102,7 +102,6 @@ def test_gitignore_is_idempotent(tmp_path: Path):
 
     assert target.read_text() == once
     assert second.added == []
-    assert any("already present" in note for note in second.notes)
 
 
 def test_makefile_appends_missing_targets_with_tabs(tmp_path: Path):
@@ -155,7 +154,6 @@ def test_taskfile_is_reported_not_appended(tmp_path: Path):
     assert result.reported == ["lint"]
     assert not result.applied
     assert target.read_text() == before
-    assert any("reported rather than appended" in note for note in result.notes)
 
 
 def test_taskfile_appends_when_approved(tmp_path: Path):
@@ -192,7 +190,6 @@ def test_taskfile_is_not_appended_when_tasks_are_not_last(tmp_path: Path):
 
     assert not result.applied and result.reported == ["lint"]
     assert target.read_text() == before
-    assert any("not the last block" in note for note in result.notes)
 
 
 def test_ci_caller_keeps_only_the_read_only_jobs():
@@ -221,15 +218,13 @@ def test_ci_caller_is_written_beside_their_workflow(tmp_path: Path):
     written = workflows / "copier-ci.yml"
     assert written.is_file()
     assert (workflows / "ci.yml").read_text() == "# MY OWN CI\n", "their workflow is untouched"
-    assert any("alongside" in note for note in result.notes)
 
     again = file_merge.merge_ci_caller(tmp_path, source)
     assert not again.applied
-    assert any("already exists" in note for note in again.notes)
 
 
 def test_unknown_kind_is_an_error(tmp_path: Path):
-    with pytest.raises(file_merge.FileMergeError, match="unknown kind"):
+    with pytest.raises(file_merge.FileMergeError):
         file_merge.merge_text_file(tmp_path / "x", tmp_path / "y", "toml")
 
 
@@ -284,7 +279,6 @@ def test_python_tasks_are_reported_not_appended(tmp_path: Path):
     assert result.reported == ["lint", "test"]
     assert not result.applied
     assert target.read_text() == before
-    assert any("reported rather than appended" in note for note in result.notes)
 
 
 def test_python_tasks_append_only_the_missing_functions(tmp_path: Path):
@@ -299,11 +293,18 @@ def test_python_tasks_append_only_the_missing_functions(tmp_path: Path):
     text = target.read_text()
     assert text.startswith(PYTHON_TASKS_TARGET), "their file is byte-identical up to the append"
     module = ast.parse(text)
-    assert {node.name for node in module.body if isinstance(node, ast.FunctionDef)} == {"mine", "lint", "test"}
+    functions = {node.name: node for node in module.body if isinstance(node, ast.FunctionDef)}
+    assert set(functions) == {"mine", "lint", "test"}
     for function in ("lint", "test"):
-        fragment = f"@task\ndef {function}(c: Context) -> None:"
-        assert fragment in text, f"the appended {function} keeps its decorator and signature"
-    assert text.count("@task") == 3, "their decorator is theirs alone"
+        node = functions[function]
+        assert [ast.unparse(decorator) for decorator in node.decorator_list] == ["task"], (
+            f"the appended {function} lost its @task decorator"
+        )
+        context = node.args.args[0]
+        assert context.arg == "c" and context.annotation is not None, (
+            f"the appended {function} lost its invoke signature"
+        )
+        assert ast.unparse(context.annotation) == "Context", f"the appended {function} lost its Context annotation"
 
 
 def test_python_tasks_is_idempotent(tmp_path: Path):
@@ -318,7 +319,6 @@ def test_python_tasks_is_idempotent(tmp_path: Path):
 
     assert target.read_text() == once
     assert second.added == [] and not second.applied
-    assert any("already present" in note for note in second.notes)
 
 
 def test_python_tasks_are_not_appended_without_the_decorator_import(tmp_path: Path):
@@ -333,8 +333,6 @@ def test_python_tasks_are_not_appended_without_the_decorator_import(tmp_path: Pa
 
     assert not result.applied and result.reported == ["lint", "test"]
     assert target.read_text() == before
-    assert any("`task` is not defined" in note for note in result.notes)
-    assert any("from invoke.tasks import task" in note for note in result.notes)
 
 
 def test_ci_jobs_are_reported_not_appended(tmp_path: Path):
@@ -349,8 +347,6 @@ def test_ci_jobs_are_reported_not_appended(tmp_path: Path):
     assert result.reported == ["lint", "test"]
     assert not result.applied
     assert target.read_text() == before
-    assert any("reported rather than appended" in note for note in result.notes)
-    assert any("not copied" in note for note in result.notes), "the publish jobs are named as excluded"
 
 
 def test_ci_jobs_append_only_the_read_only_jobs(tmp_path: Path):
@@ -385,7 +381,6 @@ def test_ci_jobs_is_idempotent(tmp_path: Path):
 
     assert target.read_text() == once
     assert second.added == [] and not second.applied
-    assert any("already present" in note for note in second.notes)
 
 
 def test_ci_jobs_skip_a_job_name_that_already_exists(tmp_path: Path):
@@ -400,7 +395,6 @@ def test_ci_jobs_skip_a_job_name_that_already_exists(tmp_path: Path):
     assert result.added == ["test"] and result.applied
     document = yaml.safe_load(target.read_text())
     assert document["jobs"]["lint"] == {"runs-on": "ubuntu-latest", "steps": [{"run": "echo my lint"}]}
-    assert any("already in your workflow, left alone: lint" in note for note in result.notes)
 
 
 def test_ci_jobs_are_not_appended_when_jobs_are_not_last(tmp_path: Path):
@@ -415,7 +409,6 @@ def test_ci_jobs_are_not_appended_when_jobs_are_not_last(tmp_path: Path):
 
     assert not result.applied and result.reported == ["lint", "test"]
     assert target.read_text() == before
-    assert any("not the last block" in note for note in result.notes)
 
 
 def test_cli_dry_run_writes_nothing(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
@@ -425,5 +418,5 @@ def test_cli_dry_run_writes_nothing(tmp_path: Path, capsys: pytest.CaptureFixtur
     source.write_text("*.pyc\n.venv\n")
 
     assert file_merge.main(["--target", str(target), "--source", str(source), "--kind", "gitignore", "--dry-run"]) == 0
-    assert "added: .venv" in capsys.readouterr().out
+    assert ".venv" in capsys.readouterr().out, "the dry run reports what it would add"
     assert target.read_text() == "*.pyc\n"

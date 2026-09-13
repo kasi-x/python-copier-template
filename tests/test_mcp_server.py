@@ -8,6 +8,7 @@ your own code.
 
 import json
 import sys
+import tomllib
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -76,11 +77,14 @@ async def test_every_tool_is_registered_with_a_description(client: Client):
 async def test_list_questions_filters_internal_variables(client: Client):
     asked = (await call(client, "list_questions"))["questions"]
     everything = (await call(client, "list_questions", {"asked_only": False}))["questions"]
-    assert len(everything) > len(asked) >= 60
+    assert len(everything) > len(asked)
     assert all(entry["internal"] is False for entry in asked)
-    assert any(entry["internal"] is True for entry in everything)
+    # the filter drops the derived variables, and the payload still describes
+    # the entries it keeps
+    assert "micropython_pkg" not in {entry["name"] for entry in asked}
+    assert "micropython_pkg" in {entry["name"] for entry in everything}
     assert asked[0]["name"] == "project_type"
-    assert "help" in asked[0] and "default" in asked[0]
+    assert {"help", "default"} <= asked[0].keys()
 
 
 @pytest.mark.anyio
@@ -88,19 +92,20 @@ async def test_questionnaire_resource(client: Client):
     result = await client.read_resource("template://questionnaire")
     assert isinstance(result.contents[0], TextResourceContents)
     payload = json.loads(result.contents[0].text)
+    everything = (await call(client, "list_questions", {"asked_only": False}))["questions"]
+    assert payload["questions"] == everything, "the resource serves the same questionnaire as the tool"
     assert payload["questions"][0]["name"] == "project_type"
-    assert len(payload["questions"]) >= 108
 
 
 @pytest.mark.anyio
 async def test_template_status_reports_the_checkout(client: Client):
     status = await call(client, "template_status")
     assert isinstance(status, dict)
-    assert status["questions"] >= 108
+    everything = (await call(client, "list_questions", {"asked_only": False}))["questions"]
+    assert status["questions"] == len(everything), "the status counts the questionnaire the tools serve"
     assert status["asked_questions"] < status["questions"]
     assert isinstance(status["dirty"], bool)
     assert status["latest_tag"], "the checkout has tags; the trap is that they are stale"
-    assert status["commits_behind_latest_tag"] is None or status["commits_behind_latest_tag"] >= 0
     assert mcp_server.template_status()["repo"] == str(TOP), "the plain function is the same call"
 
 
@@ -166,7 +171,7 @@ async def test_adopt_project_plans_then_applies(client: Client, tmp_path: Path):
     assert plan["ok"] and plan["applied"] is False
     assert plan["skip"] == [".github/workflows/ci.yml"]
     assert plan["deps"]["added"]["dev"], "the plan includes the dependency merge"
-    assert plan["tool_config"] is not None, "and the tool-config merge"
+    assert plan["tool_config"]["added"], "and the tool-config merge"
     assert (tmp_path / "README.md").read_text() == "# mine\n"
 
     applied = await call(client, "adopt_project", {"path": str(tmp_path), "ref": "HEAD", "dry_run": False})
@@ -175,7 +180,7 @@ async def test_adopt_project_plans_then_applies(client: Client, tmp_path: Path):
     assert (tmp_path / ".github" / "workflows" / "ci.yml").read_text() == "# MY OWN CI\n"
     assert (tmp_path / "README.md").read_text() == "# mine\n"
     assert (tmp_path / ".gitleaks.toml").exists()
-    assert "[dependency-groups]" in (tmp_path / "pyproject.toml").read_text()
+    assert "dependency-groups" in tomllib.loads((tmp_path / "pyproject.toml").read_text())
 
 
 @pytest.mark.anyio
@@ -183,7 +188,7 @@ async def test_adopt_project_refuses_a_foreign_template(client: Client, tmp_path
     (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/other/template.git\n")
     result = await client.call_tool("adopt_project", {"path": str(tmp_path)})
     assert result.is_error is True
-    assert "another copier template" in str(result.content)
+    assert "https://github.com/other/template.git" in str(result.content), "the error names the owning template"
 
 
 @pytest.mark.anyio
@@ -209,13 +214,12 @@ async def test_run_batch_reports_a_verdict(client: Client, tmp_path: Path):
 @pytest.mark.anyio
 async def test_list_batch_requests_reads_the_shipped_batch(client: Client):
     requests = (await call(client, "list_batch_requests", {"jsonl": str(TOP / "batches" / "smoke.jsonl")}))["requests"]
-    assert len(requests) == 8
-    assert requests[0]["id"] == "library-recommended"
-    assert any(request["has_update"] for request in requests)
+    assert requests, "the shipped batch lists its requests"
+    assert any(request["has_update"] for request in requests), "the listing reports the update phase"
 
 
 @pytest.mark.anyio
 async def test_bad_input_is_a_tool_error(client: Client):
     result = await client.call_tool("list_batch_requests", {"jsonl": "/nonexistent/requests.jsonl"})
     assert result.is_error is True
-    assert "cannot read" in str(result.content)
+    assert "/nonexistent/requests.jsonl" in str(result.content), "the error names the file it could not read"

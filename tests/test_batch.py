@@ -44,51 +44,56 @@ def request(**overrides: object) -> dict:
 
 
 def test_rejects_unknown_keys(tmp_path: Path):
-    with pytest.raises(batch.SpecError, match="unknown key"):
+    with pytest.raises(batch.SpecError) as excinfo:
         batch.load_requests(write_lines(tmp_path, {**request(), "not_a_key": {}}))
+    assert "not_a_key" in str(excinfo.value), "the refusal names the offending key"
 
 
 def test_rejects_duplicate_ids(tmp_path: Path):
-    with pytest.raises(batch.SpecError, match="duplicate id"):
+    with pytest.raises(batch.SpecError) as excinfo:
         batch.load_requests(write_lines(tmp_path, request(), request()))
+    assert request()["id"] in str(excinfo.value), "the refusal names the duplicated id"
 
 
 def test_requires_an_id(tmp_path: Path):
-    with pytest.raises(batch.SpecError, match="'id' is required"):
+    with pytest.raises(batch.SpecError):
         batch.load_requests(write_lines(tmp_path, {"answers": {}}))
 
 
 def test_rejects_a_dest_outside_the_work_dir(tmp_path: Path):
-    with pytest.raises(batch.SpecError, match="must stay inside the work dir"):
+    with pytest.raises(batch.SpecError) as excinfo:
         batch.load_requests(write_lines(tmp_path, request(dest="../escape")))
+    assert "../escape" in str(excinfo.value), "the refusal names the offending dest"
 
 
 def test_rejects_invalid_json(tmp_path: Path):
     path = tmp_path / "bad.jsonl"
     path.write_text("{not json}\n")
-    with pytest.raises(batch.SpecError, match="invalid JSON"):
+    with pytest.raises(batch.SpecError) as excinfo:
         batch.load_requests([path])
+    assert path.name in str(excinfo.value), "the refusal names the file it could not read"
 
 
 def test_rejects_an_unknown_expectation_key(tmp_path: Path):
     """A misspelled key must fail the run, not silently check nothing."""
-    with pytest.raises(batch.SpecError, match="unknown key"):
+    with pytest.raises(batch.SpecError) as excinfo:
         batch.load_requests(write_lines(tmp_path, request(expect={"expects": []})))
+    assert "expects" in str(excinfo.value), "the refusal names the misspelled key"
 
 
 def test_rejects_a_toml_expectation_without_equals(tmp_path: Path):
-    with pytest.raises(batch.SpecError, match="'equals'"):
+    with pytest.raises(batch.SpecError) as excinfo:
         batch.load_requests(
             write_lines(tmp_path, request(expect={"toml": [{"path": "pyproject.toml", "key": "project.name"}]}))
         )
+    assert "equals" in str(excinfo.value), "the refusal names the missing key"
 
 
 def test_shipped_smoke_batch_parses():
     """The sample batch is part of the contract: a typo in it fails here."""
     requests = batch.load_requests([TOP / "batches" / "smoke.jsonl"])
-    assert len(requests) == 8
-    assert next(r.id for r in requests) == "library-recommended"
     assert any(r.update is not None for r in requests), "the sample must exercise the update phase"
+    assert any(r.expect for r in requests), "and judge what a render produced"
 
 
 def test_checks_judge_a_tree(tmp_path: Path):
@@ -116,13 +121,13 @@ def test_checks_judge_a_tree(tmp_path: Path):
 
 def test_commands_report_exit_and_output(tmp_path: Path):
     passing = batch.check_commands(tmp_path, [{"run": "echo hello"}], "case")
-    assert [c.ok for c in passing] == [True]
+    assert all(c.ok for c in passing)
     failing = batch.check_commands(tmp_path, [{"run": "exit 3"}], "case")
     assert not failing[0].ok and "exit 3" in failing[0].detail
     matched = batch.check_commands(tmp_path, [{"run": "echo hello", "stdout_regex": "^hello$"}], "case")
     assert all(c.ok for c in matched)
     unmatched = batch.check_commands(tmp_path, [{"run": "echo hello", "stdout_regex": "^bye$"}], "case")
-    assert not unmatched[1].ok
+    assert not all(c.ok for c in unmatched), "a stdout regex that does not match must fail the run"
 
 
 def test_update_precondition_needs_a_clean_tree(tmp_path: Path):

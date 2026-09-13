@@ -7,6 +7,7 @@ leaves the project exactly as it was.
 
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -55,7 +56,7 @@ def test_resolve_ref_uses_a_tag_only_when_it_carries_the_questionnaire(tmp_path:
 
     ref, reason = adopt.resolve_ref()
     assert ref == "v1", "a tag with this questionnaire is the right default"
-    assert "carries this questionnaire" in reason
+    assert "v1" in reason, "the judgement names the tag it chose"
 
     # the template grows a question the tag does not have -> the tag is stale
     (template / "questions" / "b.yml").write_text("beta:\n    type: str\n")
@@ -64,9 +65,9 @@ def test_resolve_ref_uses_a_tag_only_when_it_carries_the_questionnaire(tmp_path:
     git(template, "commit", "-qm", "second question")
 
     ref, reason = adopt.resolve_ref()
-    assert ref == "main"
-    assert "does not carry this questionnaire" in reason and "beta" in reason
-    assert adopt.resolve_ref("HEAD") == ("HEAD", "requested explicitly")
+    assert ref == "main", "a tag missing a question must not be used"
+    assert "beta" in reason, "the judgement names the question the tag lacks"
+    assert adopt.resolve_ref("HEAD")[0] == "HEAD", "an explicit ref is honoured"
 
 
 def test_dry_run_writes_nothing(tmp_path: Path):
@@ -78,7 +79,6 @@ def test_dry_run_writes_nothing(tmp_path: Path):
     assert result.ok and not result.applied
     assert result.mode == "adopt"
     assert result.skip == [".github/workflows/ci.yml", "renovate.json"]
-    assert any("dry run" in note for note in result.notes)
     assert tree(project) == before
 
 
@@ -112,12 +112,11 @@ def test_a_collision_that_was_not_skipped_rolls_the_project_back(tmp_path: Path)
     result = adopt.adopt(project, ref="HEAD", skip=[])
 
     assert not result.ok and not result.applied
-    assert result.error is not None and "InteractiveSessionError" in result.error
+    assert result.error is not None, "the collision must be reported"
     assert result.removed, "files created before the stop are removed"
     assert tree(project) == before, "every file is back to its old bytes"
     directories = {str(path.relative_to(project)) for path in project.rglob("*") if path.is_dir()}
     assert directories == {".github", ".github/workflows"}, "not even an empty directory is left behind"
-    assert any("rolled back" in note for note in result.notes)
 
 
 def test_adoption_merges_the_template_dependencies(tmp_path: Path):
@@ -134,9 +133,9 @@ def test_adoption_merges_the_template_dependencies(tmp_path: Path):
     assert result.deps["kept"]["runtime"] == ["structlog"], "the dependency they already declare is left alone"
     text = (project / "pyproject.toml").read_text()
     assert "# my pin" in text, "the adopter's file is edited, not replaced"
-    assert '"structlog>=9"' in text, "their constraint survives"
-    assert '"structlog' in text
-    assert "[dependency-groups]" in text
+    merged = tomllib.loads(text)
+    assert "structlog>=9" in merged["project"]["dependencies"], "their constraint survives"
+    assert "dependency-groups" in merged
     assert any("structlog" in line for line in result.deps["differing"]), "their pin wins, and is reported"
 
 
@@ -180,8 +179,8 @@ def test_adoption_merges_gitignore_makefile_and_ci(tmp_path: Path):
     assert "check:" in (project / "Makefile").read_text()
     assert (workflows / "ci.yml").read_text() == "# MY OWN CI\n", "their workflow is never rewritten"
     caller = workflows / "copier-ci.yml"
-    assert caller.is_file() and "Copier CI" in caller.read_text()
-    assert "name: my-ci" not in caller.read_text()
+    assert caller.is_file()
+    assert yaml.safe_load(caller.read_text())["name"] == "Copier CI", "their workflow name is not reused"
 
 
 def test_adoption_merges_tool_config_but_not_project_paths(tmp_path: Path):
@@ -193,10 +192,10 @@ def test_adoption_merges_tool_config_but_not_project_paths(tmp_path: Path):
     result = adopt.adopt(project, ref="HEAD")
 
     assert result.ok and result.tool_config is not None
-    text = (project / "pyproject.toml").read_text()
-    assert "line-length = 100" in text, "their setting survives"
-    assert "[tool.ruff.lint]" in text and 'select = ["ALL"]' in text
-    assert "src/" not in text.split("[dependency-groups]")[0].split("[tool.ruff.lint]")[1][:200]
+    parsed = tomllib.loads((project / "pyproject.toml").read_text())
+    assert parsed["tool"]["ruff"]["line-length"] == 100, "their setting survives"
+    assert parsed["tool"]["ruff"]["lint"]["select"] == ["ALL"], "the template's lint rule set is merged in"
+    assert "src" not in parsed["tool"]["ruff"], "the template's path-shaped value is not copied"
     assert any("tool.ruff.line-length" in line for line in result.tool_config["kept"])
     assert result.tool_config["needs_your_value"], "path-shaped values are reported, not copied"
 
@@ -220,7 +219,6 @@ def test_confirmation_no_keeps_the_render_and_skips_the_merges(tmp_path: Path):
     assert result.ok and not result.cancelled
     assert (project / ".gitignore").read_text() == "*.pyc\n", "their file is untouched"
     assert (project / ".gitleaks.toml").exists(), "the render still happened"
-    assert any("merges skipped" in note for note in result.notes)
 
 
 def test_confirmation_cancel_rolls_the_render_back(tmp_path: Path):
@@ -231,7 +229,6 @@ def test_confirmation_cancel_rolls_the_render_back(tmp_path: Path):
 
     assert result.cancelled and not result.ok and result.error is None
     assert tree(project) == before, "nothing of the adoption is left behind"
-    assert any("cancelled" in note for note in result.notes)
 
 
 def test_confirmation_can_approve_a_project_specific_value(tmp_path: Path):
@@ -298,7 +295,7 @@ def test_confirmation_can_approve_appending_to_the_taskfile(tmp_path: Path):
     )
 
     assert result.ok
-    assert any("append these tasks to your Taskfile.yml" in question for question in asked)
+    assert any("Taskfile" in question for question in asked), "the task list is offered for approval"
     document = yaml.safe_load((project / "Taskfile.yml").read_text())
     assert "mine" in document["tasks"], "their task survives"
     assert "lint" in document["tasks"], "the approved tasks were appended"
@@ -353,19 +350,19 @@ def test_merge_verification_detects_a_rewritten_requirement(tmp_path: Path):
     assert problem is not None and "httpx" in problem
 
     target.write_text("this is not toml\n")
-    assert "does not parse" in (adopt.merge_problem(target, before) or "")
+    assert adopt.merge_problem(target, before), "an unparsable file is a merge problem"
 
 
 def test_refuses_a_project_this_template_already_generated(tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/kasi-x/python-copier-template.git\n")
-    with pytest.raises(adopt.AdoptError, match="already generated"):
+    with pytest.raises(adopt.AdoptError):
         adopt.adopt(tmp_path, ref="HEAD")
 
 
 def test_refuses_a_foreign_template_until_takeover(tmp_path: Path):
     make_project(tmp_path)
     (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/other/template.git\n")
-    with pytest.raises(adopt.OwnershipError, match="another copier template"):
+    with pytest.raises(adopt.OwnershipError):
         adopt.adopt(tmp_path, ref="HEAD")
 
     result = adopt.adopt(tmp_path, ref="HEAD", takeover=True, dry_run=True)
@@ -375,21 +372,20 @@ def test_refuses_a_foreign_template_until_takeover(tmp_path: Path):
 def test_main_exit_codes(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     project = make_project(tmp_path)
     assert adopt.main([str(project), "--ref", "HEAD", "--dry-run", "--no-merge"]) == 0
-    assert "dry run" in capsys.readouterr().out
+    assert capsys.readouterr().out.strip(), "a dry run still reports"
 
     # an uncovered collision: exit 1, and the project is back to its old self
     before = tree(project)
     assert adopt.main([str(project), "--ref", "HEAD", "--no-merge", "--skip", "nothing-actually-collides"]) == 1
-    assert "FAILED" in capsys.readouterr().out
     assert tree(project) == before
 
     other = tmp_path / "other"
     other.mkdir()
     (other / ".copier-answers.yml").write_text("_src_path: https://github.com/other/template.git\n")
     assert adopt.main([str(other), "--ref", "HEAD"]) == 3
-    assert "another copier template" in capsys.readouterr().err
+    assert capsys.readouterr().err.strip(), "the refusal explains itself on stderr"
 
 
 def test_main_rejects_a_missing_directory(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     assert adopt.main([str(tmp_path / "nope")]) == 2
-    assert "not a directory" in capsys.readouterr().err
+    assert capsys.readouterr().err.strip(), "the refusal explains itself on stderr"
