@@ -13,12 +13,21 @@ already runs them. This module only checks that the whole `template/` tree
 survives jinja rendering for the fast path, without paying for uv sync/docs.
 """
 
+import sys
 from pathlib import Path
 
 import pytest
 from copier import run_copy
 
 TOP = Path(__file__).absolute().parent.parent
+if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach tools/
+    sys.path.insert(0, str(TOP))
+
+from tools import invariants  # noqa: E402
+
+# The one source for what a leaf class must ship, must not ship, and which
+# content it must have: tests/matrix/invariants.yml, read through its loader.
+INVARIANTS = invariants.load()
 
 
 # Answers shared by every case: the required "Project Details" plus values
@@ -61,90 +70,41 @@ FAST_PATHS: list[dict[str, object]] = [
     {"project_type": "online_judge", "oj_category": "ctf", "oj_kind": "ctf"},
 ]
 
-# Artifacts unique to each case, to prove the fast path took the right
-# layout branch instead of silently copying another one.
-MARKERS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
-    "library": (("src/smoke_example/__init__.py",), ("compose.local.yml", "smoke_example/__init__.py")),
-    # docker is off on the fast path, so no compose file -- the web_api-only
-    # tell is the postgres service in ci.yml (test_library_no_web_api_extras
-    # asserts the library side of the same distinction). web_api ships no
-    # <pkg> library: the app lives in top-level app/ (fixed stale
-    # src/<pkg> expectation here).
-    "web_api": (("app/main.py",), ("compose.local.yml", "src")),
-    "script": (("smoke_example/__init__.py",), ("src", "compose.local.yml")),
-    # combo: the FastAPI app and the data_science layout coexist.
-    "data_science+web_api": (
-        ("app/main.py", "notebooks/.gitkeep", "data/DEIDENTIFICATION.md"),
-        ("compose.local.yml",),
-    ),
-    # combo: the analysis layout on top of a cli base.
-    "cli+data_science": (
-        ("src/smoke_example/__init__.py", "notebooks/.gitkeep"),
-        ("compose.local.yml", "app/main.py"),
-    ),
-    # layer: the CTF participant workspace on top of a cli base.
-    "cli+ctf": (
-        ("src/smoke_example/__init__.py", "challenges/pwn/example/solve.py"),
-        ("compose.local.yml", "app/main.py"),
-    ),
-    # layer: the MCP server on top of a cli base (integrations gate open).
-    "cli+mcp": (
-        ("src/smoke_example/mcp_server.py", "tests/test_mcp_server.py"),
-        ("compose.local.yml", "app/main.py"),
-    ),
-    # oj: kaggle ships the competition layout.
-    "oj_kaggle": (
-        ("src/utils/__init__.py",),
-        ("compose.local.yml", "src/smoke_example/__init__.py", "challenges"),
-    ),
-    # oj: atcoder ships a bare workspace.
-    "oj_atcoder": (
-        ("README.md",),
-        ("src", "challenges", "AGENTS.md"),
-    ),
-    # oj: ctf ships the participant workspace plus the agent guide.
-    "oj_ctf": (
-        ("challenges/pwn/example/solve.py", "AGENTS.md"),
-        ("compose.local.yml", "src/smoke_example/__init__.py"),
-    ),
-}
-
-# Content that must appear for each case (proves the branch, not just
-# the shared layout). web_api's CI gets a postgres service; the others do not.
-CONTENT: dict[str, tuple[tuple[str, str], ...]] = {
-    "library": (),
-    "web_api": ((".github/workflows/ci.yml", "postgres"),),
-    "script": (),
-    "data_science+web_api": (
-        (".github/workflows/ci.yml", "postgres"),
-        ("pyproject.toml", "fastapi"),
-        ("pyproject.toml", "polars"),
-    ),
-    "cli+data_science": (("pyproject.toml", "polars"),),
-    "cli+ctf": (("pyproject.toml", "pwntools"),),
-    "cli+mcp": (("pyproject.toml", "mcp"),),
-    "oj_kaggle": (("pyproject.toml", "torch"),),
-    "oj_atcoder": (("pyproject.toml", "dependencies = []"),),
-    "oj_ctf": (("pyproject.toml", "pwntools"),),
-}
-
 
 def _id(answers: dict[str, object]) -> str:
     return "-".join(f"{k}={v}" for k, v in answers.items())
 
 
-def _key(answers: dict[str, object]) -> str:
-    if answers.get("project_type") == "online_judge":
-        return "oj_" + str(answers.get("oj_kind", "kaggle"))
-    if answers.get("include_web_api") is True:
-        return "data_science+web_api"
-    if answers.get("include_data_science") is True:
-        return "cli+data_science"
-    if answers.get("include_ctf") is True:
-        return "cli+ctf"
-    if answers.get("include_mcp") is True:
-        return "cli+mcp"
-    return str(answers["project_type"])
+def _answers_of(answers: dict[str, object]) -> dict[str, object]:
+    """The full answer set of one fast path, checked against the invariants file.
+
+    A case whose class has no row there would silently lose its markers, so it
+    fails here instead: adding a path means adding the row that says what it
+    renders (tests/matrix/invariants.yml).
+    """
+    complete = {**BASE, **answers}
+    unclassified = INVARIANTS.unclaimed(complete)
+    if unclassified:
+        msg = f"fast path {_id(answers)} is unclassified in {invariants.PATH.name}: no row selects {list(unclassified)}"
+        raise RuntimeError(msg)
+    return complete
+
+
+CASES: dict[str, dict[str, object]] = {_id(answers): _answers_of(answers) for answers in FAST_PATHS}
+
+# Artifacts unique to each case, to prove the fast path took the right layout
+# branch instead of silently copying another one. Derived from the class rows
+# of tests/matrix/invariants.yml (each row's branch tells, unioned over the
+# rows the answers select), never kept in sync by hand.
+MARKERS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    case: INVARIANTS.markers_for(answers) for case, answers in CASES.items()
+}
+
+# Content that must appear for each case (proves the branch, not just the
+# shared layout); declared per class in the same file.
+CONTENT: dict[str, tuple[tuple[str, str], ...]] = {
+    case: INVARIANTS.content_for(answers) for case, answers in CASES.items()
+}
 
 
 @pytest.mark.parametrize("answers", FAST_PATHS, ids=[_id(a) for a in FAST_PATHS])
@@ -159,7 +119,7 @@ def test_recommended_path_renders(tmp_path: Path, answers: dict[str, object]):
         overwrite=True,
         skip_tasks=True,  # REUSE-copy tasks need a checkout; jinja is what we test
     )
-    key = _key(answers)
+    key = _id(answers)
     expect, not_expect = MARKERS[key]
     for rel in expect:
         assert (tmp_path / rel).exists(), f"expected {rel} to be generated"

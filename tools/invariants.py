@@ -1,0 +1,589 @@
+#!/usr/bin/env python3
+"""What a render of the questionnaire must satisfy, read from one file.
+
+``tests/matrix/invariants.yml`` is the single source for "what a leaf must
+satisfy": the artifacts it ships and must not ship, the content predicates
+that hold on them, its witness tier and the reason a question type is left out
+(TODO.md §26.4 item 4, §23.4 item 2). This module is the only reader of that
+file, so the schema is enforced in one place and a typo cannot silently shrink
+a class's invariants:
+
+- every row key, ``select`` key and ``select`` value is checked against the
+  questionnaire (``project_type`` choices, ``oj_kind`` choices, the
+  ``include_*`` questions, the ``use_recommended_*`` gates) and against the
+  file's own predicate registry and tier vocabulary. An unknown key or value
+  raises ``InvariantError`` naming the row;
+- every ``project_type`` the questionnaire offers must be selected by a row,
+  and a row may not select an excluded one;
+- a leaf whose answers carry a dimension value no row selects (a new judge, a
+  new layer, a gate nobody declared) is reported by ``unclaimed`` and refused
+  by ``expect_for`` instead of quietly resolving to the common layout.
+
+A leaf's expectation is the ordered union of the rows its answers select:
+"base first, override last" is the file's order, in which ``ships``/``absent``
+concatenate and a later row's tier takes precedence for the classes it
+selects.
+
+Consumers:
+
+- ``tools/z3_witnesses.py`` builds each §C6 request's ``expect`` with
+  ``expect_for`` and takes the excluded question types from ``excluded``;
+- ``tests/test_recommended_path.py`` derives its fast-path ``MARKERS`` (branch
+  tells) with ``markers_for`` and its per-case content checks with
+  ``content_for``;
+- ``tests/test_render_invariants.py`` looks up which content predicates a leaf
+  must satisfy with ``predicates_for``;
+- ``tests/test_invariants.py`` holds the loader's contract and the meta checks
+  (every witness leaf resolves to a row, and the union reproduces the
+  committed ``expect``).
+"""
+
+from __future__ import annotations
+
+import sys
+from collections.abc import Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
+from jinja2 import Template
+
+TOP = Path(__file__).resolve().parent.parent
+if str(TOP) not in sys.path:  # tests import tools/ the same way (no root package)
+    sys.path.insert(0, str(TOP))
+
+from tools import when_model  # noqa: E402
+
+#: The file this module is the reader of.
+PATH = TOP / "tests" / "matrix" / "invariants.yml"
+
+GATE_PREFIX = "use_recommended_"
+
+#: The witness tiers a row may declare (tests/test_witness_matrix.py's tiers).
+TIERS = ("full", "fast", "best_effort", "none")
+
+#: ``select`` keys that name questionnaire values, checked against it.
+NAMED_SELECT_KEYS = ("project_type", "oj_kind", "include", "gate_off")
+
+#: ``select`` keys that name a derived questionnaire trait (see ``Facts``).
+TRAITS = ("data_science", "kaggle", "src_layout", "web_api")
+
+SELECT_KEYS = (*NAMED_SELECT_KEYS, *TRAITS)
+
+ROW_KEYS = ("id", "select", "ships", "absent", "markers", "content", "predicates", "tier", "why")
+
+
+class InvariantError(ValueError):
+    """A malformed invariants file, or a leaf no row classifies."""
+
+
+def _matches(key: str, expected: Any, facts: Facts) -> bool:
+    """Whether one ``select`` entry holds for a leaf."""
+    if key in TRAITS:
+        return facts.trait(key) is expected
+    if key == "project_type":
+        return facts.project_type in expected
+    if key == "oj_kind":
+        return facts.oj_kind in expected
+    if key == "include":
+        return bool(set(expected) & set(facts.includes))
+    return bool(set(expected) & set(facts.gates_off))
+
+
+@dataclass(frozen=True)
+class Tier:
+    """The witness tier a leaf class is CI-gated for, and the evidence."""
+
+    name: str
+    why: str
+
+
+@dataclass(frozen=True)
+class LeafClass:
+    """One row: the leaf class it selects, and what that class must satisfy."""
+
+    id: str
+    select: dict[str, Any]
+    ships: tuple[str, ...]
+    absent: tuple[str, ...]
+    marker_ships: tuple[str, ...]
+    marker_absent: tuple[str, ...]
+    predicates: tuple[str, ...]
+    content: tuple[tuple[str, str], ...]
+    tier: Tier | None
+    why: str
+
+    def matches(self, facts: Facts) -> bool:
+        """Whether this row selects the leaf those facts describe."""
+        return all(_matches(key, expected, facts) for key, expected in self.select.items())
+
+
+@dataclass(frozen=True)
+class Facts:
+    """The dimensions of one leaf, derived from its copier answers.
+
+    ``traits`` holds the questionnaire's derived internals, keyed by ``TRAITS``:
+    the web_api and data_science layers move where the package lives
+    (questions/_internal.yml's ``pkg_dir`` switch) and the kaggle judge brings
+    its own workspace, so a row about a package directory has to select on them.
+    """
+
+    project_type: str
+    oj_kind: str
+    includes: tuple[str, ...]
+    gates_off: tuple[str, ...]
+    traits: Mapping[str, bool]
+
+    def trait(self, name: str) -> bool:
+        """One derived trait of the questionnaire (a key of ``TRAITS``)."""
+        return self.traits[name]
+
+    @property
+    def label(self) -> str:
+        """A one-line name for messages: the dimensions this leaf carries."""
+        return "/".join(f"{key}={value}" for key, value in self.dimensions())
+
+    def dimensions(self) -> tuple[tuple[str, str], ...]:
+        """Every (dimension, value) pair some row has to select for this leaf."""
+        dimensions = [("project_type", self.project_type)]
+        if self.oj_kind:
+            dimensions.append(("oj_kind", self.oj_kind))
+        dimensions += [("include", name) for name in self.includes]
+        dimensions += [("gate_off", name) for name in self.gates_off]
+        return tuple(dimensions)
+
+
+@dataclass(frozen=True)
+class Vocabulary:
+    """The questionnaire's names, as ``select`` values are checked against them."""
+
+    project_types: tuple[str, ...]
+    categories: tuple[str, ...]
+    oj_kind_choices: dict[str, tuple[str, ...]]
+    includes: tuple[str, ...]
+    gates: tuple[str, ...]
+
+    @property
+    def oj_kinds(self) -> tuple[str, ...]:
+        """Every judge, across every ``oj_category``."""
+        return tuple(dict.fromkeys(kind for kinds in self.oj_kind_choices.values() for kind in kinds))
+
+
+@dataclass(frozen=True)
+class Invariants:
+    """The loaded file: its rows, predicate registry and exclusions."""
+
+    source: Path
+    predicates: dict[str, str]
+    excluded: dict[str, str]
+    vocabulary: Vocabulary
+    rows: tuple[LeafClass, ...]
+
+    @property
+    def renderable_project_types(self) -> tuple[str, ...]:
+        """The questionnaire's project types, minus the excluded ones."""
+        return tuple(value for value in self.vocabulary.project_types if value not in self.excluded)
+
+    def facts(self, answers: Mapping[str, Any]) -> Facts:
+        """The leaf a set of copier answers describes.
+
+        Only the dimensions the questionnaire varies matter here, so an
+        answer set that omits a question is read as that question's default
+        (false for every gate, layer and judge this file selects on).
+        """
+        project_type = answers.get("project_type")
+        if not isinstance(project_type, str) or project_type not in self.vocabulary.project_types:
+            msg = f"leaf {dict(answers)!r} has no project_type the questionnaire offers"
+            raise InvariantError(msg)
+        includes = tuple(name for name in self.vocabulary.includes if answers.get(name) is True)
+        gates_off = tuple(name for name in self.vocabulary.gates if answers.get(name) is False)
+        oj_kind = answers.get("oj_kind")
+        web_api = project_type == "web_api" or "include_web_api" in includes
+        data_science = project_type == "data_science" or "include_data_science" in includes
+        return Facts(
+            project_type=project_type,
+            oj_kind=oj_kind if isinstance(oj_kind, str) else "",
+            includes=includes,
+            gates_off=gates_off,
+            traits={
+                "web_api": web_api,
+                "data_science": data_science,
+                "kaggle": project_type == "online_judge" and oj_kind == "kaggle",
+                "src_layout": project_type in ("library", "cli") and not web_api,
+            },
+        )
+
+    def rows_for(self, answers: Mapping[str, Any]) -> tuple[LeafClass, ...]:
+        """The rows this leaf selects, in file order."""
+        facts = self.facts(answers)
+        return tuple(row for row in self.rows if row.matches(facts))
+
+    def unclaimed(self, answers: Mapping[str, Any]) -> tuple[str, ...]:
+        """The leaf's dimension values no row selects (empty when classified).
+
+        This is the "no leaf is unclassified" property: a new question, layer
+        or judge fails here until a row says what it renders.
+        """
+        claimed = {(key, value) for row in self.rows for key in NAMED_SELECT_KEYS for value in row.select.get(key, ())}
+        return tuple(f"{key}={value}" for key, value in self.facts(answers).dimensions() if (key, value) not in claimed)
+
+    def expect_for(self, answers: Mapping[str, Any]) -> dict[str, list[str]]:
+        """The §C6 ``expect`` of this leaf: what it must ship and must not."""
+        facts = self.facts(answers)
+        missing = self.unclaimed(answers)
+        if missing:
+            msg = f"leaf {facts.label} is unclassified: no row selects {list(missing)}"
+            raise InvariantError(msg)
+        files: list[str] = []
+        absent: list[str] = []
+        for row in self.rows_for(answers):
+            files.extend(row.ships)
+            absent.extend(row.absent)
+        files = list(_unique(files))
+        absent = list(_unique(absent))
+        both = sorted(set(files) & set(absent))
+        if both:
+            msg = f"leaf {facts.label} declares {both} both shipped and absent"
+            raise InvariantError(msg)
+        return {"files": files, "absent": absent}
+
+    def markers_for(self, answers: Mapping[str, Any]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        """The fast-path branch tells of this leaf: what proves it took its branch."""
+        ships: list[str] = []
+        absent: list[str] = []
+        for row in self.rows_for(answers):
+            ships.extend(row.marker_ships)
+            absent.extend(row.marker_absent)
+        return (_unique(ships), _unique(absent))
+
+    def content_for(self, answers: Mapping[str, Any]) -> tuple[tuple[str, str], ...]:
+        """The (path, substring) checks this leaf's class declares."""
+        return _unique_pairs([pair for row in self.rows_for(answers) for pair in row.content])
+
+    def predicates_for(self, answers: Mapping[str, Any]) -> tuple[str, ...]:
+        """The content predicates this leaf must satisfy, de-duplicated."""
+        return _unique([name for row in self.rows_for(answers) for name in row.predicates])
+
+    def tiers_for(self, answers: Mapping[str, Any]) -> tuple[str, ...]:
+        """Every tier the rows of this leaf declare (the class's policy)."""
+        return _unique([row.tier.name for row in self.rows_for(answers) if row.tier is not None])
+
+
+def _unique(items: list[str]) -> tuple[str, ...]:
+    """De-duplicate while keeping the declared order."""
+    return tuple(dict.fromkeys(items))
+
+
+def _unique_pairs(pairs: list[tuple[str, str]]) -> tuple[tuple[str, str], ...]:
+    """De-duplicate (path, substring) pairs while keeping the declared order."""
+    return tuple(dict.fromkeys(pairs))
+
+
+def _static_choices(questions: dict[str, dict], name: str) -> list[str]:
+    """A question's choice values, mapping form normalized (when_model.static_str_choices)."""
+    choices = questions[name].get("choices")
+    values = (
+        [str(value) for value in choices.values()]
+        if isinstance(choices, dict)
+        else [str(value) for value in when_model.static_str_choices(questions[name])]
+    )
+    if not values:
+        msg = f"question {name!r} has no static choices; the leaf space needs a fixed domain"
+        raise InvariantError(msg)
+    return values
+
+
+def _oj_kind_choices(questions: dict[str, dict], category: str) -> list[str]:
+    """``oj_kind``'s choices for one ``oj_category`` (its ``choices`` is a template)."""
+    rendered = Template(str(questions["oj_kind"]["choices"])).render(oj_category=category)
+    return [str(value) for value in yaml.safe_load(rendered)]
+
+
+def questionnaire_vocabulary() -> Vocabulary:
+    """The questionnaire's names, read with copier's own loader."""
+    questions, _order = when_model.load_questions()
+    categories = tuple(_static_choices(questions, "oj_category"))
+    return Vocabulary(
+        project_types=tuple(_static_choices(questions, "project_type")),
+        categories=categories,
+        oj_kind_choices={category: tuple(_oj_kind_choices(questions, category)) for category in categories},
+        includes=tuple(name for name in questions if name.startswith("include_")),
+        gates=tuple(name for name in questions if name.startswith(GATE_PREFIX)),
+    )
+
+
+def load(path: Path | None = None) -> Invariants:
+    """Read and validate the invariants file, or raise ``InvariantError``."""
+    source = PATH if path is None else path
+    try:
+        payload = yaml.safe_load(source.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        msg = f"{source}: not valid YAML: {exc}"
+        raise InvariantError(msg) from exc
+    if not isinstance(payload, dict):
+        msg = f"{source}: the file must be a mapping of sections"
+        raise InvariantError(msg)
+    unknown = sorted(set(payload) - {"version", "predicates", "excluded", "leaf_classes"})
+    if unknown:
+        msg = f"{source}: unknown section(s) {unknown}; the schema is version/predicates/excluded/leaf_classes"
+        raise InvariantError(msg)
+    predicates = _predicates(payload.get("predicates"), source)
+    excluded = _excluded(payload.get("excluded"), source)
+    vocabulary = questionnaire_vocabulary()
+    rows = _rows(payload.get("leaf_classes"), vocabulary, predicates, excluded, source)
+    invariants = Invariants(source=source, predicates=predicates, excluded=excluded, vocabulary=vocabulary, rows=rows)
+    _check_project_type_coverage(invariants)
+    return invariants
+
+
+def _mapping(value: Any, where: str) -> dict[str, Any]:
+    """One YAML mapping, or a loud error naming where it should have been."""
+    if not isinstance(value, dict):
+        msg = f"{where}: expected a mapping, got {type(value).__name__}"
+        raise InvariantError(msg)
+    return value
+
+
+def _strings(value: Any, where: str, key: str) -> tuple[str, ...]:
+    """A list of non-empty strings (relative paths, artifact names)."""
+    if not isinstance(value, list) or not all(isinstance(item, str) and item for item in value):
+        msg = f"{where}: {key} must be a list of non-empty strings"
+        raise InvariantError(msg)
+    absolute = sorted(item for item in value if item.startswith("/"))
+    if absolute:
+        msg = f"{where}: {key} must be render-relative, got {absolute}"
+        raise InvariantError(msg)
+    return tuple(value)
+
+
+def _why(row: dict[str, Any], where: str) -> str:
+    """Every row carries the reason it says what it says."""
+    why = row.get("why")
+    if not isinstance(why, str) or not why.strip():
+        msg = f"{where}: every row needs a `why` (the evidence for what it declares)"
+        raise InvariantError(msg)
+    return why
+
+
+def _predicates(value: Any, source: Path) -> dict[str, str]:
+    """The predicate registry: id -> why, ids unique and non-empty."""
+    where = f"{source}: predicates"
+    if not isinstance(value, list) or not value:
+        msg = f"{where}: at least one predicate must be declared"
+        raise InvariantError(msg)
+    found: dict[str, str] = {}
+    for index, entry in enumerate(value):
+        row = _mapping(entry, f"{where}[{index}]")
+        unknown = sorted(set(row) - {"id", "why"})
+        if unknown:
+            msg = f"{where}[{index}]: unknown key(s) {unknown}"
+            raise InvariantError(msg)
+        name = row.get("id")
+        if not isinstance(name, str) or not name:
+            msg = f"{where}[{index}]: `id` must be a non-empty string"
+            raise InvariantError(msg)
+        if name in found:
+            msg = f"{where}: duplicate predicate {name!r}"
+            raise InvariantError(msg)
+        found[name] = _why(row, f"{where}[{index}] ({name})")
+    return found
+
+
+def _excluded(value: Any, source: Path) -> dict[str, str]:
+    """The excluded question types: project_type -> the reason it cannot render."""
+    where = f"{source}: excluded"
+    if value is None:
+        return {}
+    if not isinstance(value, list):
+        msg = f"{where}: must be a list"
+        raise InvariantError(msg)
+    found: dict[str, str] = {}
+    for index, entry in enumerate(value):
+        row = _mapping(entry, f"{where}[{index}]")
+        unknown = sorted(set(row) - {"project_type", "why"})
+        if unknown:
+            msg = f"{where}[{index}]: unknown key(s) {unknown}"
+            raise InvariantError(msg)
+        name = row.get("project_type")
+        if not isinstance(name, str) or not name:
+            msg = f"{where}[{index}]: `project_type` must be a non-empty string"
+            raise InvariantError(msg)
+        if name in found:
+            msg = f"{where}: project_type {name!r} is excluded twice"
+            raise InvariantError(msg)
+        found[name] = _why(row, f"{where}[{index}] ({name})")
+    return found
+
+
+def _select(value: Any, vocabulary: Vocabulary, excluded: dict[str, str], where: str) -> dict[str, Any]:
+    """One row's selector, checked key by key and value by value."""
+    select = _mapping(value, f"{where}: select")
+    unknown = sorted(set(select) - set(SELECT_KEYS))
+    if unknown:
+        msg = f"{where}: unknown select key(s) {unknown}; the vocabulary is {list(SELECT_KEYS)}"
+        raise InvariantError(msg)
+    for key in TRAITS:
+        if key in select and not isinstance(select[key], bool):
+            msg = f"{where}: select.{key} must be true or false, got {select[key]!r}"
+            raise InvariantError(msg)
+    domains = {
+        "project_type": vocabulary.project_types,
+        "oj_kind": vocabulary.oj_kinds,
+        "include": vocabulary.includes,
+        "gate_off": vocabulary.gates,
+    }
+    for key in NAMED_SELECT_KEYS:
+        if key not in select:
+            continue
+        values = select[key]
+        if not isinstance(values, list) or not all(isinstance(item, str) for item in values):
+            msg = f"{where}: select.{key} must be a list of names"
+            raise InvariantError(msg)
+        for name in values:
+            if key == "project_type" and name in excluded:
+                msg = f"{where}: selects the excluded project_type {name!r} ({excluded[name]})"
+                raise InvariantError(msg)
+            if name not in domains[key]:
+                msg = f"{where}: unknown {key} {name!r}; the questionnaire offers {list(domains[key])}"
+                raise InvariantError(msg)
+    return select
+
+
+def _markers(row: dict[str, Any], ships: tuple[str, ...], where: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """One row's branch tells: the row's own artifacts unless it says otherwise."""
+    markers = _mapping(row.get("markers", {}), f"{where}: markers")
+    unknown = sorted(set(markers) - {"ships", "absent"})
+    if unknown:
+        msg = f"{where}: unknown markers key(s) {unknown}; markers are ships/absent"
+        raise InvariantError(msg)
+    marker_ships = ships if "ships" not in markers else _strings(markers["ships"], where, "markers.ships")
+    marker_absent = _strings(markers.get("absent", []), where, "markers.absent")
+    both = sorted(set(marker_ships) & set(marker_absent))
+    if both:
+        msg = f"{where}: markers declare {both} both shipped and absent"
+        raise InvariantError(msg)
+    return marker_ships, marker_absent
+
+
+def _content(row: dict[str, Any], where: str) -> tuple[tuple[str, str], ...]:
+    """One row's (path, substring) content checks."""
+    raw = row.get("content", [])
+    if not isinstance(raw, list):
+        msg = f"{where}: content must be a list of [path, substring] pairs"
+        raise InvariantError(msg)
+    content: list[tuple[str, str]] = []
+    for pair in raw:
+        if not isinstance(pair, list) or len(pair) != 2 or not all(isinstance(item, str) for item in pair):
+            msg = f"{where}: content entries must be [path, substring] pairs, got {pair!r}"
+            raise InvariantError(msg)
+        content.append((pair[0], pair[1]))
+    return tuple(content)
+
+
+def _predicate_names(row: dict[str, Any], predicates: dict[str, str], where: str) -> tuple[str, ...]:
+    """The predicate ids one row names, checked against the registry."""
+    names = _strings(row.get("predicates", []), where, "predicates")
+    unknown = sorted(set(names) - set(predicates))
+    if unknown:
+        msg = f"{where}: unknown predicate(s) {unknown}; the registry holds {sorted(predicates)}"
+        raise InvariantError(msg)
+    return names
+
+
+def _row(
+    entry: Any,
+    where: str,
+    vocabulary: Vocabulary,
+    predicates: dict[str, str],
+    excluded: dict[str, str],
+) -> LeafClass:
+    """One leaf class row, checked against the questionnaire and the registry."""
+    row = _mapping(entry, where)
+    unknown = sorted(set(row) - set(ROW_KEYS))
+    if unknown:
+        msg = f"{where}: unknown key(s) {unknown}; the schema is {list(ROW_KEYS)}"
+        raise InvariantError(msg)
+    name = row.get("id")
+    if not isinstance(name, str) or not name:
+        msg = f"{where}: `id` must be a non-empty string"
+        raise InvariantError(msg)
+    where = f"{where} ({name})"
+    for key in ("select", "ships", "absent"):
+        if key not in row:
+            msg = f"{where}: `{key}` is required (say `[]`/`{{}}` when the row adds nothing)"
+            raise InvariantError(msg)
+    ships = _strings(row["ships"], where, "ships")
+    marker_ships, marker_absent = _markers(row, ships, where)
+    return LeafClass(
+        id=name,
+        select=_select(row["select"], vocabulary, excluded, where),
+        ships=ships,
+        absent=_strings(row["absent"], where, "absent"),
+        marker_ships=marker_ships,
+        marker_absent=marker_absent,
+        predicates=_predicate_names(row, predicates, where),
+        content=_content(row, where),
+        tier=_tier(row.get("tier"), where),
+        why=_why(row, where),
+    )
+
+
+def _rows(
+    value: Any,
+    vocabulary: Vocabulary,
+    predicates: dict[str, str],
+    excluded: dict[str, str],
+    source: Path,
+) -> tuple[LeafClass, ...]:
+    """Every leaf class row, in composition order."""
+    if not isinstance(value, list) or not value:
+        msg = f"{source}: leaf_classes must be a non-empty list"
+        raise InvariantError(msg)
+    rows: list[LeafClass] = []
+    seen: set[str] = set()
+    for index, entry in enumerate(value):
+        where = f"{source}: leaf_classes[{index}]"
+        row = _row(entry, where, vocabulary, predicates, excluded)
+        if row.id in seen:
+            msg = f"{where}: duplicate leaf class id {row.id!r}"
+            raise InvariantError(msg)
+        seen.add(row.id)
+        rows.append(row)
+    return tuple(rows)
+
+
+def _tier(value: Any, where: str) -> Tier | None:
+    """One row's witness tier and its evidence."""
+    if value is None:
+        return None
+    tier = _mapping(value, f"{where}: tier")
+    unknown = sorted(set(tier) - {"name", "why"})
+    if unknown:
+        msg = f"{where}: unknown tier key(s) {unknown}; a tier is name/why"
+        raise InvariantError(msg)
+    name = tier.get("name")
+    if name not in TIERS:
+        msg = f"{where}: unknown tier {name!r}; the tiers are {list(TIERS)}"
+        raise InvariantError(msg)
+    return Tier(name=name, why=_why(tier, f"{where} tier {name!r}"))
+
+
+def _check_project_type_coverage(invariants: Invariants) -> None:
+    """Every renderable project type must be selected by some row.
+
+    A project type with no row would resolve to the common layout alone, which
+    is exactly the silent weakening this file exists to prevent.
+    """
+    covered = {name for row in invariants.rows for name in row.select.get("project_type", ())}
+    missing = sorted(set(invariants.renderable_project_types) - covered)
+    if missing:
+        msg = (
+            f"{invariants.source}: no row selects project_type(s) {missing}; "
+            f"every project type the questionnaire offers needs a row"
+        )
+        raise InvariantError(msg)
+    for name, reason in invariants.excluded.items():
+        if name in invariants.vocabulary.project_types:
+            msg = f"{invariants.source}: {name!r} is excluded ({reason}) but the questionnaire still offers it"
+            raise InvariantError(msg)

@@ -16,10 +16,15 @@ point at a page the render never wrote. This module adds the deterministic
 - every relative ``README.md`` link resolves inside the render;
 - every ``zensical.toml`` / ``mkdocs.yml`` nav target exists in the render.
 
+Which of those predicates a leaf must satisfy is declared per leaf class in
+tests/matrix/invariants.yml (`predicates:`), read through tools/invariants.py:
+this module owns the implementations (one per id, ``PREDICATES`` below) and
+fails if the file's registry and that table drift apart.
+
 Every predicate is a pure function of the rendered bytes: no venv, no network,
 no execution (PLAN-improvements §24.1 puts those in L3). The module therefore
 carries no ``heavy``/``slow``/``network``/``full`` marker and lands in
-``test-fast`` (``-m "not heavy and not slow"``) by construction.
+``test-fast`` (``-m "not heavy and not slow and not meta"``) by construction.
 
 Why this sample -- §24.1 measures L2 at 0.58s/leaf, so the sample is what
 bounds the cost. All ten recommended paths of tests/test_recommended_path.py
@@ -42,6 +47,7 @@ import ast
 import re
 import sys
 import tomllib
+from collections.abc import Callable
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -55,6 +61,10 @@ if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.p
     sys.path.insert(0, str(TOP))
 
 from tools import batch  # noqa: E402
+from tools import invariants  # noqa: E402
+
+# The one source for which content predicates a leaf class must satisfy.
+INVARIANTS = invariants.load()
 
 # Imported so pytest can inject the session render cache. It lives in
 # render_cache.py and not conftest.py: the template renders the repo's
@@ -532,14 +542,38 @@ def _nav_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
     return problems
 
 
+# One implementation per predicate id the invariants file may name. The ids
+# are the file's registry (tests/matrix/invariants.yml `predicates:`); a name
+# with no implementation here, or an implementation no row names, fails
+# test_the_invariants_file_names_exactly_the_predicates_implemented_here.
+PREDICATES: dict[str, Callable[[Leaf, Path, Counters], list[str]]] = {
+    "pyproject": _pyproject_problems,
+    "agents-md": _agents_problems,
+    "readme-links": _readme_problems,
+    "docs-nav": _nav_problems,
+}
+
+
 def _problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
-    """Every content predicate for one render, each problem naming the leaf."""
-    return (
-        _pyproject_problems(leaf, root, counters)
-        + _agents_problems(leaf, root, counters)
-        + _readme_problems(leaf, root, counters)
-        + _nav_problems(leaf, root, counters)
-    )
+    """Every content predicate this leaf's class declares, each problem naming the leaf."""
+    problems: list[str] = []
+    for name in INVARIANTS.predicates_for(leaf.answers):
+        problems += PREDICATES[name](leaf, root, counters)
+    return problems
+
+
+def test_the_invariants_file_names_exactly_the_predicates_implemented_here() -> None:
+    """The file's predicate registry and this module's table are the same set.
+
+    A name only one side knows is a check that silently stops running: a
+    registry entry with no implementation, or an implementation no row names.
+    """
+    assert set(INVARIANTS.predicates) == set(PREDICATES)
+    # And a render must actually be held to them: the sample's classes declare
+    # at least one predicate each (a class that declared none would be a
+    # silently unchecked leaf).
+    unchecked = sorted(leaf.id for leaf in SAMPLE if not INVARIANTS.predicates_for(leaf.answers))
+    assert unchecked == [], f"sampled leaves whose class declares no content predicate: {unchecked}"
 
 
 @pytest.mark.parametrize("leaf", SAMPLE, ids=[leaf.id for leaf in SAMPLE])

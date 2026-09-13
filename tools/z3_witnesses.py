@@ -49,7 +49,10 @@ Usage:
 Each leaf carries the answers (tests/test_recommended_path.py:25-34 `BASE`,
 so the required Project Details stay fixed) and the render invariants of its
 declared layout: the artifact set that shape must produce, and no unrendered
-`*.jinja` left behind.
+`*.jinja` left behind. Those invariants are not declared here -- they are read
+from tests/matrix/invariants.yml through tools/invariants.py, the one source
+for what a leaf class must satisfy (TODO.md §26.4 item 4), so this tool cannot
+drift from the runner that checks it.
 """
 
 from __future__ import annotations
@@ -62,15 +65,19 @@ from pathlib import Path
 from typing import Any
 from typing import cast
 
-import yaml
 import z3
-from jinja2 import Template
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:  # tests import tools/ the same way (no root package)
     sys.path.insert(0, str(TOP))
 
+from tools import invariants  # noqa: E402
 from tools import when_model  # noqa: E402
+
+# Every leaf's declared artifacts, its class's tier and the excluded question
+# types live in one file, read through its loader (TODO §26.4 item 4): this
+# tool is one of its consumers, not a second copy of the answer.
+INVARIANTS = invariants.load()
 
 # The Project Details every leaf pins, so fixtures stay self-consistent
 # (validators, URLs): mirrors tests/test_recommended_path.py:25-34.
@@ -116,64 +123,6 @@ PROJECTED_GATES: tuple[str, ...] = (
     "use_recommended_scraping",
 )
 
-# Question types the questionnaire deliberately cannot render.
-EXCLUDED_PROJECT_TYPES: dict[str, str] = {
-    "web_django": "generation aborts by design: the _tasks.jinja web_django task exits 1",
-}
-
-# Render invariants: artifacts every leaf must produce (the same set the
-# recommended path ships, tests/test_recommended_path.py:52-100 MARKERS).
-COMMON_FILES: tuple[str, ...] = (
-    "README.md",
-    "LICENSE",
-    ".gitignore",
-    ".editorconfig",
-    "pyproject.toml",
-    "Dockerfile",
-    "justfile",
-    ".github/workflows/ci.yml",
-    "CHANGELOG.md",
-)
-COMMON_ABSENT: tuple[str, ...] = ("**/*.jinja",)
-
-PROJECT_TYPE_FILES: dict[str, tuple[str, ...]] = {
-    "library": ("src/smoke_example/__init__.py",),
-    "cli": ("src/smoke_example/__init__.py",),
-    "script": ("smoke_example/__init__.py",),
-    "online_judge": (),  # supplied by the oj_kind table below
-    "ros2": ("package.xml", "smoke_example/__init__.py"),
-    "micropython": ("firmware/main.py",),
-}
-
-# Competitive-programming judges ship a bare workspace: no package, no
-# challenges, no agent guide (tests/test_recommended_path.py MARKERS "oj_atcoder").
-OJ_CODE_KINDS: tuple[str, ...] = ("atcoder", "leetcode", "yukicoder", "aoj")
-OJ_KIND_FILES: dict[str, tuple[str, ...]] = {
-    "kaggle": ("src/utils/__init__.py",),
-    "ctf": ("challenges/pwn/example/solve.py", "AGENTS.md"),
-    **dict.fromkeys(OJ_CODE_KINDS, ()),
-}
-OJ_KIND_ABSENT: dict[str, tuple[str, ...]] = {
-    "kaggle": ("src/smoke_example", "challenges"),
-    "ctf": (),
-    **dict.fromkeys(OJ_CODE_KINDS, ("src", "challenges", "AGENTS.md")),
-}
-
-# Artifacts the other layers add. include_data_science and include_web_api
-# switch on the data_science / web_api layouts and are handled by name in
-# _expect (they replace the project type's own package directory).
-INCLUDE_FILES: dict[str, tuple[str, ...]] = {
-    "include_ctf": ("challenges/pwn/example/solve.py",),
-    "include_scraping": ("src/smoke_example/fetcher.py", "tests/test_scraping.py", "CHARTER.md"),
-}
-
-# Artifacts a gate being off adds on top of its defaults: the `prompts/`
-# directory is rendered only when the agent gate is off for library/cli
-# (template/<...>prompts condition).
-GATE_FILES: dict[str, tuple[str, ...]] = {
-    "use_recommended_agent": ("prompts",),
-}
-
 
 @dataclass(frozen=True)
 class Leaf:
@@ -216,26 +165,6 @@ class Space:
         return [self.pt, self.oj_category, self.oj_kind, *self.gates.values(), *self.includes.values()]
 
 
-def _static_choices(questions: dict[str, dict], name: str) -> list[str]:
-    """A question's choice values, mapping form normalized (when_model.static_str_choices, §C2)."""
-    choices = questions[name].get("choices")
-    values = (
-        [str(value) for value in choices.values()]
-        if isinstance(choices, dict)
-        else [str(value) for value in when_model.static_str_choices(questions[name])]
-    )
-    if not values:
-        msg = f"question {name!r} has no static choices; the leaf space needs a fixed domain"
-        raise SystemExit(msg)
-    return values
-
-
-def _oj_kinds(questions: dict[str, dict], category: str) -> list[str]:
-    """oj_kind's choices for one oj_category (its `choices` is a Jinja template)."""
-    rendered = Template(str(questions["oj_kind"]["choices"])).render(oj_category=category)
-    return [str(value) for value in yaml.safe_load(rendered)]
-
-
 def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories: list[str]) -> Space:
     """Assert the leaf-space restrictions on top of the questionnaire's variables."""
     gates = {name: z3.Bool(name) for name in questions if name.startswith(GATE_PREFIX)}
@@ -258,7 +187,7 @@ def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories
     pt = z3.Int("project_type")
     oj_category = z3.Int("oj_category")
     oj_kind = z3.Int("oj_kind")
-    oj_kinds = {category: _oj_kinds(questions, category) for category in oj_categories}
+    oj_kinds = {category: list(INVARIANTS.vocabulary.oj_kind_choices[category]) for category in oj_categories}
 
     # Derived internals, inlined from questions/_internal.yml: combinable,
     # has_web_api, has_data_science and kaggle (the four the leaf space reads).
@@ -332,45 +261,6 @@ def _models(space: Space) -> list[dict[Any, Any]]:
     return found
 
 
-def _unique(items: list[str]) -> list[str]:
-    """De-duplicate while keeping the declared order."""
-    return list(dict.fromkeys(items))
-
-
-def _expect(project_type: str, oj_kind: str, include: str | None, gate_off: str | None) -> dict[str, Any]:
-    """The render invariants of one leaf's declared layout (derived from its answers).
-
-    The web_api and data_science layers move where the package lives
-    (questions/_internal.yml `pkg_dir`), so the project type's own package
-    directory only applies when no such layer is on.
-    """
-    web_api = project_type == "web_api" or include == "include_web_api"
-    data_science = project_type == "data_science" or include == "include_data_science"
-    files = list(COMMON_FILES)
-    absent = list(COMMON_ABSENT)
-    if data_science:
-        files.append("notebooks/.gitkeep")  # the data-science layout
-    if web_api:
-        files.append("app/main.py")  # pkg_dir == 'app' (questions/_internal.yml)
-    else:
-        # data_science/web_api have no package dir of their own: their layer
-        # (handled above) is their layout.
-        files.extend(PROJECT_TYPE_FILES.get(project_type, ()))
-    # The `src/` tree comes from the src layout, the web_api app, the kaggle
-    # workspace or the data-science layout -- absent otherwise.
-    src_layout = project_type in ("library", "cli") and not web_api
-    if not (data_science or oj_kind == "kaggle" or src_layout):
-        absent.append("src")
-    if project_type == "online_judge":
-        files.extend(OJ_KIND_FILES.get(oj_kind, ()))
-        absent.extend(OJ_KIND_ABSENT.get(oj_kind, ()))
-    if include is not None:
-        files.extend(INCLUDE_FILES.get(include, ()))
-    if gate_off is not None:
-        files.extend(GATE_FILES.get(gate_off, ()))
-    return {"files": _unique(files), "absent": _unique(absent)}
-
-
 def _leaf(
     questions: dict[str, dict],
     space: Space,
@@ -391,7 +281,6 @@ def _leaf(
 
     parts = [f"project_type={project_type}", f"gate=off:{off[0]}" if off else "gate=recommended"]
     answers: dict[str, Any] = {**BASE, "project_type": project_type}
-    oj_kind = ""
     if project_type == "online_judge":
         category = space.oj_categories[values[space.oj_category].as_long()]
         oj_kind = space.oj_kinds[category][values[space.oj_kind].as_long()]
@@ -413,15 +302,15 @@ def _leaf(
         id="/".join(parts),
         note=f"W3 Z3 witness: {'; '.join(note)}",
         answers=answers,
-        expect=_expect(project_type, oj_kind, on[0] if on else None, off[0] if off else None),
+        expect=INVARIANTS.expect_for(answers),
     )
 
 
 def build() -> tuple[dict[str, Any], list[Leaf]]:
     """Return the declared leaf space and its enumerated leaves."""
     questions, _order = when_model.load_questions()
-    pt_domain = [value for value in _static_choices(questions, "project_type") if value not in EXCLUDED_PROJECT_TYPES]
-    oj_categories = _static_choices(questions, "oj_category")
+    pt_domain = list(INVARIANTS.renderable_project_types)
+    oj_categories = list(INVARIANTS.vocabulary.categories)
     space = _build_space(questions, pt_domain, oj_categories)
     domains = when_model.str_domains(questions, pt_domain)
     leaves = [_leaf(questions, space, values, domains) for values in _models(space)]
@@ -443,7 +332,7 @@ def build() -> tuple[dict[str, Any], list[Leaf]]:
             "a gate may only be off, and an include only on, where its own `when` holds",
             "every other question stays at its copier default",
         ],
-        "excluded": EXCLUDED_PROJECT_TYPES,
+        "excluded": dict(INVARIANTS.excluded),
     }
     return leaf_space, leaves
 

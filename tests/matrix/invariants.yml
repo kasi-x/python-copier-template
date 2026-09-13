@@ -1,0 +1,385 @@
+# What a render of the questionnaire must satisfy: one row per leaf class
+# (TODO.md §26.4 item 4, §23.4 item 2). This file is the single source the
+# witness generator, the witness runner's content predicates and the fast-path
+# smoke test all read.
+#
+# A row answers three questions about the leaf class it selects:
+#
+#   ships / absent  the artifacts a render of that class must (not) contain.
+#                   This is the `expect` of a §C6 batch request:
+#                   tools/z3_witnesses.py builds tests/matrix/witnesses.jsonl
+#                   from it and tests/test_witness_matrix.py's fast tier
+#                   asserts it.
+#   predicates      the content predicates that must hold on the render.
+#                   One id per predicate, implemented in
+#                   tests/test_render_invariants.py (that module owns the
+#                   implementations and checks this registry matches them).
+#   content         (path, substring) pairs that must appear in the render --
+#                   the per-class content checks of
+#                   tests/test_recommended_path.py.
+#
+#   markers         optional. The fast-path smoke test's branch tells: the
+#                   artifacts that prove the render took THIS branch instead of
+#                   a neighbouring one. `markers.ships` defaults to the row's
+#                   `ships`, `markers.absent` to []. A tell is a different
+#                   claim than `ships`/`absent` -- it is what distinguishes the
+#                   branch -- so it may name an artifact the witness `ships`
+#                   list does not (layout=data_science's de-identification
+#                   guide) or an absence no witness `expect` declares.
+#   tier            optional. The witness tier this class is CI-gated for,
+#                   mirroring support.yml's tier_policy (the human-approved
+#                   declaration; the `why` quotes its measured evidence).
+#   why             why the row says what it says.
+#
+# A leaf's expectation is the ORDERED union of the rows its answers select:
+# `ships`/`absent` concatenate in file order, so rows are listed base first --
+# common layout, layout switches, project types, judges, opt-in layers, gates
+# -- and tests/matrix/witnesses.jsonl's committed `expect` is exactly this
+# union (tests/test_invariants.py pins that). A leaf's tier is the set of tiers
+# its rows declare; the tier the witness ledger actually ran it at must be one
+# of them, which is what keeps this column and that ledger from drifting.
+# Every dimension value a leaf carries (project_type, oj_kind, an include
+# layer, a gate turned off) must be selected by some row: tools/invariants.py
+# reports the ones that are not, so a new question, layer or judge cannot be
+# added without saying what it renders.
+#
+# `select` keys: project_type / oj_kind / include / gate_off (any-of lists of
+# question names or choice values), plus the questionnaire's derived traits
+# web_api, data_science, kaggle, src_layout (bools: a row selects the leaves
+# where the trait holds). An empty `select` selects every leaf.
+#
+# Illustrative row:
+#
+#   - id: project_type=script
+#     select: {project_type: [script], web_api: false}
+#     ships: [smoke_example/__init__.py]
+#     absent: []
+#     predicates: [agents-md, docs-nav]
+#     why: "the flat script layout: the package is a top-level module"
+#
+# (the real `project_type=script` row below carries its markers, content and
+# tier as well).
+
+version: 1
+
+# Content predicates. The id is what a row's `predicates` list names; the
+# implementation lives in tests/test_render_invariants.py, which fails if this
+# registry and its own predicate table drift apart.
+predicates:
+  - id: pyproject
+    why: "pyproject.toml parses, its [project] metadata is the answer set's, every third-party import is a declared dependency, and each feature's dependencies are declared exactly when its artifact is rendered"
+  - id: agents-md
+    why: "the AGENTS.md command table names the render's task runner and only tasks that runner defines"
+  - id: readme-links
+    why: "every relative README.md link resolves inside the render"
+  - id: docs-nav
+    why: "every zensical.toml / mkdocs.yml nav target exists in the render"
+
+# Question types the questionnaire deliberately cannot render. The witness
+# generator keeps them out of the leaf space and reports this reason.
+excluded:
+  - project_type: web_django
+    why: "generation aborts by design: the _tasks.jinja web_django task exits 1"
+
+# One row per leaf class, in composition order (base first, override last).
+leaf_classes:
+  # -- the common layout -------------------------------------------------- #
+  - id: common
+    select: {}
+    ships:
+      - README.md
+      - LICENSE
+      - .gitignore
+      - .editorconfig
+      - pyproject.toml
+      - Dockerfile
+      - justfile
+      - .github/workflows/ci.yml
+      - CHANGELOG.md
+    absent:
+      - "**/*.jinja"
+    markers:
+      # The common layout is not a branch tell: every class ships it.
+      ships: []
+    predicates: [pyproject, readme-links]
+    why: "the layout every leaf ships, recommended gates or not; `absent` catches a branch that was copied verbatim instead of rendered"
+
+  # -- layout switches ---------------------------------------------------- #
+  - id: layout=data_science
+    select: {data_science: true}
+    ships:
+      - notebooks/.gitkeep
+      # Gated on data_science_layout, which defaults to this trait, so every
+      # leaf this row selects renders it (previously only the fast-path
+      # markers asserted it, so a disappearing guide was invisible to the 205
+      # witness leaves).
+      - data/DEIDENTIFICATION.md
+    absent: []
+    predicates: [agents-md, docs-nav]
+    content:
+      - [pyproject.toml, polars]
+    why: "the data-science layout (notebooks/ data/ models/ reports/), from project_type=data_science or the include_data_science layer; it changes questions/_internal.yml's pkg_dir"
+
+  - id: layout=web_api
+    select: {web_api: true}
+    ships:
+      - app/main.py
+    absent: []
+    predicates: [agents-md, docs-nav]
+    content:
+      - [.github/workflows/ci.yml, postgres]
+      - [pyproject.toml, fastapi]
+    why: "the FastAPI scaffold: the app lives in a top-level app/ package, so this row (not the project type's) owns the package directory"
+
+  - id: layout=no_src
+    select: {data_science: false, kaggle: false, src_layout: false}
+    ships: []
+    absent:
+      - src
+    predicates: []
+    why: "the src/ tree comes from the src layout, the web_api app, the kaggle workspace or the data-science layout -- and from nothing else"
+
+  # -- project types ------------------------------------------------------ #
+  - id: project_type=library
+    select: {project_type: [library], web_api: false}
+    ships:
+      - src/smoke_example/__init__.py
+    absent: []
+    markers:
+      absent: [compose.local.yml, smoke_example/__init__.py]
+    predicates: [agents-md, docs-nav]
+    tier:
+      name: full
+      why: "recommended library path, executed end to end (~3 min): uv sync + generated pytest + basedpyright + docs"
+    why: "the src layout package; docker is off on the recommended path, so no compose file, and the flat script layout's module must not appear"
+
+  - id: project_type=cli
+    select: {project_type: [cli], web_api: false}
+    ships:
+      - src/smoke_example/__init__.py
+    absent: []
+    markers:
+      absent: [compose.local.yml, app/main.py]
+    predicates: [agents-md, docs-nav]
+    tier:
+      name: full
+      why: "recommended CLI path, executed end to end (~3 min): console-script entry point and its CLI tests in the generated pytest run"
+    why: "the src layout package behind a console script; the web_api app/ layout is the neighbouring branch this row tells apart"
+
+  - id: project_type=script
+    select: {project_type: [script], web_api: false}
+    ships:
+      - smoke_example/__init__.py
+    absent: []
+    markers:
+      absent: [src, compose.local.yml]
+    predicates: [agents-md, docs-nav]
+    tier:
+      name: full
+      why: "recommended script path, executed end to end (~3 min): flat stdlib-style workspace, pytest + basedpyright + docs run"
+    why: "the flat layout: the module is top-level and there is no src/ tree"
+
+  - id: project_type=web_api
+    select: {project_type: [web_api]}
+    ships: []
+    absent: []
+    markers:
+      absent: [compose.local.yml, src]
+    predicates: [agents-md, docs-nav]
+    tier:
+      name: full
+      why: "recommended web-API path, executed end to end (~3 min): FastAPI + SQLAlchemy + Alembic stack, tests against SQLite"
+    why: "the web_api project type ships no package directory of its own: layout=web_api owns app/main.py"
+
+  - id: project_type=data_science
+    select: {project_type: [data_science]}
+    ships: []
+    absent: []
+    markers:
+      # The analysis layout's own artifact; the layer (include_data_science)
+      # ships notebooks/ but not the de-identification guide.
+      ships: [data/DEIDENTIFICATION.md]
+      absent: [compose.local.yml]
+    predicates: [agents-md, docs-nav]
+    tier:
+      name: full
+      why: "recommended data-science path, executed end to end (~3 min): the torch dependency sync is the slowest leaf but still inside the sample"
+    why: "the data_science project type ships no package directory of its own: layout=data_science owns the analysis layout"
+
+  - id: project_type=online_judge
+    select: {project_type: [online_judge]}
+    ships: []
+    absent: []
+    predicates: [docs-nav]
+    tier:
+      name: full
+      why: "one online-judge leaf (competitive_coding/atcoder) is in the full-tier sample; the other judges render only (see the oj_kind rows)"
+    why: "the judge-specific workspace is supplied by the oj_kind rows below; on its own the project type adds nothing"
+
+  - id: project_type=ros2
+    select: {project_type: [ros2]}
+    ships:
+      - package.xml
+      - smoke_example/__init__.py
+    absent: []
+    predicates: [docs-nav]
+    tier:
+      name: fast
+      why: "render + ruff only: executing a ros2 leaf needs /opt/ros/$ROS_DISTRO on the runner"
+    why: "an ament_python package: package.xml plus the node module, never a src/ layout"
+
+  - id: project_type=micropython
+    select: {project_type: [micropython]}
+    ships:
+      - firmware/main.py
+    absent: []
+    predicates: [docs-nav]
+    tier:
+      name: full
+      why: "recommended MicroPython path, executed end to end (~3 min): generated type checks pass against the micropython-*-stubs"
+    why: "the firmware layout: firmware/ instead of a Python package"
+
+  # -- online judges ------------------------------------------------------ #
+  - id: oj_kind=kaggle
+    select: {project_type: [online_judge], oj_kind: [kaggle]}
+    ships:
+      - src/utils/__init__.py
+    absent:
+      - src/smoke_example
+      - challenges
+    markers:
+      absent: [compose.local.yml, src/smoke_example/__init__.py, challenges]
+    predicates: [agents-md]
+    content:
+      - [pyproject.toml, torch]
+    tier:
+      name: fast
+      why: "AtCoder carries the execution sample; kaggle is render-only"
+    why: "a competition workspace: src/utils/ with the pipeline, no package under src/smoke_example and no CTF challenges"
+
+  - id: oj_kind=ctf
+    select: {project_type: [online_judge], oj_kind: [ctf]}
+    ships:
+      - challenges/pwn/example/solve.py
+      - AGENTS.md
+    absent: []
+    markers:
+      absent: [compose.local.yml, src/smoke_example/__init__.py]
+    predicates: [agents-md]
+    content:
+      - [pyproject.toml, pwntools]
+    tier:
+      name: fast
+      why: "AtCoder carries the execution sample; the CTF judge is render-only"
+    why: "the CTF participant workspace plus the agent guide (kaggle and ctf always allow AI coding agents)"
+
+  - id: oj_kind=code
+    select: {project_type: [online_judge], oj_kind: [atcoder, leetcode, yukicoder, aoj]}
+    ships: []
+    absent:
+      - src
+      - challenges
+      - AGENTS.md
+    markers:
+      # The bare workspace: README.md is all a code-submission leaf ships
+      # beyond the common layout.
+      ships: [README.md]
+      absent: [src, challenges, AGENTS.md]
+    predicates: []
+    content:
+      - [pyproject.toml, "dependencies = []"]
+    tier:
+      name: fast
+      why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj are render-only"
+    why: "competitive-programming judges ship a bare workspace: no package, no challenges, and no agent guide (oj_allow_ai defaults to no)"
+
+  # -- opt-in layers ------------------------------------------------------ #
+  - id: include=include_data_science
+    select: {include: [include_data_science]}
+    ships: []
+    absent: []
+    predicates: []
+    tier:
+      name: fast
+      why: "the layer renders and ruff-checks in the fast tier; the analysis layout it turns on is layout=data_science's row"
+    why: "this layer answers has_data_science; the artifacts are layout=data_science's"
+
+  - id: include=include_web_api
+    select: {include: [include_web_api]}
+    ships: []
+    absent: []
+    predicates: []
+    tier:
+      name: fast
+      why: "the layer renders and ruff-checks in the fast tier; the app layout it turns on is layout=web_api's row"
+    why: "this layer answers has_web_api; the artifacts are layout=web_api's"
+
+  - id: include=include_ctf
+    select: {include: [include_ctf]}
+    ships:
+      - challenges/pwn/example/solve.py
+    absent: []
+    predicates: []
+    content:
+      - [pyproject.toml, pwntools]
+    tier:
+      name: fast
+      why: "the opt-in layers (ctf / data_science / scraping / web_api) are coverable by rendering: their artifacts are file-set invariants"
+    why: "the CTF participant workspace on top of a library/cli base"
+
+  - id: include=include_scraping
+    select: {include: [include_scraping]}
+    ships:
+      - src/smoke_example/fetcher.py
+      - tests/test_scraping.py
+      - CHARTER.md
+    absent: []
+    predicates: []
+    tier:
+      name: fast
+      why: "the opt-in layers (ctf / data_science / scraping / web_api) are coverable by rendering: their artifacts are file-set invariants"
+    why: "the polite-fetching layer as a module plus its offline test and data-collection charter"
+
+  - id: include=include_mcp
+    select: {include: [include_mcp]}
+    ships:
+      - src/smoke_example/mcp_server.py
+      - tests/test_mcp_server.py
+    absent: []
+    predicates: []
+    content:
+      - [pyproject.toml, mcp]
+    why: "the MCP server integration; a detail question behind use_recommended_integrations, not a leaf-space layer, so no witness leaf turns it on and it declares no tier"
+
+  # -- gates turned off --------------------------------------------------- #
+  - id: gate_off=use_recommended_agent
+    select: {gate_off: [use_recommended_agent]}
+    ships:
+      - prompts
+    absent: []
+    predicates: []
+    tier:
+      name: fast
+      why: "a project_type=*/gate=off:use_recommended_* detailed branch is rendered and ruff-checked (support.yml tier_policy); the cli variant is the branch-only leaf in the execution sample, and its project_type=cli row carries that full tier"
+    why: "the prompts/ directory is rendered only when the agent gate is off for library/cli"
+
+  - id: gate_off=other
+    select:
+      gate_off:
+        - use_recommended_toolchain
+        - use_recommended_polish
+        - use_recommended_docs
+        - use_recommended_quality
+        - use_recommended_license
+        - use_recommended_integrations
+        - use_recommended_security
+        - use_recommended_data_science
+        - use_recommended_web_api
+        - use_recommended_scraping
+    ships: []
+    absent: []
+    predicates: []
+    tier:
+      name: fast
+      why: "project_type=*/gate=off:use_recommended_* (detailed branches) are rendered and ruff-checked; the 3 m/leaf execution cost limits the full tier to the sample"
+    why: "every other gate-off branch leaves its detail questions at their copier defaults, so it changes no declared artifact"
