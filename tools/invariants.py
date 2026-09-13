@@ -177,7 +177,7 @@ class Vocabulary:
 
 @dataclass(frozen=True)
 class Invariants:
-    """The loaded file: its rows, predicate registry and exclusions."""
+    """The loaded file: its rows, predicate registry, exclusions and merge contracts."""
 
     source: Path
     predicates: dict[str, str]
@@ -185,6 +185,7 @@ class Invariants:
     excluded_questions: dict[str, str]
     vocabulary: Vocabulary
     rows: tuple[LeafClass, ...]
+    merge_contracts: dict[str, tuple[str, ...]]
 
     @property
     def renderable_project_types(self) -> tuple[str, ...]:
@@ -331,12 +332,13 @@ def load(path: Path | None = None) -> Invariants:
     if not isinstance(payload, dict):
         msg = f"{source}: the file must be a mapping of sections"
         raise InvariantError(msg)
-    unknown = sorted(set(payload) - {"version", "predicates", "excluded", "leaf_classes"})
+    unknown = sorted(set(payload) - {"version", "predicates", "excluded", "leaf_classes", "merges"})
     if unknown:
-        msg = f"{source}: unknown section(s) {unknown}; the schema is version/predicates/excluded/leaf_classes"
+        msg = f"{source}: unknown section(s) {unknown}; the schema is version/predicates/excluded/leaf_classes/merges"
         raise InvariantError(msg)
     predicates = _predicates(payload.get("predicates"), source)
     excluded, excluded_questions = _excluded(payload.get("excluded"), source)
+    merge_contracts = _merge_contracts(payload.get("merges"), source)
     questions, _order = when_model.load_questions()
     vocabulary = questionnaire_vocabulary(questions)
     rows = _rows(payload.get("leaf_classes"), vocabulary, predicates, excluded, source)
@@ -347,10 +349,42 @@ def load(path: Path | None = None) -> Invariants:
         excluded_questions=excluded_questions,
         vocabulary=vocabulary,
         rows=rows,
+        merge_contracts=merge_contracts,
     )
     _check_project_type_coverage(invariants)
     _check_excluded_questions(invariants, questions)
     return invariants
+
+
+def _merge_contracts(value: Any, source: Path) -> dict[str, tuple[str, ...]]:
+    """The ``merges:`` section: kind -> the post-conditions it promises.
+
+    Structure only, here: that each kind is a non-empty mapping to non-empty
+    condition-name lists. Which condition names have implementations, and that
+    the kinds match the merge dispatch, is held by tests/test_merge_contracts.py
+    -- the same split as the render predicates, whose implementations live in
+    their test module.
+    """
+    if value is None:
+        return {}
+    where = f"{source}: merges"
+    contracts: dict[str, tuple[str, ...]] = {}
+    for kind, conditions in _mapping(value, where).items():
+        if not isinstance(kind, str) or not kind:  # pyright: ignore[reportUnnecessaryIsInstance]  WHYNOT: YAML mapping keys are untyped at runtime
+            msg = f"{where}: every kind must be a non-empty string"
+            raise InvariantError(msg)
+        if (
+            not isinstance(conditions, list)
+            or not conditions
+            or not all(isinstance(condition, str) and condition for condition in conditions)
+        ):
+            msg = f"{where}: {kind} must promise a non-empty list of condition names"
+            raise InvariantError(msg)
+        if len(set(conditions)) != len(conditions):
+            msg = f"{where}: {kind} repeats a condition"
+            raise InvariantError(msg)
+        contracts[kind] = tuple(conditions)
+    return contracts
 
 
 def _mapping(value: Any, where: str) -> dict[str, Any]:

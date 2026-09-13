@@ -84,6 +84,25 @@ predicates:
 # keeps it at its copier default. The generator refuses an include question
 # that is neither a leaf-space layer nor declared here, so nothing can leave
 # the enumeration silently.
+# What each adopt-time merge kind promises about its outcome (TODO §25.5 V5).
+# This is the oracle the merge-contract tests read (tests/test_merge_contracts.py,
+# which owns the condition implementations and holds this registry against the
+# dispatch in tools/file_merge.py / tools/pyproject_merge.py): a kind the code
+# offers without a declared contract, a contract whose kind is gone, and a
+# condition name no checker implements all fail. Conditions:
+#   original_is_prefix  the adopter's pre-merge content is still a byte prefix
+#   idempotent          applying the merge twice changes nothing
+#   existing_declared   everything the target declared survives, unchanged
+#   reparse             the merged file still parses in its own format
+merges:
+  gitignore: [original_is_prefix, idempotent, existing_declared]
+  makefile: [original_is_prefix, idempotent, existing_declared]
+  justfile: [original_is_prefix, idempotent, existing_declared]
+  taskfile: [original_is_prefix, idempotent, existing_declared, reparse]
+  python_tasks: [original_is_prefix, idempotent, existing_declared, reparse]
+  ci_jobs: [original_is_prefix, idempotent, existing_declared, reparse]
+  pyproject_dependencies: [idempotent, existing_declared, reparse]
+
 excluded:
   - project_type: web_django
     why: "generation aborts by design: the _tasks.jinja web_django task exits 1"
