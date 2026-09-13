@@ -91,7 +91,10 @@ def main(args: Sequence[str] | None = None) -> None:
     parser.add_argument(
         "--model",
         default=None,
-        help=f"Real model to use (default: offline via TestModel, model {DEFAULT_MODEL!r})",
+        help=(
+            "Real model to use (default: offline via TestModel,"
+            f" model {DEFAULT_MODEL!r})"
+        ),
     )
     parsed = parser.parse_args(args, namespace=_CliArgs())
     print(asyncio.run(run(prompt=parsed.prompt, model=parsed.model)))

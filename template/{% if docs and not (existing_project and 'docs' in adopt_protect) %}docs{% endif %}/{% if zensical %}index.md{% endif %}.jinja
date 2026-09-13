@@ -9,6 +9,9 @@ how it does it, and why people should use it.
 
 {% if micropython_pkg %}This is MicroPython firmware — there is nothing to pip-install.
 Connect a device and deploy with `mpremote` (see the README).
+{% elif oj_code %}This is an online-judge workspace: it ships no importable package, so there
+is nothing to install. Sync the project environment (see the README) and start
+from `main.py`.
 {% else %}```console
 $ pip install {{ distribution_name }}
 ```
@@ -19,6 +22,8 @@ $ pip install {{ distribution_name }}
 {% if micropython_pkg %}```python
 from firmware.core.app import BlinkConfig, run
 ```
+{% elif oj_code %}Each solution lives in its own `main.py`, tested and submitted with your
+judge's tooling; there is no package to import (see the README).
 {% else %}```python
 from {{ import_pkg }} import __version__
 

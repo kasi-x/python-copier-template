@@ -8,4 +8,10 @@
 # MicroPython project. They are pinned (~=) to the MicroPython firmware
 # version this project targets ({{ micropython_version }}) so the stubs
 # match the firmware; bump them together with freeze.py's DEFAULT_TAG.
-micropython-{{ micropython_port }}-stubs~={{ micropython_version[1:] }}
+{% if micropython_port == 'mimxrt' %}# Exception: upstream publishes mimxrt stubs only up to 1.26.1 (newest
+# release on PyPI: 1.26.1.post1), so this port cannot track the
+# {{ micropython_version }} firmware tag. Pin the port's newest published
+# series so `just stubs` resolves; bump it when upstream catches up.
+micropython-mimxrt-stubs~=1.26.1
+{% else %}micropython-{{ micropython_port }}-stubs~={{ micropython_version[1:] }}
+{% endif -%}
