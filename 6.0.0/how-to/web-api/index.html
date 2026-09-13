@@ -1737,9 +1737,12 @@ all verified by generated tests.</p>
 large framework with its own ecosystem (ORM, migrations, admin, auth, Celery,
 mail handling, ...) that would be a second project to maintain on top of this
 one — the template's questionnaire and generated files would roughly double.</p>
-<p>If you select the <code>web_django</code> project type, generation <strong>aborts</strong> with a
-message pointing you to the alternatives below (FastAPI / Litestar / Flask, or
-upstream cookiecutter-django).</p>
+<p>Django is not one of the <code>project_type</code> choices at all: <code>copier</code> rejects it
+before anything is written (<code>Invalid choice for 'project_type'</code>), and this
+template's web work is API-only. For a Django project, use
+<a href="https://github.com/cookiecutter/cookiecutter-django">upstream cookiecutter-django</a>;
+for a Python API, use this template's <code>web_api</code> type, or FastAPI / Litestar /
+Flask on a <code>library</code> scaffold.</p>
 <h2 id="what-a-web_api-project-includes">What a web_api project includes<a class="headerlink" href="#what-a-web_api-project-includes" title="Permanent link">&para;</a></h2>
 <p>The recommended stack (<code>use_recommended_web_api</code> = Yes) generates:</p>
 <ul>

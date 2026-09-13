@@ -1786,9 +1786,10 @@ uv/copier/2026 toolchain.</p>
 everyone's best option for everything becomes no one's best option for
 anything. Concretely, out of scope:</p>
 <ul>
-<li><strong>Full-stack web apps.</strong> <code>project_type: web_django</code> aborts generation on
-  purpose and points to <code>cookiecutter-django</code> and upstream FastAPI/Litestar
-  docs instead. <code>web_api</code> stays deliberately API-only.</li>
+<li><strong>Full-stack web apps.</strong> Django is not a <code>project_type</code> at all (the choice
+  never renders; it only pointed at <code>cookiecutter-django</code>). The how-to names
+  FastAPI / Litestar / Flask and upstream <code>cookiecutter-django</code> as the
+  alternatives. <code>web_api</code> stays deliberately API-only.</li>
 <li><strong>Auth, admin UIs, task queues baked into <code>web_api</code>.</strong> Documented as
   "add later"; the recommended-settings gate for <code>web_api</code> is three switches
   (Prometheus, rate limiting, CORS), not a catalogue.</li>
