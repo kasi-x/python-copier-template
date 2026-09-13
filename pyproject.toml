@@ -297,6 +297,8 @@ extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", 
 [tool.vulture]
 paths = ["tests", "tools"]
 min_confidence = 60
+# pytestmark is read by pytest's module reflection, which vulture cannot see.
+ignore_names = ["pytestmark"]
 # Entry points whose callers vulture cannot see: the MCP tools in
 # tools/mcp_server.py are invoked by MCP hosts (same idea as @app.route),
 # and pytest discovers fixtures by name.
@@ -304,7 +306,7 @@ ignore_decorators = ["*tool*", "*resource*", "*fixture*"]
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template,DEP004=jinja2|copier|yaml|mcp|tomlkit"
+per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template,DEP004=jinja2|copier|yaml|mcp|tomlkit|z3"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
 # tests/ は pytest の暗黙パッケージ import (test_example) があり依存検査と相性が悪い。
 exclude = ["template", "tests", "docs", ".venv", ".pixi", ".tox", "build", "dist"]

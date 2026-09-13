@@ -110,7 +110,7 @@ def _parse_tasks(runner: str, project: Path) -> dict[str, list[str] | None]:
 
 
 @pytest.fixture(scope="module")
-def model_tasks(tmp_path_factory) -> dict[str, list[str] | None]:
+def model_tasks(tmp_path_factory: pytest.TempPathFactory) -> dict[str, list[str] | None]:
     """The task model itself, read out of the pixi pyproject table."""
     project = tmp_path_factory.mktemp("model-pixi")
     copy_project(project, **RENDER_ARGS["pixi"])

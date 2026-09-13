@@ -61,6 +61,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any
+from typing import cast
 
 import yaml
 import z3
@@ -286,18 +287,18 @@ def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories
         [*gates, *includes],
         z3.BoolVal(True),  # noqa: FBT003  WHYNOT: z3's own API takes a Python bool.
     )
-    asked["use_recommended_agent"] = z3.Or(pt == index["library"], pt == index["cli"])  # questions/_common_a.yml
-    asked["use_recommended_data_science"] = has_data_science  # questions/data_science.yml
-    asked["use_recommended_web_api"] = has_web_api  # questions/web_api.yml
+    asked["use_recommended_agent"] = _bool(z3.Or(pt == index["library"], pt == index["cli"]))  # questions/_common_a.yml
+    asked["use_recommended_data_science"] = _bool(has_data_science)  # questions/data_science.yml
+    asked["use_recommended_web_api"] = _bool(has_web_api)  # questions/web_api.yml
     asked["use_recommended_scraping"] = includes["include_scraping"]  # questions/_combo.yml
-    asked["include_data_science"] = z3.Or(  # questions/_combo.yml
-        pt == index["library"], pt == index["cli"], pt == index["web_api"]
+    asked["include_data_science"] = _bool(  # questions/_combo.yml
+        z3.Or(pt == index["library"], pt == index["cli"], pt == index["web_api"])
     )
-    asked["include_web_api"] = z3.Or(  # questions/_combo.yml
-        pt == index["library"], pt == index["cli"], pt == index["data_science"], kaggle
+    asked["include_web_api"] = _bool(  # questions/_combo.yml
+        z3.Or(pt == index["library"], pt == index["cli"], pt == index["data_science"], kaggle)
     )
-    asked["include_ctf"] = z3.Or(pt == index["library"], pt == index["cli"])  # questions/_combo.yml
-    asked["include_scraping"] = pt == index["cli"]  # questions/_combo.yml
+    asked["include_ctf"] = _bool(z3.Or(pt == index["library"], pt == index["cli"]))  # questions/_combo.yml
+    asked["include_scraping"] = _bool(pt == index["cli"])  # questions/_combo.yml
     # use_recommended_toolchain's when is only false for ros2 + a pixi package
     # manager, and ros2_package_manager stays at its 'apt' default here, so it
     # is always asked (questions/_common_a.yml:16-25).
@@ -317,6 +318,17 @@ def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories
         solver.add(z3.Implies(z3.And(pt == index["online_judge"], oj_category == position), asked_kind))
     solver.add(z3.Implies(pt != index["online_judge"], z3.And(oj_category == 0, oj_kind == 0)))
     return Space(solver, pt, oj_category, oj_kind, gates, includes, pt_domain, oj_categories, oj_kinds)
+
+
+def _bool(expr: object) -> z3.BoolRef:
+    """One z3 formula as a BoolRef.
+
+    z3's stubs widen `And`/`Or`/probe results to `BoolRef | Probe` and an `Int`
+    comparison to `BoolRef | Literal[False]`; every value here is a formula, so
+    the cast is the honest narrowing (the leaf is re-checked against the
+    questionnaire's own encoder before it is written out).
+    """
+    return cast("z3.BoolRef", expr)
 
 
 def _when_domains(structure: ModuleType, questions: dict[str, dict], pt_domain: list[str]) -> dict[str, list[str]]:
@@ -387,7 +399,13 @@ def _expect(project_type: str, oj_kind: str, include: str | None, gate_off: str 
     return {"files": _unique(files), "absent": _unique(absent)}
 
 
-def _leaf(structure: ModuleType, questions: dict[str, dict], space: Space, values: dict[Any, Any], domains) -> Leaf:
+def _leaf(
+    structure: ModuleType,
+    questions: dict[str, dict],
+    space: Space,
+    values: dict[Any, Any],
+    domains: dict[str, list[str]],
+) -> Leaf:
     """Map one Z3 model to its §C6 request (id, answers, expected invariants)."""
     project_type = space.pt_domain[values[space.pt].as_long()]
     off = [name for name, gate in space.gates.items() if not z3.is_true(values[gate])]

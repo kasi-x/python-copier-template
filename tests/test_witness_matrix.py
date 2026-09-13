@@ -54,7 +54,7 @@ import shlex
 import subprocess
 import sys
 import time
-from collections.abc import Iterator
+from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
@@ -221,7 +221,7 @@ class ResultStore:
         _merge_verdict(payload)
 
     @contextlib.contextmanager
-    def record(self, leaf_id: str, tier: str) -> Iterator[None]:
+    def record(self, leaf_id: str, tier: str) -> Generator[None, None, None]:
         """Record ``pass``/``fail`` for the enclosed test body."""
         started = time.monotonic()
         try:
@@ -681,7 +681,7 @@ def _ledger_entries(observations: dict[str, dict[str, Any]]) -> tuple[list[dict[
 
 
 @contextlib.contextmanager
-def _ledger_lock() -> Iterator[None]:
+def _ledger_lock() -> Generator[None, None, None]:
     """Serialize the ledger's read-modify-write across xdist workers."""
     LEDGER_LOCK.parent.mkdir(parents=True, exist_ok=True)
     with LEDGER_LOCK.open("w") as lock:
