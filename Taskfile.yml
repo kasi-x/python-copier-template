@@ -69,6 +69,14 @@ tasks:
     desc: 'Run a JSONL batch of copier requests and verdict each line (FILE=... CLI_ARGS=...)'
     cmd: uv run --locked python tools/batch.py {{ .FILE | default "batches/smoke.jsonl" }} {{ .CLI_ARGS }}
 
+  witness:
+    desc: 'Regenerate the 205 witness leaves and judge them all (JOBS=N, CLI_ARGS=...)'
+    vars:
+      JOBS: '{{ .JOBS | default numCPU }}'
+    cmds:
+      - uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
+      - uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
+
   detect:
     desc: 'Report what a target project already has and which mode fits (DIR=... CLI_ARGS=...)'
     cmd: uv run --locked python tools/detect.py {{ .DIR | default "." }} {{ .CLI_ARGS }}

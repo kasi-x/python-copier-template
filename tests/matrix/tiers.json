@@ -1,0 +1,108 @@
+{
+  "_note": "Cost ledger for the pytest tiers: each tier task's marker expression, the node ids it collected when this record was written, and the wall time a human measured for it. tests/test_marker_drift.py re-collects every tier (collection only -- no test run) and fails when a tier no longer collects what is recorded here; the counts stated in docs/how-to/test-loop.md are checked against this file. Re-record the collected sets after a deliberate tier change with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, then fill wall_seconds/measured by hand from a `time` run of that tier (each tier's note records the exact command and the conditions it was measured under).",
+  "tiers": {
+    "test-fast": {
+      "task": "test-fast",
+      "expression": "not heavy and not slow",
+      "collected": 717,
+      "files": {
+        "tests/test_adopt.py": 32,
+        "tests/test_batch.py": 18,
+        "tests/test_copier_structure.py": 14,
+        "tests/test_detect.py": 22,
+        "tests/test_example.py": 112,
+        "tests/test_file_merge.py": 21,
+        "tests/test_generated_docs_sync.py": 9,
+        "tests/test_generated_lint.py": 106,
+        "tests/test_generation_docs.py": 1,
+        "tests/test_gitleaks_config.py": 9,
+        "tests/test_machine_gate.py": 13,
+        "tests/test_marker_drift.py": 5,
+        "tests/test_mcp_server.py": 26,
+        "tests/test_micropython_maintenance.py": 3,
+        "tests/test_pyproject_fmt.py": 26,
+        "tests/test_pyproject_merge.py": 15,
+        "tests/test_qa.py": 3,
+        "tests/test_questionnaire.py": 9,
+        "tests/test_recommended_path.py": 11,
+        "tests/test_render_invariants.py": 28,
+        "tests/test_support_matrix.py": 5,
+        "tests/test_task_runners.py": 9,
+        "tests/test_update_path.py": 1,
+        "tests/test_when_model.py": 3,
+        "tests/test_witness_matrix.py": 208,
+        "tests/test_workflow_security.py": 8
+      },
+      "ids_sha256": "a3ca296bc258c9af0fa6f77a5ed7fee70b602775cee0a595dbc2a81115a2b2d3",
+      "wall_seconds": 32.8,
+      "measured": "2026-09-14",
+      "note": "time uv run --no-sync pytest -q -m \"not heavy and not slow\" (715-717 tests; 22s with the machine idle, 38s while four sibling test runs shared the 16 cores)"
+    },
+    "test-slow": {
+      "task": "test-slow",
+      "expression": "slow",
+      "collected": 5,
+      "files": {
+        "tests/test_update_path.py": 4,
+        "tests/test_witness_matrix.py": 1
+      },
+      "ids_sha256": "0d31f7abe0b9ca16314877e7c6b73afc4603b3c3ee5a28ed307240cede6d1028",
+      "wall_seconds": 71.9,
+      "measured": "2026-09-14",
+      "note": "time uv run --no-sync pytest -q -m slow (5 tests, warm .cache/renders; 200s on the run that populated it -- the 2026-09-13 audit measured the batch runner alone at 119s, before the on-disk render cache existed)"
+    },
+    "test-heavy": {
+      "task": "test-heavy",
+      "expression": "heavy",
+      "collected": 43,
+      "files": {
+        "tests/test_example.py": 23,
+        "tests/test_generated_typecheck.py": 6,
+        "tests/test_task_runners.py": 6,
+        "tests/test_witness_matrix.py": 8
+      },
+      "ids_sha256": "af8c768e31cd50688fa854e3d6a99b2eecf2a31849339b5f930b1bd2effe2f1e",
+      "wall_seconds": 28.7,
+      "measured": "2026-09-14",
+      "note": "time uv run --no-sync pytest -q -m heavy (43 tests, warm uv cache; 44s while other test runs shared the 16 cores)"
+    },
+    "test": {
+      "task": "test",
+      "expression": "",
+      "collected": 765,
+      "files": {
+        "tests/test_adopt.py": 32,
+        "tests/test_batch.py": 18,
+        "tests/test_copier_structure.py": 14,
+        "tests/test_detect.py": 22,
+        "tests/test_example.py": 135,
+        "tests/test_file_merge.py": 21,
+        "tests/test_generated_docs_sync.py": 9,
+        "tests/test_generated_lint.py": 106,
+        "tests/test_generated_typecheck.py": 6,
+        "tests/test_generation_docs.py": 1,
+        "tests/test_gitleaks_config.py": 9,
+        "tests/test_machine_gate.py": 13,
+        "tests/test_marker_drift.py": 5,
+        "tests/test_mcp_server.py": 26,
+        "tests/test_micropython_maintenance.py": 3,
+        "tests/test_pyproject_fmt.py": 26,
+        "tests/test_pyproject_merge.py": 15,
+        "tests/test_qa.py": 3,
+        "tests/test_questionnaire.py": 9,
+        "tests/test_recommended_path.py": 11,
+        "tests/test_render_invariants.py": 28,
+        "tests/test_support_matrix.py": 5,
+        "tests/test_task_runners.py": 15,
+        "tests/test_update_path.py": 5,
+        "tests/test_when_model.py": 3,
+        "tests/test_witness_matrix.py": 217,
+        "tests/test_workflow_security.py": 8
+      },
+      "ids_sha256": "93294521c190320ae99a78bfdabb9d134f6142ce9ede9e6bdb14f5127c43d001",
+      "wall_seconds": 138.9,
+      "measured": "2026-09-14",
+      "note": "time uv run --no-sync pytest -q --cov --cov-report term (whole suite, warm caches; 337s on the run that populated .cache/renders)"
+    }
+  }
+}

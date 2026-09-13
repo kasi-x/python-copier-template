@@ -30,6 +30,7 @@ dev = [
     "pytest-xdist>=3.8.0,<3.9",
     "pyyaml>=6.0,<7",
     "ruff>=0.16.2,<0.17",
+    "starlette>=1.6,<2",
     "tomlkit>=0.13,<1",
     "typos>=1.49.0,<1.50",
     "vulture>=2.14.0,<3.0",
@@ -56,15 +57,20 @@ packages = ["tools"]
 addopts = """
     --tb=native -vv -n auto
     """
-# Cost tiers. `-m "not heavy"` is the fast tier (edit loop, PR/push CI) and
-# `-m heavy` the tier that builds venvs / hits the network (pre-push, nightly
-# CI). fast/full are the witness render tiers; slow is anything else expensive.
+# Cost tiers. `-m "not heavy and not slow"` is the edit loop (`task test-fast`,
+# budget 30s: anything slower than that belongs to a marker below or is a
+# regression); `slow` is the serial witness batch runner (`task test-slow`);
+# `heavy` builds venvs and `network` says the run needs the wire
+# (`task test-heavy`, pre-push and nightly). fast/full are the witness render
+# tiers from .github/workflows/witness.yml. The collected sets and measured
+# costs of the four task tiers live in tests/matrix/tiers.json, checked by
+# tests/test_marker_drift.py.
 markers = [
     "heavy: builds a virtualenv (uv sync), i.e. installs dependencies",
     "network: touches the network (uv sync, uvx downloads, remote clones)",
     "fast: witness render tier -- renders the template without a venv",
     "full: witness full tier -- renders plus the expensive generated-project checks",
-    "slow: expensive, but neither a venv build nor network-bound",
+    "slow: expensive, but neither a venv build nor network-bound (the serial 205-leaf witness batch runner)",
 ]
 # Doctest python code in docs, python code in src docstrings, test functions in tests
 testpaths = "tests"
@@ -241,12 +247,21 @@ task-tags = [
     "PLW1510",# subprocess-run-without-check  CONTEXT: run_pipe は returncode を assert する。
     "PT006",  # pytest-parametrize-names-wrong-type  CONTEXT: 既存の parametrize 名。
 ]
+# The parser and the Z3 encoder moved to tools/when_model.py (TODO.md §23.1), so
+# their complexity/return/branch/RUF010 ignores followed the code. EM102 stays:
+# this module's questionnaire-ordering errors still embed the offending name.
 "tests/test_copier_structure.py" = [
-    "C901",    # too-complex  CONTEXT: the when-expression parser is a compact recursive-descent parser.
+    "EM102", # f-string-in-exception  CONTEXT: the message names the question and field it rejected.
+]
+"tools/when_model.py" = [
+    "C901",    # too-complex  CONTEXT: a tokenizer plus a recursive-descent parser is branchy by design.
     "PLR0911", # too-many-return-statements  CONTEXT: ditto.
     "PLR0912", # too-many-branches  CONTEXT: ditto.
-    "EM102",   # f-string-in-exception  CONTEXT: parser errors embed the offending expression for debugging.
-    "RUF010",  # explicit-f-string-type-conversion  CONTEXT: parser errors intentionally use !r.
+    "EM102",   # f-string-in-exception  CONTEXT: every model limitation names the expression it gave up on.
+    "TRY004",  # type-check-without-type-error  CONTEXT: AssertionError here means "outside the modeled subset" (which the tests assert on), not a caller type error.
+]
+"tests/test_when_model.py" = [
+    "SLF001", # private-member-access  CONTEXT: the oracle must be copier's own questionnaire pass (Worker._ask), not a re-implementation of it.
 ]
 "tools/*" = [
     "INP001", # implicit-namespace-package  CONTEXT: standalone maintenance scripts, not a package.
@@ -301,15 +316,18 @@ min_confidence = 60
 ignore_names = ["pytestmark"]
 # Entry points whose callers vulture cannot see: the MCP tools in
 # tools/mcp_server.py are invoked by MCP hosts (same idea as @app.route),
-# and pytest discovers fixtures by name.
-ignore_decorators = ["*tool*", "*resource*", "*fixture*"]
+# HTTP routes are registered by their decorator, and pytest discovers
+# fixtures by name.
+ignore_decorators = ["*tool*", "*resource*", "*route*", "*fixture*"]
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template,DEP004=jinja2|copier|yaml|mcp|tomlkit|z3"
+per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
 # tests/ は pytest の暗黙パッケージ import (test_example) があり依存検査と相性が悪い。
-exclude = ["template", "tests", "docs", ".venv", ".pixi", ".tox", "build", "dist"]
+# .cache/ は tests/render_cache.py が置くレンダ済みプロジェクト（生成コード）で、
+# deptry は .gitignore を見ないのでここで除外する。
+exclude = ["template", "tests", "docs", ".cache", ".venv", ".pixi", ".tox", "build", "dist"]
 
 [tool.pyproject_fmt]
 keep-full-version = true
@@ -330,3 +348,12 @@ parallel = true
 show_missing = true
 skip_covered = true
 skip_empty = true
+# 下限はラチェット（目標ではない）。2026-09-14 実測: tools/ の網羅率は
+# 全体 79.9%（`uv run --no-sync pytest -q --cov --cov-report term`、4276 文中
+# 861 未達）、fast tier 79.8%（同 -m "not heavy and not slow"）、fast+heavy 79.8%。
+# 4276 文で 1 ポイント ≈ 43 文なので、測定値の約 2 ポイント下（≈ 85 文）に置く:
+# テストの無いモジュール（数百文）が入れば数ポイント落ちて fail し、稼働中の
+# 小さな編集では pre-release gate（`task check` → `task test`）を赤くしない。
+# 数値を下げる変更は「テストされていないコードが増えた」signal なので、まず
+# テストを足すか上のコマンドで測り直すこと。`task test` が --cov を出す唯一の口。
+fail_under = 78
