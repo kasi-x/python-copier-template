@@ -176,7 +176,7 @@ def _taskfile_tasks(text: str) -> dict[str, Any]:
 def _parses_as_mapping(text: str) -> bool:
     """True when `text` is YAML that reads back as a mapping (or empty).
 
-    `_taskfile_tasks` deliberately swallows a parse error (an unparseable
+    `_taskfile_tasks` deliberately swallows a parse error (an unparsable
     target simply has no *known* tasks), which would make a "were the old
     tasks kept?" check vacuously true on a file that does not parse at all.
     The append path needs the stricter question.

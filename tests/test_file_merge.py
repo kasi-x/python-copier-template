@@ -193,7 +193,7 @@ def test_taskfile_is_not_appended_when_tasks_are_not_last(tmp_path: Path):
 
 
 def test_taskfile_append_is_refused_when_the_result_would_not_parse(tmp_path: Path):
-    """`tasks: {}` (and an unparseable target) made the old check vacuous.
+    """`tasks: {}` (and an unparsable target) made the old check vacuous.
 
     The verification compared only the tasks that were there before, so an
     empty `before` accepted anything - including indented blocks appended after
