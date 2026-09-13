@@ -10,6 +10,15 @@ name: Update path
 
 on:
   pull_request:
+    # Docs-only PRs cannot change the questionnaire or a copier update replay,
+    # so this workflow does not start for them (TODO §23.2). Workflow-level
+    # path filtering is safe *here* -- unlike ci.yml's jobs, this workflow does
+    # not feed ci.yml's required-checks-passed gate, so no required check can
+    # be left "Pending" and block the merge; ci.yml itself must (and does) use
+    # a job-level gate instead.
+    paths-ignore:
+      - docs/**
+      - '**/*.md'
   workflow_dispatch:
 
 permissions:
