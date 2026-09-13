@@ -1,7 +1,7 @@
 
 # How to check code coverage
 
-Code coverage is reported to the command line and to a `cov.xml` file by the command `task test` (in generated projects; the test CI job uploads it). The file is uploaded to the Codecov service in CI.
+Code coverage is reported to the command line by the command `task test`. In this repository the XML report lands in `.cache/cov.xml` (git-ignored: it is a local artifact nobody reads); a generated project writes `cov.xml` at its root, where the test CI job picks it up to upload to the Codecov service.
 
 ## Installing Codecov GitHub app
 

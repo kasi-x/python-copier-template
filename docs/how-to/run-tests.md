@@ -12,7 +12,7 @@ When you have some fully working tests then you can run it with coverage:
 $ task test
 ```
 
-It will also report coverage to the commandline and to `cov.xml`.
+It will also report coverage to the commandline and to `.cache/cov.xml`.
 
 [look like tests]: https://docs.pytest.org/explanation/goodpractices.html#test-discovery
 [pytest]: https://pytest.org/
