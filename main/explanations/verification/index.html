@@ -1519,6 +1519,10 @@
       
         
       
+        
+      
+        
+      
     
     
     
@@ -1591,6 +1595,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../reference/features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Feature Catalogue
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../reference/questionnaire/" class="md-nav__link">
         
   
@@ -1599,6 +1630,33 @@
     
   
   Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/non-interactive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Non-interactive Generation
 
     
   </span>
@@ -2008,8 +2066,14 @@ check moves between tiers, the budget moves with it.</p>
 <tr>
 <td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td><code>-m "not heavy and not slow"</code></td>
+<td><code>-m "not heavy and not slow and not meta"</code></td>
 <td>L1 + L2 + everything that neither builds a venv nor touches the network</td>
+</tr>
+<tr>
+<td>Cost ledger guard</td>
+<td><code>task test-meta</code></td>
+<td><code>-m meta</code></td>
+<td>the guards in <code>tests/test_marker_drift.py</code>: the venv/network marker scan, the tier-membership check and the cost-staleness check</td>
 </tr>
 <tr>
 <td>Slow</td>
@@ -2043,18 +2107,34 @@ check moves between tiers, the budget moves with it.</p>
 </tr>
 </tbody>
 </table>
+<p>The ledger guard is <code>meta</code> rather than part of the edit loop because it
+re-collects every tier in a pytest session of its own (six startups): it is a
+check on the cost contract, not a cost the edit loop can carry. <code>ci.yml</code> runs
+<code>task test-meta</code> as its own job on every push and PR, and <code>task test</code> includes
+it.</p>
 <p>When a number in this table disagrees with the suite, the ledger wins:
 <code>tests/matrix/tiers.json</code> records each tier's marker expression, the node ids
-it collects and a measured wall time, <code>tests/test_marker_drift.py</code> re-collects
-every tier and fails on drift, and <code>UPDATE_TIERS=1 uv run --no-sync pytest -q
-tests/test_marker_drift.py</code> re-records it after a deliberate tier change.</p>
+it collects, a measured wall time and the command that time came from, plus —
+for the witness fast job — the CI timeout the time has to fit inside.
+<code>tests/test_marker_drift.py</code> re-collects every tier and fails on drift, fails
+when a row's <code>measured</code> date is more than 30 days old, and
+<code>UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py</code>
+re-records the collected sets after a deliberate tier change.</p>
 <p>The edit-loop budget is <strong>30 s</strong>; anything that pushes <code>task test-fast</code> past it
-is either marked <code>slow</code> / <code>heavy</code> or is a regression — for venv and network work
-the marker-drift guard enforces that structurally. The run taken for this page
-on 2026-09-14 was <strong>652 passed, 1 skipped, 1 xfailed in 26.06 s</strong>
-(<code>uv run --no-sync pytest -q -m "not heavy and not slow"</code>, 16 cores). The count
-grows as tests land, so read that as a dated observation of a moving suite and
-take the current numbers from the ledger above.</p>
+is either marked <code>slow</code> / <code>heavy</code> / <code>meta</code> or is a regression — for venv and
+network work the marker-drift guard enforces that structurally, and the ledger's
+own guards are out of the loop by the <code>meta</code> marker. The run taken for this page
+on 2026-09-14 was <strong>731 tests in 47 s</strong>
+(<code>uv run --no-sync pytest -q -m "not heavy and not slow and not meta"</code>), on a
+machine whose 32 logical CPUs were also carrying unrelated work at load average
+64–117. That number measures the contention: the same tree with the guard still
+in the selection (738 tests) took 46 s at load 85 in the same session, and the
+ledger's earlier 22 s was taken idle on a 717-test tree that other changes have
+since grown past. What the guard's removal is worth <em>on its own</em> is the ledger's
+<code>test-meta</code> row (10.5 s, nearly all of it the six pytest startups the membership
+check runs); what it is worth inside the loop was below this box's noise. The
+count grows as tests land, so read every time here as a dated observation of a
+moving suite and take the current numbers from the ledger above.</p>
 <h2 id="growth-rules">Growth rules<a class="headerlink" href="#growth-rules" title="Permanent link">&para;</a></h2>
 <p>Adding a capability is not free, and the cost is predictable:</p>
 <table>
@@ -2220,13 +2300,23 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 <td>TODO §24.0 P6</td>
 </tr>
 <tr>
-<td>Edit loop 652 passed, 1 skipped, 1 xfailed in 26.06 s</td>
-<td><code>uv run --no-sync pytest -q -m "not heavy and not slow"</code></td>
+<td>Edit loop 731 (of today's 732) tests in 47 s, load average 64; the same tree with the guard still in the selection, then 738 tests, took 46 s at load 85</td>
+<td><code>uv run --no-sync pytest -q -m "not heavy and not slow and not meta"</code></td>
 <td>2026-09-14, this tree — a dated observation; the current per-tier counts are the ledger row below</td>
 </tr>
 <tr>
-<td>Per-tier counts, marker expressions and wall times</td>
-<td><code>tests/matrix/tiers.json</code>; re-collect with <code>UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py</code>, fill <code>wall_seconds</code> from a <code>time task &lt;tier&gt;</code> run</td>
+<td>Ledger guard: 7 tests, 10.5 s (six pytest startups: the membership check re-collects every tier)</td>
+<td><code>uv run --no-sync pytest -q -m meta</code></td>
+<td>2026-09-14, this tree — the ledger row, measured with unrelated work on the machine</td>
+</tr>
+<tr>
+<td>Witness fast job: 208 tests (205 renders + three leaf-list checks), 39.4 s with <code>.cache/renders</code> emptied and 6.4 s warm, against the job's 30-minute timeout</td>
+<td><code>uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast</code></td>
+<td>2026-09-14, this tree — the ledger's <code>witness</code> row; a PR runner is always cold</td>
+</tr>
+<tr>
+<td>Per-tier counts, marker expressions, re-measure commands and wall times (task tiers and the witness fast job)</td>
+<td><code>tests/matrix/tiers.json</code>; re-collect with <code>UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py</code>, fill <code>wall_seconds</code>/<code>measured</code> by hand from a <code>time</code> run of the row's own <code>command</code></td>
 <td>2026-09-14, this tree</td>
 </tr>
 <tr>
