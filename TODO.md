@@ -2068,7 +2068,13 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
 
 ### 27.7 残タスク（2026-09-14 時点）
 
-1. **V5 / T6 の残り**: merge の事後条件を invariants.yml 側へ（現在は実装内の検査）
+1. [x] **V5 / T6 の残り**: merge の事後条件を invariants.yml 側へ（現在は実装内の検査）
+   → **完了（2026-09-14、2a907080）**: `invariants.yml` に `merges:` 節（kind →
+     保証する事後条件のレジストリ）を新設し、`tests/test_merge_contracts.py` が
+     条件実装を持ち、dispatch と双方向に照合（kind と契約の片方欠けで fail）。
+     各条件は benign merge で成立 + 自身の違反の検出を二重証明（guard-the-guard）。
+     レジストリは事実を記録: pyproject マージは tomlkit の再整形のため
+     `original_is_prefix` を保証しない（契約は idempotent/existing_declared/reparse）
 2. [x] **V2 の次の一手**: rollback / recover 中の kill フックを `tools/adopt.py` に足し、
    Quint が証明した「全クラッシュ点が覆われている」をテストでも標本化する
    → **完了（2026-09-14、23a84342）**: `_crash_at("rollback" / "recover")` を追加し、
