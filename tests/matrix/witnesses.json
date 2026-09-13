@@ -1,0 +1,3889 @@
+{
+  "leaves": [
+    {
+      "id": "project_type=cli/gate=off:use_recommended_agent",
+      "tier": "full",
+      "result": "fail",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "use_recommended_agent": false
+      },
+      "source": "full"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_agent/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true,
+        "use_recommended_agent": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_agent/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_agent": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_agent/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_agent": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_agent/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_agent": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_data_science/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_data_science": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_docs",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_docs/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_docs/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_docs/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_docs/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_integrations",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_integrations/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_integrations/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_integrations/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_integrations/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_license",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_license/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_license/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_license/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_license/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_polish",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_polish/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_polish/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_polish/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_polish/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_quality",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_quality/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_quality/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_quality/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_quality/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_scraping/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_scraping": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_security",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_security/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_security/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_security/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_security/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_toolchain",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_toolchain/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_toolchain/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_toolchain/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_toolchain/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_web_api/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true,
+        "use_recommended_web_api": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=recommended",
+      "tier": "full",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli"
+      },
+      "source": "full"
+    },
+    {
+      "id": "project_type=cli/gate=recommended/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_ctf": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=recommended/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_data_science": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=recommended/include=include_scraping",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_scraping": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=recommended/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "cli",
+        "include_web_api": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "use_recommended_data_science": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_data_science/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_data_science": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_docs",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_docs/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_integrations",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_integrations/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_license",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_license/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_polish",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_polish/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_quality",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_quality/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_security",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_security/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_toolchain",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_toolchain/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=off:use_recommended_web_api/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true,
+        "use_recommended_web_api": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=recommended",
+      "tier": "full",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science"
+      },
+      "source": "full"
+    },
+    {
+      "id": "project_type=data_science/gate=recommended/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "data_science",
+        "include_web_api": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_agent",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "use_recommended_agent": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_agent/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true,
+        "use_recommended_agent": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_agent/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_agent": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_agent/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_agent": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_data_science/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_data_science": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_docs",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_docs/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_docs/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_docs/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_integrations",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_integrations/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_integrations/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_integrations/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_license",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_license/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_license/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_license/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_polish",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_polish/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_polish/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_polish/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_quality",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_quality/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_quality/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_quality/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_security",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_security/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_security/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_security/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_toolchain",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_toolchain/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_toolchain/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_toolchain/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=off:use_recommended_web_api/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true,
+        "use_recommended_web_api": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=recommended",
+      "tier": "full",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library"
+      },
+      "source": "full"
+    },
+    {
+      "id": "project_type=library/gate=recommended/include=include_ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_ctf": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=recommended/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_data_science": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=library/gate=recommended/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "library",
+        "include_web_api": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=micropython/gate=off:use_recommended_docs",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "micropython",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=micropython/gate=off:use_recommended_integrations",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "micropython",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=micropython/gate=off:use_recommended_license",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "micropython",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=micropython/gate=off:use_recommended_polish",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "micropython",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=micropython/gate=off:use_recommended_quality",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "micropython",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=micropython/gate=off:use_recommended_security",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "micropython",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=micropython/gate=off:use_recommended_toolchain",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "micropython",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=micropython/gate=recommended",
+      "tier": "full",
+      "result": "fail",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "micropython"
+      },
+      "source": "full"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=competitive_coding/aoj",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "aoj",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=competitive_coding/atcoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=competitive_coding/leetcode",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "leetcode",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=competitive_coding/yukicoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "yukicoder",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=ctf/ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "ctf",
+        "oj_kind": "ctf",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=data_science/kaggle",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=competitive_coding/aoj",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "aoj",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=competitive_coding/atcoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=competitive_coding/leetcode",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "leetcode",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=competitive_coding/yukicoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "yukicoder",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=ctf/ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "ctf",
+        "oj_kind": "ctf",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=data_science/kaggle",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=competitive_coding/aoj",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "aoj",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=competitive_coding/atcoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=competitive_coding/leetcode",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "leetcode",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=competitive_coding/yukicoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "yukicoder",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=ctf/ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "ctf",
+        "oj_kind": "ctf",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=data_science/kaggle",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=competitive_coding/aoj",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "aoj",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=competitive_coding/atcoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=competitive_coding/leetcode",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "leetcode",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=competitive_coding/yukicoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "yukicoder",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=ctf/ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "ctf",
+        "oj_kind": "ctf",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=data_science/kaggle",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=competitive_coding/aoj",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "aoj",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=competitive_coding/atcoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=competitive_coding/leetcode",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "leetcode",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=competitive_coding/yukicoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "yukicoder",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=ctf/ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "ctf",
+        "oj_kind": "ctf",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=data_science/kaggle",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=competitive_coding/aoj",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "aoj",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=competitive_coding/atcoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=competitive_coding/leetcode",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "leetcode",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=competitive_coding/yukicoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "yukicoder",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=ctf/ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "ctf",
+        "oj_kind": "ctf",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=data_science/kaggle",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=competitive_coding/aoj",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "aoj",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=competitive_coding/atcoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=competitive_coding/leetcode",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "leetcode",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=competitive_coding/yukicoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "yukicoder",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=ctf/ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "ctf",
+        "oj_kind": "ctf",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=data_science/kaggle",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_web_api/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true,
+        "use_recommended_web_api": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/aoj",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "aoj"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/atcoder",
+      "tier": "full",
+      "result": "fail",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "atcoder"
+      },
+      "source": "full"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/leetcode",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "leetcode"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/yukicoder",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "yukicoder"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=ctf/ctf",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "ctf",
+        "oj_kind": "ctf"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=data_science/kaggle",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=data_science/kaggle/include=include_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "online_judge",
+        "oj_category": "data_science",
+        "oj_kind": "kaggle",
+        "include_web_api": true
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=ros2/gate=off:use_recommended_docs",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "ros2",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=ros2/gate=off:use_recommended_integrations",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "ros2",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=ros2/gate=off:use_recommended_license",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "ros2",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=ros2/gate=off:use_recommended_polish",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "ros2",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=ros2/gate=off:use_recommended_quality",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "ros2",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=ros2/gate=off:use_recommended_security",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "ros2",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=ros2/gate=off:use_recommended_toolchain",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "ros2",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=ros2/gate=recommended",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "ros2"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=script/gate=off:use_recommended_docs",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "script",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=script/gate=off:use_recommended_integrations",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "script",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=script/gate=off:use_recommended_license",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "script",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=script/gate=off:use_recommended_polish",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "script",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=script/gate=off:use_recommended_quality",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "script",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=script/gate=off:use_recommended_security",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "script",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=script/gate=off:use_recommended_toolchain",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "script",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=script/gate=recommended",
+      "tier": "full",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "script"
+      },
+      "source": "full"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_data_science/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_data_science": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_docs",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_docs/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_integrations",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_integrations/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_license",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_license/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_polish",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_polish/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_quality",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_quality/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_security",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_security/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_toolchain",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_toolchain/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_web_api",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "use_recommended_web_api": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_web_api/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_web_api": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=recommended",
+      "tier": "full",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api"
+      },
+      "source": "full"
+    },
+    {
+      "id": "project_type=web_api/gate=recommended/include=include_data_science",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "repo_name": "smoke-example",
+        "distribution_name": "smoke-example",
+        "project_type": "web_api",
+        "include_data_science": true
+      },
+      "source": "fast"
+    }
+  ],
+  "coverage": {
+    "total": 205,
+    "executed_fast": 205,
+    "executed_full": 8,
+    "none": 0,
+    "unexecuted": []
+  }
+}

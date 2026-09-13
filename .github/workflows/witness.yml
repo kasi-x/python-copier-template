@@ -1,0 +1,69 @@
+name: Witness matrix
+
+# W3's leaf matrix: every leaf of the questionnaire's gate space is rendered and
+# judged by tests/test_witness_matrix.py. A PR runs the fast tier only (render
+# every leaf with skip_tasks + ruff; no venv), while the nightly run adds the
+# full tier (uv sync + generated pytest + basedpyright + docs build on a bounded
+# sample, plus tools/batch.py over the whole JSONL) -- that tier builds venvs,
+# so it is far too expensive for every push.
+
+permissions:
+  contents: read
+
+concurrency:
+  # One lane per event: a nightly full run must not be cancelled by a push/PR
+  # run of the same workflow.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # Nightly full tier. Staggered from ci.yml (`0 3 * * *`) and the other
+    # scheduled workflows (check-upstream.yml MON 06:00, check-upstream-fork.yml
+    # TUE 06:00, scheduled-check.yml TUE 07:00, periodic.yml WED 08:00,
+    # dependency-audit.yml THU 07:00, scorecard.yml SAT 01:30) so a failure
+    # names exactly one workflow.
+    - cron: "0 4 * * *"
+
+jobs:
+  fast:
+    name: Witness matrix (fast tier)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          # Explicit true (not the "auto" default) so tag-push runs also cache.
+          enable-cache: true
+
+      - name: Render and judge every witness leaf
+        run: uv run --locked pytest -q tests/test_witness_matrix.py -m fast
+
+  full:
+    name: Witness matrix (full tier)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          # Explicit true (not the "auto" default) so tag-push runs also cache.
+          enable-cache: true
+
+      - name: Build the generated projects and run them (bounded sample)
+        run: uv run --locked pytest -q tests/test_witness_matrix.py -m full
