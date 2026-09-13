@@ -1117,14 +1117,16 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       - `dependencies=` の1行20連ゲートと deptry `per_rule_ignores` 文字列組立を
         `_shared/pyproject-deps.toml.jinja` + `_shared/pyproject-deptry.toml.jinja` に抽出し、
         本体は構造のみ残す。dep 追加時の編集箇所を1箇所にする
-- [ ] **`_tasks.jinja` を宣言的に安定化する**
-      - `{% set tasks = tasks + [...] %}` の8ブロック変異を `when` 付き単一リストにし、
-        poe / pixi シリアライザ（`&&` 単一コマンドの `shell` / `cmd` ヒューリスティック含む）を
-        単一 macro に統一する。matrix path ごとの task-name 集合を assert する単体テストを追加
-        （`audit` の `check` 外し等の退行を検出）
-- [ ] **`logging_setup` の2行 wrapper 先頭空行を解消する**
+- [x] **`_tasks.jinja` を宣言的に安定化する**
+      → **完了（§22.2 W2、2026-09-13）**: 単一宣言リスト + inline guard に置換し、
+        シリアライザは macro 集約。byte-identical 検証と全ランナー厳密集合比較つき
+- [x] **`logging_setup` の2行 wrapper 先頭空行を解消する**
       - template-dev.md の単行 wrapper 規約に反する2行 wrapper が先頭空行を生む既知の残件。
         単行化して byte-identical 検証する
+      → **完了（2026-09-14、b9aaf651）**: 3 wrapper（app/・src/・flat）を単行化。
+        library / flat cli / web_api の3構成レンダー before/after diff で
+        「先頭空行の削除のみ」を実証（他ファイルは不変、`_commit` のみ dirty render の
+        既知アーティファクトで揺れ）
 
 ## 19. テスト・CI の高速化と確実性（2026-09-08 監査）
 
@@ -1185,28 +1187,33 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       - `--vcs-ref=main` の理由説明3箇所の矛盾を解消する（README は「v1.0 で re-tag 済み」、
         adopt-existing は「v1.0 未到達で必須」）。単一の version-status 注記に集約し TODO-11 漏れを消す
       - 2 flag（`--trust` / `--vcs-ref`）を隠す wrapper script / alias を検討する
-- [ ] **欠落・孤児ページを解消する**
-      - 生成 README が link する `{{docs_url}}/how-to/run-container` に対応する
-        `docs/how-to/run-container.md` を書く（または生成 link を既存 how-to に付け替える。
-        現状 Docker 生成物は全て404 link を ship している）
-      - `docs/explanations/structure.md` の孤児を `explanations.md` index に登録する
-- [ ] **README Features / mermaid と questionnaire の drift を解消する**
-      - `docs/reference/questionnaire.md` 側にはある CTF / scraping /
-        `use_recommended_scraping` / `scraping_engine` / `license_check` /
-        `oj_category=ctf` / 新 security 意味が、README Features + mermaid に無い。
-        questionnaire を正として README を再生成する
-      - ついでに toolchain default 矛盾を解消する（help は推奨 `uv + just`、
-        README は `Task (default)`）。mermaid は quickstart の後に移すか折りたたむ
+- [x] **欠落・孤児ページを解消する**
+      - ~~生成 README が link する `{{docs_url}}/how-to/run-container` に対応する
+        `docs/how-to/run-container.md` を書く~~ → **誤認と判明（2026-09-14 実測）**:
+        テンプレには `template/docs/how-to/{% if docker %}run-container.md{% endif %}.jinja`
+        が既存し、README のリンクも同じ `{% if docker %}` 節内にあるため
+        「リンクが出る＝ページが生成される」で整合。docker+docs の実レンダーで
+        ページ実在とリンク解決を確認（nav 非掲載の孤児ページとして build はされる）。
+        docs 無効時は `Dockerfile)` への弱代替に落ちるのも意図どおり
+      - ~~`docs/explanations/structure.md` の孤児を `explanations.md` index に登録する~~
+        → 登録済みを確認（zensical.toml nav の "Structure"）
+- [x] **README Features / mermaid と questionnaire の drift を解消する**
+      → **完了（§22.2 W5 + 1981f367）**: README は `tools/gen_docs.py` が生成し、
+        機能カタログは `docs/reference/features.md` へ分離。README は 120 行の
+        エントリポイントに（§22.5 #5 も解消）。mermaid の CTF / scraping 分岐も導入済み
 - [ ] **生成ドキュメントを堅くする**
-      - 生成 `CONTRIBUTING.md.jinja`（30行・外部 how-to URL 依存・`_commit.split` pin 脆弱）を
-        `AGENTS.md` と同じコマンドブロック内蔵型にし、offline でも作業可能にする。
-        `copier update` での AGENTS.md / CONTRIBUTING.md 乖離を防ぐ
+      - ~~生成 `CONTRIBUTING.md.jinja`（30行・外部 how-to URL 依存・`_commit.split` pin 脆弱）を
+        `AGENTS.md` と同じコマンドブロック内蔵型にし、offline でも作業可能にする~~
+        → **完了（2026-09-14、031be19b）**: Common commands 節が `_tasks.jinja` の
+        `_t.agent_cmd_specs` モデルから導出（AGENTS.md と同一ソースで乖離不能）。
+        `_commit.split` pin とテンプレ how-to への link は廃止し、docs ルート URL に
       - 生成 README の `<details> Platform-specific setup` の Linux/macOS vs Windows
         同一コマンド並列（noise）を差分化または削除、`**pkg** is a Python package that ...`
         プレースホルダの ship しやすさに対処（validator / コメント誘導）、docs 無効時の
-        `See ... (.github/CONTRIBUTING.md)` 弱代替を手当てする
+        `See ... (.github/CONTRIBUTING.md)` 弱代替を手当てする（生成 README 側は未着手）
 - [ ] **質問票の小粒改善**
-      - `project_type=web_django` の罠選択肢（選ぶと abort）を choices から外し、文書ポインタにする
+      - ~~`project_type=web_django` の罠選択肢（選ぶと abort）を choices から外し、文書ポインタにする~~
+        → **完了（§22.2 W6）**: choice・help・`_tasks` ガードとも除去済み
       - `license` help の40行 SPDX ダンプを端末向けに短縮（全文は docs 参照）
       - `example-answers.yml`（全 gate-off 網羅 fixture）を `create-new.md` +
         `reference/questionnaire.md` から non-interactive 起点として link する
@@ -1460,7 +1467,7 @@ clean clone から render する形に修正済み。
 | 2 | 全葉が ledger に登録され、`tier != none` の全葉に実行済みの証人 | ✅ | `coverage: {total: 205, executed_fast: 205, executed_full: 8, none: 0, unexecuted: []}`、results 全部 pass |
 | 3 | タスク名集合が全ランナーでモデル一致 + `test`/`check` の実走 | ✅ | `test_task_runners.py` の構造比較 7 ランナー + `make test` / `poe check` 実走 |
 | 4 | `copier update` が全 fixture ref で conflict なし | ✅ | `tests/test_update_path.py` 5 passed（タグ生成 → HEAD へ update） |
-| 5 | README が <130 行 + TL;DR、`gen_docs.py --check` 緑 | ⚠️ 部分 | `--check` は緑（9 blocks）。**README は 496 行**で、行数削減は W5 の非目標として別 WP 送り（未着手） |
+| 5 | README が <130 行 + TL;DR、`gen_docs.py --check` 緑 | ✅ | **完了（1981f367）**: README は 120 行のエントリポイントに。機能カタログは `docs/reference/features.md`、`--check` 緑 |
 | 6 | 全 workflow に `timeout-minutes` + `task check` が通る | ✅ | W7 で付与。`task check` 相当を実測: lint ✓ / type-check ✓ / fast tier 657 passed ✓ / **heavy tier 43 passed**（venv 構築含む） |
 | 7 | adopt の T1 衝突 | ✅ | W8（解決済み）+ `tools/detect.py` の `COLLISIONS` |
 | 8 | `-m "not heavy"` がヘビー tier を外しレンダ被覆を失わない | ✅ | 435 + 30 = 465 を検証、witness fast tier は render 205 件を維持 |
@@ -1573,38 +1580,26 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
 
 ### 23.3 MCP の整備
 
-- [ ] **このリポジトリ自身の `.mcp.json` を追加する**（dogfooding）
-      - 生成物には `.mcp.json` を ship しているのに、テンプレート本体には無い
-        （`ls -a` 実測: ルートに `.mcp.json` / `AGENTS.md` / `CLAUDE.md` いずれも無し）。
-        エージェントがテンプレートを編集するとき、repo の tool（`template_status` /
-        `render_project` / `run_batch`）を登録なしでは使えない。`task mcp` を起動する
-        project スコープの `.mcp.json` を1枚置く
-      - 併せてエージェント向けの入口を1ページに固定する（`docs/how-to/test-loop.md` の MCP 節を
-        拡張 or 新規 how-to）。ルートに AGENTS.md が無いため、現状は test-loop.md 頼り
-- [ ] **開発ループの実 tool を足す**（現状 7 tool + `template://questionnaire` は「調べる / 生成する」のみ）
+- [x] **このリポジトリ自身の `.mcp.json` を追加する**（dogfooding）
+      → **完了（2026-09-14、36b7fc7d）**: ルート `.mcp.json` + `docs/how-to/mcp-tools.md`
+        （tool 一覧ページ）。`task mcp` と同一の stdio 起動
+- [ ] **開発ループの実 tool を足す**（12 tool まで拡充済み。残りは `run_tests(tier)` のみ）
       - `run_tests(tier)` — `fast` / `heavy` / `witness` を回して**構造化 verdict** を返す。
         本命: エージェントが pytest のテキストを解釈せずに済む（`batch.py` の verdict 形式を流用）
-      - `render_diff(answers_a, answers_b)` — 2 レンダのファイル単位 byte 比較。W2 の検証は
-        「23 レンダー 1684 ファイルの全ハッシュ一致」を**手作業**で確認しており、同じ検証が
-        1 tool 呼び出しになる
-      - `lint_render(answers)` — render して `ruff format --check` / `ruff check` まで
-        （venv 不要。`test_generated_lint.py` の fast tier と同じ仕事）
-      - `list_witnesses()` / `run_witness(tier)` — W3 の成果物を tool 面に出す
-      - `template_fingerprint()` — `render_cache.py` の指紋（render 入力の sha256）を返し、
-        キャッシュがいつ無効化されるかをエージェントが判断できるようにする
+      - [x] `render_diff(answers_a, answers_b)` — 2 レンダのファイル単位 byte 比較
+      - [x] `lint_render(answers)` — render して `ruff format --check` / `ruff check` まで
+      - [x] `list_witnesses()` / `run_witness(tier)` — W3 の成果物を tool 面に出す
+      - [x] `template_fingerprint()` — `render_cache.py` の指紋（render 入力の sha256）を返す
 - [ ] **`render_project` の戻り値を拡張する**（現状はファイル一覧 + dest）
       - ファイルごとの sha256 と `diff_against`（既存 dest との差分）を返す。
-        tool の出力がそのまま回帰検証の入力になる（上記 `render_diff` と同じ用途）
-- [ ] **repo 側 MCP の未テスト経路を埋める**
-      - `tools/mcp_server.py:_allowed_hosts`（307-320 行）は実装済みだがテストが無い。
-        生成 scaffold 側は `_shared/mcp_server.py.jinja:87` を `template/.../test_mcp_server.py.jinja:74`
-        が **monkeypatch の単体テスト**で見るだけで、実際の bind / 421 は誰も検証していない
-        （TODO 節5 の「悪意 Host は /mcp で 421、/health は 200」は手動スモークの記録）。
-        repo 側で「allowlist 無しの非ローカル bind は起動拒否 / allowlist 有りで悪意 Host は 421」を
-        実走で固定する
-      - `tests/test_mcp_server.py` は tool の description が**非空**かしか見ていない。
-        `test-loop.md` が規約として書く「cost（レンダ / インストール / ネットワーク）と戻り値の
-        形を docstring に書く」をテストで強制できるか検討する
+        tool の出力がそのまま回帰検証の入力になる。回帰比較そのものは
+        `render_diff` が既に担うので、本項は利便性の重複整理として優先度低
+- [x] **repo 側 MCP の未テスト経路を埋める**
+      → **完了（2026-09-14、36b7fc7d）**: `tests/test_mcp_server.py` が実サーバを実走し
+        「allowlist 無しの 0.0.0.0 bind は起動拒否（stderr が変数名を指す）/
+        allowlist 有りで悪意 Host は /mcp 421・/health は 200」を固定
+      - [x] `tests/test_mcp_server.py` の tool docstring 検査は「cost と戻り値の形を
+        docstring に書く」規約の強制として動作中（docstring が両方書かないと fail）
 - [ ] **resource を増やす**（`template://questionnaire` のみ）
       - `template://witnesses`（205 葉の一覧と tier）、W4 後は `template://support`（`support.yml`）。
         エージェントが「何が検証済みか」を 1 resource で読める
@@ -1735,7 +1730,7 @@ P6 は方針の裏付けでもある: **L3 サンプルは 8 葉で 3 件の実�
 
 ### 24.4 TODO（優先順）
 
-- [ ] **T1: L3 の 3 失敗に決着をつける（最優先。今 夜間が赤い）**
+- [x] **T1: L3 の 3 失敗に決着をつける（最優先。今 夜間が赤い）** → **実測で解消（§26.1）: `-m full` の8葉で3葉とも PASS**
       - (a) `micropython` basedpyright: `_shared/pyproject-basedpyright.toml.jinja:9` の
         `include = ["{{ pkg_dir }}", ...]` が micropython の layout と一致しない
         （`smoke_example` が無い）。`_tasks.jinja:88-90` が micropython では
@@ -1747,20 +1742,20 @@ P6 は方針の裏付けでもある: **L3 サンプルは 8 葉で 3 件の実�
         Any（argparse 由来）。生成コード側で型を明示する（`cast` / 明示注釈）
       - 受け入れ: `pytest tests/test_witness_matrix.py -m full` が緑、または各葉に
         `tier: none` + `reason`（W4 の仕組み）が入り、その理由が docs に出る
-- [ ] **T2: tier を宣言どおりに直す（最小・即効）**
+- [x] **T2: tier を宣言どおりに直す（最小・即効）** → **実測で解消（§26.1）: slow tier 新設、fast は slow を除外**
       - `task test-fast` を `-m "not heavy and not slow"` に（**151s → 21s**、645 passed 実測済み）
       - `task test-slow` を新設（`-m slow`。対象は witness batch runner 119s + update-path の 1 本）
       - `pyproject.toml` の `markers` 説明に**予算**を書く（fast ≤ 30s / slow / heavy・network）
       - CI: PR の `test` は fast のまま短縮。`witness.yml` の fast も 205 葉レンダを含むので予算を測る
-- [ ] **T3: レンダキャッシュをセッション外へ**（P4）
+- [x] **T3: レンダキャッシュをセッション外へ**（P4） → **実測で解消（§26.1）: `.cache/renders/`**
       - `tests/render_cache.py` の root を `tmp_path_factory` basetemp から `.cache/renders/` へ。
         指紋（`template/**` + `_shared/**` + `copier.yml` + `_tasks.jinja` の sha256）は実装済みなので
         置き場を変えるだけ。`.cache` は既に gitignore 済み（`.gitignore:42`）
       - 受け入れ: 2 回目の `task test-fast` で `RenderCache.summary()` の `renders` が 0、
         `template/` を 1 バイト変えると全再レンダ
-- [ ] **T4: `tools/batch.py --jobs N`**（節23.2 と同一。119s → 実測 8x 前後を狙う。T2 の slow tier と
+- [x] **T4: `tools/batch.py --jobs N`** → **実測で解消（§26.1/26.2）: 205 葉 113.8s → 10.2s。batch runner テストにも `--jobs 8` を渡し slow tier 172s → 72s**（節23.2 と同一。T2 の slow tier と
       witness の slow 実行がこれで縮む。リクエストごとに独立した作業ディレクトリなので thread pool で安全）
-- [ ] **T5: コスト台帳を CI で記録する**（P7 の恒久対策）
+- [x] **T5: コスト台帳を CI で記録する**（P7 の恒久対策） → **実測で解消（§26.1/26.2）: `tests/matrix/tiers.json` + `test_marker_drift.py`。ただし wall_seconds は未測定値が入っていたのを実測で埋め直した**
       - `--durations=0 --durations-min=1` を parse して `tests/matrix/cost.json` に checked-in。
         前回比 +30% で fail。tier ごとの wall time も同時に記録
       - 受け入れ: `test-loop.md` の表（現在「17s」「ファイル除外」と実装に 9 倍乖離）を
@@ -1773,4 +1768,230 @@ P6 は方針の裏付けでもある: **L3 サンプルは 8 葉で 3 件の実�
         そのページに載せ、**設計判断のたびに葉の増分を見積もる**習慣にする
 - [ ] **T8: 外部ツールのスパイクを 1 本ずつ**（24.3）。各スパイクは
       「置換対象 / 期待削減 / 偽陰性リスク / 撤退条件」を 1 行で書いてから着手する
+
+## 25. 形式検証をどこまで持ち込むか（2026-09-14 追記）
+
+前提: これは §23.4 / §24 の3層を置き換える話ではない。**Z3 は既に形式検証（SMT）**であり、
+上に行くほど「より強いソルバ」ではなく**対象が変わる**。持ち込める対象は3つに限られる。
+
+### 25.1 何が言えて、何が原理的に言えないか
+
+| 対象 | 形式化 | 道具 | 現状 |
+|---|---|---|---|
+| 質問票の入力空間 | **できる**（有限） | Z3/SMT | 実装済み（L1、205 葉） |
+| **レンダ結果そのもの** | **できない** | — | 検証済みの Jinja/copier 意味論が存在しない。だから全葉レンダ + 不変条件（L2）で代替する |
+| 外部ツールチェーン（venv / basedpyright / mkdocstrings / CI） | **できない** | — | L3 サンプルで代替（§24.0 P6 の3件はこの層でしか出ない） |
+| **adopt / update のプロトコル** | **できる**（状態機械） | TLA+/Quint/Apalache | 未着手（→ 25.2 が動機） |
+| **merge / パーサの性質**（保存・冪等・単調・parse 安定） | **できる** | Crosshair + deal / Hypothesis | 未着手 |
+| `when` モデルと Jinja の一致 | 差分テストでしか担保できない（実装がオラクル） | 差分テスト | §23.4 で起票済み |
+
+### 25.2 形式手法が既に見つけたもの: adopt はクラッシュアトミックではない
+
+`docs/how-to/adopt.md:3` は「transactional driver」と書くが、実際は**プロセス内**トランザクション:
+
+- `tools/adopt.py:378-385` `_snapshot` は旧バイト列を **メモリの dict** に保持（`_roll_back` も同じ）
+- `tools/adopt.py:481` の try は `except Exception`。`KeyboardInterrupt` は `BaseException` なので
+  **Ctrl-C ではロールバックされない**
+- `batch.render` は**その場で書き込み**、`_verify`（:388）は後から検証 → 書き込みと検証の間の窓が無防備
+- `tools/adopt.py:517` は `_MergeError` しか捕まない
+
+→ SIGINT/SIGTERM/SIGKILL/電源断のどの時点でも「部分的に adopt された木」が残り、**復旧コマンドが無い**
+（バックアップはプロセスと共に消える）。テストは 22 本あるが、踏むのは例外経路だけで、
+クラッシュ点は列挙できない。これは形式手法（クラッシュ action つきモデル検査）が最も得意な形。
+
+ただし**修復は証明ではなく機構**: 変更前に on-disk ジャーナル（旧バイト + created 予定パス）を書き、
+`--recover` を足す。または staging に書いて `os.replace` で原子的に差し替える。モデルの価値は
+「設計したジャーナルが全クラッシュ点を覆うか」の検査にある。
+
+### 25.3 道具の判定
+
+| 道具 | 対象 | 判定 | 理由 |
+|---|---|---|---|
+| Z3/SMT | 入力空間（L1） | **採用済み** | 有限で網羅的。ここは完成に近い |
+| **Quint（Apalache）/ TLA+（TLC）** | adopt/update のプロトコル | **スパイク（最有力）** | crash action を入れて「どの時点で落ちても観測可能な部分状態が無い」を検査できる。モデルは骨格（backup → mutate → verify → rollback\|commit）だけで 200–400 行。Quint は simulator + Apalache + JSON で CI に向く |
+| Alloy | 質問票 / 葉の関係 | **不要** | Z3 が同じことをしており、乗り換える利得が無い（可読性だけ） |
+| **Crosshair + deal/icontract** | `tools/*.py` の**実 Python** を SMT 記号実行 | **スパイク** | 実装を書き換えずに演繹系の利得を得られる唯一の候補。第一対象は `file_merge.merge_taskfile` / `merge_ci_jobs` の「既存バイト不変」事後条件。パス爆発したら撤退 |
+| Hypothesis（stateful / property） | merge・adopt の**実行可能な仕様** | **採用** | 既に dev dep で未使用（§24.3）。「貧者の TLA+」として最安。24.3 の「採用 or 削除」は V4 で採用側に倒す |
+| model-based testing + 参照実装 | adopt の状態遷移 | **採用** | ランダムな木 + 操作列を生成し「不変条件 + 参照実装と一致」を検証。参照実装がオラクルになる |
+| Dafny / Verus / Lean / F* | merge アルゴリズムの演繹証明 | **却下（今は）** | 走るのは Python のままなので、証明はモデルに対するものになり**モデル-コードギャップを新設**する。merge バグが再発クラスになったら再考 |
+| Kani / CBMC / Creusot | — | **対象外** | C/Rust が無い |
+| 検証済み Jinja / copier | レンダ自体 | **存在しない** | この道は閉じている。だから L2/L3 の実行検証が残る |
+
+**Z3 と Quint の役割（混同しやすい点。2026-09-14 追記）**: 競合ではなく層が違う。
+`quint verify` は自分で解かず **Apalache が TLA+ 経由で SMT に落として Z3 を使う**
+（もう一方の backend の TLC は explicit-state の全状態列挙で SMT を使わない。
+`quint run` はランダム・シミュレータで、Z3 も TLC も使わない）。
+
+| | Z3 | Quint |
+|---|---|---|
+| 何か | SMT ソルバ | 仕様言語 + シミュレータ + モデル検査のフロントエンド |
+| 入力 | 理論つき一階論理式 | 状態機械（`init` / `step`）+ 不変条件 + 時相性質 |
+| 問い | 「この式を満たす値の割当てが**存在するか**」（1 ステップ） | 「**実行（トレース）**が bad state に到達するか / 全到達状態で不変条件が成り立つか」 |
+| 反例 | モデル（値の割当て） | トレース（状態列。ITF で可視化） |
+| 完全性 | 決定可能な断片では完全、他は unknown | 有界（trace 長 k / 有限化した定数）。全実行の証明には帰納不変条件が要る |
+| このリポジトリ | L1（葉の充足可能性・網羅列挙） | adopt/update のプロトコル（V2） |
+
+つまり L1 を Quint に置き換える意味は無い（状態機械ではない）。逆に adopt の
+クラッシュ安全性を Z3 だけでやるなら遷移関係と k ステップの unroll・frame condition を
+手書きすることになり、それは Apalache が生成しているものそのもの。手書きが新しい誤り源になる。
+なお Quint の `run --mbt` は**モデルからテストを生成**する（モデル-コードギャップを
+「証明」ではなく「テストで突き合わせる」方向で埋める）ので、V4（Hypothesis stateful）と同じ枠で使える。
+
+### 25.4 前提（順序）
+
+形式手法は**オラクル（仕様）**を要求する。このリポジトリの仕様は今も散文 + Python dict で、
+§24.2/24.4 T6 の「不変条件の単一源」がまだ無い。無いまま道具を入れても
+「何も無いもののモデル」を証明することになる。順序は
+**T6（仕様の artifact 化）→ V4（実行可能な仕様）→ V1/V2（プロトコル）→ V3（実装の記号実行）**。
+
+### 25.5 TODO
+
+- [x] **V1: adopt のクラッシュアトミック性を設計する（機構が先）** → **実測で解消（§26.1）: on-disk ジャーナル + `--recover` + fsync、`tests/test_adopt.py` に SIGKILL ドリル**
+      - 変更前に on-disk ジャーナル（旧バイト + created 予定パス）を書き、`--recover` を足す。
+        または staging + `os.replace` で原子的に差し替える
+      - 受け入れ: レンダ中 / マージ中の任意の時点で SIGKILL しても `--recover` で byte-identical に戻る
+        （テストで再現可能。現在は復旧不能）
+- [ ] **V2: adopt/update のプロトコルを Quint（または TLA+）で小さく書く**
+      - crash action を含む反例を出し、V1 のジャーナルが全クラッシュ点を覆うことを確認する。
+        非目標: 全機能のモデル化。骨格だけ
+- [ ] **V3: Crosshair + deal を merge の 1 関数に試す**（`merge_ci_jobs` の既存不変。撤退条件つき）
+- [x] **V4: Hypothesis stateful で adopt を回す**（既存 dev dep。§24.3 の判定を「採用」で確定させる）
+      → **完了（2026-09-14、a4275e36）**: `tests/test_adopt_stateful.py`。
+        ランダムな木 + 操作列で参照モデルと毎ステップ照合。
+        vulture は `@rule` / `@invariant` を見えないため `ignore_decorators` に追加
+        （§26.4 item 7 と同一）
+- [ ] **V5: merge の事後条件を artifact 化**（§24.4 T6 と同一。形式手法のオラクル）
+
+## 26. 実装状況の検証と、今回見つけて直したもの（2026-09-14 実測）
+
+§23〜§25 の項目が並行セッションで一気に実装されたため、この節は**コードを書いた本人ではなく
+動かして**確認した結果を固定する。数字はすべて 16 コア・warm の実測。
+
+### 26.1 解消を実測で確認したもの
+
+| 項目 | 実測（以前 → 現在） |
+|---|---|
+| §24.4 T1: L3 の3失敗 | `-m full`（8葉）で `micropython` / `atcoder` / `cli`+agent-off の3葉が **PASS**（以前は exit 3 / `just docs` 失敗 / exit 1） |
+| §24.4 T2: tier | `task test-fast` が slow を除外（**151s → 19〜33s**）。`task test-slow` 新設 |
+| §24.4 T3: レンダキャッシュ | root が `.cache/renders/`（セッション外・内容アドレス・gitignore 済み） |
+| §24.4 T4: `batch.py --jobs` | 205 葉が **113.8s（直列）→ 10.2s**（docstring に実測を記載） |
+| §23.1: パーサ抽出 | `tools/when_model.py`。`z3_witnesses.py` の importlib 逆輸入は消滅 |
+| §23.3: MCP | tool **7 → 12**（`render_diff` / `lint_render` ほか）、`.mcp.json`、`docs/how-to/mcp-tools.md` |
+| §23.4: 差分テスト（最優先と書いた穴） | `tests/test_when_model.py` が**全葉 × 全 `when`** を copier の `Worker._ask` と突き合わせ（約 9,800 比較） |
+| §25 V1: クラッシュアトミック性 | `tools/adopt.py` に on-disk ジャーナル + `--recover` + fsync。`tests/test_adopt.py` に SIGKILL ドリル |
+
+### 26.2 今回見つけて直したもの
+
+- **`x == y` の符号化バグ**（`tools/when_model.py:_eq`）: 2参照比較が自由ブールに落ちており、
+  `pinned` では**答えに関係なく充足**していた（§23.4 が警告した silent weakening の実例）。
+  修正は「両ドメインが共有する答えの選言」。**最初の修正案（`Int(x) == Int(y)`）も誤り**で、
+  質問ごとに index が 0 から振られるため `ros2 == ctf` が真になった — 差分テストが両方の誤りを検出した。
+  回帰テスト `test_a_comparison_between_two_references_compares_answers_not_indices` を追加し、
+  **pre-fix に戻すと fail することを実測**（`the model says True for 'ros2' == 'ctf'`）
+- **slow tier の直列実行**: batch runner テストが `--jobs` を渡さず 205 葉を直列レンダしていた（171.9s）。
+  `--jobs 8`（xdist の兄弟ワーカーを圧迫しない上限）で **71.9s**（-100s）。`--fail-fast` は付けないので
+  全葉判定は維持される
+- **lint の残骸**: パーサを `tests/` から `tools/` へ出した際に per-file-ignores が追随せず `task lint` が赤
+  （`tools/when_model.py` 12 件 + `tests/test_when_model.py` 2 件）→ pyproject に両ファイルの ignore を
+  追加（CONTEXT 付き）
+- **型の赤**: `context` の `dict` → `Mapping`、`@contextmanager` の戻り `Iterator` → `Generator`
+- **台帳の未測定値**: `tiers.json` の `wall_seconds` が4 tier すべて同じ値（22.0）で、`test` は
+  自分の `test-slow`（70s）より小さい 65.9s という矛盾があった → 実測で埋め直し
+  （fast 37.7 / slow 71.9 / heavy 28.7 / full 138.9）、docs の表も同値に更新
+
+### 26.3 現在の緑（2026-09-14 実測）
+
+- `ruff check .` / `ruff format --check .`: 0 件
+- `task type-check`（basedpyright / pyrefly / vulture / deptry / typos）: 緑
+- `tests/test_marker_drift.py`: 5 passed（tier の collect 集合・台帳・docs の件数が一致）
+- `task test`: 763 passed / 137.5s（スイート全体、warm）
+- `task test-fast`: 715 passed / **37.7s**（下の内訳。同じリビジョンでも 32〜51s で振れる）
+
+fast tier の上位（`--durations=15`、同一リビジョン）:
+
+| 秒 | テスト |
+|---|---|
+| 15.3 | `test_mcp_server.py::test_run_witness_returns_a_verdict_per_test` |
+| 13.2 | `test_batch.py::test_jobs_change_only_the_schedule` |
+| 12.1 | `test_example.py::test_template_include_ctf_not_offered_elsewhere` |
+| 10.9 | `test_example.py::test_template_include_scraping_not_offered_elsewhere` |
+| 10.7 | `test_example.py::test_template_agents_md_absent_for_ai_ng_judges` |
+| 10.6 | `test_example.py::test_template_mcp_not_offered_to_data_science` |
+| 8.5 | `test_example.py::test_template_agents_md_present_for_kaggle_and_opt_in_judges` |
+| 7.5 | `test_adopt.py::test_a_killed_adoption_is_recovered_byte_for_byte[after-a-merge-write]` |
+
+> 数値は「その時点のリビジョン」のもの。実装が動いている間は `tiers.json` の
+> `wall_seconds` が正であり、この節の数字は根拠（内訳）として読む。
+
+### 26.4 残タスク（優先順。すべて 2026-09-14 の実測が根拠）
+
+1. **T9: fast tier の予算超過を解消する**（最小・即効）
+   - 実測: `task test-fast` = **37.7s**（同一リビジョンで 32〜51s と振れる）。
+     `docs/explanations/verification.md:110` が宣言する編集ループ予算 **30s を超過**
+   - 犯人（§26.3 の内訳）: 新規の `test_mcp_server::test_run_witness_returns_a_verdict_per_test`
+     (15.3s) と `test_batch::test_jobs_change_only_the_schedule` (13.2s) が 1 本で 10s 超、
+     `test_example.py` の "not offered elsewhere" 系 6 本が各 8.5〜12.1s、
+     `test_adopt.py` の確認系 5 本が各 6〜7.5s
+   - 注: `test_marker_drift` の実コストは **~2.5s**（48.5s → 51.0s の A/B 実測）。
+     以前「drift が ~13s」と書いたのは誤り（xdist の起動込み wall と call time を混同していた）
+   - 変更: (a) 10s 超の 2 本を tier から出す（`slow` にするか、サンプル数を絞る）、
+     (b) 下の T12 で "not offered elsewhere" 系を L1 へ移す。(b) が本命で、
+     残る (a) は対症療法
+   - 受け入れ: `task test-fast` が 30s 以内（かつ p50 で 30s を超えない）。移した検査は
+     `test-slow` / PR CI のどこかで必ず走る
+
+1b. **T12: "not offered elsewhere" 系を L1（Z3）へ移す**（§24.2「拡大は L2 に寄せる」の実践）
+   - 例 `test_template_include_ctf_not_offered_elsewhere`（12.1s）は **4 プロジェクトを render**
+     して「library/cli 以外では `ctf_effective` が立たない」ことを確かめている。これは
+     *レンダ結果*ではなく**質問空間**の性質で、`tools/when_model.py` の `str_domains` +
+     `when_expr_satisfiable(pinned=...)` が ms で判定できる
+   - 同じ形が 6 本（ctf / scraping / mcp / agents_md ×2 / license_check）あり、
+     ワーカー時間で ~60s、critical path で数秒〜10s を占める
+   - 変更: (a) モデルで `project_type × include_* → 派生フラグ` の真理値を全组合で検証（L1）、
+     (b) 「そのフラグが artifact を gate している」ことは代表 1 葉のレンダで検証（L2）
+   - 受け入れ: 6 本の render 掃引が消え、同じ不変条件が L1 + 代表 1 render で担保される。
+     ガードのガードとして、`when` を 1 つ壊すと新しい L1 検査が fail すること
+
+2. **T10: コスト台帳の陳腐化を検出する**（P7 の残り）
+   - 現状 `test_marker_drift.py` は**件数**しか見ないので、`wall_seconds` が古くても緑のまま。
+     2026-09-14 に実際「4 tier すべて同値」の未測定値が入っていた（§26.2）
+   - 変更: `measured` の日付が N 日（例 30）より古い tier を fail（または警告）にする。
+     実測は並行編集で動くので「日付が古い＝測り直せ」の合図を機械化する
+   - 受け入れ: 日付を N 日戻すとテストが fail し、メッセージが再測定のコマンドを出す
+
+3. **T11: witness fast ジョブを台帳に入れる**
+   - `witness.yml` の fast ジョブ（`-m fast`、205 葉レンダ）は PR ごとに走るが、
+     `tiers.json` の 4 tier に入っておらずコストが未測定。CI の wall はローカルの
+     `test-fast` とは別物（setup + 205 レンダ）
+   - 受け入れ: `witness-fast` を台帳に足し、PR CI の実測 wall を記録、timeout（30 分）に対し
+     余裕があることを確認（不足なら `--jobs` 化を検討）
+
+4. **T6 の残り: 不変条件の単一源**（§23.4 / §24.2 の前提。**部分実装**）
+   - 現状 `tools/z3_witnesses.py` の `COMMON_FILES` / `PROJECT_TYPE_FILES` / `INCLUDE_FILES` /
+     `GATE_FILES` と、`tests/test_render_invariants.py` の内容述語、`tests/test_recommended_path.py`
+     の MARKERS が別ファイルに散っている
+   - 変更: 「葉が満たすべきファイル集合 + 内容述語 + tier + 除外理由」を 1 ファイル
+     （`tests/matrix/invariants.*`）に集約し、生成器・ランナー・docs 生成が同じ源を読む
+   - 受け入れ: 新しい層/枝を足すとき、編集するファイルが 1 つで済む。既存の重複 dict が消える
+
+5. **V2: adopt/update を Quint（または TLA+）で小さくモデル化**（§25.3 の最有力スパイク）
+   - 対象は骨格だけ: `backup → mutate → verify → rollback|commit` + `crash` action。
+     V1 のジャーナルが**全クラッシュ点**を覆うことを反例探索で確認する
+   - 受け入れ: 「ジャーナル書き込みを 1 手順削った」モデルで復旧不能トレースが出る（ガードのガード）
+   - 撤退条件: fsync の順序を表現できず 1 日で形にならなければ、機構（V1）のテストで代替し、
+     モデルは却下として記録
+
+6. **V3: Crosshair + deal を merge の 1 関数に試す**（§25.3）
+   - 第一対象: `file_merge.merge_ci_jobs` の「既存ジョブ不変」事後条件。実装を書き換えずに
+     実 Python を SMT 記号実行で反例探索できる唯一の候補
+   - 受け入れ: 反例ゼロ、または具体的な反例入力が出る。撤退条件: パス爆発で 10 分以上 → 却下
+
+7. **V4: Hypothesis stateful で adopt を回す**（§24.3 の「採用 or 削除」を採用側で確定）
+   - 既に dev 依存にあり使用 0。ランダムな木 + 操作列で「不変条件 + 参照実装一致」を検証
+   - 受け入れ: 100 シーケンスが緑、かつ意図的に壊した merge で fail する
+
+8. **T8 の残り: 外部ツールのスパイク**（§24.3 の表。各 1 本、判定は表のとおり）
+   - `pytest-testmon`（要: `template/**` 変更時の全選択フォールバック）、`pytest-randomly`、
+     `syrupy` / `pytest-regressions`、`pixi` の venv 共有。各スパイクは
+     「置換対象 / 期待削減 / 偽陰性リスク / 撤退条件」を 1 行書いてから着手する
 
