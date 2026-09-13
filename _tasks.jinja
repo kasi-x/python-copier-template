@@ -11,14 +11,38 @@
       (task_runner_effective == 'poe')
     - the `[tool.pixi.feature.dev.tasks]` table in template/pyproject.toml.jinja
       (task_runner_effective == 'pixi')
+    - the command table in template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja
 
-  Sets `tasks`: a list of {name, desc, cmd: [str, ...]} or
-  {name, desc, deps: [name, ...]} dicts, in the order they should be shown.
+  The model is ONE declarative list, `tasks`: each entry is
+  {name, desc, run: [str, ...]} or {name, desc, deps: [name, ...]}, in the
+  order the tasks should be shown. Conditional groups (kaggle, docs,
+  data-science, micropython, mcp, the strictness-gated quality gates) are
+  built as named lists and one assembly concatenates them under inline
+  guards (`+ (docs_tasks if docs else [])`), so no task is ever mutated or
+  appended after the model is built. Presentation (the AGENTS.md table, the
+  CI lint job) derives from the same model and cannot drift.
 
-  `cmd` entries already include the right package-manager run-prefix, EXCEPT
-  when task_runner_effective == 'pixi': pixi's own tasks already run inside
-  the activated environment, so no `pixi run` prefix is needed there.
-  For ros2 projects the commands source the ROS environment and use colcon.
+  - `run` holds the commands in execution order and every serializer
+    concatenates it in order: one recipe line / YAML entry / c.run call
+    per command for the line-based runners (task/just/make/invoke/duty),
+    `&&`-joined into a single shell string for pixi/poe. Serializers
+    never inspect command strings.
+  - The serializers themselves are the `macro`s at the end of this file
+    (`taskfile`, `justfile`, `makefile`, `invoke_tasks`, `duty_duties`,
+    `poe_tasks`, `pixi_tasks`). Each runner template is now only
+    `{% import "_tasks.jinja" as _t %}` plus one call, so adding a task
+    cannot need seven edits. A macro reads `tasks` from this module's
+    scope and takes no arguments; the whitespace inside it is
+    significant (it is the runner's output, newlines included).
+  - `shell: true` marks a task whose commands must chain inside ONE shell
+    invocation although they share a single `run` entry. The poe
+    serializer branches on this structural marker instead of sniffing
+    the string for `&&`.
+  - `run` entries already include the right package-manager run-prefix,
+    EXCEPT when task_runner_effective == 'pixi': pixi's own tasks already
+    run inside the activated environment, so no `pixi run` prefix is
+    needed there.
+  - For ros2 projects the commands source the ROS environment and use colcon.
 
   `lint` is check-only (safe in CI); the `fix` task is the explicit
   pre-commit replacement — run it before committing to auto-fix formatting
@@ -32,26 +56,14 @@
 {% set ros_source = '. /opt/ros/$ROS_DISTRO/setup.bash && ' %}
 {% endif %}
 {% set tasks = [
-    {
-        'name': 'lint',
-        'desc': 'Check formatting and lint (ruff, check-only)',
-        'cmd': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .'],
-    },
-    {
-        'name': 'build',
-        'desc': 'Build the package with colcon',
-        'cmd': [ros_source ~ 'colcon build --symlink-install --packages-select ' ~ package_name],
-    },
-    {
-        'name': 'test',
-        'desc': 'Run the ament test suite with colcon',
-        'cmd': [ros_source ~ 'colcon test --packages-select ' ~ package_name ~ ' && ' ~ ros_source ~ 'colcon test-result --verbose'],
-    },
-    {
-        'name': 'check',
-        'desc': 'Run all quality checks',
-        'deps': ['lint', 'build', 'test'],
-    },
+    {'name': 'lint', 'desc': 'Check formatting and lint (ruff, check-only)', 'shell': true,
+     'run': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .']},
+    {'name': 'build', 'desc': 'Build the package with colcon',
+     'run': [ros_source ~ 'colcon build --symlink-install --packages-select ' ~ package_name]},
+    {'name': 'test', 'desc': 'Run the ament test suite with colcon', 'shell': true,
+     'run': [ros_source ~ 'colcon test --packages-select ' ~ package_name
+             ~ ' && ' ~ ros_source ~ 'colcon test-result --verbose']},
+    {'name': 'check', 'desc': 'Run all quality checks', 'deps': ['lint', 'build', 'test']},
 ] %}
 {% else %}{% set run = '' if task_runner_effective == 'pixi' else (
     'uv run --locked ' if package_manager == 'uv' else (
@@ -61,21 +73,6 @@
     'pixi run -e experiment ' if package_manager == 'pixi' else 'poetry run ')) %}
 {% set docs_build_cmd = 'sphinx-build --fresh-env --show-traceback --fail-on-warning --keep-going docs build/html' if sphinx else ('zensical build' if zensical else 'great-docs build') %}
 {% set docs_serve_cmd = 'sphinx-autobuild --show-traceback --watch README.md docs build/html' if sphinx else ('zensical serve' if zensical else 'great-docs preview') %}
-
-{% set tasks = [
-    {
-        'name': 'lint',
-        'desc': 'Check formatting and lint (ruff, check-only)',
-        'cmd': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .'],
-    },
-    {
-        'name': 'fix',
-        'desc': 'Auto-fix formatting, lint and typos (run before committing)',
-        'cmd': [run ~ 'ruff check --fix .', run ~ 'ruff format .'
-                ~ (' && ' ~ run ~ 'typos -w .' if strictness in ['recommended', 'full'] else '')],
-    },
-] %}
-{% if strictness in ['recommended', 'full'] %}
 {% set secondary = 'ty check' if type_checker == 'ty' else 'pyrefly check' %}
 {# License compliance (PyPI metadata): deterministic copyleft policy that
    fails on licenses the project license cannot absorb. Network-dependent
@@ -96,81 +93,193 @@
     run ~ 'deptry .',
     run ~ 'typos .',
 ] %}
-{# Network-dependent (OSV/PyPI): exits non-zero on findings or fetch
-   failures, so `audit` stays out of `type-check`/`check`/CI: run on demand. #}
-{% set tasks = tasks + [{
-    'name': 'type-check',
-    'desc': 'Run basedpyright + ' ~ type_checker ~ ' + static analysis',
-    'cmd': type_check_cmds,
-}, {
-    'name': 'audit',
-    'desc': 'Audit dependencies for known vulnerabilities (needs network)',
-    'cmd': [run ~ 'pip-audit'],
-}] %}
-{% if license_check_effective %}
-{% set tasks = tasks + [{
-    'name': 'license-check',
-    'desc': 'Check dependency licenses comply with ' ~ license_effective ~ ' (needs network)',
-    'cmd': [license_check_cmd],
-}] %}
-{% endif %}
-{% endif %}
-{% set tasks = tasks + [{
-    'name': 'test',
-    'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] and not oj_code else ''),
-    'cmd': [run ~ 'pytest' ~ (' --cov=' ~ ('firmware' if micropython_pkg else pkg_dir) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] and not oj_code else '')],
-}] %}
-{% if docs %}
-{% set tasks = tasks + [
-    {'name': 'docs', 'desc': 'Build documentation', 'cmd': [run ~ docs_build_cmd]},
-    {'name': 'docs-serve', 'desc': 'Serve documentation with live reload', 'cmd': [run ~ docs_serve_cmd]},
+{# The model: quality gates appear only on the recommended/full strictness;
+   audit and license-check are network-dependent on-purpose one-offs that
+   stay out of `type-check`/`check` (both must run offline). #}
+{% set quality_tasks = [
+    {'name': 'type-check', 'desc': 'Run basedpyright + ' ~ type_checker ~ ' + static analysis',
+     'run': type_check_cmds},
+    {'name': 'audit', 'desc': 'Audit dependencies for known vulnerabilities (needs network)',
+     'run': [run ~ 'pip-audit']},
+] + ([{'name': 'license-check',
+       'desc': 'Check dependency licenses comply with ' ~ license_effective ~ ' (needs network)',
+       'run': [license_check_cmd]}] if license_check_effective else []) %}
+{% set docs_tasks = [
+    {'name': 'docs', 'desc': 'Build documentation', 'run': [run ~ docs_build_cmd]},
+    {'name': 'docs-serve', 'desc': 'Serve documentation with live reload', 'run': [run ~ docs_serve_cmd]},
+] + ([{'name': 'docs-linkcheck', 'desc': 'Check documentation links',
+       'run': [run ~ 'sphinx-build -b linkcheck docs build/linkcheck']}] if sphinx else []) %}
+{% set kaggle_tasks = [
+    {'name': 'dataset', 'desc': 'Build the dataset from raw inputs', 'run': [run ~ 'python -m utils.dataset']},
+    {'name': 'features', 'desc': 'Build engineered features', 'run': [run ~ 'python -m utils.features']},
+    {'name': 'train', 'desc': 'Train a model', 'run': [run ~ 'python -m utils.modeling.train']},
+    {'name': 'tune', 'desc': 'Run Optuna hyperparameter search',
+     'run': [run ~ 'python -m utils.modeling.train optuna.trials=50']},
+    {'name': 'predict', 'desc': 'Run inference and write predictions', 'run': [run ~ 'python -m utils.modeling.predict']},
+    {'name': 'plots', 'desc': 'Generate exploratory plots', 'run': [run ~ 'python -m utils.plots']},
+    {'name': 'marimo', 'desc': 'Launch the marimo notebook editor on src/notebook',
+     'run': [run_x ~ 'marimo edit src/notebook']},
 ] %}
-{% if sphinx %}
-{% set tasks = tasks + [{'name': 'docs-linkcheck', 'desc': 'Check documentation links', 'cmd': [run ~ 'sphinx-build -b linkcheck docs build/linkcheck']}] %}
-{% endif %}
-{% endif %}
-{% if kaggle %}
-{% set tasks = tasks + [
-    {'name': 'dataset', 'desc': 'Build the dataset from raw inputs', 'cmd': [run ~ 'python -m utils.dataset']},
-    {'name': 'features', 'desc': 'Build engineered features', 'cmd': [run ~ 'python -m utils.features']},
-    {'name': 'train', 'desc': 'Train a model', 'cmd': [run ~ 'python -m utils.modeling.train']},
-    {'name': 'tune', 'desc': 'Run Optuna hyperparameter search', 'cmd': [run ~ 'python -m utils.modeling.train optuna.trials=50']},
-    {'name': 'predict', 'desc': 'Run inference and write predictions', 'cmd': [run ~ 'python -m utils.modeling.predict']},
-    {'name': 'plots', 'desc': 'Generate exploratory plots', 'cmd': [run ~ 'python -m utils.plots']},
-    {'name': 'marimo', 'desc': 'Launch the marimo notebook editor on src/notebook', 'cmd': [run_x ~ 'marimo edit src/notebook']},
+{% set data_science_tasks = [
+    {'name': 'marimo', 'desc': 'Launch marimo notebook editor', 'run': [run_x ~ 'marimo edit notebooks']},
+    {'name': 'notebook', 'desc': 'Launch Jupyter on notebooks/', 'run': [run_x ~ 'jupyter lab notebooks/ --allow-root']},
+    {'name': 'paper', 'desc': 'Render the paper to arxiv-pdf and html', 'run': ['quarto render paper/paper.qmd']},
+    {'name': 'slides', 'desc': 'Render the slides to reveal.js html', 'run': ['quarto render slides/slides.qmd']},
+    {'name': 'paper-api', 'desc': 'Build the quartodoc API reference', 'run': [run ~ 'quartodoc build --config _quarto.yml']},
 ] %}
-{% endif %}
-{% if data_science %}
-{% set tasks = tasks + [
-    {'name': 'marimo', 'desc': 'Launch marimo notebook editor', 'cmd': [run_x ~ 'marimo edit notebooks']},
-    {'name': 'notebook', 'desc': 'Launch Jupyter on notebooks/', 'cmd': [run_x ~ 'jupyter lab notebooks/ --allow-root']},
-    {'name': 'paper', 'desc': 'Render the paper to arxiv-pdf and html', 'cmd': ['quarto render paper/paper.qmd']},
-    {'name': 'slides', 'desc': 'Render the slides to reveal.js html', 'cmd': ['quarto render slides/slides.qmd']},
-    {'name': 'paper-api', 'desc': 'Build the quartodoc API reference', 'cmd': [run ~ 'quartodoc build --config _quarto.yml']},
+{% set micropython_tasks = [
+    {'name': 'stubs', 'desc': 'Install MicroPython type stubs into typings/',
+     'run': [run ~ 'pip install -r requirements-dev.txt --target typings']},
+    {'name': 'deploy', 'desc': 'Copy firmware/ to the device root and reset it', 'shell': true,
+     'run': ['for f in firmware/*; do ' ~ run ~ 'mpremote connect auto fs cp -r "$f" :; done && ' ~ run ~ 'mpremote connect auto reset']},
+    {'name': 'run', 'desc': 'Run firmware/main.py on the device without copying',
+     'run': [run ~ 'mpremote connect auto run firmware/main.py']},
+    {'name': 'repl', 'desc': 'Open a REPL on the connected device',
+     'run': [run ~ 'mpremote connect auto repl']},
+    {'name': 'freeze', 'desc': 'Build a distributable firmware image (Docker)',
+     'run': [run ~ 'python tools/micropython/freeze.py']},
 ] %}
-{% endif %}
-{% if micropython_pkg %}
-{% set tasks = tasks + [
-    {'name': 'stubs', 'desc': 'Install MicroPython type stubs into typings/', 'cmd': [run ~ 'pip install -r requirements-dev.txt --target typings']},
-    {'name': 'deploy', 'desc': 'Copy firmware/ to the device root and reset it', 'cmd': ['for f in firmware/*; do ' ~ run ~ 'mpremote connect auto fs cp -r "$f" :; done && ' ~ run ~ 'mpremote connect auto reset']},
-    {'name': 'run', 'desc': 'Run firmware/main.py on the device without copying', 'cmd': [run ~ 'mpremote connect auto run firmware/main.py']},
-    {'name': 'repl', 'desc': 'Open a REPL on the connected device', 'cmd': [run ~ 'mpremote connect auto repl']},
-    {'name': 'freeze', 'desc': 'Build a distributable firmware image (Docker)', 'cmd': [run ~ 'python tools/micropython/freeze.py']},
+{# Network-dependent (OSV/PyPI / Docker Hub): `mcp-serve` builds and runs on
+   demand, like audit — it is not part of `check`. #}
+{% set mcp_tasks = [{'name': 'mcp-serve',
+                      'desc': 'Build and run the MCP server in Docker (Streamable HTTP on :8000)',
+                      'shell': true,
+                      'run': ['docker build -t ' ~ repo_name ~ ' . && docker run --rm -p 8000:8000 '
+                              ~ '-e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 '
+                              ~ '--entrypoint mcp-server-' ~ repo_name ~ ' ' ~ repo_name
+                              ~ ' --transport streamable-http --host 0.0.0.0']}] %}
+{# The single declarative assembly: conditions that used to gate eight
+   separate `set tasks = tasks + [...]` blocks are the inline guards here. #}
+{% set tasks = [
+    {'name': 'lint', 'desc': 'Check formatting and lint (ruff, check-only)', 'shell': true,
+     'run': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .']},
+    {'name': 'fix', 'desc': 'Auto-fix formatting, lint and typos (run before committing)',
+     'run': [run ~ 'ruff check --fix .',
+             run ~ 'ruff format .'
+             ~ (' && ' ~ run ~ 'typos -w .' if strictness in ['recommended', 'full'] else '')]},
+] + (quality_tasks if strictness in ['recommended', 'full'] else []) + [
+    {'name': 'test',
+     'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] and not oj_code else ''),
+     'run': [run ~ 'pytest'
+             ~ (' --cov=' ~ ('firmware' if micropython_pkg else pkg_dir) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] and not oj_code else '')]},
+] + (docs_tasks if docs else []) + (kaggle_tasks if kaggle else []) + (data_science_tasks if data_science else []) + (micropython_tasks if micropython_pkg else []) + (mcp_tasks if mcp_effective and docker else []) + [
+    {'name': 'check', 'desc': 'Run all quality checks',
+     'deps': ['lint'] + (['type-check'] if strictness in ['recommended', 'full'] else []) + ['test']},
 ] %}
+
+{# The AGENTS.md command-table presentation, derived from the same model so
+   the agent guide cannot drift from the runner files. #}
+{% set agent_cmd_specs = {'fix': 'auto-fix formatting and lint',
+                          'lint': 'ruff format --check + ruff check (check-only)',
+                          'test': 'pytest',
+                          'type-check': 'type checker + static analysis',
+                          'check': 'everything above'} %}
+{% set agent_prefix = {
+    'task': 'task', 'just': 'just', 'make': 'make',
+    'poe': 'poe', 'invoke': 'invoke', 'duty': 'duty'}.get(task_runner_effective, 'pixi run -e dev') %}
+{% set agent_commented = ['fix', 'lint', 'test', 'type-check', 'check'] if task_runner_effective == 'task' else (['fix'] if task_runner_effective == 'just' else []) %}
 {% endif %}
-{% if mcp_effective and docker %}
-{% set tasks = tasks + [{
-    'name': 'mcp-serve',
-    'desc': 'Build and run the MCP server in Docker (Streamable HTTP on :8000)',
-    'cmd': ['docker build -t ' ~ repo_name ~ ' . && docker run --rm -p 8000:8000 '
-            ~ '-e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 '
-            ~ '--entrypoint mcp-server-' ~ repo_name ~ ' ' ~ repo_name
-            ~ ' --transport streamable-http --host 0.0.0.0'],
-}] %}
+
+{# ---------------------------------------------------------------------------
+   Runner serializers: one macro per consumer file. Defining them here means a
+   new task reaches every runner with no per-runner edit; each runner template
+   keeps only its import line plus a single call to one of the macros below.
+   The whitespace is part of the output (the newline after a loop tag is the
+   blank line these runners put between entries), so keep the trim markers
+   exactly as they are. A macro reads `tasks` from this module's scope and
+   takes no arguments; the right-trim on each call site swallows the call
+   line's own newline, which lets the consumer source end with a newline while
+   its output ends where it did before.
+   --------------------------------------------------------------------------- #}
+{% macro taskfile() %}{% for task in tasks %}
+  {{ task.name }}:
+    desc: "{{ task.desc }}"
+{% if task.deps is defined %}
+    deps: [{{ task.deps | join(', ') }}]
+{% else %}
+    cmds:
+{% for c in task.run %}
+      - "{{ c }}"
+{% endfor %}
+{% endif -%}
+{% endfor -%}{% endmacro %}
+{% macro justfile() %}{% for task in tasks %}
+# {{ task.desc }}
+{% if task.deps is defined %}
+{{ task.name }}: {{ task.deps | join(' ') }}
+{% else %}
+{{ task.name }}:
+    {{ task.run | join('\n    ') }}
+{% endif -%}
+{% endfor -%}{% endmacro %}
+{% macro makefile() %}.PHONY: default {% for task in tasks %}{{ task.name }} {% endfor %}
+
+default:
+	@echo "Available tasks:"
+	@awk -F: '/^[a-zA-Z_-]+:/ {print "  " $$1}' Makefile | sort -u
+{% for task in tasks %}
+
+{{ task.name }}:{% if task.deps is defined %} {{ task.deps | join(" ") }}{% endif %}
+	@echo "==> {{ task.desc }}"
+{%- if task.run is defined %}
+	{{ task.run | join('\n\t') }}
+{% endif -%}
+{% endfor -%}{% endmacro %}
+{% macro invoke_tasks() %}{% for t in tasks %}
+{% if t.deps is defined %}
+@task({{ t.deps | map('replace', '-', '_') | join(', ') }})  # pyright: ignore[reportUntypedFunctionDecorator]
+def {{ t.name | replace('-', '_') }}(c: Context) -> None:
+    """{{ t.desc }}."""
+{%- for cmd in t.run %}
+    c.run(
+        "{{ cmd }}",
+    )
+{%- endfor %}
+{% else %}
+@task
+def {{ t.name | replace('-', '_') }}(c: Context) -> None:
+    """{{ t.desc }}."""
+{%- for cmd in t.run %}
+    c.run(
+        "{{ cmd }}",
+    )
+{%- endfor %}
+{% endif %}{%- endfor -%}{% endmacro %}
+{% macro duty_duties() %}{% for t in tasks %}
+{% if t.deps is defined %}
+@duty(pre=[{{ t.deps | map('tojson') | join(', ') }}])
+def {{ t.name | replace('-', '_') }}(ctx: Context) -> None:
+    """{{ t.desc }}."""
+{%- for cmd in t.run %}
+    ctx.run(
+        "{{ cmd }}",
+        title="{{ t.desc }}",
+    )
+{%- endfor %}
+{% else %}
+@duty
+def {{ t.name | replace('-', '_') }}(ctx: Context) -> None:
+    """{{ t.desc }}."""
+{%- for cmd in t.run %}
+    ctx.run(
+        "{{ cmd }}",
+        title="{{ t.desc }}",
+    )
+{%- endfor %}
+{% endif %}{%- endfor -%}{% endmacro %}
+{% macro poe_tasks() %}{% for t in tasks %}
+{% if t.deps is defined %}
+"{{ t.name }}" = { sequence = [{{ t.deps | map('tojson') | join(', ') }}] }
+{% elif t.run | length > 1 or t.get('shell', false) %}
+"{{ t.name }}" = { shell = "{{ t.run | join(' && ') }}", help = "{{ t.desc }}" }
+{% else %}
+"{{ t.name }}" = { cmd = "{{ t.run[0] }}", help = "{{ t.desc }}" }
 {% endif %}
-{% set tasks = tasks + [{
-    'name': 'check',
-    'desc': 'Run all quality checks',
-    'deps': ['lint'] + (['type-check'] if strictness in ['recommended', 'full'] else []) + ['test'],
-}] %}
+{% endfor %}{% endmacro %}
+{% macro pixi_tasks() %}{% for t in tasks %}
+{% if t.deps is defined %}
+"{{ t.name }}" = { depends-on = [{{ t.deps | map('tojson') | join(', ') }}] }
+{% else %}
+"{{ t.name }}" = { cmd = "{{ t.run | join(' && ') }}" }
 {% endif %}
+{% endfor %}{% endmacro %}

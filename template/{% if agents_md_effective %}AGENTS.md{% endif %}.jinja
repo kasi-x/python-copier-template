@@ -1,4 +1,4 @@
-# Agent Guide for `{{ repo_name }}`
+{% import "_tasks.jinja" as _t with context -%}# Agent Guide for `{{ repo_name }}`
 
 This file is for AI coding agents working in this repository. It states how
 to run the checks and where edits belong. The human-facing contribution
@@ -33,52 +33,26 @@ guide is [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 The `{{ task_runner_effective }}` task runner drives the common commands:
 
-```sh
-{% if task_runner_effective == 'task' %}task fix            # auto-fix formatting and lint
-task lint           # ruff format --check + ruff check (check-only)
-task test           # pytest{% if strictness in ['recommended', 'full'] %}
-task type-check     # type checker + static analysis{% endif %}
-task check          # everything above
-{% elif task_runner_effective == 'just' %}just fix            # auto-fix formatting and lint
-just lint
-just test
-just check
-{% elif task_runner_effective == 'make' %}make fix
-make lint
-make test
-make check
-{% elif task_runner_effective == 'poe' %}poe fix
-poe lint
-poe test
-poe check
-{% elif task_runner_effective == 'invoke' %}invoke fix
-invoke lint
-invoke test
-invoke check
-{% elif task_runner_effective == 'duty' %}duty fix
-duty lint
-duty test
-duty check
-{% else %}pixi run -e dev fix
-pixi run -e dev lint
-pixi run -e dev test
-pixi run -e dev check
-{% endif %}```
+```sh{# The rows below are the `_tasks.jinja` model, not a hand-written table:
+   a row is printed only when the task exists in this render. Presentation
+   (comments on the `task` runner, the fix comment on `just`) is kept as is. #}
+{% for task_name in _t.agent_cmd_specs if task_name in (_t.tasks | map(attribute='name')) and (task_runner_effective == 'task' or task_name != 'type-check') %}{{ _t.agent_prefix }} {% if task_name in _t.agent_commented %}{{ task_name }}{{ (15 - (task_name | length)) * ' ' }}# {{ _t.agent_cmd_specs[task_name] }}{% else %}{{ task_name }}{% endif %}
+{% endfor %}```
 
 Run `{{ task_runner_effective }} fix` before committing to apply formatting
 and lint fixes, then `{{ task_runner_effective }} check` (or `lint` + `test`
-{% if strictness in ['recommended', 'full'] %}+ `type-check` {% endif %}individually) before finishing a change.
+{% if 'type-check' in (_t.tasks | map(attribute='name')) %}+ `type-check` {% endif %}individually) before finishing a change.
 The repo-hygiene checks (secrets, workflow linting, YAML validity,
 conventional commit messages) run in CI, not as local hooks — the lint and
 fix tasks work anywhere, including outside a git repository.
-{% if strictness in ['recommended', 'full'] %}
+{% if 'type-check' in (_t.tasks | map(attribute='name')) %}
 Type checking uses basedpyright plus `{{ type_checker }}`; `deptry`,
 `vulture`, and `typos` also run as part of type-check.
 {% else %}
 Type checking is minimal at `strictness: {{ strictness }}` — pytest and
 ruff are the checks that matter.
 {% endif %}
-{% if docs %}
+{% if 'docs' in (_t.tasks | map(attribute='name')) %}
 Build the docs with `{{ task_runner_effective }} docs`.
 {% endif %}
 ## Where to edit

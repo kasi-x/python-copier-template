@@ -138,6 +138,8 @@ _JINJA_IF_WORDS = {
     "endfor",
     "set",
     "endset",
+    "macro",
+    "endmacro",
     "import",
     "include",
     "from",
@@ -177,7 +179,8 @@ def shared_files() -> list[Path]:
 
 
 def _template_local_vars(files: list[Path]) -> set[str]:
-    """Names bound by {% set %}, {% import ... as %} and {% for %} in templates.
+    """Names bound by {% set %}, {% import ... as %}, {% for %} and
+    {% macro %} in templates.
 
     These are template-local definitions, not copier.yml keys.
     """
@@ -191,6 +194,11 @@ def _template_local_vars(files: list[Path]) -> set[str]:
             continue
         local |= set(re.findall(r"\{%-?\s*set\s+([A-Za-z_][A-Za-z0-9_]*)", text))
         local |= set(re.findall(r"\{%-?\s*import\s+[\"'][^\"']+[\"']\s+as\s+([A-Za-z_][A-Za-z0-9_]*)", text))
+        # A macro definition binds its name and its parameters, both of which
+        # are bare identifiers in the macro body: {% macro serialize(x, y=1) %}.
+        for name, params in re.findall(r"\{%-?\s*macro\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)", text):
+            local.add(name)
+            local |= {p.split("=", 1)[0].strip() for p in params.split(",") if p.strip()}
         # A loop may bind several names: {% for a, b in ... %}.
         local |= set(
             re.findall(r"\{%-?\s*for\s+([A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*)*)\s+in\b", text)

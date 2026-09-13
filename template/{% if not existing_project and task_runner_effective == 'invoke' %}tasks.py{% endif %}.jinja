@@ -2,23 +2,4 @@
 
 from invoke.context import Context
 from invoke.tasks import task  # pyright: ignore[reportUnknownVariableType]
-{% for t in _t.tasks %}
-{% if t.deps is defined %}
-@task({{ t.deps | map('replace', '-', '_') | join(', ') }})  # pyright: ignore[reportUntypedFunctionDecorator]
-def {{ t.name | replace('-', '_') }}(c: Context) -> None:
-    """{{ t.desc }}."""
-{%- for cmd in t.cmd %}
-    c.run(
-        "{{ cmd }}",
-    )
-{%- endfor %}
-{% else %}
-@task
-def {{ t.name | replace('-', '_') }}(c: Context) -> None:
-    """{{ t.desc }}."""
-{%- for cmd in t.cmd %}
-    c.run(
-        "{{ cmd }}",
-    )
-{%- endfor %}
-{% endif %}{%- endfor -%}
+{{ _t.invoke_tasks() -}}
