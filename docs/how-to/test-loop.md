@@ -6,10 +6,10 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 731 | ~47s † |
+| Edit loop | `task test-fast` | 732 | ~47s † |
 | Slow | `task test-slow` | 5 | ~72s |
 | Pre-push / nightly | `task test-heavy` | 43 | ~29s |
-| Everything | `task test` | 786 | ~139s |
+| Everything | `task test` | 787 | ~139s |
 | Cost ledger guard | `task test-meta` | 7 | ~11s † |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
@@ -21,8 +21,8 @@ Those times are the lightest of the runs measured on 2026-09-14 with
 marked † were measured for this version of the ledger with unrelated work
 filling the machine's 32 logical CPUs (load average 64–117), so they are
 observations of that contention rather than of a quiet box: the same tree with
-the guard still in the edit-loop selection (738 tests) took 46s at load 85 in
-the same session, and the 30s budget remains the contract. A cold
+the guard still in the edit-loop selection (then 738 tests) took 46s at load 85
+in the same session, and the 30s budget remains the contract. A cold
 `.cache/renders` (the first run after changing the template) turned `task test`
 into 337s. That spread is why the budget is the contract and a time is only an
 observation — `tests/matrix/tiers.json` holds each measurement with the

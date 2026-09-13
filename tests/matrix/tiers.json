@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 731,
+      "collected": 732,
       "files": {
         "tests/test_adopt.py": 32,
         "tests/test_adopt_stateful.py": 1,
@@ -12,7 +12,7 @@
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example.py": 112,
-        "tests/test_file_merge.py": 21,
+        "tests/test_file_merge.py": 22,
         "tests/test_generated_docs_sync.py": 9,
         "tests/test_generated_lint.py": 106,
         "tests/test_generation_docs.py": 1,
@@ -34,11 +34,11 @@
         "tests/test_witness_matrix.py": 208,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "c7d6e91f2dbd71c26cded68c1b09d5232dadb615872ab223564d108433070560",
+      "ids_sha256": "4b9ca7d8e778cdfeb78f7aec5bc3d2a1f98f8003a133707686c643a4f8101c2a",
       "wall_seconds": 47.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
-      "note": "time uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\" (731 tests; 47s is the lightest of this re-record's runs, on a machine whose 32 logical CPUs were also carrying unrelated work at load average 64-117 -- the contention, not the selection, is what that number measures: the same tree with the guard still in the selection (738 tests) measured 46s at load 85 in the same session. The previous record's 22s was measured idle on a 717-test tree, which other changes have since grown past, so it is not a bound for this selection; the guard's own cost is the test-meta row below, and on this box its removal was not resolvable in the loop's wall at all)"
+      "note": "time uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\" (732 tests now; 47s is the lightest of this re-record's runs, on a machine whose 32 logical CPUs were also carrying unrelated work at load average 64-117 -- the contention, not the selection, is what that number measures: the same tree with the guard still in the selection (then 738 tests) measured 46s at load 85 in the same session. The previous record's 22s was measured idle on a 717-test tree, which other changes have since grown past, so it is not a bound for this selection; the guard's own cost is the test-meta row below, and on this box its removal was not resolvable in the loop's wall at all)"
     },
     "test-slow": {
       "task": "test-slow",
@@ -86,7 +86,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 786,
+      "collected": 787,
       "files": {
         "tests/test_adopt.py": 32,
         "tests/test_adopt_stateful.py": 1,
@@ -94,7 +94,7 @@
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example.py": 135,
-        "tests/test_file_merge.py": 21,
+        "tests/test_file_merge.py": 22,
         "tests/test_generated_docs_sync.py": 9,
         "tests/test_generated_lint.py": 106,
         "tests/test_generated_typecheck.py": 6,
@@ -118,7 +118,7 @@
         "tests/test_witness_matrix.py": 217,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "9cf2d1722d07a193656db1b3e8bf1e98254f5741c9790f3aeed9be3f12ac7f14",
+      "ids_sha256": "7c122d03a3d0085b9a499154bc3bc35bb7dad15c8c11f604940db02707d0edcb",
       "wall_seconds": 138.9,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
