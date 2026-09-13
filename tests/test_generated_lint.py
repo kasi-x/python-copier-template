@@ -2,7 +2,9 @@
 
 test_recommended_path.py proves those paths *render*; this module proves the
 rendered tree is clean under the generated project's own ruff config. Renders
-come from the session-wide cache in render_cache.py, which runs copier with
+come from the on-disk render cache in render_cache.py (`.cache/renders/`,
+shared across runs, keyed by answers + template fingerprint), which runs
+copier with
 `skip_tasks=True` (no uv sync needed) once per (answers, template) and copies
 that tree per test. ruff (from this repo's venv) is pointed at the generated
 project, whose pyproject.toml holds the `[tool.ruff]` that the generated

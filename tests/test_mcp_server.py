@@ -3,18 +3,31 @@
 The in-process client below is the same pattern the generated MCP scaffold
 ships in its own tests (`mcp.Client` against the server object, no
 subprocess, no port), so this file also documents how to call the server from
-your own code.
+your own code. The HTTP tests at the end go the other way: they launch
+`tools/mcp_server.py` for real, so the Host allowlist and /health are checked
+by a running server rather than by a mock of it.
 """
 
 import json
+import os
+import re
+import socket
+import subprocess
 import sys
+import time
 import tomllib
+import urllib.error
+import urllib.request
 from collections.abc import AsyncIterator
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+from typing import cast
 
 import pytest
 from mcp import Client
+from mcp.server.mcpserver.exceptions import ToolError
+from mcp.types import LATEST_PROTOCOL_VERSION
 from mcp.types import TextContent
 from mcp.types import TextResourceContents
 
@@ -38,12 +51,24 @@ BASE_ANSWERS = {
 TOOL_NAMES = {
     "adopt_project",
     "inspect_project",
+    "lint_render",
     "list_batch_requests",
     "list_questions",
+    "list_witnesses",
+    "render_diff",
     "render_project",
     "run_batch",
+    "run_witness",
+    "template_fingerprint",
     "template_status",
 }
+
+# The convention docs/how-to/test-loop.md states: the docstring is the tool
+# description the model reads, so it says what the call costs and what comes
+# back. The cost half is checked as a vocabulary rather than a phrase: any of
+# these words names a price the caller pays (a render, an install, the
+# network, ...).
+COST_WORDS = ("render", "network", "venv", "install", "filesystem", "hashes", "shells")
 
 
 @pytest.fixture
@@ -71,6 +96,16 @@ async def test_every_tool_is_registered_with_a_description(client: Client):
     assert {tool.name for tool in tools} == TOOL_NAMES
     for tool in tools:
         assert tool.description, f"{tool.name} needs a docstring (it is the tool description)"
+
+
+@pytest.mark.anyio
+async def test_every_tool_description_states_its_cost_and_return_shape(client: Client):
+    """test-loop.md's rule, enforced: a description that hides the cost is how
+    a model picks a two-minute render when it wanted a file listing."""
+    for tool in (await client.list_tools()).tools:
+        description = (tool.description or "").lower()
+        assert re.search(r"\breturns?\b", description), f"{tool.name} must say what it returns"
+        assert any(word in description for word in COST_WORDS), f"{tool.name} must say what it costs"
 
 
 @pytest.mark.anyio
@@ -223,3 +258,338 @@ async def test_bad_input_is_a_tool_error(client: Client):
     result = await client.call_tool("list_batch_requests", {"jsonl": "/nonexistent/requests.jsonl"})
     assert result.is_error is True
     assert "/nonexistent/requests.jsonl" in str(result.content), "the error names the file it could not read"
+
+
+# --------------------------------------------------------------------------- #
+# the render loop: render_diff / lint_render
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.anyio
+async def test_render_diff_compares_two_renders_file_by_file(client: Client):
+    """The audit compared 1684 rendered files by hand; this is that comparison."""
+    script = {**BASE_ANSWERS, "project_type": "script"}
+    diff = await call(
+        client, "render_diff", {"answers_a": script, "answers_b": {**BASE_ANSWERS, "project_type": "cli"}}
+    )
+
+    assert diff["identical"] is False
+    changed = {entry["path"]: entry for entry in diff["changed"]}
+    assert "pyproject.toml" in changed, "the project type reaches pyproject.toml"
+    entry = changed["pyproject.toml"]
+    assert entry["sha256_a"] != entry["sha256_b"] and entry["bytes_a"] != entry["bytes_b"]
+    assert entry["diff"], "a changed file carries its unified diff"
+    assert entry["diff"].startswith("--- a/pyproject.toml")
+    # the two layouts differ in where the package lives, which is a file-set
+    # difference, not a content one
+    assert diff["only_in_a"] == ["mcp_example/__init__.py", "mcp_example/__main__.py", "mcp_example/logging_setup.py"]
+    assert diff["only_in_b"] == [f"src/{name}" for name in diff["only_in_a"]]
+    assert diff["identical_count"] + diff["changed_count"] + len(diff["only_in_a"]) == diff["file_count"]["a"]
+    assert diff["identical_count"] + diff["changed_count"] + len(diff["only_in_b"]) == diff["file_count"]["b"]
+    assert diff["dest_a"] is None, "a temp render is reported only when keep=True"
+
+    # copier's own checkout stamp is reported next to the comparison, not
+    # inside it: for a dirty template the two renders carry different
+    # synthetic commits, and that difference says nothing about the answers
+    assert diff["answers_commit"]["a"] and diff["answers_commit"]["b"]
+    assert "-project_type: script" in changed[".copier-answers.yml"]["diff"], "the answer change is what shows"
+
+
+@pytest.mark.anyio
+async def test_render_diff_accepts_an_identical_pair(client: Client):
+    """What "the change is inert" looks like: no changed path on either side.
+
+    The same answers twice. The one file a *dirty* template renders
+    differently per render is `.copier-answers.yml`, whose `_commit` records
+    the synthetic commit copier makes for the working tree -- so this verdict
+    holds only because `render_diff` reports that stamp instead of comparing
+    it (see `answers_commit`).
+    """
+    answers = {**BASE_ANSWERS, "project_type": "script"}
+    diff = await call(client, "render_diff", {"answers_a": answers, "answers_b": dict(answers), "keep": True})
+    assert diff["identical"] is True
+    assert diff["changed"] == [] and diff["only_in_a"] == [] and diff["only_in_b"] == []
+    assert diff["identical_count"] == diff["file_count"]["a"] == diff["file_count"]["b"]
+
+    for side, answers_file in (("a", diff["dest_a"]), ("b", diff["dest_b"])):
+        recorded = re.search(
+            r"^_commit: (\S+)$", (Path(answers_file) / ".copier-answers.yml").read_text(), re.MULTILINE
+        )
+        assert recorded is not None, "copier stamps the render it was taken from"
+        assert diff["answers_commit"][side] == recorded.group(1), "the stamp is reported, not compared"
+
+
+@pytest.mark.anyio
+async def test_lint_render_runs_the_generated_lint(client: Client):
+    """test_generated_lint's fast tier, as one call: render, then ruff."""
+    verdict = await call(client, "lint_render", {"answers": {**BASE_ANSWERS, "project_type": "script"}})
+    assert verdict["ok"] is True
+    assert verdict["checked"] is True
+    assert [check["name"] for check in verdict["checks"]] == ["ruff format --check", "ruff check"]
+    assert [check["detail"] for check in verdict["checks"]] == ["", ""], "a passing check carries ruff's silence"
+    assert (Path(verdict["dest"]) / "pyproject.toml").is_file(), "the destination is the rendered project"
+
+
+# --------------------------------------------------------------------------- #
+# the witness ledger
+# --------------------------------------------------------------------------- #
+
+
+def _declared_witness_ids() -> list[str]:
+    """The ledger's own declaration order, straight from the JSONL."""
+    return [json.loads(line)["id"] for line in (TOP / "tests" / "matrix" / "witnesses.jsonl").read_text().splitlines()]
+
+
+@pytest.mark.anyio
+async def test_list_witnesses_reports_the_leaves_and_their_verdicts(client: Client):
+    listed = await call(client, "list_witnesses")
+    assert listed["total"] == 205 == len(listed["leaves"])
+    assert [leaf["id"] for leaf in listed["leaves"]] == _declared_witness_ids()
+    assert sum(listed["tiers"].values()) == listed["total"]
+    assert sum(listed["results"].values()) == listed["total"]
+    assert listed["coverage"]["total"] == listed["total"], "the coverage block is the committed ledger's"
+    assert set(listed["tiers"]) <= {"fast", "full"}, "a recorded tier, not a guess"
+
+
+@pytest.mark.anyio
+async def test_witnesses_resource_serves_the_same_inventory(client: Client):
+    first = await client.read_resource("template://witnesses")
+    assert isinstance(first.contents[0], TextResourceContents)
+    assert json.loads(first.contents[0].text) == await call(client, "list_witnesses")
+    second = await client.read_resource("template://witnesses")
+    assert isinstance(second.contents[0], TextResourceContents)
+    assert first.contents[0].text == second.contents[0].text, "the payload is deterministic"
+
+
+@pytest.mark.anyio
+async def test_run_witness_returns_a_verdict_per_test(client: Client):
+    """One leaf, so this pins the tool's pytest plumbing (~4s), not the suite."""
+    verdict = await call(client, "run_witness", {"tier": "fast", "only": "ros2 and use_recommended_license"})
+    assert verdict["ok"] is True
+    assert verdict["counts"] == {"passed": 1, "failed": 0, "skipped": 0}
+    assert [line["id"] for line in verdict["lines"]] == [
+        "tests.test_witness_matrix::test_witness_render_invariants[project_type=ros2/gate=off:use_recommended_license]"
+    ]
+    assert verdict["lines"][0]["checks"] == [{"name": "pytest", "ok": True, "detail": ""}]
+    assert verdict["output"] == ""
+    assert verdict["command"][:3] == [sys.executable, "-m", "pytest"], "the verdict reports how to rerun it"
+
+
+@pytest.mark.anyio
+async def test_run_witness_rejects_an_unknown_tier(client: Client):
+    """The schema rejects it for a client; the plain function must too."""
+    result = await client.call_tool("run_witness", {"tier": "turbo"})
+    assert result.is_error is True
+    assert "turbo" in str(result.content)
+    # the Literal in the schema is not something a plain function call enforces
+    with pytest.raises(ToolError):
+        mcp_server.run_witness(cast("Any", "turbo"))
+
+
+# --------------------------------------------------------------------------- #
+# the render fingerprint
+# --------------------------------------------------------------------------- #
+
+
+def test_template_fingerprint_hashes_the_render_inputs(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """The digest is a function of the render inputs and of nothing else."""
+    (tmp_path / "template" / "pkg").mkdir(parents=True)
+    (tmp_path / "template" / "pkg" / "mod.py.jinja").write_text("x = 1\n")
+    (tmp_path / "template" / "README.md.jinja").write_text("# {{ repo_name }}\n")
+    (tmp_path / "copier.yml").write_text("repo_name:\n  type: str\n")
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "guide.md").write_text("# not a render input\n")
+    monkeypatch.setattr(mcp_server, "TOP", tmp_path)
+
+    first = mcp_server.template_fingerprint()
+    assert first["inputs"] == {
+        "dirs": ["template", "_shared"],
+        "files": ["copier.yml", "_tasks.jinja"],
+        "paths": 3,
+        "bytes": len("x = 1\n") + len("# {{ repo_name }}\n") + len("repo_name:\n  type: str\n"),
+    }
+    assert first["fingerprint"] == mcp_server.template_fingerprint()["fingerprint"], "deterministic"
+    assert len(first["fingerprint"]) == 64
+
+    (tmp_path / "template" / "pkg" / "mod.py.jinja").write_text("x = 2\n")
+    edited = mcp_server.template_fingerprint()
+    assert edited["fingerprint"] != first["fingerprint"], "a nested source counts, not just the two root files"
+
+    (tmp_path / "docs" / "guide.md").write_text("# edited\n")
+    assert mcp_server.template_fingerprint()["fingerprint"] == edited["fingerprint"], "a non-input does not count"
+
+
+def test_template_fingerprint_covers_this_checkout() -> None:
+    """The real tree: every template source and partial, not just copier.yml."""
+    reported = mcp_server.template_fingerprint()
+    assert reported["inputs"]["paths"] > 200, "template/** files are inputs; a trailing-** glob yields directories only"
+    assert reported["inputs"]["bytes"] > 100_000
+
+
+# --------------------------------------------------------------------------- #
+# the project-scope registration
+# --------------------------------------------------------------------------- #
+
+
+def test_mcp_json_registers_the_command_the_how_to_documents() -> None:
+    """An agent editing the template gets the server with no setup: the
+    registration and the page that explains it name the same command, and it
+    points at a file that exists."""
+    config = json.loads((TOP / ".mcp.json").read_text())
+    entry = config["mcpServers"]["python-copier-template"]
+    command = " ".join([entry["command"], *entry["args"]])
+
+    assert command == "uv run --locked python tools/mcp_server.py", "the stdio command `task mcp` runs"
+    assert (TOP / entry["args"][-1]).is_file(), "the registered script exists"
+    assert "--transport" not in entry["args"], "a host launches stdio, the default"
+    documented = (TOP / "docs" / "how-to" / "mcp-tools.md").read_text()
+    assert command in documented, "the how-to documents the command it registers"
+
+
+# --------------------------------------------------------------------------- #
+# the HTTP transport: a real server, a real Host header
+# --------------------------------------------------------------------------- #
+#
+# These launch tools/mcp_server.py (the same command `task mcp` runs) on a
+# localhost port instead of mocking `_allowed_hosts`: a mock would only assert
+# that the settings object was built, and the defect this guards against -- the
+# SDK arming its DNS-rebinding protection only for a localhost bind, so a
+# public server accepts every Host header -- only exists at the socket. No venv
+# is built and nothing leaves 127.0.0.1, so the tests carry no cost marker.
+
+SERVER = str(TOP / "tools" / "mcp_server.py")
+ALLOWED_HOST = "mcp.example"
+FOREIGN_HOST = "attacker.example"
+ALLOWED_ORIGIN = "https://mcp.example"
+FOREIGN_ORIGIN = "https://attacker.example"
+MCP_HEADERS = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"}
+INITIALIZE = json.dumps(
+    {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": LATEST_PROTOCOL_VERSION,
+            "capabilities": {},
+            "clientInfo": {"name": "test_mcp_server", "version": "0"},
+        },
+    }
+).encode()
+
+
+def _free_port() -> int:
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
+
+
+def _request(
+    url: str, *, host: str, method: str = "GET", body: bytes | None = None, headers: dict[str, str] | None = None
+) -> tuple[int, str]:
+    """One HTTP request with the Host header this test chooses (urllib keeps it)."""
+    request = urllib.request.Request(url, data=body, method=method, headers={"Host": host, **(headers or {})})
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return int(response.status), response.read().decode()
+    except urllib.error.HTTPError as exc:
+        return int(exc.code), exc.read().decode()
+
+
+def _await_health(port: int, log: Path) -> None:
+    """Wait for the server's own readiness signal, never for a sleep."""
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        try:
+            status, _ = _request(f"http://127.0.0.1:{port}/health", host=f"127.0.0.1:{port}")
+        except OSError:
+            status = 0
+        if status == 200:
+            return
+        time.sleep(0.1)
+    pytest.fail(f"the server never answered /health on 127.0.0.1:{port}:\n{log.read_text()}")
+
+
+@pytest.fixture
+def allowed_server(tmp_path: Path) -> Iterator[tuple[int, Path]]:
+    """The real entry point over HTTP: local bind, one allowed Host."""
+    port = _free_port()
+    log = tmp_path / "server.log"
+    with log.open("w") as stream:
+        proc = subprocess.Popen(
+            [sys.executable, SERVER, "--transport", "streamable-http", "--host", "127.0.0.1", "--port", str(port)],
+            cwd=TOP,
+            env={
+                **os.environ,
+                "MCP_ALLOWED_HOSTS": ALLOWED_HOST,
+                "MCP_ALLOWED_ORIGINS": ALLOWED_ORIGIN,
+            },
+            stdout=stream,
+            stderr=stream,
+            text=True,
+        )
+        try:
+            _await_health(port, log)
+            yield port, log
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=10)
+            except subprocess.TimeoutExpired:  # pragma: no cover - a hung server, not a failed assertion
+                proc.kill()
+                proc.wait(timeout=10)
+
+
+def test_non_local_bind_without_an_allowlist_refuses_to_start():
+    """--host 0.0.0.0 with no MCP_ALLOWED_HOSTS: exit before the socket opens."""
+    port = _free_port()
+    env = {name: value for name, value in os.environ.items() if name != "MCP_ALLOWED_HOSTS"}
+    proc = subprocess.run(
+        [sys.executable, SERVER, "--transport", "streamable-http", "--host", "0.0.0.0", "--port", str(port)],
+        cwd=TOP,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert proc.returncode == 2, proc.stderr
+    assert "MCP_ALLOWED_HOSTS" in proc.stderr, "the refusal names the variable that would fix it"
+    assert "error: " in proc.stderr
+    with pytest.raises(OSError):
+        socket.create_connection(("127.0.0.1", port), timeout=1)
+
+
+def test_allowlist_refuses_a_foreign_host_but_serves_health(allowed_server: tuple[int, Path]):
+    """The 421 is the protection; /health staying 200 is its documented scope."""
+    port, log = allowed_server
+    base = f"http://127.0.0.1:{port}"
+
+    status, body = _request(f"{base}/health", host=FOREIGN_HOST)
+    assert status == 200, f"/health is a custom route and bypasses the allowlist:\n{log.read_text()}"
+    assert json.loads(body) == {"status": "ok"}
+
+    status, body = _request(f"{base}/mcp", host=FOREIGN_HOST, method="POST", body=INITIALIZE, headers=MCP_HEADERS)
+    assert status == 421, f"a foreign Host must not reach the tools:\n{body}\n{log.read_text()}"
+    assert "Invalid Host header" in body
+
+    status, body = _request(f"{base}/mcp", host=ALLOWED_HOST, method="POST", body=INITIALIZE, headers=MCP_HEADERS)
+    assert status == 200, f"an allowed Host completes the handshake:\n{body}\n{log.read_text()}"
+    assert "python-copier-template" in body, "the handshake reached this server's tool list"
+
+
+def test_allowlist_enforces_the_origin_variable_too(allowed_server: tuple[int, Path]):
+    """MCP_ALLOWED_ORIGINS is checked on the same endpoint, after the Host."""
+    port, log = allowed_server
+    base = f"http://127.0.0.1:{port}"
+    headers = {**MCP_HEADERS, "Origin": FOREIGN_ORIGIN}
+
+    status, body = _request(f"{base}/mcp", host=ALLOWED_HOST, method="POST", body=INITIALIZE, headers=headers)
+    assert status == 403, f"a browser client from a foreign origin is refused:\n{body}\n{log.read_text()}"
+    assert "Invalid Origin header" in body
+
+    allowed = {**MCP_HEADERS, "Origin": ALLOWED_ORIGIN}
+    status, body = _request(f"{base}/mcp", host=ALLOWED_HOST, method="POST", body=INITIALIZE, headers=allowed)
+    assert status == 200, f"a listed origin is let through:\n{body}\n{log.read_text()}"
+
+    status, _ = _request(f"{base}/mcp", host=ALLOWED_HOST, method="POST", body=INITIALIZE, headers=MCP_HEADERS)
+    assert status == 200, "an absent Origin is same-origin by definition and stays allowed"
