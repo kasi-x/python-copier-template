@@ -407,6 +407,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-one-command-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The one-command way
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-raw-copier-command-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The raw copier command (advanced)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#committing-the-results" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1611,6 +1633,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-one-command-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The one-command way
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-raw-copier-command-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The raw copier command (advanced)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#committing-the-results" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1662,16 +1706,100 @@
 
 
 <h1 id="create-a-new-repo-from-the-template">Create a new repo from the template<a class="headerlink" href="#create-a-new-repo-from-the-template" title="Permanent link">&para;</a></h1>
-<p>Once you have followed the <a href=".././installation/">installation</a> tutorial, you can use <code>copier</code> to make a new project from the template:</p>
+<h2 id="the-one-command-way">The one-command way<a class="headerlink" href="#the-one-command-way" title="Permanent link">&para;</a></h2>
+<p>The template ships a small CLI that wraps copier: it decides whether the target
+is a new project or an existing one, picks the release to expand, warns about
+the files both the target and the template have, and then renders.</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/kasi-x/python-copier-template.git<span class="w">   </span><span class="c1"># once</span>
+uv<span class="w"> </span>run<span class="w"> </span>--project<span class="w"> </span>python-copier-template<span class="w"> </span>python-copier-template<span class="w"> </span>new<span class="w"> </span>my-project<span class="w"> </span>--preset<span class="w"> </span>library
+</code></pre></div>
+<p><code>--preset library</code> answers the one question that defines the project family;
+every other question keeps copier's default. Drop <code>--preset</code> and copier asks
+the <a href="../../reference/questionnaire/">whole questionnaire</a> instead, which needs a
+terminal. From inside the checkout the same two forms are
+<code>uv run python-copier-template …</code> (the console script the package declares) and
+<code>uv run python -m tools.cli …</code>.</p>
+<table>
+<thead>
+<tr>
+<th>preset</th>
+<th><code>project_type</code></th>
+<th>what you get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>library</code></td>
+<td><code>library</code></td>
+<td>a reusable Python package (src/ layout)</td>
+</tr>
+<tr>
+<td><code>cli</code></td>
+<td><code>cli</code></td>
+<td>a command-line application</td>
+</tr>
+<tr>
+<td><code>web-api</code></td>
+<td><code>web_api</code></td>
+<td>a FastAPI service (Postgres, Alembic, Prometheus, rate limiting, CORS)</td>
+</tr>
+<tr>
+<td><code>data-science</code></td>
+<td><code>data_science</code></td>
+<td>notebooks, <code>data/</code>, <code>models/</code>, <code>reports/</code> and the Quarto paper</td>
+</tr>
+<tr>
+<td><code>ros2</code></td>
+<td><code>ros2</code></td>
+<td>a ROS 2 package (ament_python + rclpy, Humble, apt toolchain)</td>
+</tr>
+<tr>
+<td><code>micropython</code></td>
+<td><code>micropython</code></td>
+<td>firmware (esp32 by default) beside the CPython dev toolchain</td>
+</tr>
+<tr>
+<td><code>online-judge-atcoder</code></td>
+<td><code>online_judge</code></td>
+<td>an AtCoder workspace driven with <code>oj</code> + <code>acc</code></td>
+</tr>
+</tbody>
+</table>
+<p>Each preset is a file under <code>presets/</code>: it names only the answers that define
+the family, so adding a preset of your own is a two-line YAML file. For a
+fixture that sets every option instead, copy <code>example-answers.yml</code> from the
+template root — it is what the template's own CI renders, and it works as a
+<code>copier copy --data-file</code> answers file.</p>
+<p>Other options:</p>
+<ul>
+<li><code>--ref &lt;ref&gt;</code> expands another revision (<code>--ref HEAD</code> is the working tree of
+  the checkout). <strong>No <code>--vcs-ref</code> is needed</strong>: without it the CLI expands this
+  fork's newest release tag, and only falls back to the default branch — saying
+  so — when that tag carries a different questionnaire.</li>
+<li><code>--dry-run</code> renders the plan into a temporary directory and reports what the
+  target would receive; nothing is written.</li>
+<li>A target that already has files is not copied into but
+  <a href=".././adopt-existing/">adopted</a>: the files you already have are left alone
+  (collisions are skipped and reported), the infrastructure you are missing is
+  added, and the run rolls back if any of your files changed anyway.</li>
+</ul>
+<p>Exit codes follow the other tools in the repository: <code>0</code> success, <code>1</code> a failed
+render, <code>2</code> an invalid request (unknown preset, <code>copier update</code> needed, no
+terminal for an interactive run), <code>3</code> the target belongs to another copier
+template.</p>
+<h2 id="the-raw-copier-command-advanced">The raw copier command (advanced)<a class="headerlink" href="#the-raw-copier-command-advanced" title="Permanent link">&para;</a></h2>
+<p>Once you have followed the <a href=".././installation/">installation</a> tutorial, you can
+also drive copier directly:</p>
 <div class="highlight"><pre><span></span><code>git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
 uvx copier copy --trust \
     https://github.com/kasi-x/python-copier-template.git $_
 </code></pre></div>
-<p>No <code>--vcs-ref</code> is needed: copier then expands this fork's <strong>newest release
-tag</strong>, and since the 6.0.0 fork detach that tag is the fork's own release.
-Pass <code>--vcs-ref=6.0.0</code> (or another release tag) only to pin an exact release
-and make the generation reproducible.</p>
+<p>No <code>--vcs-ref</code> is needed here either: copier then expands this fork's <strong>newest
+release tag</strong>, and since the 6.0.0 fork detach that tag is the fork's own
+release. Pass <code>--vcs-ref=6.0.0</code> (or another release tag) only to pin an exact
+release and make the generation reproducible. Add <code>--defaults</code> to accept every
+default, and <code>--data-file example-answers.yml</code> for a fully specified run.</p>
 <p>This will:</p>
 <ul>
 <li>Ask some questions about the project to be created (each area first asks

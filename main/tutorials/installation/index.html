@@ -456,6 +456,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#get-the-templates-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Get the template's CLI
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#conclusion" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1633,6 +1644,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#get-the-templates-cli" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Get the template's CLI
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#conclusion" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1664,11 +1686,25 @@
 <h1 id="install-template-pre-requisites">Install template pre-requisites<a class="headerlink" href="#install-template-pre-requisites" title="Permanent link">&para;</a></h1>
 <p>This tutorial will take you through installing copier, the templating engine that will allow you
 to create new projects from the template, update existing projects in line with it, and keep projects in sync with changes to it.</p>
+<p><code>git</code> is required too: copier expands a revision of the template repository, and the projects it
+generates are git repositories.</p>
 <h2 id="install-uv">Install uv<a class="headerlink" href="#install-uv" title="Permanent link">&para;</a></h2>
 <p>We recommend that you invoke copier via <code>uvx</code>, which will download, install, and run it in its own isolated <code>venv</code>. </p>
 <p>Please follow the <a href="https://docs.astral.sh/uv/getting-started/installation">uv installation instructions</a>.</p>
 <h2 id="try-it-out">Try it out<a class="headerlink" href="#try-it-out" title="Permanent link">&para;</a></h2>
 <p>If you run <code>uvx copier --version</code> then <code>copier</code> will be downloaded, installed, and run, and will print its version.</p>
+<h2 id="get-the-templates-cli">Get the template's CLI<a class="headerlink" href="#get-the-templates-cli" title="Permanent link">&para;</a></h2>
+<p>The repository also ships a one-command wrapper, <code>python-copier-template new</code>, which picks the
+release tag to expand, decides between creating a project and adopting an existing one, and warns
+about — or protects — the files the target already has. No <code>--vcs-ref</code> or other copier flag is
+needed:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/kasi-x/python-copier-template.git
+uv<span class="w"> </span>run<span class="w"> </span>--project<span class="w"> </span>python-copier-template<span class="w"> </span>python-copier-template<span class="w"> </span>--help
+</code></pre></div>
+<p><code>uv</code> installs the CLI's dependencies into the checkout's environment on the first run. Inside the
+checkout the equivalent forms are <code>uv run python-copier-template …</code> and
+<code>uv run python -m tools.cli …</code>; add <code>--preset &lt;name&gt;</code> for a fully non-interactive run (see
+<a href=".././create-new/">Create a New Project</a>).</p>
 <h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
 <p>You now have the pre-requisites to allow you to <a href=".././create-new/">create a new project</a> and <a href=".././adopt-existing/">adopt an existing one</a>.</p>
 
