@@ -9,11 +9,11 @@ repeats that data, so none of it can silently drift again:
 - `docs/reference/questionnaire.md`: the project-type list, the area-gate
   table with each area's recommended defaults, the detailed questions a gate
   reveals, and the trailing project-details questions.
-- `README.md`: the per-area recommended settings table, the ask-order mermaid
-  graph (each gate's Yes/No branch) and the task-runner bullet of the Features
-  section.
-- `README.md`: a compact support summary (one row per declared combination),
-  generated from `support.yml`.
+- `docs/reference/features.md`: the per-area recommended settings table, the
+  ask-order mermaid graph (each gate's Yes/No branch) and the task-runner
+  bullet of the feature catalogue.
+- `docs/reference/features.md`: a compact support summary (one row per declared
+  combination), generated from `support.yml`.
 - `docs/reference/support.md`: the full support matrix, prose included, also
   generated from `support.yml`.
 
@@ -55,8 +55,8 @@ if str(TOP) not in sys.path:
 from tools import questionnaire  # noqa: E402
 from tools.questionnaire import Question  # noqa: E402
 
-README = TOP / "README.md"
 QUESTIONNAIRE_DOC = TOP / "docs" / "reference" / "questionnaire.md"
+FEATURES_DOC = TOP / "docs" / "reference" / "features.md"
 SUPPORT_DOC = TOP / "docs" / "reference" / "support.md"
 SUPPORT_YML = TOP / "support.yml"
 
@@ -533,12 +533,12 @@ def render_project_details(model: Model) -> str:
 
 
 def render_features_areas(model: Model) -> str:
-    """`README.md`: the per-area recommended settings table."""
+    """`docs/reference/features.md`: the per-area recommended settings table."""
     return "\n".join(_area_table(model))
 
 
 def render_features_task_runner(model: Model) -> str:
-    """`README.md`: the task-runner bullet, with the questionnaire's default."""
+    """`docs/reference/features.md`: the task-runner bullet, with the questionnaire's default."""
     runners = model.question("task_runner")
     pixi = model.question("task_runner_pixi")
     text = (
@@ -563,8 +563,8 @@ def _matrix_rows(rows: list[Any], *, drop: tuple[str, ...] = (), plain: tuple[st
     """One markdown table over `rows`, deriving its columns from their keys.
 
     `drop` removes keys that belong in the full reference but not in a
-    summary: README keeps one row per combination, while the `why` column
-    (the measured evidence) lives in `docs/reference/support.md`.
+    summary: the catalogue keeps one row per combination, while the `why`
+    column (the measured evidence) lives in `docs/reference/support.md`.
 
     `plain` columns are prose cells, rendered without the code-span wrapping
     `_support_cell` gives identifiers (`why` quotes commands and paths).
@@ -598,10 +598,11 @@ def _support_section(support: dict[str, Any], key: str) -> list[Any]:
 
 
 def render_support_table(support: dict[str, Any]) -> str:
-    """`README.md`: the compact support summary, from `support.yml`.
+    """`docs/reference/features.md`: the compact support summary, from `support.yml`.
 
     One row per combination and no `why` column: the full matrix and its
-    evidence live in `docs/reference/support.md`, which the summary links to.
+    evidence live in `docs/reference/support.md`, which the summary links to
+    (the link is relative to the page the summary is generated into).
     The columns are the entry keys, in the order the file writes them, so the
     table follows whatever shape W4 settles on instead of pinning one here.
     """
@@ -618,10 +619,8 @@ def render_support_table(support: dict[str, Any]) -> str:
             "",
             _matrix_rows(_support_section(support, "best_effort"), drop=("why",)),
         ]
-    blocks += [
-        "",
-        f"Full matrix and the evidence behind each tier: [{_relative(SUPPORT_DOC)}]({_relative(SUPPORT_DOC)}).",
-    ]
+    link = SUPPORT_DOC.relative_to(FEATURES_DOC.parent)
+    blocks += ["", f"Full matrix and the evidence behind each tier: [{link}]({link})."]
     return "\n".join(blocks)
 
 
@@ -928,32 +927,33 @@ class Target:
 def targets(support: Path = SUPPORT_YML) -> list[Target]:
     """Every generated block, in file order.
 
-    The support matrix is only generated when `support.yml` exists: W4 owns
-    that file, and its blocks (README's summary and the full
-    `docs/reference/support.md` reference) appear with it.
+    The catalogue blocks live in `docs/reference/features.md`, so the README
+    keeps no generated region; the support matrix is only generated when
+    `support.yml` exists: W4 owns that file, and its blocks (the catalogue's
+    summary and the full `docs/reference/support.md` reference) appear with it.
     """
     blocks = [
         Target(QUESTIONNAIRE_DOC, "project-types", render_project_types),
         Target(QUESTIONNAIRE_DOC, "areas", render_areas),
         Target(QUESTIONNAIRE_DOC, "detailed-questions", render_detailed_questions),
         Target(QUESTIONNAIRE_DOC, "project-details", render_project_details),
-        Target(README, "features-areas", render_features_areas),
-        Target(README, "features-mermaid", _mermaid_block),
-        Target(README, "features-task-runner", render_features_task_runner),
+        Target(FEATURES_DOC, "features-areas", render_features_areas),
+        Target(FEATURES_DOC, "features-mermaid", _mermaid_block),
+        Target(FEATURES_DOC, "features-task-runner", render_features_task_runner),
     ]
     if support.is_file():
-        blocks.append(Target(README, "support-table", _support_block(support)))
+        blocks.append(Target(FEATURES_DOC, "support-table", _support_block(support)))
         blocks.append(Target(SUPPORT_DOC, "support-matrix", _support_doc_block(support)))
     return blocks
 
 
 def _mermaid_block(model: Model) -> str:
-    """The README mermaid block, fences included."""
+    """The catalogue mermaid block, fences included."""
     return f"```mermaid\n{render_mermaid(model)}\n```"
 
 
 def _support_block(support: Path) -> Callable[[Model], str]:
-    """A renderer for README's compact support summary, bound to `support.yml`."""
+    """A renderer for the catalogue's compact support summary, bound to `support.yml`."""
 
     def render(_model: Model) -> str:
         return render_support_table(load_support(support))

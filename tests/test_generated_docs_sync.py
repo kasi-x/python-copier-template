@@ -7,8 +7,8 @@ that gate, and pin the three properties it depends on:
 
 - a changed questionnaire changes the rendered docs (the blocks are derived,
   not hard-coded);
-- the README graph covers the option set that drifted before (CTF, scraping,
-  the license check);
+- the feature catalogue's graph covers the option set that drifted before
+  (CTF, scraping, the license check);
 - the task-runner bullet marks the questionnaire's default, not a former one.
 
 The support matrix is only generated when `support.yml` exists (W4 owns that
@@ -27,9 +27,9 @@ if str(TOP) not in sys.path:
 from tools import gen_docs  # noqa: E402
 from tools import questionnaire  # noqa: E402
 
-# Drift this generator exists to prevent (TODO.md: README Features / mermaid
-# vs the questionnaire): the questionnaire has these, the README did not.
-README_GRAPH_MUST_MENTION = (
+# Drift this generator exists to prevent (TODO.md: the Features / mermaid text
+# vs the questionnaire): the questionnaire has these, the docs did not.
+CATALOGUE_GRAPH_MUST_MENTION = (
     "oj_category",
     "ctf",
     "include_scraping",
@@ -135,15 +135,15 @@ def test_check_detects_drift_and_write_fixes_it(tmp_path: Path):
         gen_docs.write(model, [target])
 
 
-def test_readme_graph_covers_the_option_set_that_drifted():
+def test_catalogue_graph_covers_the_option_set_that_drifted():
     """The graph names the questionnaire's CTF / scraping / license-check options."""
     graph = gen_docs.render_mermaid(gen_docs.Model.load())
-    missing = [needle for needle in README_GRAPH_MUST_MENTION if needle not in graph]
-    assert missing == [], f"the README graph no longer documents {missing}"
+    missing = [needle for needle in CATALOGUE_GRAPH_MUST_MENTION if needle not in graph]
+    assert missing == [], f"the catalogue graph no longer documents {missing}"
 
 
 def test_task_runner_bullet_marks_the_questionnaires_default():
-    """`just` is the questionnaire's default, so the README must say so."""
+    """`just` is the questionnaire's default, so the catalogue must say so."""
     model = gen_docs.Model.load()
     assert model.question("task_runner").default == "just"
     bullet = gen_docs.render_features_task_runner(model)
@@ -174,11 +174,12 @@ def test_support_table_follows_the_support_yml_columns(tmp_path: Path):
     )
     blocks = gen_docs.targets(support=support)
     target = next(block for block in blocks if block.block == "support-table")
-    assert target.path == gen_docs.README
+    assert target.path == gen_docs.FEATURES_DOC
     table = target.render_text(gen_docs.Model.load())
     assert "| base | tier | optional |" in table
     assert "| `library` | `full` | `scraping`, `mcp` |" in table
     assert "| `cli` | `best_effort` |  |" in table
+    assert "[support.md](support.md)" in table, "the summary must link the full matrix beside it"
 
 
 def _ragged_tables(text: str) -> list[str]:
