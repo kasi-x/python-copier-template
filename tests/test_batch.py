@@ -268,9 +268,11 @@ def _run_json(argv: list[str]) -> tuple[int, dict[str, Any]]:
 def test_jobs_change_only_the_schedule(tmp_path: Path):
     """--jobs N reorders nothing and swallows nothing.
 
-    The first line sleeps, so under --jobs 3 the later lines render first; the
+    The first line sleeps, so under --jobs 3 the later lines finish first; the
     report must still follow the JSONL. The second line fails an expectation,
     so the run must still exit nonzero, with the same verdicts as `--jobs 1`.
+    Overlap itself is proven by test_jobs_run_requests_concurrently - comparing
+    wall-clock seconds here measured the machine's load, not the scheduler.
     """
     path = write_lines(
         tmp_path,
@@ -287,8 +289,45 @@ def test_jobs_change_only_the_schedule(tmp_path: Path):
     assert [line["id"] for line in parallel["lines"]] == ["slow", "broken", "quick"], (
         "results follow the JSONL, not the completion order"
     )
-    assert parallel["lines"][0]["seconds"] > parallel["lines"][2]["seconds"], "the slow line really did finish last"
     assert _verdicts(parallel) == _verdicts(serial)
+
+
+def test_jobs_run_requests_concurrently(tmp_path: Path):
+    """--jobs N really overlaps: each request can only finish if its peer runs.
+
+    A duration comparison is not a proof (a 0.8s sleep loses to render variance
+    under load - measured once, 3.01s vs 3.217s, with 32 xdist workers). This
+    is a handshake instead: `second` announces itself and then waits for
+    `first`, which waits for that announcement before it can finish. Under
+    `--jobs 1` the first request waits out its bound and fails, so the run can
+    only exit 0 when both are in flight at the same time.
+    """
+    markers = tmp_path / "markers"
+    markers.mkdir()
+    announced, first_done = markers / "second", markers / "first"
+
+    def wait_for(peer: Path) -> str:
+        return f"for i in $(seq 1 100); do [ -f {peer} ] && break; sleep 0.05; done; [ -f {peer} ]"
+
+    path = write_lines(
+        tmp_path,
+        {
+            "id": "first",
+            "answers": _script_answers(),
+            "commands": [{"run": f"{{ {wait_for(announced)}; }} && touch {first_done}"}],
+        },
+        {
+            "id": "second",
+            "answers": _script_answers(),
+            "commands": [{"run": f"touch {announced} && {{ {wait_for(first_done)}; }}"}],
+        },
+    )[0]
+
+    code, payload = _run_json([str(path), "--json", "--work", str(tmp_path / "work"), "--jobs", "2"])
+    assert code == 0, payload
+    assert payload["ok"] is True
+    assert sorted(line["id"] for line in payload["lines"]) == ["first", "second"]
+    assert first_done.is_file() and announced.is_file(), "both requests ran while the other was in flight"
 
 
 def test_rejects_overlapping_dests(tmp_path: Path):
