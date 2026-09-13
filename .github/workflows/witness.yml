@@ -18,6 +18,15 @@ concurrency:
 
 on:
   pull_request:
+    # Docs-only PRs cannot change a render, so the matrix does not start for
+    # them (TODO §23.2). Workflow-level path filtering is safe *here* -- unlike
+    # ci.yml's jobs, neither of this workflow's jobs feeds ci.yml's
+    # required-checks-passed gate, so no required check can be left "Pending"
+    # and block the merge; ci.yml itself must (and does) skip jobs with a
+    # job-level gate instead.
+    paths-ignore:
+      - docs/**
+      - '**/*.md'
   workflow_dispatch:
   schedule:
     # Nightly full tier. Staggered from ci.yml (`0 3 * * *`) and the other

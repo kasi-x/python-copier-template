@@ -110,8 +110,20 @@ disagree); the times are the measurements recorded with them.
 | `ci.yml` (`_test.yml`) | push / PR | `task test-fast` — the edit loop |
 | `ci.yml` (`_test.yml`) | push / PR | `task test-meta` — the ledger's own guard, its own job so the edit loop does not pay for six extra pytest startups |
 | `ci.yml` (nightly) | schedule | `task test-heavy` |
-| `witness.yml` (fast) | PR | `pytest -q tests/test_witness_matrix.py -m fast` — renders every leaf, no venv: 208 tests (205 renders plus three leaf-list checks), 39 s locally with the render cache emptied, against the job's 30-minute timeout |
+| `witness.yml` (fast) | PR (except docs-only) | `pytest -q tests/test_witness_matrix.py -m fast` — renders every leaf, no venv: 208 tests (205 renders plus three leaf-list checks), 39 s locally with the render cache emptied, against the job's 30-minute timeout |
 | `witness.yml` (full) | schedule / manual | `pytest -q tests/test_witness_matrix.py -m full` — the 8-leaf venv sample plus the batch runner |
+
+Docs-only pull requests do not start the render matrix. `ci.yml` runs a
+`changes` job first and skips `test-fast` / `test-meta` when every changed file
+is under `docs/` or is a markdown file, and `witness.yml` (fast) and
+`update-path.yml` apply the same rule as workflow-level `paths-ignore`. The
+`ci.yml` skip is a job-level `if`, not path filtering on the workflow: a
+workflow skipped by path filtering never reports its checks, so a required
+check would sit "Pending" and block merging, while a skipped *job* reports
+`skipped` — a check status that required checks count as success and that
+`required-checks-passed`'s own jq already tolerates. `lint` and `hygiene` are
+not gated (`lint` runs `typos`, which is exactly the check a docs change
+needs), and the `docs` build is the check a docs-only PR is for.
 
 The witness tiers are the [W3 matrix](../explanations/verification.md): `fast`
 renders all 205 leaves and checks the artifacts each one declares, `full` runs

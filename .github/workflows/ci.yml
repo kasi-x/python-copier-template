@@ -28,7 +28,56 @@ on:
 # already runs on each push to main, and docs/example have side effects
 # (publishing, deploying the example repo) that a nightly run must not repeat.
 jobs:
+  changes:
+    name: detect docs-only pull request
+    # Docs-only gate for the render/test matrix below (TODO §23.2). This is a
+    # job, NOT `on.pull_request.paths:`: a workflow skipped by path filtering
+    # never reports its checks, so a required check would sit "Pending" and
+    # block merging a docs-only PR (GitHub docs, "Troubleshooting required
+    # status checks" -> "Handling skipped but required checks"). Keeping the
+    # workflow unconditional and skipping individual jobs instead works with
+    # branch protection: a job skipped by `if:` reports conclusion `skipped`,
+    # which counts as a successful check status, and the
+    # required-checks-passed jq below already tolerates `skipped` too.
+    #
+    # The job itself has no `if:` on purpose: a skipped `changes` job would
+    # skip every job that needs it. On non-PR events only the steps are
+    # skipped, the empty output reads as "not docs-only", and everything runs
+    # (nightlies and tag pushes must never be gated by a diff).
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      docs-only: ${{ steps.filter.outputs.docs-only }}
+    steps:
+      - name: Checkout
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Full history so the merge base against the PR's base branch resolves.
+          fetch-depth: 0
+
+      - name: Report whether the PR is docs-only
+        id: filter
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          merge_base=$(git merge-base "origin/$BASE_REF" HEAD)
+          docs_only=true
+          # Every changed file must be docs for the matrix below to be skippable;
+          # bash `case` patterns match across `/`, so `*.md` is any depth.
+          while IFS= read -r path; do
+            case "$path" in
+              docs/*|*.md) ;;
+              *) docs_only=false; break ;;
+            esac
+          done < <(git diff --name-only "$merge_base" HEAD)
+          echo "docs-only=$docs_only" >> "$GITHUB_OUTPUT"
+
   lint:
+    # Not gated by `changes`: lint,type-check includes `typos`, which is
+    # exactly the check a docs-only change needs.
     if: github.event_name != 'schedule'
     uses: ./.github/workflows/_tasks.yml
     with:
@@ -41,7 +90,10 @@ jobs:
 
   test:
     # PR/push: the fast tier (`-m "not heavy and not slow and not meta"`) -- no venv builds.
-    if: github.event_name != 'schedule'
+    # Docs-only PRs skip this job (see `changes`): the tier re-renders the
+    # template, which a markdown change cannot affect.
+    if: github.event_name != 'schedule' && needs.changes.outputs.docs-only != 'true'
+    needs: changes
     uses: ./.github/workflows/_test.yml
     with:
       runs-on: ubuntu-latest
@@ -53,7 +105,9 @@ jobs:
     # own pytest sessions and scans every test module for unmarked venv/network
     # work, which is exactly what the edit loop's 30s budget cannot afford, so
     # `test-fast` excludes it and this job is where it runs.
-    if: github.event_name != 'schedule'
+    # Docs-only PRs skip it together with `test` (same `changes` gate).
+    if: github.event_name != 'schedule' && needs.changes.outputs.docs-only != 'true'
+    needs: changes
     uses: ./.github/workflows/_test.yml
     with:
       runs-on: ubuntu-latest
@@ -98,7 +152,10 @@ jobs:
 
   required-checks-passed:
     name: all required checks passed
-    needs: [hygiene, lint, test, test-meta, docs]
+    # `changes` is in needs so a failure of the docs-only detector itself fails
+    # the gate instead of silently skipping the jobs it guards; its success (and
+    # any `skipped` test job on a docs-only PR) is tolerated by the jq below.
+    needs: [changes, hygiene, lint, test, test-meta, docs]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 15
