@@ -1,13 +1,14 @@
 {
-  "_note": "Cost ledger for the pytest tiers: each tier task's marker expression, the node ids it collected when this record was written, and the wall time a human measured for it. tests/test_marker_drift.py re-collects every tier (collection only -- no test run) and fails when a tier no longer collects what is recorded here; the counts stated in docs/how-to/test-loop.md are checked against this file. Re-record the collected sets after a deliberate tier change with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, then fill wall_seconds/measured by hand from a `time` run of that tier (each tier's note records the exact command and the conditions it was measured under).",
+  "_note": "Cost ledger for the pytest tiers. Per tier: the marker expression it selects on, the node ids it collected when this record was written, and the wall time a human measured for it. `tiers` are the Taskfile tasks (their expressions are read back from Taskfile.yml); `witness` are the jobs of .github/workflows/witness.yml (their expression, test path and timeout are read back from the workflow). tests/test_marker_drift.py re-collects every tier (collection only -- no test run) and fails when a tier no longer collects what is recorded here, when a recorded expression stops being the one the task or job runs, and when a `measured` date is older than 30 days; the counts stated in docs/how-to/test-loop.md are checked against this file. Re-record the collected sets after a deliberate tier change with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, then fill wall_seconds/measured by hand from a `time` run of the row's own `command` (each row's note records the conditions it was measured under).",
   "tiers": {
     "test-fast": {
       "task": "test-fast",
-      "expression": "not heavy and not slow",
-      "collected": 717,
+      "expression": "not heavy and not slow and not meta",
+      "collected": 731,
       "files": {
         "tests/test_adopt.py": 32,
-        "tests/test_batch.py": 18,
+        "tests/test_adopt_stateful.py": 1,
+        "tests/test_batch.py": 19,
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example.py": 112,
@@ -16,8 +17,8 @@
         "tests/test_generated_lint.py": 106,
         "tests/test_generation_docs.py": 1,
         "tests/test_gitleaks_config.py": 9,
+        "tests/test_invariants.py": 16,
         "tests/test_machine_gate.py": 13,
-        "tests/test_marker_drift.py": 5,
         "tests/test_mcp_server.py": 26,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
@@ -25,7 +26,7 @@
         "tests/test_qa.py": 3,
         "tests/test_questionnaire.py": 9,
         "tests/test_recommended_path.py": 11,
-        "tests/test_render_invariants.py": 28,
+        "tests/test_render_invariants.py": 29,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 9,
         "tests/test_update_path.py": 1,
@@ -33,10 +34,11 @@
         "tests/test_witness_matrix.py": 208,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "a3ca296bc258c9af0fa6f77a5ed7fee70b602775cee0a595dbc2a81115a2b2d3",
-      "wall_seconds": 32.8,
+      "ids_sha256": "c7d6e91f2dbd71c26cded68c1b09d5232dadb615872ab223564d108433070560",
+      "wall_seconds": 47.0,
       "measured": "2026-09-14",
-      "note": "time uv run --no-sync pytest -q -m \"not heavy and not slow\" (715-717 tests; 22s with the machine idle, 38s while four sibling test runs shared the 16 cores)"
+      "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
+      "note": "time uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\" (731 tests; 47s is the lightest of this re-record's runs, on a machine whose 32 logical CPUs were also carrying unrelated work at load average 64-117 -- the contention, not the selection, is what that number measures: the same tree with the guard still in the selection (738 tests) measured 46s at load 85 in the same session. The previous record's 22s was measured idle on a 717-test tree, which other changes have since grown past, so it is not a bound for this selection; the guard's own cost is the test-meta row below, and on this box its removal was not resolvable in the loop's wall at all)"
     },
     "test-slow": {
       "task": "test-slow",
@@ -49,6 +51,7 @@
       "ids_sha256": "0d31f7abe0b9ca16314877e7c6b73afc4603b3c3ee5a28ed307240cede6d1028",
       "wall_seconds": 71.9,
       "measured": "2026-09-14",
+      "command": "uv run --no-sync pytest -q -m slow",
       "note": "time uv run --no-sync pytest -q -m slow (5 tests, warm .cache/renders; 200s on the run that populated it -- the 2026-09-13 audit measured the batch runner alone at 119s, before the on-disk render cache existed)"
     },
     "test-heavy": {
@@ -64,15 +67,30 @@
       "ids_sha256": "af8c768e31cd50688fa854e3d6a99b2eecf2a31849339b5f930b1bd2effe2f1e",
       "wall_seconds": 28.7,
       "measured": "2026-09-14",
+      "command": "uv run --no-sync pytest -q -m heavy",
       "note": "time uv run --no-sync pytest -q -m heavy (43 tests, warm uv cache; 44s while other test runs shared the 16 cores)"
+    },
+    "test-meta": {
+      "task": "test-meta",
+      "expression": "meta",
+      "collected": 7,
+      "files": {
+        "tests/test_marker_drift.py": 7
+      },
+      "ids_sha256": "b059648fa46e340b32eed69bc57f66894a94685015fa999a6bf22ab8888d3f7e",
+      "wall_seconds": 10.5,
+      "measured": "2026-09-14",
+      "command": "uv run --no-sync pytest -q -m meta",
+      "note": "time uv run --no-sync pytest -q -m meta (7 tests; 10.5s on the lightest of this re-record's runs, and almost all of it is collection: the membership check re-collects the six tiers in six pytest sessions, one startup each. Inside the edit loop that work overlapped 31 other workers, so the wall it saves there is smaller than 10.5s -- on this loaded machine it was not measurable at all (46s with the guard, 47s without), which is why this row exists: the guard costs a measurement of its own, not a slice of the loop's budget)"
     },
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 765,
+      "collected": 786,
       "files": {
         "tests/test_adopt.py": 32,
-        "tests/test_batch.py": 18,
+        "tests/test_adopt_stateful.py": 1,
+        "tests/test_batch.py": 19,
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example.py": 135,
@@ -82,8 +100,9 @@
         "tests/test_generated_typecheck.py": 6,
         "tests/test_generation_docs.py": 1,
         "tests/test_gitleaks_config.py": 9,
+        "tests/test_invariants.py": 16,
         "tests/test_machine_gate.py": 13,
-        "tests/test_marker_drift.py": 5,
+        "tests/test_marker_drift.py": 7,
         "tests/test_mcp_server.py": 26,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
@@ -91,7 +110,7 @@
         "tests/test_qa.py": 3,
         "tests/test_questionnaire.py": 9,
         "tests/test_recommended_path.py": 11,
-        "tests/test_render_invariants.py": 28,
+        "tests/test_render_invariants.py": 29,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 15,
         "tests/test_update_path.py": 5,
@@ -99,10 +118,28 @@
         "tests/test_witness_matrix.py": 217,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "93294521c190320ae99a78bfdabb9d134f6142ce9ede9e6bdb14f5127c43d001",
+      "ids_sha256": "9cf2d1722d07a193656db1b3e8bf1e98254f5741c9790f3aeed9be3f12ac7f14",
       "wall_seconds": 138.9,
       "measured": "2026-09-14",
+      "command": "uv run --no-sync pytest -q --cov --cov-report term",
       "note": "time uv run --no-sync pytest -q --cov --cov-report term (whole suite, warm caches; 337s on the run that populated .cache/renders)"
+    }
+  },
+  "witness": {
+    "witness-fast": {
+      "workflow": ".github/workflows/witness.yml",
+      "job": "fast",
+      "expression": "fast",
+      "collected": 208,
+      "files": {
+        "tests/test_witness_matrix.py": 208
+      },
+      "ids_sha256": "db43a61eeabaff310f0064764464cb8bc0e8c3489cf0244942f25f2b8718c15f",
+      "wall_seconds": 39.4,
+      "measured": "2026-09-14",
+      "timeout_seconds": 1800,
+      "command": "uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast",
+      "note": "time uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast (208 tests: 205 leaf renders plus the three leaf-list checks, and the render cache emptied first -- the PR job is always cold because a fresh runner has no .cache/renders; 6.4s warm, 39.4s cold, both on a machine carrying unrelated work at load average ~80-106 of 16 cores). The job's timeout in .github/workflows/witness.yml is 30 minutes, so the cold local wall is ~2% of it."
     }
   }
 }

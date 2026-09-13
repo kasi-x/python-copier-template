@@ -32,7 +32,7 @@ tasks:
     desc: 'Run the tests that neither build a venv nor touch the network (edit loop)'
     cmd: >-
       uv run --locked pytest -q
-      -m "not heavy and not slow"
+      -m "not heavy and not slow and not meta"
       {{ .CLI_ARGS }}
 
   test-slow:
@@ -42,6 +42,10 @@ tasks:
   test-heavy:
     desc: 'Run only the tests that build a venv / install deps (pre-push tier)'
     cmd: uv run --locked pytest -q -m heavy {{ .CLI_ARGS }}
+
+  test-meta:
+    desc: "Run the cost ledger's own guards (marker scan, tier membership, stale measurements)"
+    cmd: uv run --locked pytest -q -m meta {{ .CLI_ARGS }}
 
   mcp:
     desc: 'Run the repo MCP server (CLI_ARGS="--transport streamable-http")'

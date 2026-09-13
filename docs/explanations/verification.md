@@ -94,26 +94,44 @@ check moves between tiers, the budget moves with it.
 
 | Tier | Command | Selector | What runs |
 |---|---|---|---|
-| Edit loop | `task test-fast` | `-m "not heavy and not slow"` | L1 + L2 + everything that neither builds a venv nor touches the network |
+| Edit loop | `task test-fast` | `-m "not heavy and not slow and not meta"` | L1 + L2 + everything that neither builds a venv nor touches the network |
+| Cost ledger guard | `task test-meta` | `-m meta` | the guards in `tests/test_marker_drift.py`: the venv/network marker scan, the tier-membership check and the cost-staleness check |
 | Slow | `task test-slow` | `-m slow` | the serial 205-leaf batch runner (`tools/batch.py` over `tests/matrix/witnesses.jsonl`) |
 | Pre-push / nightly | `task test-heavy` | `-m heavy` | L3: `uv sync` + the generated project's pytest / type check / docs build (`network` follows where the case downloads) |
 | Witness render | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | `fast` | L2 over all 205 leaves |
 | Witness execution | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m full` | `full` | L3 over the 8-leaf sample (those tests are also `heavy` / `network`) |
 | Full suite | `task test` | — | everything, with coverage |
 
+The ledger guard is `meta` rather than part of the edit loop because it
+re-collects every tier in a pytest session of its own (six startups): it is a
+check on the cost contract, not a cost the edit loop can carry. `ci.yml` runs
+`task test-meta` as its own job on every push and PR, and `task test` includes
+it.
+
 When a number in this table disagrees with the suite, the ledger wins:
 `tests/matrix/tiers.json` records each tier's marker expression, the node ids
-it collects and a measured wall time, `tests/test_marker_drift.py` re-collects
-every tier and fails on drift, and `UPDATE_TIERS=1 uv run --no-sync pytest -q
-tests/test_marker_drift.py` re-records it after a deliberate tier change.
+it collects, a measured wall time and the command that time came from, plus —
+for the witness fast job — the CI timeout the time has to fit inside.
+`tests/test_marker_drift.py` re-collects every tier and fails on drift, fails
+when a row's `measured` date is more than 30 days old, and
+`UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`
+re-records the collected sets after a deliberate tier change.
 
 The edit-loop budget is **30 s**; anything that pushes `task test-fast` past it
-is either marked `slow` / `heavy` or is a regression — for venv and network work
-the marker-drift guard enforces that structurally. The run taken for this page
-on 2026-09-14 was **652 passed, 1 skipped, 1 xfailed in 26.06 s**
-(`uv run --no-sync pytest -q -m "not heavy and not slow"`, 16 cores). The count
-grows as tests land, so read that as a dated observation of a moving suite and
-take the current numbers from the ledger above.
+is either marked `slow` / `heavy` / `meta` or is a regression — for venv and
+network work the marker-drift guard enforces that structurally, and the ledger's
+own guards are out of the loop by the `meta` marker. The run taken for this page
+on 2026-09-14 was **731 tests in 47 s**
+(`uv run --no-sync pytest -q -m "not heavy and not slow and not meta"`), on a
+machine whose 32 logical CPUs were also carrying unrelated work at load average
+64–117. That number measures the contention: the same tree with the guard still
+in the selection (738 tests) took 46 s at load 85 in the same session, and the
+ledger's earlier 22 s was taken idle on a 717-test tree that other changes have
+since grown past. What the guard's removal is worth *on its own* is the ledger's
+`test-meta` row (10.5 s, nearly all of it the six pytest startups the membership
+check runs); what it is worth inside the loop was below this box's noise. The
+count grows as tests land, so read every time here as a dated observation of a
+moving suite and take the current numbers from the ledger above.
 
 ## Growth rules
 
@@ -242,8 +260,10 @@ from it, and `--check` fails CI when those drift.
 | L2 ≈ 0.58 s/leaf (119 s ÷ 205), 205 leaves ≈ 10 s at 16 workers + cache | the serial batch runner's `--durations` entry (119 s) in the 2026-09-13 audit | TODO §23.0 / §24.0 P4 / §24.1 |
 | L3 13–24 s/case; the 8-leaf sample 132–195 s | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m full` | TODO §24.0 P6 (PLAN §W9 top-5) |
 | L3 found 3 defects L2 missed, with L2 green on every leaf | same 8-leaf sample; `-m fast` for the render layer | TODO §24.0 P6 |
-| Edit loop 652 passed, 1 skipped, 1 xfailed in 26.06 s | `uv run --no-sync pytest -q -m "not heavy and not slow"` | 2026-09-14, this tree — a dated observation; the current per-tier counts are the ledger row below |
-| Per-tier counts, marker expressions and wall times | `tests/matrix/tiers.json`; re-collect with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, fill `wall_seconds` from a `time task <tier>` run | 2026-09-14, this tree |
+| Edit loop 731 tests in 47 s (load average 64; the same tree with the guard still in the selection, 738 tests, took 46 s at load 85) | `uv run --no-sync pytest -q -m "not heavy and not slow and not meta"` | 2026-09-14, this tree — a dated observation; the current per-tier counts are the ledger row below |
+| Ledger guard: 7 tests, 10.5 s (six pytest startups: the membership check re-collects every tier) | `uv run --no-sync pytest -q -m meta` | 2026-09-14, this tree — the ledger row, measured with unrelated work on the machine |
+| Witness fast job: 208 tests (205 renders + three leaf-list checks), 39.4 s with `.cache/renders` emptied and 6.4 s warm, against the job's 30-minute timeout | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | 2026-09-14, this tree — the ledger's `witness` row; a PR runner is always cold |
+| Per-tier counts, marker expressions, re-measure commands and wall times (task tiers and the witness fast job) | `tests/matrix/tiers.json`; re-collect with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, fill `wall_seconds`/`measured` by hand from a `time` run of the row's own `command` | 2026-09-14, this tree |
 | Growth table's +76 / +22 leaf increments and their second costs | derived in the 2026-09-13 audit from the ledger's leaf counts and the 0.58 s/leaf unit | TODO §24.1 |
 | Edit-loop budget of 30 s (a contract, not a measurement) | declared for the tiers in the 2026-09-13 audit | TODO §24.2 |
 | "all 205 leaves executed would be ~10 hours" | the `FULL_SAMPLE` rationale comment: 205 × (venv build + docs) at ~3 min | `tests/test_witness_matrix.py` |

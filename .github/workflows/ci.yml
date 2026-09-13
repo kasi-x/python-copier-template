@@ -40,13 +40,28 @@ jobs:
     uses: ./.github/workflows/_hygiene.yml
 
   test:
-    # PR/push: the fast tier (`-m "not heavy"`) -- no venv builds.
+    # PR/push: the fast tier (`-m "not heavy and not slow and not meta"`) -- no venv builds.
     if: github.event_name != 'schedule'
     uses: ./.github/workflows/_test.yml
     with:
       runs-on: ubuntu-latest
       task_runner: task
       task: test-fast
+
+  test-meta:
+    # The cost ledger's own guard (`-m meta`): it re-collects every tier in its
+    # own pytest sessions and scans every test module for unmarked venv/network
+    # work, which is exactly what the edit loop's 30s budget cannot afford, so
+    # `test-fast` excludes it and this job is where it runs.
+    if: github.event_name != 'schedule'
+    uses: ./.github/workflows/_test.yml
+    with:
+      runs-on: ubuntu-latest
+      task_runner: task
+      task: test-meta
+      # Re-collecting six tiers is six pytest startups; the fast tier's 60 is
+      # not the right budget for a run that is mostly collection.
+      timeout-minutes: 15
 
   # Nightly: the heavy tier (`-m heavy`) the PR/push run skips.
   test-heavy:
@@ -83,7 +98,7 @@ jobs:
 
   required-checks-passed:
     name: all required checks passed
-    needs: [hygiene, lint, test, docs]
+    needs: [hygiene, lint, test, test-meta, docs]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 15

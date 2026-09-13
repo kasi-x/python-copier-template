@@ -57,19 +57,22 @@ packages = ["tools"]
 addopts = """
     --tb=native -vv -n auto
     """
-# Cost tiers. `-m "not heavy and not slow"` is the edit loop (`task test-fast`,
-# budget 30s: anything slower than that belongs to a marker below or is a
-# regression); `slow` is the serial witness batch runner (`task test-slow`);
-# `heavy` builds venvs and `network` says the run needs the wire
-# (`task test-heavy`, pre-push and nightly). fast/full are the witness render
-# tiers from .github/workflows/witness.yml. The collected sets and measured
-# costs of the four task tiers live in tests/matrix/tiers.json, checked by
-# tests/test_marker_drift.py.
+# Cost tiers. `-m "not heavy and not slow and not meta"` is the edit loop
+# (`task test-fast`, budget 30s: anything slower than that belongs to a marker
+# below or is a regression); `slow` is the serial witness batch runner
+# (`task test-slow`); `heavy` builds venvs and `network` says the run needs the
+# wire (`task test-heavy`, pre-push and nightly); `meta` is the cost ledger's
+# own guard (`task test-meta`, its own CI job: it re-collects every tier in its
+# own pytest sessions, which is what the edit loop cannot afford). fast/full
+# are the witness render tiers from .github/workflows/witness.yml. The
+# collected sets and measured costs of the task tiers and of the PR witness
+# tier live in tests/matrix/tiers.json, checked by tests/test_marker_drift.py.
 markers = [
     "heavy: builds a virtualenv (uv sync), i.e. installs dependencies",
     "network: touches the network (uv sync, uvx downloads, remote clones)",
     "fast: witness render tier -- renders the template without a venv",
     "full: witness full tier -- renders plus the expensive generated-project checks",
+    "meta: the cost ledger's own guard -- it re-collects every tier, so it is not part of the edit loop",
     "slow: expensive, but neither a venv build nor network-bound (the serial 205-leaf witness batch runner)",
 ]
 # Doctest python code in docs, python code in src docstrings, test functions in tests
@@ -313,7 +316,8 @@ extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", 
 paths = ["tests", "tools"]
 min_confidence = 60
 # pytestmark is read by pytest's module reflection, which vulture cannot see.
-ignore_names = ["pytestmark"]
+# hypothesis registers @rule methods by decorator, which vulture cannot see.
+ignore_names = ["pytestmark", "adopt_*"]
 # Entry points whose callers vulture cannot see: the MCP tools in
 # tools/mcp_server.py are invoked by MCP hosts (same idea as @app.route),
 # HTTP routes are registered by their decorator, and pytest discovers

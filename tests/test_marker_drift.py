@@ -1,18 +1,31 @@
 """Guards against the test suite's cost tiers drifting away from their names.
 
-Two drifts cost the most time and neither fails anything by itself:
+Three drifts cost the most time and none of them fails anything by itself:
 
 marker debt
     A test that builds a virtualenv or hits the network without ``heavy``
     (plus ``network``) leaks into the edit loop's ``-m "not heavy and not
-    slow"`` selection. Every such test is marked today; nothing stops the next
-    one from being unmarked, and the edit loop just gets slower.
+    slow and not meta"`` selection. Every such test is marked today; nothing
+    stops the next one from being unmarked, and the edit loop just gets
+    slower.
 tier membership
-    tests/matrix/tiers.json records, per tier task, the marker expression that
-    task passes to pytest and the node ids it collected when the record was
+    tests/matrix/tiers.json records, per tier, the marker expression that
+    tier passes to pytest and the node ids it collected when the record was
     written. A test that changes tiers without the record changing is a
     membership change nobody chose, so the check re-collects each tier --
     collection only, no test runs -- and fails on the difference.
+stale cost
+    ``wall_seconds`` is the human half of that ledger: collection cannot time
+    a tier, so a measurement that a growing suite has outgrown is invisible to
+    every other check. An entry whose ``measured`` date is older than
+    ``STALENESS_DAYS`` fails and names the command to re-measure with.
+
+The task tiers come from Taskfile.yml and the witness tier from
+.github/workflows/witness.yml (its expression and job timeout are read back
+from the workflow, exactly as the tasks' are from the Taskfile). This module
+is itself marked ``meta`` and runs in its own CI job: re-collecting every tier
+means one pytest startup each, which is work the edit loop's budget cannot
+afford.
 
 The marker scan is structural (``ast``), not textual: it classifies the
 commands a test actually builds and follows same-module helpers, fixtures, and
@@ -41,8 +54,12 @@ import sys
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from datetime import UTC
+from datetime import date
+from datetime import datetime
 from functools import cache
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -51,15 +68,33 @@ TOP = Path(__file__).absolute().parent.parent
 TESTS = TOP / "tests"
 LEDGER = TESTS / "matrix" / "tiers.json"
 TASKFILE = TOP / "Taskfile.yml"
+WITNESS = TOP / ".github" / "workflows" / "witness.yml"
 DOC = TOP / "docs" / "how-to" / "test-loop.md"
+
+# Everything here is `meta`: re-collecting every tier starts one pytest session
+# per tier, and the edit loop's 30s budget cannot afford its own guard. The
+# selection `-m "not heavy and not slow and not meta"` is what Taskfile.yml's
+# `test-fast` runs, and .github/workflows/ci.yml runs this module as its own
+# job.
+pytestmark = pytest.mark.meta
 
 # The tier tasks of Taskfile.yml. The marker expression each one runs is read
 # back from the Taskfile, so the ledger cannot claim a selection the task does
 # not use; a renamed or removed task fails the ledger check on purpose.
-TIER_TASKS = ("test-fast", "test-slow", "test-heavy", "test")
+TIER_TASKS = ("test-fast", "test-slow", "test-heavy", "test-meta", "test")
+
+# The witness tiers of .github/workflows/witness.yml, as ledger name -> job
+# name. They are not Taskfile tasks: the job runs its pytest command itself, so
+# the expression and the test path are read back from the workflow instead.
+WITNESS_JOBS = {"witness-fast": "fast"}
 
 MARKER_HEAVY = "heavy"
 MARKER_NETWORK = "network"
+
+# A wall time is an observation of a suite that grows and a machine that
+# changes, so an entry measured longer ago than this is re-measured rather than
+# cited. The date is the one in the ledger's own `measured` column.
+STALENESS_DAYS = 30
 
 # Commands that build a project virtualenv, and commands that need the wire.
 # The two are not the same set: `uv run` uses a project environment without
@@ -420,9 +455,10 @@ def _names(markers: set[str]) -> str:
 def test_venv_and_network_work_carries_the_markers_that_keep_it_out_of_the_edit_loop() -> None:
     """A test that builds a venv / uses the network must say so with markers.
 
-    ``heavy`` keeps it out of the edit loop's ``-m "not heavy and not slow"``;
-    ``network`` says it needs the wire. The scan is structural, so the fix is to
-    mark the test (or move the work to a helper the test does not call).
+    ``heavy`` keeps it out of the edit loop's ``-m "not heavy and not slow and
+    not meta"``; ``network`` says it needs the wire. The scan is structural, so
+    the fix is to mark the test (or move the work to a helper the test does not
+    call).
     """
     problems = _unmarked_work()
     assert not problems, (
@@ -519,7 +555,15 @@ def test_the_scan_judges_helpers_fixtures_and_data_not_network(tmp_path: Path) -
 # --------------------------------------------------------------------------- #
 
 
-def _tier_expressions() -> dict[str, str]:
+@dataclass(frozen=True)
+class _Selection:
+    """What a tier passes to pytest: a path (None for the whole suite) and a marker expression."""
+
+    path: str | None
+    expression: str
+
+
+def _task_expressions() -> dict[str, str]:
     """The marker expression each tier task passes to pytest, from the Taskfile."""
     tasks = yaml.safe_load(TASKFILE.read_text(encoding="utf-8"))["tasks"]
     expressions = {}
@@ -531,7 +575,47 @@ def _tier_expressions() -> dict[str, str]:
     return expressions
 
 
-def _collect(expression: str) -> list[str]:
+def _witness_job(name: str) -> dict[str, Any]:
+    """The .github/workflows/witness.yml job a witness ledger row names."""
+    workflow = yaml.safe_load(WITNESS.read_text(encoding="utf-8"))
+    job = WITNESS_JOBS[name]
+    assert job in workflow["jobs"], f"{WITNESS.name} has no `{job}` job: the ledger names one that is gone"
+    return workflow["jobs"][job]
+
+
+def _witness_selection(name: str) -> _Selection:
+    """What the witness job's pytest step passes, read back from the workflow.
+
+    The job runs pytest itself (it is not a Taskfile task), so its expression
+    and test path are recovered from the step's own argv: the ledger cannot
+    record a selection the job does not run.
+    """
+    for step in _witness_job(name)["steps"]:
+        args = shlex.split(str(step.get("run", "")))
+        if "pytest" in args:
+            rest = args[args.index("pytest") + 1 :]
+            return _Selection(
+                path=next((arg for arg in rest if arg.endswith(".py")), None),
+                expression=rest[rest.index("-m") + 1] if "-m" in rest else "",
+            )
+    msg = f"{WITNESS.name}'s {WITNESS_JOBS[name]!r} job runs no pytest step"
+    raise AssertionError(msg)
+
+
+def _witness_timeout(name: str) -> int:
+    """The job timeout, in seconds, that witness tier's measured cost must fit inside."""
+    return int(_witness_job(name)["timeout-minutes"]) * 60
+
+
+def _selections() -> dict[str, _Selection]:
+    """Every recorded tier's pytest selection, task tiers and witness tier alike."""
+    selections = {
+        name: _Selection(path=None, expression=expression) for name, expression in _task_expressions().items()
+    }
+    return {name: _witness_selection(name) for name in WITNESS_JOBS} | selections
+
+
+def _collect(selection: _Selection) -> list[str]:
     """The node ids pytest collects for one tier (collection only, no runs)."""
     argv = [
         sys.executable,
@@ -544,12 +628,14 @@ def _collect(expression: str) -> list[str]:
         "--collect-only",
         "-q",
     ]
-    if expression:
-        argv += ["-m", expression]
+    if selection.path:
+        argv.append(selection.path)
+    if selection.expression:
+        argv += ["-m", selection.expression]
     proc = subprocess.run(argv, cwd=TOP, capture_output=True, text=True, check=False)
     assert proc.returncode == 0, (
-        f"pytest cannot collect `-m {expression!r}` -- the tier is uncollectable, so its cost is unknown:\n"
-        f"{proc.stdout[-4000:]}{proc.stderr[-4000:]}"
+        f"pytest cannot collect `{selection.path or '.'} -m {selection.expression!r}` -- the tier is "
+        f"uncollectable, so its cost is unknown:\n{proc.stdout[-4000:]}{proc.stderr[-4000:]}"
     )
     return [line for line in proc.stdout.splitlines() if line.startswith("tests/") and "::" in line]
 
@@ -570,11 +656,20 @@ def _load_ledger() -> dict[str, dict[str, object]]:
     return json.loads(LEDGER.read_text(encoding="utf-8"))["tiers"]
 
 
+def _load_witness() -> dict[str, dict[str, object]]:
+    return json.loads(LEDGER.read_text(encoding="utf-8"))["witness"]
+
+
+def _cost_entries() -> dict[str, dict[str, object]]:
+    """Every hand-measured cost row: the task tiers and the witness tiers."""
+    return {**_load_ledger(), **_load_witness()}
+
+
 def _live_tiers() -> dict[str, tuple[list[str], dict[str, object]]]:
-    """Collect every tier once, in parallel: four pytest startups, not four serial ones."""
-    expressions = _tier_expressions()
-    with ThreadPoolExecutor(max_workers=len(TIER_TASKS)) as pool:
-        collected = dict(zip(TIER_TASKS, pool.map(_collect, (expressions[name] for name in TIER_TASKS)), strict=True))
+    """Collect every recorded tier once, in parallel: one pytest startup each."""
+    selections = _selections()
+    with ThreadPoolExecutor(max_workers=len(selections)) as pool:
+        collected = dict(zip(selections, pool.map(_collect, selections.values()), strict=True))
     return {name: (ids, _summarize(ids)) for name, ids in collected.items()}
 
 
@@ -596,23 +691,49 @@ def _changes(recorded: dict[str, object], live: dict[str, object]) -> list[str]:
 
 
 def _update_ledger(live: dict[str, tuple[list[str], dict[str, object]]]) -> None:
-    """Rewrite the collected sets, keeping the human-measured cost columns."""
-    tiers = json.loads(LEDGER.read_text(encoding="utf-8"))
+    """Rewrite the collected sets, keeping the human-measured cost columns.
+
+    ``wall_seconds``, ``measured``, the timeout, the command and the note are
+    the human half of the record: a tier that has never been run keeps its null
+    time and empty note rather than looking measured.
+    """
+    ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
+    selections = _selections()
     for name, (_ids, summary) in live.items():
-        previous = tiers["tiers"].get(name, {})
-        tiers["tiers"][name] = {
-            "task": name,
-            "expression": _tier_expressions()[name],
+        witness = name in WITNESS_JOBS
+        previous = ledger["witness" if witness else "tiers"].get(name, {})
+        identity = {"workflow": str(WITNESS.relative_to(TOP)), "job": WITNESS_JOBS[name]} if witness else {"task": name}
+        collected = {
+            "expression": selections[name].expression,
             "collected": summary["collected"],
             "files": summary["files"],
             "ids_sha256": summary["ids_sha256"],
-            # Measured by hand: collection cannot time a tier, and a tier that
-            # has never been run must not look like it has.
+        }
+        measured = {
             "wall_seconds": previous.get("wall_seconds"),
             "measured": previous.get("measured", ""),
+            **({"timeout_seconds": previous.get("timeout_seconds")} if witness else {}),
+            "command": previous.get("command", ""),
             "note": previous.get("note", ""),
         }
-    LEDGER.write_text(json.dumps(tiers, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+        ledger["witness" if witness else "tiers"][name] = identity | collected | measured
+    LEDGER.write_text(json.dumps(ledger, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+
+
+def _cost_problems(name: str, entry: dict[str, object]) -> list[str]:
+    """The human columns of one row, judged: a measured time, a date, its command."""
+    problems = []
+    seconds = entry.get("wall_seconds")
+    if not isinstance(seconds, (int, float)) or float(seconds) <= 0:
+        problems.append(f"{name}: wall_seconds is not a measured cost ({seconds!r})")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(entry.get("measured", ""))):
+        problems.append(f"{name}: measured is not a date ({entry.get('measured')!r})")
+    command, expression = entry.get("command"), str(entry.get("expression", ""))
+    if not isinstance(command, str) or not command.strip():
+        problems.append(f"{name}: command is not the re-measure command ({command!r})")
+    elif expression and f"-m {expression}" not in command and f'-m "{expression}"' not in command:
+        problems.append(f"{name}: command {command!r} does not select {expression!r}")
+    return problems
 
 
 def test_tier_ledger_records_the_selection_each_task_claims() -> None:
@@ -620,11 +741,12 @@ def test_tier_ledger_records_the_selection_each_task_claims() -> None:
 
     The expressions come from Taskfile.yml, so the ledger cannot claim a
     selection the task does not run; the times are the human half of the record
-    and must look measured (a number, a date) rather than inferred here.
+    and must look measured (a number, a date, and the command it was measured
+    with) rather than inferred here.
     """
     if os.environ.get("UPDATE_TIERS"):
         pytest.skip("UPDATE_TIERS set: the ledger is being rewritten; re-run without it to check it")
-    expressions = _tier_expressions()
+    expressions = _task_expressions()
     ledger = _load_ledger()
     assert set(ledger) == set(TIER_TASKS), (
         f"the ledger records {sorted(ledger)}, Taskfile.yml declares {sorted(TIER_TASKS)}: "
@@ -636,29 +758,67 @@ def test_tier_ledger_records_the_selection_each_task_claims() -> None:
             problems.append(
                 f"{name}: the ledger says {ledger[name].get('expression')!r}, `{name}` runs {expressions[name]!r}"
             )
-        seconds = ledger[name].get("wall_seconds")
-        if not isinstance(seconds, (int, float)) or float(seconds) <= 0:
-            problems.append(f"{name}: wall_seconds is not a measured cost ({seconds!r})")
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(ledger[name].get("measured", ""))):
-            problems.append(f"{name}: measured is not a date ({ledger[name].get('measured')!r})")
+        problems += _cost_problems(name, ledger[name])
     assert not problems, (
         f"{LEDGER.relative_to(TOP)} no longer describes the tiers Taskfile.yml runs:\n  " + "\n  ".join(problems)
     )
 
 
+def test_witness_ledger_records_the_selection_its_workflow_runs() -> None:
+    """A witness row must name the CI job that runs it, its selection and its timeout.
+
+    A witness tier is a job in .github/workflows/witness.yml, not a Taskfile
+    task, so its row is checked against that job instead: the expression of the
+    pytest step, and the job timeout the measured time has to sit inside. The
+    measured time itself is a local observation -- the job's wall in CI also
+    carries checkout and the venv -- so the row records the timeout, not the
+    other way round.
+    """
+    if os.environ.get("UPDATE_TIERS"):
+        pytest.skip("UPDATE_TIERS set: the ledger is being rewritten; re-run without it to check it")
+    ledger = _load_witness()
+    assert set(ledger) == set(WITNESS_JOBS), (
+        f"the ledger records {sorted(ledger)}, WITNESS_JOBS names {sorted(WITNESS_JOBS)}: "
+        "one witness tier was renamed or added without the other"
+    )
+    problems = []
+    for name, job in WITNESS_JOBS.items():
+        entry = ledger[name]
+        selection = _witness_selection(name)
+        if (entry.get("workflow"), entry.get("job")) != (str(WITNESS.relative_to(TOP)), job):
+            problems.append(
+                f"{name}: the ledger points at {entry.get('workflow')!r}#{entry.get('job')!r}, "
+                f"WITNESS_JOBS points at {WITNESS.name}#{job}"
+            )
+        if entry.get("expression") != selection.expression:
+            problems.append(
+                f"{name}: the ledger says {entry.get('expression')!r}, the job runs {selection.expression!r}"
+            )
+        timeout = entry.get("timeout_seconds")
+        if timeout != _witness_timeout(name):
+            problems.append(f"{name}: the ledger allows {timeout!r}s, the job's timeout is {_witness_timeout(name)}s")
+        problems += _cost_problems(name, entry)
+    assert not problems, (
+        f"{LEDGER.relative_to(TOP)} no longer describes the witness jobs {WITNESS.name} runs:\n  "
+        + "\n  ".join(problems)
+    )
+
+
 def test_each_tier_collects_what_the_ledger_records() -> None:
-    """The collected set of every tier must still be the one on record.
+    """The collected set of every recorded tier must still be the one on record.
 
     A tier's cost is a property of the selection, and the selection is decided
-    by markers on tests. A test that joins or leaves a tier without the record
-    moving is an unexplained cost change, so this re-collects (no runs) and
-    names the files that moved. Re-record deliberately with UPDATE_TIERS=1.
+    by markers on tests (and, for the witness tier, by the path and expression
+    of the job's own pytest step). A test that joins or leaves a tier without
+    the record moving is an unexplained cost change, so this re-collects (no
+    runs) and names the files that moved. Re-record deliberately with
+    UPDATE_TIERS=1.
     """
     live = _live_tiers()
     if os.environ.get("UPDATE_TIERS"):
         _update_ledger(live)
         pytest.skip(f"rewrote {LEDGER.relative_to(TOP)} from the live collection (fill wall_seconds/measured by hand)")
-    ledger = _load_ledger()
+    ledger = _cost_entries()
     problems = []
     for name, (_ids, summary) in live.items():
         changes = _changes(ledger.get(name, {}), summary)
@@ -669,6 +829,40 @@ def test_each_tier_collects_what_the_ledger_records() -> None:
         + "\n\n".join(problems)
         + "\n\nif the change is deliberate, re-record the collected sets (and then the counts in "
         + "docs/how-to/test-loop.md):\n  UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py"
+    )
+
+
+def test_no_recorded_cost_is_stale() -> None:
+    """A cost older than STALENESS_DAYS must be re-measured, not cited.
+
+    ``wall_seconds`` is the human half of the ledger: nothing recomputes it, so
+    a suite that has grown and a machine that has changed leave a number that
+    still looks measured. The failure names the command the row was measured
+    with, so re-measuring is a copy and paste rather than a search through the
+    notes.
+    """
+    if os.environ.get("UPDATE_TIERS"):
+        pytest.skip("UPDATE_TIERS set: the ledger's collected sets are being rewritten, not its costs")
+    today = datetime.now(UTC).date()
+    stale = []
+    for section, entries in (("tiers", _load_ledger()), ("witness", _load_witness())):
+        for name, entry in entries.items():
+            measured = str(entry.get("measured", ""))
+            try:
+                age = (today - date.fromisoformat(measured)).days
+            except ValueError:
+                age = None
+            if age is None or age > STALENESS_DAYS:
+                stale.append(
+                    f"  {name}: measured {measured!r}, "
+                    + ("not a date" if age is None else f"{age} days ago")
+                    + f" -- re-measure with\n      time {entry.get('command') or 'uv run --no-sync pytest -q -m <expression>'}\n"
+                    + f"    then write that wall time into {LEDGER.relative_to(TOP)} -> "
+                    + f'{section}."{name}".wall_seconds and {today.isoformat()} into its "measured"'
+                )
+    assert not stale, (
+        f"these costs were measured more than {STALENESS_DAYS} days ago (today {today.isoformat()}):\n"
+        + "\n".join(stale)
     )
 
 
