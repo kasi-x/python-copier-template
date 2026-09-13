@@ -512,6 +512,11 @@ def _roll_back(
 
     Returns what it actually had to put back and delete: a file that never
     drifted is not reported as restored.
+
+    The undo is a crash region like the render: a SIGKILL after any of these
+    writes (`COPIER_ADOPT_CRASH_AT=rollback`) leaves a half-undone tree with
+    the journal still on disk -- `_remove_journal` runs only after this
+    returns -- and `--recover` finishes what the kill interrupted.
     """
     restored: list[str] = []
     for relative, content in backup.items():
@@ -520,12 +525,18 @@ def _roll_back(
             continue
         _write_bytes(path, content)
         restored.append(relative)
+        # Crash point: a rollback killed mid-restore, with the rest of the old
+        # bytes still to go back and everything the run created still in place.
+        _crash_at("rollback")
     removed: list[str] = []
     for relative in created:
         path = target / relative
         if path.is_file():
             path.unlink()
             removed.append(relative)
+            # Crash point: a rollback killed mid-deletion, with a subset of the
+            # run's files gone and the journal there to name the rest.
+            _crash_at("rollback")
     _remove_new_dirs(target, before_dirs)
     return sorted(restored), sorted(removed)
 
@@ -647,6 +658,12 @@ def _restore(journal: _Journal) -> list[str]:
             continue
         _write_bytes(path, content)
         restored.append(relative)
+        # Crash point: a recovery killed mid-restore. The files already written
+        # back are on disk, the rest of the journal is not applied, and the
+        # journal itself is untouched -- the next `--recover` reads the same
+        # journal and converges, because every write is decided by what the
+        # tree holds now, not by how far a previous one got.
+        _crash_at("recover")
     return sorted(restored)
 
 
@@ -671,6 +688,12 @@ def recover(target: Path) -> Recovery:
     removed = sorted(_files_under(target) - set(journal.existing) - {JOURNAL_NAME})
     for relative in removed:
         (target / relative).unlink()
+        # Crash point: a recovery killed while it deletes what the run created.
+        # The old bytes are all back by now, so what is in question is a subset
+        # of the run's own files, and the journal (dropped last) still names
+        # the ones this kill got to keep: the next `--recover` removes exactly
+        # the rest and no second time.
+        _crash_at("recover")
     _remove_new_dirs(target, set(journal.dirs))
     _remove_journal(target)
     recovery = Recovery(
@@ -775,8 +798,13 @@ def _crash_at(point: str) -> None:
     `COPIER_ADOPT_CRASH_AT=render:3` dies (SIGKILL -- uncatchable, so the run
     really cannot clean up after itself) once the render has written three
     files into the target, `merge:1` after the first merge write, and `verify`
-    before the run checks what it did. Any other value, and the variable being
-    unset, is a no-op: no production path is affected.
+    before the run checks what it did. The undo is drillable too, the way the
+    protocol model crashes in every state: `rollback` dies inside a failing
+    run's rollback, after its first real write or deletion, and `recover`
+    dies inside `--recover`, at the first old bytes written back or created
+    file removed -- both leave the journal in place, which is what the next
+    `--recover` finishes from. Any other value, and the variable being unset,
+    is a no-op: no production path is affected.
     """
     if os.environ.get(CRASH_POINT_ENV) == point:
         os.kill(os.getpid(), signal.SIGKILL)
