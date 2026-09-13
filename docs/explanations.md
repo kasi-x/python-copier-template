@@ -9,3 +9,4 @@ Explanations of how it works and why it works that way.
 - [Authoring Template Sources](explanations/template-dev.md)
 - [Long-Running Executables](explanations/long-running.md)
 - [Security & Compliance](explanations/security.md)
+- [Verification Architecture](explanations/verification.md)

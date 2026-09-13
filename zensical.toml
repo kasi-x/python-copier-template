@@ -45,6 +45,7 @@ nav = [
       { "Authoring Template Sources" = "explanations/template-dev.md" },
       { "Long-Running Executables" = "explanations/long-running.md" },
       { "Security & Compliance" = "explanations/security.md" },
+      { "Verification Architecture" = "explanations/verification.md" },
   ]},
   { "Reference" = [
       { "Overview" = "reference.md" },
