@@ -1214,7 +1214,10 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 - [ ] **質問票の小粒改善**
       - ~~`project_type=web_django` の罠選択肢（選ぶと abort）を choices から外し、文書ポインタにする~~
         → **完了（§22.2 W6）**: choice・help・`_tasks` ガードとも除去済み
-      - `license` help の40行 SPDX ダンプを端末向けに短縮（全文は docs 参照）
+      - ~~`license` help の40行 SPDX ダンプを端末向けに短縮（全文は docs 参照）~~
+        → **完了（2026-09-14、75f5595a）**: choices を素の SPDX ID に（保存値は
+          従来から ID なので answers 互換・順序も同一）。名称は
+          choosealicense.com と docs/reference/questionnaire.md を参照
       - `example-answers.yml`（全 gate-off 網羅 fixture）を `create-new.md` +
         `reference/questionnaire.md` から non-interactive 起点として link する
       - `create-new.md` の commit 手順 `uv sync` 固定を runner 対応に
@@ -1574,9 +1577,12 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
       - `task test-fast CLI_ARGS="--lf"` / `-x` / `--durations=25` は既に動くが
         `test-loop.md` に記述が無い。`task batch ... --shell` と合わせて
         「1 ケース（2s）→ ファイル（17s）→ フル（37s）」の3段として明文化する
-- [ ] **coverage の扱いを決める**（`task test` は `--cov` を出すが `fail_under` が無く、
+- [x] **coverage の扱いを決める**（`task test` は `--cov` を出すが `fail_under` が無く、
       `cov.xml` がローカルにも残る）。閾値を入れるか、ローカルでは coverage を外して
       CI のみにするか（現状は「出るが誰も見ない」）
+      → **決着（2026-09-14、121b221a）**: 閾値は入れない（テンプレ repo の coverage は
+        運用指標にならない）。repo の `task test` は xml を `.cache/cov.xml`
+        （gitignore済み）へ、生成プロジェクトは codecov 用にルート `cov.xml` を維持
 
 ### 23.3 MCP の整備
 
@@ -2063,12 +2069,36 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
 ### 27.7 残タスク（2026-09-14 時点）
 
 1. **V5 / T6 の残り**: merge の事後条件を invariants.yml 側へ（現在は実装内の検査）
-2. **V2 の次の一手**: rollback / recover 中の kill フックを `tools/adopt.py` に足し、
+2. [x] **V2 の次の一手**: rollback / recover 中の kill フックを `tools/adopt.py` に足し、
    Quint が証明した「全クラッシュ点が覆われている」をテストでも標本化する
-3. **Quint モデルを CI へ**: モデル 2 本（+変種）を `models/` に置き、repo-only workflow で
+   → **完了（2026-09-14、23a84342）**: `_crash_at("rollback" / "recover")` を追加し、
+     SIGKILL ドリル2本（rollback からの byte-identical 復元 / recover の収束、両 recover
+     部分状態を parametrize）+ stateful マシンに専用 rule 2本で標本化。
+     ついでに stateful モデルの潜在バグを1件修正（`start_a_project` だけ
+     `pending_journal` ガードが無く、kill 後の journal を model が取り消していた。
+     ドライバは無関係）。fast tier に +3 テスト / +5.5s
+3. [x] **Quint モデルを CI へ**: モデル 2 本（+変種）を `models/` に置き、repo-only workflow で
    `quint verify --backend=tlc`（~2s）。Node 22 + quint 0.32 が前提
-4. **§23.1 の残り**: `tests/support/` 共有モジュール、answers の単一情報源、`test_example.py` の分割
-   （所有権メモが解けたら）
-5. **§23.2 の残り**: CI の `paths:` フィルタ
-6. **§23.4 の残り**: 列挙の完全性（除外リストをカバレッジ出力に載せる）、`witnesses.jsonl` の陳腐化検出
+   → **完了（2026-09-14、7901cbc1）**: `models/{adopt_crash,adopt_crash_journal_late}.qnt`
+     + `quint.yml`（quint 0.32.0 pin）。良モデルは 51 状態で不変成立、journal 遅延変種は
+     3状態の反例が出ることを CI が毎回確認（変種が通ったら job を落とす二重ガードつき）。
+     TLC は JVM を要するため ubuntu-latest の preinstalled Temurin に依存（README に記載）。
+     `.gitignore` の `models/*` に否定パターンを追加、zizmor の `adhoc-packages` 監査は
+     文書付き ignore で例外化。マージ後に `.gitignore` の union 検査が赤化したため
+     テンプレ側へもミラー（7d7b6e84）
+4. **§23.1 の残り**: answers の単一情報源、`test_example.py` の分割（所有権メモが解けたら）。
+   `tests/support.py` 共有モジュールの第一スライスは完了（a30747e8: `run_pipe` / `make_venv`
+   を test_example から移設、importer 改線、marker スキャンの edge 追従を meta tier で実証）
+5. [x] **§23.2 の残り**: CI の `paths:` フィルタ
+   → **完了（2026-09-14、f4838b75）**: required check になる ci.yml の test / test-meta は
+     job 単位ゲート（`changes` job の `docs-only` 出力。skip は branch protection で
+     success 扱い）とし、required でない witness.yml / update-path.yml は workflow 級の
+     `paths-ignore: [docs/**, **/*.md]`。pyproject-only は意図的にゲートしない
+     （renovate の bump こそ fast tier の捕まえるべき変更）。test-loop.md に記載
+6. [x] **§23.4 の残り**: 列挙の完全性（除外リストをカバレッジ出力に載せる）、`witnesses.jsonl` の陳腐化検出
+   → **完了（2026-09-14、bb6a9e53）**: 除外は invariants.yml の `excluded` 節が単一源
+     （web_django + integration 質問2件、理由つき。load 時に questionnaire と照合して腐ったら落る）。
+     coverage 出力は「205 enumerated, 3 excluded (<names>)」を明示。
+     `witnesses.jsonl` は in-process 再導出で陳腐化検出（失敗時に `task witness` を表示）。
+     再導出の結果、現行ファイルは新鮮と実証
 7. **T8 の残り**: `pixi` venv 共有の採否、`pytest-randomly` を夜間ジョブに入れるか
