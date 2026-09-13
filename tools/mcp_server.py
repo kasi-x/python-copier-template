@@ -111,11 +111,12 @@ def inspect_project(path: str, *, takeover: bool = False) -> dict[str, Any]:
 def template_status() -> dict[str, Any]:
     """Report this template checkout's own state.
 
-    `latest_tag` and `head` come from git; `commits_behind_latest_tag` is the
-    trap this repository lives with -- `copier copy` without `--vcs-ref`
-    resolves the latest *tag*, which for a fork can point at a long-abandoned
-    ancestor. `dirty` means uncommitted template changes are included in any
-    render done from this checkout.
+    `latest_tag` and `head` come from git. The fork tags its own releases
+    since the 6.0.0 detach, so `copier copy` without `--vcs-ref` expands the
+    newest release tag; `commits_behind_latest_tag` says how far that tag
+    trails the working tree, which is what an explicit ref (or the local
+    `--ref HEAD` render) exists for. `dirty` means uncommitted template
+    changes are included in any render done from this checkout.
     """
     describe = batch.git(TOP, "describe", "--tags", "--abbrev=0").stdout.strip()
     head = batch.git(TOP, "rev-parse", "--short", "HEAD").stdout.strip()

@@ -176,22 +176,31 @@ The same lesson applies to answer-driven file protection: conditional
 presence is expressed on the FILE NAME (`{% if x %}name{% endif %}.jinja`),
 never by jinja in `_skip_if_exists` (config values are not rendered).
 
-## Documented generation commands must pin `--vcs-ref`
+## Documented generation commands must run without `--vcs-ref`
 
-Every `copier copy` command we publish against the template URL passes
-`--vcs-ref=main` (or a deliberate release ref). Reason: copier checks out the
-**latest git tag** when `--vcs-ref` is absent, and this fork still carries
-inherited upstream tags — the newest of them (`5.4.0`) points at the old
-pre-fork DiamondLightSource template. Generating without the flag therefore
-silently asks the old questionnaire and renders the old files, which produced
-two real bug reports ("docs_type rejects zensical", "asks component_owner";
-see BUG.md — both were misdiagnosed twice before the tag mechanism was
-confirmed via `git show 5.4.0:copier.yml`).
+Every `copier copy` command we publish against the template URL runs with no
+`--vcs-ref`. Copier then checks out the repository's **newest git tag**, and
+since the 6.0.0 fork detach that tag is this fork's own release, so the plain
+command asks this questionnaire and renders these files. A revision is pinned
+only when the surrounding text says so — `--vcs-ref=6.0.0` to reproduce an
+exact older release — and `--vcs-ref=main` is never presented as required.
 
-This stays a hard rule until the v1.0 fork detach re-tags the repository
-(TODO item 11). Enforced by `tests/test_generation_docs.py`, which scans the
-README and docs/tutorials fenced blocks for URL-based `copier copy` commands
-without a `--vcs-ref=` flag.
+The rule used to be the opposite, and the reason is worth keeping. Before the
+detach the newest tag (`5.4.0`) was inherited from the upstream
+DiamondLightSource template, so a flagless copy silently asked the *old*
+questionnaire and rendered the *old* files. That produced two real bug reports
+("docs_type rejects zensical", "asks component_owner"; see BUG.md — both were
+misdiagnosed twice before the tag mechanism was confirmed via
+`git show 5.4.0:copier.yml`), and the published commands pinned `--vcs-ref` to
+escape the trap. The detach removed the need.
+
+The one ref that stays pinned is `--vcs-ref=HEAD` (equivalently
+`tools/adopt.py --ref HEAD`), and it belongs only in this repository's own
+local-iteration docs: it expands the working tree, uncommitted changes
+included, so it describes how to test a template edit — never how a user
+generates a project. Enforced by `tests/test_generation_docs.py`, which
+renders a defaults copy with no ref and fails if the newest tag ever stops
+carrying this questionnaire.
 
 The same investigation pattern is worth reusing: when generation behaves
 differently between two invocations that look identical, print

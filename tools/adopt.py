@@ -164,10 +164,13 @@ def _ref_question_files(ref: str) -> list[str]:
 def resolve_ref(requested: str | None = None) -> tuple[str, str]:
     """Choose the revision to expand: the latest tag only if it is this questionnaire.
 
-    `copier copy` without `--vcs-ref` resolves the latest tag. On a fork those
-    tags can be inherited and point at a different template, so the tag is used
-    only when it declares the same questions as this checkout; otherwise the
-    default branch is used, with the reason reported.
+    `copier copy` without `--vcs-ref` resolves the repository's newest tag.
+    This fork tags its own releases, so that tag normally is the right
+    questionnaire. It is still used only when it declares the same questions
+    as this checkout -- a tag left over from before the fork detach points at
+    a different template -- and otherwise the default branch is used, with the
+    reason reported. `--ref` names a revision explicitly; `--ref HEAD` expands
+    the working tree for local iteration.
     """
     if requested:
         return requested, "requested explicitly"

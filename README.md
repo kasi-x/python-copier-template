@@ -414,15 +414,16 @@ You can see the template in action in the
 
 ## Create a new project
 
-We recommend invoking copier via `uvx`. `--vcs-ref=main` matters: without it,
-copier checks out the **latest git tag** instead of the current main branch,
-and this repository still carries inherited upstream tags that point at the
-old, pre-fork template (they are re-tagged at the v1.0 fork detach):
+We recommend invoking copier via `uvx`. Without `--vcs-ref` copier expands the
+repository's **newest release tag**, which since the 6.0.0 fork detach is this
+fork's own release — so the command below generates from the current template
+and no flag is needed. Add `--vcs-ref=6.0.0` only to pin an exact release and
+make the generation reproducible:
 
 ```
 git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
-uvx copier copy --trust --vcs-ref=main \
+uvx copier copy --trust \
     https://github.com/kasi-x/python-copier-template.git $_
 ```
 
@@ -449,7 +450,7 @@ EOF
 
 # Generate project
 uvx copier copy --trust --defaults \
-    --vcs-ref=main --data-file answers.yml /path/to/my-project
+    --data-file answers.yml /path/to/my-project
 ```
 
 Notes:

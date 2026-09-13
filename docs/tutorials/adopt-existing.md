@@ -2,13 +2,12 @@
 
 You can adopt this template into an existing repo by running `copier copy` in much the same way as in a new project.
 
-!!! warning
-    This repository has not reached its v1.0 detach yet, so the only current
-    release tags are inherited from the upstream project and point at the old,
-    pre-fork template. **Until v1.0, every URL-based `copier copy` here must
-    pass `--vcs-ref=main`** (as the commands below for the general case do).
-    The `1.0.0`-based flow below applies once the fork has been detached and
-    re-tagged (see the repository's TODO, item 11).
+!!! note
+    The fork's own release tags start at `6.0.0`, the fork detach; the
+    inherited upstream tags are gone. A URL-based `copier copy` with no
+    `--vcs-ref` therefore expands this fork's newest release, which is what
+    the commands below rely on. Pass `--vcs-ref=6.0.0` (or any other release
+    tag) only to pin an exact release.
 
 This will:
 
@@ -105,13 +104,13 @@ Later updates: `copier update --trust` and review the diff (see
 
 ## If you have a skeleton-based project
 
-If you have a [python3-pip-skeleton](https://github.com/kasi-x/python3-pip-skeleton) based project then it is best to adopt the *first* release of this template (the tag the fork detach creates, see the warning above), then `copier update` to get to the latest. This is because `copier update` will try and merge file changes across renames done between releases, while `copier copy` cannot. This looks like:
+If you have a [python3-pip-skeleton](https://github.com/kasi-x/python3-pip-skeleton) based project then it is best to adopt the *first* release of this template (`6.0.0`, the tag the fork detach creates), then `copier update` to get to the latest. This is because `copier update` will try and merge file changes across renames done between releases, while `copier copy` cannot. This looks like:
 
 ```shell
-uvx copier copy https://github.com/kasi-x/python-copier-template.git --trust --vcs-ref=<first-release-tag> /path/to/existing-project
+uvx copier copy https://github.com/kasi-x/python-copier-template.git --trust --vcs-ref=6.0.0 /path/to/existing-project
 git diff
 # Examine the changes, put back anything you want to keep
-git commit -m "Adopt python-copier-template <first-release-tag>"
+git commit -m "Adopt python-copier-template 6.0.0"
 uvx copier update /path/to/existing-project --trust
 git diff
 # Examine the changes, resolve any merge conflicts
@@ -126,7 +125,7 @@ template also ships (check the template's tree, or run `detect` — it lists
 them):
 
 ```shell
-uvx copier copy --trust --vcs-ref=main --data existing_project=true \
+uvx copier copy --trust --data existing_project=true \
     --skip .github/workflows/ci.yml --skip renovate.json \
     https://github.com/kasi-x/python-copier-template.git /path/to/existing-project
 git diff
@@ -145,7 +144,7 @@ recipes) and keep your existing `README.md`, `LICENSE`, `pyproject.toml`
 and `.gitignore`, protect them with `--skip`:
 
 ```shell
-uvx copier copy --trust --vcs-ref=main \
+uvx copier copy --trust \
     --skip README.md --skip LICENSE --skip pyproject.toml --skip .gitignore \
     https://github.com/kasi-x/python-copier-template.git /path/to/existing-project
 git diff

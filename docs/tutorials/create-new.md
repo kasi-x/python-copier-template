@@ -5,14 +5,14 @@ Once you have followed the [installation](./installation.md) tutorial, you can u
 ```
 git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
-uvx copier copy --trust --vcs-ref=main \
+uvx copier copy --trust \
     https://github.com/kasi-x/python-copier-template.git $_
 ```
 
-`--vcs-ref=main` asks for the current main branch. Without it copier checks
-out the **latest git tag**, and this repository still carries inherited
-upstream tags that point at the old, pre-fork template (they are re-tagged
-at the v1.0 fork detach).
+No `--vcs-ref` is needed: copier then expands this fork's **newest release
+tag**, and since the 6.0.0 fork detach that tag is the fork's own release.
+Pass `--vcs-ref=6.0.0` (or another release tag) only to pin an exact release
+and make the generation reproducible.
 
 This will:
 

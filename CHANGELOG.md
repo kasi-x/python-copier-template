@@ -20,6 +20,13 @@ All notable changes to this project are documented in this file.
 - lock file maintenance (#368) (f39321a)
 
 
+## [6.0.0]
+
+### Features
+
+- fork detach: own release tags, so `--vcs-ref` is no longer required, plus the deep-dive question set
+
+
 ## [5.3.0]
 
 ### Dependencies

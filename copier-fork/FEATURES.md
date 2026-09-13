@@ -91,14 +91,17 @@ via Discussion.
 Status: proposed (extends `notes/` item 9 and draft `09`).
 
 Problem: `copier copy <url>` without `--vcs-ref` checks out the latest git
-*tag*, not the default branch. On forked or renamed template repos that tag
-can point at a long-abandoned ancestor — users silently receive the old
-questionnaire and old files. This exact trap produced two real bug reports
-against this template in one week.
+*tag*, not the default branch. A fork that has not cut its own releases
+inherits upstream's tags, so that tag can point at a long-abandoned ancestor
+— users silently receive the old questionnaire and the old files. This exact
+trap produced two real bug reports against this template in one week, before
+its own 6.0.0 detach release became the newest tag and the plain command
+started resolving the right template.
 
 Proposal: when the resolved ref is a tag N commits behind the default
 branch, warn, e.g. `Warning: using tag 5.4.0, which is 44 commits behind
-the default branch main. Pass --vcs-ref=main to use the branch tip.`
+the default branch main. Pass an explicit ref — a newer release tag, or
+--vcs-ref=main for unreleased branch work — to render that instead.`
 The clone already exists, so detection is one
 `git rev-list --count <branch>..<tag>` call. Docs note first (small),
 warning second.

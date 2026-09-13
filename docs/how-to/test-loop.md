@@ -64,9 +64,11 @@ uv run mcp dev tools/mcp_server.py        # MCP Inspector
 | `list_batch_requests` | the requests in a batch file |
 | `run_batch` | run a batch and return the verdict |
 
-Read `template_status` first: `commits_behind_latest_tag` is the trap where
-`copier copy` without `--vcs-ref` resolves an inherited tag that points at a
-long-abandoned ancestor.
+Read `template_status` first: `latest_tag` is the fork's own newest release —
+what a plain `copier copy` expands since the 6.0.0 detach — and
+`commits_behind_latest_tag` says how far the working tree has moved past it.
+That counter used to be a trap: before the detach the newest tag was an
+inherited pre-fork one pointing at a long-abandoned ancestor.
 
 Two implementation notes worth knowing before editing that file:
 
