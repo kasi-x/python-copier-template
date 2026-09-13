@@ -3,7 +3,7 @@
     {
       "id": "project_type=cli/gate=off:use_recommended_agent",
       "tier": "full",
-      "result": "fail",
+      "result": "pass",
       "answers": {
         "package_name": "smoke_example",
         "description": "An example project",
@@ -2086,7 +2086,7 @@
     {
       "id": "project_type=micropython/gate=recommended",
       "tier": "full",
-      "result": "fail",
+      "result": "pass",
       "answers": {
         "package_name": "smoke_example",
         "description": "An example project",
@@ -3130,7 +3130,7 @@
     {
       "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/atcoder",
       "tier": "full",
-      "result": "fail",
+      "result": "pass",
       "answers": {
         "package_name": "smoke_example",
         "description": "An example project",

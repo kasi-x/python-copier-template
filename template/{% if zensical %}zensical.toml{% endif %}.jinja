@@ -12,8 +12,8 @@ copyright = 'Maintained by <a href="{{ repo_url }}">{{ author_name }}</a>.'
 
 nav = [
   { "Home" = "index.md" },
-  { "Modules" = "modules.md" },
-]
+{% if not oj_code %}  { "Modules" = "modules.md" },
+{% endif %}]
 
 [project.theme]
 name = "material"
@@ -51,8 +51,8 @@ toggle.icon = "material/brightness-4"
 toggle.name = "Switch to light mode"
 
 [project.plugins]
-mkdocstrings = { default_handler = "python", handlers = { python = { paths = [{{ '"."' if micropython_pkg else '"src"' }}] } } }
-search = {}
+{% if not oj_code %}mkdocstrings = { default_handler = "python", handlers = { python = { paths = [{{ '"."' if micropython_pkg else '"src"' }}] } } }
+{% endif %}search = {}
 
 [project.markdown_extensions]
 admonition = {}

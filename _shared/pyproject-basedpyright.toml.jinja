@@ -6,7 +6,10 @@ typeCheckingMode = "{{ 'strict' if strictness == 'full' else 'recommended' }}"
 # everything else 3.11. Without this basedpyright assumes its newest
 # supported Python and lets newer-only syntax slip through.
 pythonVersion = "{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' if ros2_pkg and ros_distro == 'jazzy' else '3.11') }}"
-include = ["{{ pkg_dir }}", "tests"{% if micropython_pkg %}, "firmware/core"{% endif %}]
+{% if micropython_pkg %}# The MicroPython layout ships no `{{ pkg_dir }}` package: its CPython-checked
+# code is tests/ + firmware/core (the firmware/ device tree is covered by the
+# dedicated firmware/pyrightconfig.json pass), matching the pyrefly/ty sections.
+include = ["tests", "firmware/core"]{% else %}include = ["{{ pkg_dir }}", "tests"]{% endif %}
 # tasks.py/duties.py: invoke/duty's own decorators (@task/@duty) and Context
 # are only partially typed upstream, so an explicit `basedpyright tasks.py`
 # (outside the `include` scan above) would otherwise be noisy.

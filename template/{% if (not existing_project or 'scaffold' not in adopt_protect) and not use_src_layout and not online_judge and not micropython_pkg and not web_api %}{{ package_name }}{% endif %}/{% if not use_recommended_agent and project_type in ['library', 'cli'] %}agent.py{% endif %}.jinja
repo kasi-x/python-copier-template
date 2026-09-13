@@ -65,6 +65,25 @@ async def run(prompt: str, model: str | None = None) -> str:
     return result.output
 
 
+class _CliArgs:
+    """Typed destination for argparse's attributes.
+
+    ``argparse.Namespace`` reads every attribute as ``Any``, which the
+    project's own type checks reject; parsing into a typed namespace keeps
+    ``main`` free of casts. The fields are pre-set so they are real instance
+    attributes: argparse overwrites ``prompt`` (required, so it is never
+    absent) and leaves ``model`` at its own ``None`` default when ``--model``
+    is not passed.
+    """
+
+    prompt: str
+    model: str | None
+
+    def __init__(self) -> None:
+        self.prompt = ""
+        self.model = None
+
+
 def main(args: Sequence[str] | None = None) -> None:
     """CLI entry point: run the agent on a prompt and print the reply."""
     parser = argparse.ArgumentParser(description="Run the {{ repo_name }} agent")
@@ -74,8 +93,8 @@ def main(args: Sequence[str] | None = None) -> None:
         default=None,
         help=f"Real model to use (default: offline via TestModel, model {DEFAULT_MODEL!r})",
     )
-    parsed = parser.parse_args(args)
-    print(asyncio.run(run(parsed.prompt, model=parsed.model)))
+    parsed = parser.parse_args(args, namespace=_CliArgs())
+    print(asyncio.run(run(prompt=parsed.prompt, model=parsed.model)))
 
 
 if __name__ == "__main__":

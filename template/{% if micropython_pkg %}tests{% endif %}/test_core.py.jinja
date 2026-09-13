@@ -7,16 +7,19 @@ must never import ``machine`` so it stays importable here.
 import contextlib
 
 from firmware.core import BlinkConfig
-from firmware.core.app import DigitalOut
 from firmware.core.app import run
 
 
-class FakeLed(DigitalOut):
-    """DigitalOut stub that records on/off calls."""
+class FakeLed:
+    """Duck-typed ``DigitalOut`` stub that records on/off calls.
+
+    ``app.run`` takes the ``DigitalOut`` protocol, so this stub satisfies it
+    structurally at the call site, like ``FakeClock`` does for ``Clock``.
+    """
 
     def __init__(self) -> None:
-        self.on_calls = 0
-        self.off_calls = 0
+        self.on_calls: int = 0
+        self.off_calls: int = 0
 
     def on(self) -> None:
         self.on_calls += 1
