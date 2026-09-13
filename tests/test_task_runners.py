@@ -27,8 +27,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from support import make_venv
 from test_example import copy_project
-from test_example import make_venv
 
 RENDER_ARGS: dict[str, dict[str, object]] = {
     "task": {"use_recommended_toolchain": False, "task_runner": "task"},

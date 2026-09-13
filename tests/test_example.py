@@ -1,16 +1,14 @@
-import functools
 import json
-import os
 import re
-import shlex
-import subprocess
 import tomllib
-from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 import yaml
 from copier import run_copy
+
+from support import make_venv
+from support import run_pipe
 
 TOP = Path(__file__).absolute().parent.parent
 
@@ -61,37 +59,6 @@ def copy_project_recommended(project_path: Path, **kwargs: object):
         defaults=True,
     )
     run_pipe("git add .", cwd=str(project_path))
-
-
-def run_pipe(cmd: str, cwd: str | Path | None = None, venv: str | Path = "") -> str:
-    sp = subprocess.run(
-        shlex.split(cmd),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        cwd=cwd,
-        env=dict(os.environ, UV_PROJECT_ENVIRONMENT="", VIRTUAL_ENV=str(venv)),
-    )
-    output = sp.stdout.decode()
-    assert sp.returncode == 0, output
-    return output
-
-
-def make_venv(project_path: Path) -> Callable[[str], str]:
-    venv_path = project_path / ".venv"
-    run = functools.partial(run_pipe, cwd=str(project_path), venv=venv_path)
-    run("uv sync")  # Create a lockfile and install packages
-
-    exe_path = venv_path / "bin" / "python"
-    assert exe_path.exists(), f"UV created a venv but did not install {exe_path}"
-
-    # Commit the freshly created lockfile: `uv run --locked` (used by the
-    # generated tasks and CI) requires it to match the environment.
-    run("git config user.email 'you@example.com'")
-    run("git config user.name 'Your Name'")
-    run("git add -A")
-    run("git commit -qm 'Initial sync'")
-
-    return run
 
 
 def ci_requested_tasks(ci_path: Path) -> list[str]:
