@@ -1763,14 +1763,13 @@
 
 <h1 id="adopt-the-template-into-an-existing-repo">Adopt the template into an existing repo<a class="headerlink" href="#adopt-the-template-into-an-existing-repo" title="Permanent link">&para;</a></h1>
 <p>You can adopt this template into an existing repo by running <code>copier copy</code> in much the same way as in a new project.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This repository has not reached its v1.0 detach yet, so the only current
-release tags are inherited from the upstream project and point at the old,
-pre-fork template. <strong>Until v1.0, every URL-based <code>copier copy</code> here must
-pass <code>--vcs-ref=main</code></strong> (as the commands below for the general case do).
-The <code>1.0.0</code>-based flow below applies once the fork has been detached and
-re-tagged (see the repository's TODO, item 11).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The fork's own release tags start at <code>6.0.0</code>, the fork detach; the
+inherited upstream tags are gone. A URL-based <code>copier copy</code> with no
+<code>--vcs-ref</code> therefore expands this fork's newest release, which is what
+the commands below rely on. Pass <code>--vcs-ref=6.0.0</code> (or any other release
+tag) only to pin an exact release.</p>
 </div>
 <p>This will:</p>
 <ul>
@@ -1873,11 +1872,11 @@ git<span class="w"> </span>add<span class="w"> </span>-A<span class="w"> </span>
 <p>Later updates: <code>copier update --trust</code> and review the diff (see
 <a href="../../how-to/update-template/">Update Template</a>).</p>
 <h2 id="if-you-have-a-skeleton-based-project">If you have a skeleton-based project<a class="headerlink" href="#if-you-have-a-skeleton-based-project" title="Permanent link">&para;</a></h2>
-<p>If you have a <a href="https://github.com/kasi-x/python3-pip-skeleton">python3-pip-skeleton</a> based project then it is best to adopt the <em>first</em> release of this template (the tag the fork detach creates, see the warning above), then <code>copier update</code> to get to the latest. This is because <code>copier update</code> will try and merge file changes across renames done between releases, while <code>copier copy</code> cannot. This looks like:</p>
-<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span>&lt;first-release-tag&gt;<span class="w"> </span>/path/to/existing-project
+<p>If you have a <a href="https://github.com/kasi-x/python3-pip-skeleton">python3-pip-skeleton</a> based project then it is best to adopt the <em>first</em> release of this template (<code>6.0.0</code>, the tag the fork detach creates), then <code>copier update</code> to get to the latest. This is because <code>copier update</code> will try and merge file changes across renames done between releases, while <code>copier copy</code> cannot. This looks like:</p>
+<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span><span class="m">6</span>.0.0<span class="w"> </span>/path/to/existing-project
 git<span class="w"> </span>diff
 <span class="c1"># Examine the changes, put back anything you want to keep</span>
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Adopt python-copier-template &lt;first-release-tag&gt;"</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Adopt python-copier-template 6.0.0"</span>
 uvx<span class="w"> </span>copier<span class="w"> </span>update<span class="w"> </span>/path/to/existing-project<span class="w"> </span>--trust
 git<span class="w"> </span>diff
 <span class="c1"># Examine the changes, resolve any merge conflicts</span>
@@ -1888,7 +1887,7 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 own files are protected, and <code>--skip</code> every file you want to keep that the
 template also ships (check the template's tree, or run <code>detect</code> — it lists
 them):</p>
-<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span>main<span class="w"> </span>--data<span class="w"> </span><span class="nv">existing_project</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>--trust<span class="w"> </span>--data<span class="w"> </span><span class="nv">existing_project</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--skip<span class="w"> </span>.github/workflows/ci.yml<span class="w"> </span>--skip<span class="w"> </span>renovate.json<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>/path/to/existing-project
 git<span class="w"> </span>diff
@@ -1902,7 +1901,7 @@ failure mode to expect — not a silent replacement.</p>
 <p>To add only the infrastructure (CI workflows, hygiene, quality tooling
 recipes) and keep your existing <code>README.md</code>, <code>LICENSE</code>, <code>pyproject.toml</code>
 and <code>.gitignore</code>, protect them with <code>--skip</code>:</p>
-<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span>main<span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>--trust<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>--skip<span class="w"> </span>README.md<span class="w"> </span>--skip<span class="w"> </span>LICENSE<span class="w"> </span>--skip<span class="w"> </span>pyproject.toml<span class="w"> </span>--skip<span class="w"> </span>.gitignore<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>/path/to/existing-project
 git<span class="w"> </span>diff

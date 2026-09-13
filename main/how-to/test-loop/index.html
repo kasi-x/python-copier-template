@@ -1674,9 +1674,11 @@ uv<span class="w"> </span>run<span class="w"> </span>mcp<span class="w"> </span>
 </tr>
 </tbody>
 </table>
-<p>Read <code>template_status</code> first: <code>commits_behind_latest_tag</code> is the trap where
-<code>copier copy</code> without <code>--vcs-ref</code> resolves an inherited tag that points at a
-long-abandoned ancestor.</p>
+<p>Read <code>template_status</code> first: <code>latest_tag</code> is the fork's own newest release —
+what a plain <code>copier copy</code> expands since the 6.0.0 detach — and
+<code>commits_behind_latest_tag</code> says how far the working tree has moved past it.
+That counter used to be a trap: before the detach the newest tag was an
+inherited pre-fork one pointing at a long-abandoned ancestor.</p>
 <p>Two implementation notes worth knowing before editing that file:</p>
 <ul>
 <li>A stdio MCP server's stdout <strong>is</strong> the protocol channel, and copier prints

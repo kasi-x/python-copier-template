@@ -1346,10 +1346,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#documented-generation-commands-must-pin-vcs-ref" class="md-nav__link">
+  <a href="#documented-generation-commands-must-run-without-vcs-ref" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Documented generation commands must pin <code>--vcs-ref</code>
+        Documented generation commands must run without <code>--vcs-ref</code>
       </span>
     </span>
   </a>
@@ -1743,10 +1743,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#documented-generation-commands-must-pin-vcs-ref" class="md-nav__link">
+  <a href="#documented-generation-commands-must-run-without-vcs-ref" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Documented generation commands must pin <code>--vcs-ref</code>
+        Documented generation commands must run without <code>--vcs-ref</code>
       </span>
     </span>
   </a>
@@ -1930,20 +1930,28 @@ the shell script — harmless. Verified by rendering with
 <p>The same lesson applies to answer-driven file protection: conditional
 presence is expressed on the FILE NAME (<code>{% if x %}name{% endif %}.jinja</code>),
 never by jinja in <code>_skip_if_exists</code> (config values are not rendered).</p>
-<h2 id="documented-generation-commands-must-pin-vcs-ref">Documented generation commands must pin <code>--vcs-ref</code><a class="headerlink" href="#documented-generation-commands-must-pin-vcs-ref" title="Permanent link">&para;</a></h2>
-<p>Every <code>copier copy</code> command we publish against the template URL passes
-<code>--vcs-ref=main</code> (or a deliberate release ref). Reason: copier checks out the
-<strong>latest git tag</strong> when <code>--vcs-ref</code> is absent, and this fork still carries
-inherited upstream tags — the newest of them (<code>5.4.0</code>) points at the old
-pre-fork DiamondLightSource template. Generating without the flag therefore
-silently asks the old questionnaire and renders the old files, which produced
-two real bug reports ("docs_type rejects zensical", "asks component_owner";
-see BUG.md — both were misdiagnosed twice before the tag mechanism was
-confirmed via <code>git show 5.4.0:copier.yml</code>).</p>
-<p>This stays a hard rule until the v1.0 fork detach re-tags the repository
-(TODO item 11). Enforced by <code>tests/test_generation_docs.py</code>, which scans the
-README and docs/tutorials fenced blocks for URL-based <code>copier copy</code> commands
-without a <code>--vcs-ref=</code> flag.</p>
+<h2 id="documented-generation-commands-must-run-without-vcs-ref">Documented generation commands must run without <code>--vcs-ref</code><a class="headerlink" href="#documented-generation-commands-must-run-without-vcs-ref" title="Permanent link">&para;</a></h2>
+<p>Every <code>copier copy</code> command we publish against the template URL runs with no
+<code>--vcs-ref</code>. Copier then checks out the repository's <strong>newest git tag</strong>, and
+since the 6.0.0 fork detach that tag is this fork's own release, so the plain
+command asks this questionnaire and renders these files. A revision is pinned
+only when the surrounding text says so — <code>--vcs-ref=6.0.0</code> to reproduce an
+exact older release — and <code>--vcs-ref=main</code> is never presented as required.</p>
+<p>The rule used to be the opposite, and the reason is worth keeping. Before the
+detach the newest tag (<code>5.4.0</code>) was inherited from the upstream
+DiamondLightSource template, so a flagless copy silently asked the <em>old</em>
+questionnaire and rendered the <em>old</em> files. That produced two real bug reports
+("docs_type rejects zensical", "asks component_owner"; see BUG.md — both were
+misdiagnosed twice before the tag mechanism was confirmed via
+<code>git show 5.4.0:copier.yml</code>), and the published commands pinned <code>--vcs-ref</code> to
+escape the trap. The detach removed the need.</p>
+<p>The one ref that stays pinned is <code>--vcs-ref=HEAD</code> (equivalently
+<code>tools/adopt.py --ref HEAD</code>), and it belongs only in this repository's own
+local-iteration docs: it expands the working tree, uncommitted changes
+included, so it describes how to test a template edit — never how a user
+generates a project. Enforced by <code>tests/test_generation_docs.py</code>, which
+renders a defaults copy with no ref and fails if the newest tag ever stops
+carrying this questionnaire.</p>
 <p>The same investigation pattern is worth reusing: when generation behaves
 differently between two invocations that look identical, print
 <code>Worker(...).template.config_data</code> from the Python API — it exposes which

@@ -1665,13 +1665,13 @@
 <p>Once you have followed the <a href=".././installation/">installation</a> tutorial, you can use <code>copier</code> to make a new project from the template:</p>
 <div class="highlight"><pre><span></span><code>git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
-uvx copier copy --trust --vcs-ref=main \
+uvx copier copy --trust \
     https://github.com/kasi-x/python-copier-template.git $_
 </code></pre></div>
-<p><code>--vcs-ref=main</code> asks for the current main branch. Without it copier checks
-out the <strong>latest git tag</strong>, and this repository still carries inherited
-upstream tags that point at the old, pre-fork template (they are re-tagged
-at the v1.0 fork detach).</p>
+<p>No <code>--vcs-ref</code> is needed: copier then expands this fork's <strong>newest release
+tag</strong>, and since the 6.0.0 fork detach that tag is the fork's own release.
+Pass <code>--vcs-ref=6.0.0</code> (or another release tag) only to pin an exact release
+and make the generation reproducible.</p>
 <p>This will:</p>
 <ul>
 <li>Ask some questions about the project to be created (each area first asks
