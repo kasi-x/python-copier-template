@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 741,
+      "collected": 771,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -20,6 +20,7 @@
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
         "tests/test_mcp_server.py": 26,
+        "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
         "tests/test_pyproject_merge.py": 16,
@@ -34,7 +35,7 @@
         "tests/test_witness_matrix.py": 210,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "e7b2c6428a6deac39fcc1b76561716165ae660e173b04197bbeb93c661ea12eb",
+      "ids_sha256": "b100c2c0d142099b0f3e808977003f95f3c893dd7045b07fee4938b301cfacd7",
       "wall_seconds": 47.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
@@ -86,7 +87,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 797,
+      "collected": 827,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -104,6 +105,7 @@
         "tests/test_machine_gate.py": 13,
         "tests/test_marker_drift.py": 8,
         "tests/test_mcp_server.py": 26,
+        "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
         "tests/test_pyproject_merge.py": 16,
@@ -118,7 +120,7 @@
         "tests/test_witness_matrix.py": 219,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "251fa5ad07a9f54d4605417315bf8a3f8b32bc5d3552032cb5c6babd97616476",
+      "ids_sha256": "506ade5a39127ec17f0d161a6d983f94af0c54b791917f90d351dc75795d741e",
       "wall_seconds": 138.9,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -127,7 +129,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta",
-      "collected": 741,
+      "collected": 771,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -143,6 +145,7 @@
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
         "tests/test_mcp_server.py": 26,
+        "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
         "tests/test_pyproject_merge.py": 16,
@@ -157,7 +160,7 @@
         "tests/test_witness_matrix.py": 210,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "e7b2c6428a6deac39fcc1b76561716165ae660e173b04197bbeb93c661ea12eb",
+      "ids_sha256": "b100c2c0d142099b0f3e808977003f95f3c893dd7045b07fee4938b301cfacd7",
       "wall_seconds": 50.3,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta\"",
