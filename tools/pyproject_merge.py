@@ -39,6 +39,7 @@ import argparse
 import json
 import re
 import tomllib
+from collections.abc import Iterable
 from dataclasses import dataclass
 from dataclasses import field
 from dataclasses import replace
@@ -130,21 +131,37 @@ def _to_poetry(requirement: str) -> tuple[str, str] | None:
     return match.group("name"), (match.group("spec").strip() or "*")
 
 
+def _hand_wiring_note(label: str, section: Any, entries: Iterable[str]) -> str:
+    """The note for a section whose shape the merge cannot add to.
+
+    A parseable but malformed file (`dependencies = "httpx"`, `= 5`) must be a
+    clean refusal - the append loop would otherwise raise AttributeError or
+    TypeError from inside the merge.
+    """
+    return f"{label} is not a list or table ({type(section).__name__}); add these by hand: {', '.join(sorted(entries))}"
+
+
 def _add_missing(
     target_section: Any,
     entries: list[str] | dict[str, str],
     result: MergeResult,
     section: str,
+    label: str | None = None,
 ) -> None:
     """Append requirements the target does not declare; record what was kept.
 
     Two container shapes: a PEP 621 array of requirement strings, or a table
     (`name = "spec"`) as Poetry writes it. Only names that are absent are
-    added, and a table key is never rewritten.
+    added, and a table key is never rewritten. A section with any other shape
+    (the file parsed, but the value is a string or an integer) is refused with
+    a note instead of raising from the middle of the append.
     """
     kept: list[str] = []
     added: list[str] = []
     if isinstance(entries, dict):
+        if not isinstance(target_section, dict):
+            result.notes.append(_hand_wiring_note(label or f"[{section}]", target_section, entries))
+            return
         present = {canonical(str(name)) for name in target_section}
         for name, value in entries.items():
             key = canonical(str(name))
@@ -155,6 +172,9 @@ def _add_missing(
             present.add(key)
             added.append(str(name))
     else:
+        if not isinstance(target_section, list):
+            result.notes.append(_hand_wiring_note(label or f"[{section}]", target_section, entries))
+            return
         present = {canonical(str(item)) for item in target_section}
         for entry in entries:
             key = canonical(entry)
@@ -171,7 +191,13 @@ def _add_missing(
 
 
 def _differing(target_section: Any, template: list[str]) -> list[str]:
-    """Names declared by both sides with a different requirement string."""
+    """Names declared by both sides with a different requirement string.
+
+    A section that is not an array has no comparable names (the caller has
+    already refused it with a note), so there is nothing to report.
+    """
+    if not isinstance(target_section, list):
+        return []
     declared = {canonical(str(item)): str(item) for item in target_section}
     out = []
     for entry in template:
@@ -190,7 +216,7 @@ def _merge_pep621(document: Any, source: dict[str, Any], result: MergeResult) ->
     if runtime:
         if "dependencies" not in project:
             project["dependencies"] = tomlkit.array()
-        _add_missing(project["dependencies"], runtime, result, "runtime")
+        _add_missing(project["dependencies"], runtime, result, "runtime", "[project] dependencies")
         result.differing += _differing(project["dependencies"], runtime)
     dev = template.get("dev", [])
     if dev:
@@ -201,7 +227,7 @@ def _merge_pep621(document: Any, source: dict[str, Any], result: MergeResult) ->
             result.notes.append("created [dependency-groups] to hold the dev dependencies")
         if "dev" not in groups:
             groups["dev"] = tomlkit.array()
-        _add_missing(groups["dev"], dev, result, "dev")
+        _add_missing(groups["dev"], dev, result, "dev", "[dependency-groups] dev")
         result.differing += _differing(groups["dev"], dev)
     optional = _requirements(source, "optional")
     if optional:
@@ -224,7 +250,7 @@ def _merge_poetry(document: Any, source: dict[str, Any], result: MergeResult) ->
     if translated["runtime"]:
         if "dependencies" not in poetry:
             poetry["dependencies"] = tomlkit.table()
-        _add_missing(poetry["dependencies"], translated["runtime"], result, "runtime")
+        _add_missing(poetry["dependencies"], translated["runtime"], result, "runtime", "[tool.poetry.dependencies]")
     if translated["dev"]:
         group = poetry.get("group", {}).get("dev", {})
         table = group.get("dependencies") if isinstance(group, dict) else None
@@ -233,7 +259,7 @@ def _merge_poetry(document: Any, source: dict[str, Any], result: MergeResult) ->
         if table is None:
             result.notes.append("no [tool.poetry.group.dev.dependencies]; dev dependencies not merged")
         else:
-            _add_missing(table, translated["dev"], result, "dev")
+            _add_missing(table, translated["dev"], result, "dev", "[tool.poetry.group.dev.dependencies]")
 
 
 def merge_dependencies(target_path: Path, source_path: Path, *, apply: bool = True) -> MergeResult:

@@ -265,3 +265,26 @@ def test_cli_reports_and_applies(tmp_path: Path, capsys: pytest.CaptureFixture[s
     # --tool-config adds the [tool.*] keys too
     assert pyproject_merge.main(["--target", str(target), "--source", str(source), "--tool-config"]) == 0
     assert "tool" not in tomllib.loads(target.read_text()), "SOURCE has no tool tables"
+
+
+def test_malformed_sections_are_refused_with_a_note(tmp_path: Path):
+    """A parseable but wrongly-shaped section is a refusal, not a crash.
+
+    `dependencies = "httpx"` reached the append loop as a tomlkit String
+    (AttributeError) and `dependencies = 5` as an Integer (TypeError); the
+    stateful adopt run reproduced both through the real driver, where they
+    surfaced as an internal error instead of a diagnosis.
+    """
+    source = write(tmp_path, "source.toml", SOURCE)
+
+    for malformed in ('[project]\nname = "x"\ndependencies = "httpx"\n', '[project]\nname = "x"\ndependencies = 5\n'):
+        target = write(tmp_path, "pyproject.toml", malformed)
+
+        result = pyproject_merge.merge_dependencies(target, source)
+
+        assert "runtime" not in result.added, f"the malformed section takes nothing: {malformed!r}"
+        assert any("by hand" in note for note in result.notes), result.notes
+        assert (
+            tomllib.loads(target.read_text())["project"]["dependencies"]
+            == tomllib.loads(malformed)["project"]["dependencies"]
+        ), "the malformed value is left as the adopter wrote it"

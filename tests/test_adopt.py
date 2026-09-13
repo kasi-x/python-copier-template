@@ -385,6 +385,11 @@ def test_merge_verification_detects_a_rewritten_requirement(tmp_path: Path):
     target.write_text("this is not toml\n")
     assert adopt.merge_problem(target, before), "an unparsable file is a merge problem"
 
+    # ... but only when it parsed *before*: the merge refuses to touch a file
+    # that never parsed, so blaming it there refused the whole adoption with a
+    # misleading message (found by the stateful adopt run).
+    assert adopt.merge_problem(target, b"this is not toml\n") is None, "the merge did not break it"
+
 
 def test_refuses_a_project_this_template_already_generated(tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/kasi-x/python-copier-template.git\n")

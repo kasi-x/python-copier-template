@@ -1067,18 +1067,22 @@ def merge_problem(target_pyproject: Path, before: bytes | None) -> str | None:
     """Why the merged pyproject is not acceptable, or None when it is.
 
     The merge may only add: every requirement that was declared before must
-    still be declared, unchanged, and the file must still parse.
+    still be declared, unchanged, and the file must still parse. A target that
+    did not parse *before* the merge is not the merge's fault - the merge
+    refuses to touch it and says so in its own note - so it is not a problem
+    here either (checking it in this order is what keeps a pre-broken file from
+    being reported as broken *by* the merge, which refused the whole adoption).
     """
     if before is None:
+        return None
+    try:
+        before_document = tomllib.loads(before.decode("utf-8"))
+    except tomllib.TOMLDecodeError:
         return None
     try:
         after_document = tomllib.loads(target_pyproject.read_text(encoding="utf-8"))
     except (tomllib.TOMLDecodeError, OSError) as exc:
         return f"the merged file does not parse: {exc}"
-    try:
-        before_document = tomllib.loads(before.decode("utf-8"))
-    except tomllib.TOMLDecodeError:
-        return None
     after = pyproject_merge.declared_values(after_document)
     for name, raw in pyproject_merge.declared_values(before_document).items():
         if name not in after:
