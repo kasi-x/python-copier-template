@@ -1024,6 +1024,8 @@
       
         
       
+        
+      
     
     
     
@@ -1266,6 +1268,33 @@
     
   
   Security & Compliance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/verification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Verification Architecture
 
     
   </span>
@@ -1525,6 +1554,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#if-the-run-is-killed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        If the run is killed
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#why-a-driver-and-not-just-copier-copy" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1598,12 +1638,82 @@
 
 
 <h1 id="how-to-adopt-the-template-into-an-existing-project">How to adopt the template into an existing project<a class="headerlink" href="#how-to-adopt-the-template-into-an-existing-project" title="Permanent link">&para;</a></h1>
-<p><code>tools/adopt.py</code> is the transactional driver: it plans the adoption, applies
-it, verifies what happened, and rolls back if anything it promised not to
-touch changed.</p>
+<p><code>tools/adopt.py</code> is the reversible driver: it plans the adoption, applies it,
+verifies what happened, and undoes what it did — whether it failed, was
+interrupted, or was killed outright.</p>
+<p>What that means precisely, because the word "transactional" alone overstates
+it:</p>
+<table>
+<thead>
+<tr>
+<th>How the run ends</th>
+<th>What the project looks like afterwards</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Verified and fitted</td>
+<td>The adoption, plus a note of what to wire by hand</td>
+</tr>
+<tr>
+<td>A failure at any point (a collision it did not skip, a merge that rewrote a line, an unexpected exception)</td>
+<td>Exactly as it was before the run, byte for byte, directories included; exit 1</td>
+</tr>
+<tr>
+<td>Ctrl-C / <code>SIGINT</code> / <code>SIGTERM</code> mid-run</td>
+<td>The same rollback, from a signal handler; exit 1</td>
+</tr>
+<tr>
+<td><code>SIGKILL</code>, a crash, or a power cut</td>
+<td>Whatever the process had written stays on disk <strong>with its journal</strong>; <code>--recover</code> puts the project back exactly as it was (see <a href="#if-the-run-is-killed">If the run is killed</a>)</td>
+</tr>
+</tbody>
+</table>
 <div class="highlight"><pre><span></span><code>task<span class="w"> </span>adopt<span class="w"> </span><span class="nv">DIR</span><span class="o">=</span>/path/to/project<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--dry-run"</span><span class="w">   </span><span class="c1"># plan only</span>
 task<span class="w"> </span>adopt<span class="w"> </span><span class="nv">DIR</span><span class="o">=</span>/path/to/project<span class="w">                        </span><span class="c1"># plan, then apply</span>
+task<span class="w"> </span>adopt<span class="w"> </span><span class="nv">DIR</span><span class="o">=</span>/path/to/project<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--recover"</span><span class="w">   </span><span class="c1"># undo a killed run</span>
 </code></pre></div>
+<h2 id="if-the-run-is-killed">If the run is killed<a class="headerlink" href="#if-the-run-is-killed" title="Permanent link">&para;</a></h2>
+<p>Nothing the driver writes is unrecoverable. Before it changes the first byte
+of your project it writes a journal — <code>.copier-adopt-journal.json</code>, inside the
+target — holding the old bytes of every file the run may modify and the path
+of every file it may create, and <code>fsync</code>s it and its directory. The journal is
+removed only when the run has committed or been rolled back, so finding one
+means the run it describes did not finish: the project is in a state nobody
+chose, and a new adoption refuses to start over it (exit 4) rather than
+building on an accident. A <code>--dry-run</code> refuses too — a plan built from that
+state would be a plan about an accident.</p>
+<div class="highlight"><pre><span></span><code>task<span class="w"> </span>adopt<span class="w"> </span><span class="nv">DIR</span><span class="o">=</span>/path/to/project<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--recover"</span>
+<span class="c1"># or, directly:</span>
+python<span class="w"> </span>tools/adopt.py<span class="w"> </span>/path/to/project<span class="w"> </span>--recover
+</code></pre></div>
+<p>Recovery puts the recorded old bytes back, deletes every file that was not
+there before the run, removes the directories it created, and removes the
+journal last. It is idempotent: running it when the tree already matches
+rewrites nothing, and running it with no journal at all does nothing — both
+exit 0, so a retry is always safe. <code>--json</code> prints the result (<code>found</code>,
+<code>applied</code>, <code>restored</code>, <code>removed</code>) instead of the report.</p>
+<div class="highlight"><pre><span></span><code><span class="gp">$ </span>python<span class="w"> </span>tools/adopt.py<span class="w"> </span>/path/to/project<span class="w"> </span>--recover
+<span class="go">target:  /path/to/project</span>
+<span class="go">journal: /path/to/project/.copier-adopt-journal.json</span>
+<span class="go">recovered: 1 file(s) restored, 45 removed</span>
+<span class="go">  nothing of the interrupted run is left; adopt again when you are ready</span>
+
+<span class="gp">$ </span>python<span class="w"> </span>tools/adopt.py<span class="w"> </span>/path/to/project<span class="w"> </span>--recover<span class="w">      </span><span class="c1"># nothing left to do</span>
+<span class="go">target:  /path/to/project</span>
+<span class="go">journal: /path/to/project/.copier-adopt-journal.json</span>
+<span class="go">nothing to recover: this project has no journal</span>
+<span class="go">  no journal: nothing to recover</span>
+</code></pre></div>
+<p><code>--recover</code> exits 0 when it recovered something or found nothing to recover,
+and 2 when the journal is there but cannot be used (unreadable, or written by
+a run in another project — the refusal names which). It never deletes a journal
+it cannot read, because one that is unreadable was written before the project
+was touched: if nothing has changed since, deleting it by hand is safe.</p>
+<p>The one thing the journal cannot cover is the instant of the commit itself:
+the run deletes the journal without flushing the rendered files to disk, so a
+power cut in that same instant can lose <em>new</em> content. Every crash before that
+point is recovered exactly; the commit is the last thing that happens.</p>
 <h2 id="why-a-driver-and-not-just-copier-copy">Why a driver and not just <code>copier copy</code><a class="headerlink" href="#why-a-driver-and-not-just-copier-copy" title="Permanent link">&para;</a></h2>
 <p>Three failure modes, all measured against copier 9.18.1:</p>
 <table>
@@ -1638,7 +1748,8 @@ task<span class="w"> </span>adopt<span class="w"> </span><span class="nv">DIR</s
    file <em>and</em> directory sets. If anything did, the originals are restored,
    everything the run created is deleted (empty directories included), and the
    command exits 1 reporting what happened. A failed adoption leaves the
-   project exactly as it was.</li>
+   project exactly as it was; a run that ends any other way leaves the journal
+   for <a href="#if-the-run-is-killed">recovery</a>.</li>
 <li><strong>The right revision</strong>: <code>ref</code> is the latest tag <em>only if that tag declares
    the same questions as this checkout</em>; otherwise the default branch is used
    and the report says why ("latest tag 5.4.0 does not carry this
@@ -1846,14 +1957,20 @@ FAILED: InteractiveSessionError: Interactive session required: Consider using `-
 <td>Do not merge anything into the files you already have.</td>
 </tr>
 <tr>
+<td><code>--recover</code></td>
+<td>Undo an interrupted run from its journal; exits 0 when there is nothing to undo. Refused with <code>--dry-run</code>.</td>
+</tr>
+<tr>
 <td><code>--json</code></td>
 <td>Machine-readable result, including <code>created</code>, <code>unchanged</code>, <code>restored</code>, <code>removed</code>.</td>
 </tr>
 </tbody>
 </table>
-<p>Exit codes: <code>0</code> adopted (or a clean dry run), <code>1</code> failed and rolled back, <code>2</code>
-invalid request (already generated by this template, not a directory),
-<code>3</code> refused (foreign template without <code>--takeover</code>).</p>
+<p>Exit codes: <code>0</code> adopted (or a clean dry run, or a recovery that had nothing to
+do), <code>1</code> failed and rolled back (a signal included), <code>2</code> invalid request
+(already generated by this template, not a directory, an unusable journal),
+<code>3</code> refused (foreign template without <code>--takeover</code>), <code>4</code> a previous run left
+its journal behind — recover it first.</p>
 <p>The same operation is available over MCP as <code>adopt_project</code>
 (<a href="../test-loop/">Check a Change Without the Full Suite</a>), where <code>dry_run</code>
 defaults to <code>true</code> and a failed adoption raises rather than returning a

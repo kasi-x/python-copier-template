@@ -1024,6 +1024,8 @@
       
         
       
+        
+      
     
     
     
@@ -1266,6 +1268,33 @@
     
   
   Security & Compliance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/verification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Verification Architecture
 
     
   </span>
@@ -1525,6 +1554,39 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-cost-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The cost ledger
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-tiers-cost-in-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What the tiers cost in CI
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ergonomic-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ergonomic flags
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#investigating-one-combination" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1576,45 +1638,141 @@
 
 
 <h1 id="how-to-check-a-change-without-running-the-full-suite">How to check a change without running the full suite<a class="headerlink" href="#how-to-check-a-change-without-running-the-full-suite" title="Permanent link">&para;</a></h1>
-<p>Three speeds are available, from "did this one combination render" to "is
+<p>Four speeds are available, from "did this one combination render" to "is
 everything still green". Pick by what you changed.</p>
 <table>
 <thead>
 <tr>
-<th>Check</th>
+<th>Tier</th>
 <th>Command</th>
-<th>Wall time (measured, 16-core, warm caches)</th>
+<th>Tests</th>
+<th>Wall time (16-core, warm caches)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>One request</td>
-<td><code>task batch CLI_ARGS="--only web-api --prepare --shell"</code></td>
-<td>~2s</td>
-</tr>
-<tr>
-<td>Fast tier</td>
+<td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td>~17s</td>
+<td>717</td>
+<td>~33s</td>
 </tr>
 <tr>
-<td>Full suite</td>
+<td>Slow</td>
+<td><code>task test-slow</code></td>
+<td>5</td>
+<td>~72s</td>
+</tr>
+<tr>
+<td>Pre-push / nightly</td>
+<td><code>task test-heavy</code></td>
+<td>43</td>
+<td>~29s</td>
+</tr>
+<tr>
+<td>Everything</td>
 <td><code>task test</code></td>
-<td>~37s (≈110s cold)</td>
+<td>765</td>
+<td>~139s</td>
 </tr>
 </tbody>
 </table>
-<p>The full suite's cost is concentrated in a handful of tests that build a
-virtualenv and install dependencies (<code>uv sync</code>) per case — <code>pytest
---durations=25</code> on this repository puts <code>test_template_defaults</code> (24s),
-<code>test_template_include_scraping_runs</code> (21s) and
-<code>test_template_web_api_runs_in_process</code> (16s) at the top, all in
-<code>tests/test_example.py</code>. <code>task test-fast</code> skips those two files entirely
-(<code>test_example.py</code>, <code>test_generated_typecheck.py</code>); everything else — the
-structure/machine-gate/QA checks, the render-and-lint matrix, this
-repository's own tooling tests — still runs, so a template edit is still
-covered by the render matrix.</p>
-<p>Use <code>task test-heavy</code> for just the slow tier before pushing.</p>
+<p>Those times are the lightest of the runs measured on 2026-09-14 with
+<code>time uv run --no-sync pytest -q -m "&lt;the task's own selection&gt;"</code>; four test
+runs sharing the same 16 cores roughly doubled every one of them, and a cold
+<code>.cache/renders</code> (the first run after changing the template) turned <code>task test</code>
+into 337s. That spread is why the budget is the contract and the number is only
+an observation — <code>tests/matrix/tiers.json</code> holds the measurement each row came
+from.</p>
+<p>The tiers are a contract, not a habit: each one is a marker expression the
+Taskfile passes to pytest, and a check that belongs to a tier only if its cost
+does. <a href="../../explanations/verification/">Verification</a> states the three layers
+(L1 input space, L2 render invariants, L3 execution), the edit-loop budget
+(<strong>30s</strong>) and where a new check belongs; this page is the practical side.</p>
+<ul>
+<li><code>task test-fast</code> runs <code>-m "not heavy and not slow"</code>: everything that neither
+  builds a virtualenv nor touches the network, minus the serial batch runner.
+  That is the whole edit loop and what CI runs on every push and PR. It does
+  <strong>not</strong> exclude <code>tests/test_example.py</code> — 112 of that file's 135 tests run;
+  the 23 that build a venv are marked <code>heavy</code>. <code>tests/test_generated_typecheck.py</code>
+  is excluded in practice, because all 6 of its tests are <code>heavy</code>.</li>
+<li><code>task test-slow</code> runs <code>-m slow</code>: the serial 205-leaf witness batch runner
+  (<code>tests/test_witness_matrix.py::test_witness_batch_runner_executes_every_leaf</code>,
+  the one test the edit loop cannot afford) and the four <code>copier update</code> cases.
+  Neither builds a venv; both are far too slow for the edit loop.</li>
+<li><code>task test-heavy</code> runs <code>-m heavy</code>: builds a venv (<code>uv sync</code>) in a rendered
+  project, plus the generated project's own checks. Run it before pushing a
+  template change that touches dependencies, task runners or CI; the nightly
+  <code>ci.yml</code> run is what guarantees it.</li>
+<li><code>task test</code> runs everything with coverage (see
+  <a href="../coverage/">Coverage</a>); it is the pre-release gate, not the edit loop.</li>
+</ul>
+<h2 id="the-cost-ledger">The cost ledger<a class="headerlink" href="#the-cost-ledger" title="Permanent link">&para;</a></h2>
+<p><code>tests/matrix/tiers.json</code> records, per tier task, the marker expression that
+task runs, the node ids it collected, and the wall time a human measured for
+it. It is JSON, next to the other machine-checked artifacts in
+<code>tests/matrix/</code> (<code>witnesses.jsonl</code>, <code>witnesses.json</code>), rather than a table in
+this page: a test has to read it, and a table a test parses is a machine
+format with worse tooling. The prose stays here; the numbers live there.</p>
+<p><code>tests/test_marker_drift.py</code> re-collects each tier (collection only, no
+test runs) and fails when a tier no longer collects what the ledger says, so a
+test cannot change tiers silently; the same file fails when a test builds a
+venv or touches the network without <code>heavy</code> / <code>network</code>, which is what would
+otherwise leak a 20-second case into the edit loop unnoticed.</p>
+<p>After a deliberate tier change, re-record the collected sets and then the
+counts on this page:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">UPDATE_TIERS</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--no-sync<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>tests/test_marker_drift.py
+</code></pre></div>
+<p>The command rewrites the sets but leaves <code>wall_seconds</code> / <code>measured</code> alone,
+because a wall time is a measurement, not a projection: fill those in from a
+<code>time</code> run of that tier's own selection, e.g.</p>
+<div class="highlight"><pre><span></span><code><span class="nb">time</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--no-sync<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not heavy and not slow"</span>
+</code></pre></div>
+<p>on an otherwise idle machine. The counts in the table above are the ledger's
+(the check fails if the two disagree); the times are the measurements recorded
+with them.</p>
+<h2 id="what-the-tiers-cost-in-ci">What the tiers cost in CI<a class="headerlink" href="#what-the-tiers-cost-in-ci" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Event</th>
+<th>Tier</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ci.yml</code> (<code>_test.yml</code>)</td>
+<td>push / PR</td>
+<td><code>task test-fast</code></td>
+</tr>
+<tr>
+<td><code>ci.yml</code> (nightly)</td>
+<td>schedule</td>
+<td><code>task test-heavy</code></td>
+</tr>
+<tr>
+<td><code>witness.yml</code> (fast)</td>
+<td>PR</td>
+<td><code>pytest -q tests/test_witness_matrix.py -m fast</code> — renders every leaf, no venv</td>
+</tr>
+<tr>
+<td><code>witness.yml</code> (full)</td>
+<td>schedule / manual</td>
+<td><code>pytest -q tests/test_witness_matrix.py -m full</code> — the 8-leaf venv sample plus the batch runner</td>
+</tr>
+</tbody>
+</table>
+<p>The witness tiers are the <a href="../../explanations/verification/">W3 matrix</a>: <code>fast</code>
+renders all 205 leaves and checks the artifacts each one declares, <code>full</code> runs
+<code>uv sync</code> on a bounded sample. <code>-m full</code> tests also carry <code>heavy</code>, so a local
+<code>task test-heavy</code> includes the sample.</p>
+<h2 id="ergonomic-flags">Ergonomic flags<a class="headerlink" href="#ergonomic-flags" title="Permanent link">&para;</a></h2>
+<p><code>task test-fast</code> forwards extra arguments, which is how the loop stays short:</p>
+<div class="highlight"><pre><span></span><code>task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--lf"</span><span class="w">            </span><span class="c1"># only what failed last time</span>
+task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"-x"</span><span class="w">              </span><span class="c1"># stop at the first failure</span>
+task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--durations=25"</span><span class="w">  </span><span class="c1"># where the time goes</span>
+task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"tests/test_example.py -k web_api"</span>
+</code></pre></div>
 <h2 id="investigating-one-combination">Investigating one combination<a class="headerlink" href="#investigating-one-combination" title="Permanent link">&para;</a></h2>
 <p><code>tools/batch.py</code> renders real projects from a JSONL request list
 (<a href="../batch/">Run a Batch of Generation Requests</a>). For investigation, run a
@@ -1698,6 +1856,8 @@ server binds to localhost, so a publicly bound server would otherwise accept
 any <code>Host</code> header.</p>
 <h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
 <ul>
+<li><a href="../../explanations/verification/">Verification</a> — the layers, the tier
+  budgets and how the suite is meant to grow.</li>
 <li><a href="../batch/">Run a Batch of Generation Requests</a> — the request format.</li>
 <li><a href="../detect/">Inspect a Target Before Applying the Template</a> — the mode and
   collision report in detail.</li>
