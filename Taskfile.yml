@@ -32,8 +32,12 @@ tasks:
     desc: 'Run the tests that neither build a venv nor touch the network (edit loop)'
     cmd: >-
       uv run --locked pytest -q
-      -m "not heavy"
+      -m "not heavy and not slow"
       {{ .CLI_ARGS }}
+
+  test-slow:
+    desc: 'Run the slow tier: the serial 205-leaf witness batch runner (~2 min)'
+    cmd: uv run --locked pytest -q -m slow {{ .CLI_ARGS }}
 
   test-heavy:
     desc: 'Run only the tests that build a venv / install deps (pre-push tier)'
