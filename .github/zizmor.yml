@@ -21,8 +21,18 @@
 #     established local-reusable-workflow form here and in generated
 #     projects; zizmor v1.30's `$/...` suggestion is cosmetic for this
 #     repository layout.
+#   - adhoc-packages on quint.yml: the Quint models' checker is installed at
+#     an exact npm version (`@informalsystems/quint@0.32.0`, the version the
+#     models in models/ were verified with). A lockfile would vendor a
+#     ~79-package dependency tree to re-pin on every quint bump; the exact
+#     pin leaves no version range for the audit's drift concern.
 
 rules:
+  adhoc-packages:
+    ignore:
+      # quint.yml installs @informalsystems/quint@0.32.0 (exact version, no
+      # range); see the note at the top of this file.
+      - quint.yml
   unpinned-uses:
     ignore:
       # _pypi.yml uses pypa/gh-action-pypi-publish@release/v1 (upstream's
