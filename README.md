@@ -179,10 +179,6 @@ flowchart TD
     `test/` sample files (`oj` for AtCoder / yukicoder, `acc` for AtCoder
     contests, `aoj-cli` for AOJ; LeetCode is solved in its own editor)
 - **script** — a minimal script, flat package at the repo root
-- **web_django** — *not supported*: selecting it aborts generation with a
-  pointer to FastAPI / Litestar / Flask and the upstream
-  [cookiecutter-django](https://github.com/cookiecutter/cookiecutter-django)
-  (see the [web-api how-to](https://kasi-x.github.io/python-copier-template/main/how-to/web-api.html))
 - **ros2** — a ROS 2 package (`ament_python` with rclpy, or `ament_cmake`
   with C++), built with **colcon + rosdep**. Choose **Humble** (Ubuntu
   22.04 / Python 3.10, recommended for its wide deployment) or **Jazzy**
@@ -445,8 +441,8 @@ uvx copier copy --trust \
     https://github.com/kasi-x/python-copier-template.git $_
 ```
 
-(`--trust` is required: the template uses
-post-generation tasks (the web_django guard and the REUSE `LICENSES/` copy).
+(`--trust` is required: the template uses post-generation tasks (the
+adoption report, the next-steps hint and the REUSE `LICENSES/` copy).
 Without it copier refuses to generate anything and exits with status 4.)
 
 ### Non-interactive mode

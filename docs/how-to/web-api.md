@@ -12,9 +12,12 @@ large framework with its own ecosystem (ORM, migrations, admin, auth, Celery,
 mail handling, ...) that would be a second project to maintain on top of this
 one — the template's questionnaire and generated files would roughly double.
 
-If you select the `web_django` project type, generation **aborts** with a
-message pointing you to the alternatives below (FastAPI / Litestar / Flask, or
-upstream cookiecutter-django).
+Django is not one of the `project_type` choices at all: `copier` rejects it
+before anything is written (`Invalid choice for 'project_type'`), and this
+template's web work is API-only. For a Django project, use
+[upstream cookiecutter-django](https://github.com/cookiecutter/cookiecutter-django);
+for a Python API, use this template's `web_api` type, or FastAPI / Litestar /
+Flask on a `library` scaffold.
 
 ## What a web_api project includes
 

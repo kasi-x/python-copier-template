@@ -1,0 +1,6 @@
+# A competitive-programming workspace for AtCoder: a bare tree driven with
+# oj + acc. oj_category is what makes the judge choices available; oj_kind
+# picks AtCoder among them.
+project_type: online_judge
+oj_category: competitive_coding
+oj_kind: atcoder

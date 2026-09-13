@@ -34,9 +34,6 @@ project_type:
           rules for AI coding agents differ per judge, which decides
           whether an AGENTS.md file is generated.
         - script: a minimal script, no package layout.
-        - web_django: NOT supported. Selecting this aborts generation —
-          Django is not maintained by this template; use FastAPI /
-          Litestar / Flask, or the upstream cookiecutter-django instead.
         - ros2: a ROS 2 package (ament_python or ament_cmake). Built with
           colcon + rosdep; not a uv/pixi/poetry project.
         - micropython: MicroPython firmware for a microcontroller (esp32,
@@ -50,7 +47,6 @@ project_type:
         - data_science
         - online_judge
         - script
-        - web_django
         - ros2
         - micropython
     default: library
@@ -104,9 +100,6 @@ _skip_if_exists:
     - CHANGELOG.md
 
 _tasks:
-    - command: >-
-        python -c "import sys; print('Django is not supported by this template. Use FastAPI / Litestar / Flask instead, or the upstream cookiecutter-django template: https://github.com/cookiecutter/cookiecutter-django'); sys.exit(1)"
-      when: "{{ project_type == 'web_django' }}"
     - command: >-
         python -c "print('Adopt mode: your own files (README.md, LICENSE, pyproject.toml, .gitignore, .python-version, src/tests) were protected and not touched.'); print('Added infrastructure: .github/workflows, .gitleaks.toml, renovate.json, AGENTS.md and more — see git status.'); print('Wire the tooling into your own pyproject.toml, e.g.: uv add --dev ruff pytest pytest-cov typos deptry vulture basedpyright'); print('Task entry points to copy: see justfile / Taskfile.yml.'); print('Files the template also ships (.github/workflows/ci.yml, renovate.json, cliff.toml, ...) are replaced unless you passed --skip <path>; git diff shows exactly what changed.'); print('Update later with: uvx copier update --trust --defaults')"
       when: "{{ existing_project }}"

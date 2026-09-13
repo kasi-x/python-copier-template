@@ -47,8 +47,6 @@ questions depend on it.
   - **`oj_allow_ai`** (bool; default no) — Is AI assistance (coding agents, code completion) allowed
     for this judge?
 - **script** — a minimal script, no package layout.
-- **web_django** — NOT supported. Selecting this aborts generation — Django is not maintained by
-  this template; use FastAPI / Litestar / Flask, or the upstream cookiecutter-django instead.
 - **ros2** — a ROS 2 package (ament_python or ament_cmake). Built with colcon + rosdep; not a
   uv/pixi/poetry project.
   Questions asked when this is the base type:
@@ -94,9 +92,10 @@ existing type, or out of scope:
   separate-repo concern.
 - **Ansible / Terraform / Kubernetes** — separate-repo concerns, not Python
   projects. IaC lives beside the app, not in this template.
-- **Django** — see `web_django` above and [the web-api
-  how-to](../how-to/web-api.md): FastAPI / Litestar / Flask, or upstream
-  cookiecutter-django.
+- **Django** — no `project_type` of its own: `web_api` (FastAPI / Litestar /
+  Flask) is the Python API type, and Django itself belongs to
+  [upstream cookiecutter-django](https://github.com/cookiecutter/cookiecutter-django)
+  — see [the web-api how-to](../how-to/web-api.md).
 - **SRE** — scoped to `web_api` hardening: non-root runtime user,
   read-only root filesystem, resource limits, `/health` probes. No
   separate observability questionnaire (metrics are the three web_api

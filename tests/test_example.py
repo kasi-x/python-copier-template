@@ -1552,10 +1552,11 @@ def test_bad_repo_name(tmp_path: Path):
         copy_project(tmp_path, repo_name="bad:thing")
 
 
-def test_django_not_supported_aborts(tmp_path: Path):
-    # Selecting the web_django project type must abort generation with a
-    # pointer to the alternatives, instead of generating a project.
-    with pytest.raises(Exception, match="Django is not supported"):
+def test_django_is_not_a_project_type(tmp_path: Path):
+    # The web_django trap choice is gone: selecting it used to render and then
+    # abort from a post-generation task, and it is now rejected before
+    # anything is written.
+    with pytest.raises(ValueError, match="Invalid choice for 'project_type'"):
         copy_project(tmp_path, project_type="web_django")
 
 

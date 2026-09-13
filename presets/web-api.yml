@@ -1,0 +1,4 @@
+# A FastAPI / Litestar / Flask service (the web-api gate's recommended
+# settings: prometheus, rate limiting, CORS). Not available: Django --
+# selecting it used to abort generation, and it is no longer a choice.
+project_type: web_api

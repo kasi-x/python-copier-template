@@ -1,0 +1,4 @@
+# A ROS 2 package (ament_python + rclpy, Humble, apt toolchain). The
+# ros2-specific follow-ups keep their defaults: override pkg_language /
+# ros_distro / ros2_package_manager to change them.
+project_type: ros2

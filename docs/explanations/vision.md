@@ -70,9 +70,10 @@ Saying no explicitly is part of the pitch — a template that tries to be
 everyone's best option for everything becomes no one's best option for
 anything. Concretely, out of scope:
 
-- **Full-stack web apps.** `project_type: web_django` aborts generation on
-  purpose and points to `cookiecutter-django` and upstream FastAPI/Litestar
-  docs instead. `web_api` stays deliberately API-only.
+- **Full-stack web apps.** Django is not a `project_type` at all (the choice
+  never renders; it only pointed at `cookiecutter-django`). The how-to names
+  FastAPI / Litestar / Flask and upstream `cookiecutter-django` as the
+  alternatives. `web_api` stays deliberately API-only.
 - **Auth, admin UIs, task queues baked into `web_api`.** Documented as
   "add later"; the recommended-settings gate for `web_api` is three switches
   (Prometheus, rate limiting, CORS), not a catalogue.

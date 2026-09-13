@@ -1,0 +1,4 @@
+# A plain reusable Python library: src/ layout, uv + just, docs on
+# (the recommended path). The family question is all this preset answers;
+# every other question keeps its copier default.
+project_type: library

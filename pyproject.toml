@@ -7,6 +7,9 @@ name = "python-copier-template"
 dynamic = ["version"]
 requires-python = ">=3.11"
 
+[project.scripts]
+python-copier-template = "tools.cli:main"
+
 [dependency-groups]
 dev = [
     "basedpyright>=1.39.9,<1.40",
@@ -37,13 +40,14 @@ dev = [
 [tool.setuptools]
 # This repo is the copier template itself, not a library: there is no
 # importable Python at the root (generation no longer needs custom Jinja
-# extensions). Explicitly list nothing so setuptools does not try
-# flat-layout auto-discovery and trip over site/ (docs build output)
-# or template/ (the copier source tree) when editable-installing under xdist.
-# (tools/ is a script directory without __init__.py; tests import it via
-# an explicit sys.path hook in tests/test_qa.py.)
+# extensions). `tools` is listed explicitly so the `python-copier-template`
+# entry point resolves in an installed environment (tools/ is a namespace
+# package: it has no __init__.py, and tests import it via the explicit
+# sys.path hook in tests/test_qa.py). Nothing else is listed: flat-layout
+# auto-discovery would trip over site/ (docs build output) and template/
+# (the copier source tree) when editable-installing under xdist.
 py-modules = []
-packages = []
+packages = ["tools"]
 
 [tool.setuptools_scm]
 

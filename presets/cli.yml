@@ -1,0 +1,2 @@
+# A command-line application: a library-style package plus a console script.
+project_type: cli
