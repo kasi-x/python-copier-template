@@ -43,6 +43,13 @@ tasks:
     desc: 'Run only the tests that build a venv / install deps (pre-push tier)'
     cmd: uv run --locked pytest -q -m heavy {{ .CLI_ARGS }}
 
+  test-randomly:
+    desc: >-
+      Run the edit-loop selection in a shuffled order (nightly seed job; the
+      plugin is disabled everywhere else by addopts' -p no:randomly). The seed
+      is random per run and printed in the pytest header for reproduction.
+    cmd: uv run --locked pytest -q -p randomly -m "not heavy and not slow and not meta" {{ .CLI_ARGS }}
+
   test-meta:
     desc: "Run the cost ledger's own guards (marker scan, tier membership, stale measurements)"
     cmd: uv run --locked pytest -q -m meta {{ .CLI_ARGS }}

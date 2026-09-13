@@ -51,6 +51,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tomllib
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -81,7 +82,7 @@ pytestmark = pytest.mark.meta
 # The tier tasks of Taskfile.yml. The marker expression each one runs is read
 # back from the Taskfile, so the ledger cannot claim a selection the task does
 # not use; a renamed or removed task fails the ledger check on purpose.
-TIER_TASKS = ("test-fast", "test-slow", "test-heavy", "test-meta", "test")
+TIER_TASKS = ("test-fast", "test-slow", "test-heavy", "test-randomly", "test-meta", "test")
 
 # The witness tiers of .github/workflows/witness.yml, as ledger name -> job
 # name. They are not Taskfile tasks: the job runs its pytest command itself, so
@@ -450,6 +451,25 @@ def _unmarked_work() -> list[str]:
 def _names(markers: set[str]) -> str:
     """The missing markers, in the order the tiers read them."""
     return ", ".join(name for name in (MARKER_HEAVY, MARKER_NETWORK) if name in markers)
+
+
+def test_the_randomized_tier_is_the_only_place_the_plugin_pays() -> None:
+    """pytest-randomly is installed but inert everywhere except `task test-randomly`.
+
+    The plugin is a dev dependency for the nightly seed job alone (TODO §24.3,
+    §27.4: conditional adopt, the edit loop must not pay for the reshuffle), so
+    the addopts block it globally and exactly one task re-enables it on its own
+    command line (later `-p` arguments unblock earlier `no:` ones). If a second
+    task starts paying for it, that is a tier-budget change and belongs in the
+    ledger deliberately.
+    """
+    addopts = tomllib.loads((TOP / "pyproject.toml").read_text(encoding="utf-8"))["tool"]["pytest"]["ini_options"][
+        "addopts"
+    ]
+    assert "-p no:randomly" in addopts, "addopts must keep the randomly plugin inert by default"
+    tasks = yaml.safe_load(TASKFILE.read_text(encoding="utf-8"))["tasks"]
+    payers = [name for name, task in tasks.items() if "-p randomly" in str(task.get("cmd", ""))]
+    assert payers == ["test-randomly"], f"only the nightly seed task may re-enable the plugin, found: {payers}"
 
 
 def test_venv_and_network_work_carries_the_markers_that_keep_it_out_of_the_edit_loop() -> None:

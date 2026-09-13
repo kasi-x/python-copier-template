@@ -1,16 +1,18 @@
 # How to check a change without running the full suite
 
-Four speeds are available, from "did this one combination render" to "is
-everything still green". Pick by what you changed; the last row is not a speed
-but the cost ledger's own guard, and it stays outside the loop.
+Five speeds are available, from "did this one combination render" to "is
+everything still green". Pick by what you changed; the last two rows are not
+speeds to pick by what you changed: one is the nightly randomized-order run and
+the other is the cost ledger's own guard, and both stay outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
 | Edit loop | `task test-fast` | 741 | ~47s † |
 | Slow | `task test-slow` | 5 | ~72s |
 | Pre-push / nightly | `task test-heavy` | 43 | ~29s |
-| Everything | `task test` | 796 | ~139s |
-| Cost ledger guard | `task test-meta` | 7 | ~11s † |
+| Nightly, shuffled | `task test-randomly` | 741 | ~50s |
+| Everything | `task test` | 797 | ~139s |
+| Cost ledger guard | `task test-meta` | 8 | ~11s † |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
 it is the cost ledger's own guard (`tests/test_marker_drift.py`) split out of
@@ -46,9 +48,17 @@ does. [Verification](../explanations/verification.md) states the three layers
   which check that expensive work carries its markers, that every tier still
   collects what `tests/matrix/tiers.json` records, and that no recorded wall
   time is older than 30 days. They are not part of the edit loop because the
-  membership check re-collects every tier in its own pytest session (six
+  membership check re-collects every tier in its own pytest session (seven
   startups); `ci.yml` runs them as its own job. They are also part of
   `task test`, so the pre-release gate still runs them.
+- `task test-randomly` runs the edit-loop selection again with pytest-randomly
+  active (`-p randomly`): the same 741 tests in a freshly shuffled order, so
+  order dependence and shared state surface in the nightly run instead of in
+  someone's local loop. The plugin is a dev dependency but stays disabled
+  everywhere else — `addopts` carries `-p no:randomly`, and this task is the
+  only command line that re-enables it — so no other tier pays for the
+  reshuffle (TODO §24.3 / §27.4: conditional adopt, nightly seed job only).
+  Each run's seed is random and printed in the pytest header for reproduction.
 - `task test-slow` runs `-m slow`: the serial 205-leaf witness batch runner
   (`tests/test_witness_matrix.py::test_witness_batch_runner_executes_every_leaf`,
   the one test the edit loop cannot afford) and the four `copier update` cases.
@@ -108,8 +118,9 @@ disagree); the times are the measurements recorded with them.
 | Workflow | Event | Tier |
 | --- | --- | --- |
 | `ci.yml` (`_test.yml`) | push / PR | `task test-fast` — the edit loop |
-| `ci.yml` (`_test.yml`) | push / PR | `task test-meta` — the ledger's own guard, its own job so the edit loop does not pay for six extra pytest startups |
+| `ci.yml` (`_test.yml`) | push / PR | `task test-meta` — the ledger's own guard, its own job so the edit loop does not pay for seven extra pytest startups |
 | `ci.yml` (nightly) | schedule | `task test-heavy` |
+| `ci.yml` (nightly) | schedule | `task test-randomly` — the edit-loop selection in a shuffled order (pytest-randomly), the seed job the plugin is kept installed for |
 | `witness.yml` (fast) | PR (except docs-only) | `pytest -q tests/test_witness_matrix.py -m fast` — renders every leaf, no venv: 210 tests (205 renders plus five leaf-list checks), 39 s locally with the render cache emptied, against the job's 30-minute timeout |
 | `witness.yml` (full) | schedule / manual | `pytest -q tests/test_witness_matrix.py -m full` — the 8-leaf venv sample plus the batch runner |
 

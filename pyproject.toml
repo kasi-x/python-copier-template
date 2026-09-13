@@ -26,6 +26,7 @@ dev = [
     "pytest>=9.1.1,<9.2",
     "pytest-cov>=7.1.0,<7.2",
     "pytest-mock>=3.14.0,<4.0",
+    "pytest-randomly>=5.0,<6",
     "pytest-timeout>=2.4.0,<2.5",
     "pytest-xdist>=3.8.0,<3.9",
     "pyyaml>=6.0,<7",
@@ -53,9 +54,14 @@ packages = ["tools"]
 [tool.setuptools_scm]
 
 [tool.pytest.ini_options]
-# Run pytest with all our checkers, and don't spam us with massive tracebacks on error
+# Run pytest with all our checkers, and don't spam us with massive tracebacks on error.
+# `-p no:randomly` keeps the installed pytest-randomly plugin inert everywhere by
+# default (it reshuffles test order, which the 30s edit loop must not pay for):
+# the nightly seed task (`task test-randomly`, run by ci.yml's schedule) is the
+# only place that re-enables it with `-p randomly` (TODO.md §27.4: conditional
+# adopt, nightly seed job only).
 addopts = """
-    --tb=native -vv -n auto
+    --tb=native -vv -n auto -p no:randomly
     """
 # Cost tiers. `-m "not heavy and not slow and not meta"` is the edit loop
 # (`task test-fast`, budget 30s: anything slower than that belongs to a marker
@@ -326,7 +332,7 @@ ignore_decorators = ["*tool*", "*resource*", "*route*", "*fixture*", "@rule", "@
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage,DEP003=python-copier-template,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
+per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage|pytest-randomly,DEP003=python-copier-template,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
 # tests/ は pytest の暗黙パッケージ import (test_example) があり依存検査と相性が悪い。
 # .cache/ は tests/render_cache.py が置くレンダ済みプロジェクト（生成コード）で、
