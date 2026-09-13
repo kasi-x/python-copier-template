@@ -1995,3 +1995,80 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
      `syrupy` / `pytest-regressions`、`pixi` の venv 共有。各スパイクは
      「置換対象 / 期待削減 / 偽陰性リスク / 撤退条件」を 1 行書いてから着手する
 
+
+## 27. §26.4 の実行結果（2026-09-14 実測。残タスクは §27.7）
+
+§26.4 の 8 項目を並行実装し、**実測で**確認した。数字はすべて 16 コアのこのマシン（負荷 60〜117 の
+時間帯を含む）で、負荷条件は各項目に付記する。
+
+### 27.1 tier とコスト（T9 / T10 / T11）
+
+| 項目 | 結果 |
+|---|---|
+| T9 | `test-fast` は `-m "not heavy and not slow and not meta"`（**731 / 41s**、負荷 ~60）。drift 検査は `meta` marker + 専用 CI ジョブ `test-meta`（`timeout-minutes: 15`、`required-checks-passed.needs` 入り）へ移動。`_test.yml` は payload なので触っていない |
+| T10 | 台帳の `measured` が 30 日超の行は fail。メッセージがその行の再測定コマンドを出す（back-date デモ済み）。行ごとの `command` 列を追加し、ledger / Taskfile / docs の件数一致を機械検査 |
+| T11 | `witness-fast` を台帳に追加。**cold 39.4s / 1800s timeout（45 倍の余裕）** — `--jobs` 化は不要と判断 |
+
+### 27.2 不変条件の単一源（T6 / §23.4）
+
+- `tests/matrix/invariants.yml`（22 行）+ `tools/invariants.py`。以前は
+  `z3_witnesses.py` の 4 辞書 / `test_recommended_path.py` の MARKERS / `test_render_invariants.py` の
+  predicates / `support.yml` の tier 方針に散っていた事実を 1 ファイルへ統合。未知の select 値・
+  predicate・tier、重複 id、どの行にも属さない葉は**読み込み時に落ちる**
+- 移行で実ギャップを発見: `data/DEIDENTIFICATION.md` は fast path の MARKERS だけが主張し、
+  witness の `expect` には入っていなかった（＝205 葉では消えても気づけない）→ 49 葉の期待に追加し、
+  再生成（`witnesses.jsonl` が変わった唯一の理由）
+
+### 27.3 形式手法（V2 / V3 / V4）
+
+- **V2: 採用（範囲限定）**。`adopt` の骨格（journal → mutate → verify → rollback|commit + crash）を
+  Quint 219 行で書き、TLC で 51 状態を全探索。**journal を 1 手遅らせた変種は 2/3 状態の反例**が出る。
+  fsync の耐久性は表現できない（write は原子的と仮定）ので、その半分は V1 の SIGKILL ドリルが担う。
+  次の一手: **rollback 中と recover 中の kill フックが無い**（`_crash_at` の呼び出しは write 時と verify 時の 2 箇所）
+- **V3: 却下**（撤退条件成立）。`merge_ci_jobs` / `merge_taskfile` は 10 分の記号実行で**判定が出ない**
+  （YAML パースが下流の全契約を決定不能にする）。決定版の対照実験: 契約が**具体的実行では捕まえる**
+  意図的な破壊版も、記号実行では捕まえられない → CI に入れても飾り。YAML 非依存の `_recipe_blocks`
+  だけは 1 分 50 秒で実反例を出した（採用しない理由はレポート §5）
+- **V4: 採用**。Hypothesis stateful（100 シーケンス / 312 ルール実行 / 毎ステップ不変条件）が
+  **編集ループ 17s** で回る。モデルは実装のヘルパーを呼ばず自前の tomllib/regex で読む。ガードのガード済み
+
+### 27.4 外部ツールの判定（T8）
+
+| ツール | 判定 | 根拠 |
+|---|---|---|
+| `pytest-testmon` | **却下** | `-m` と併用で選択が自動無効（この repo の fast tier はまさに `-m`）。さらに `.jinja` を追跡せず、`template/CHANGELOG.md.jinja` に 1 行足しても **26 件の render テストが選ばれない**（偽陰性を実測）。testmon は coverage トレーサ由来でデータファイルを読まない |
+| `pytest-randomly` | **条件付き採用**（夜間の seed ジョブ向け） | 8 回のランダム順で順序依存は出ず（xdist/serial 両方）。編集ループには入れない |
+| `syrupy` / `pytest-regressions` | **不要** | pytest 9.1.1 で動くことは確認したが、この suite は render の byte / 解析結果を見ており、snapshot は audit が意図的に消した「文言固定」に戻る |
+| `pixi` venv 共有 | レポート参照（`/tmp/spike-tools/REPORT.md`） | 依存差で偽陽性の risk を計測 |
+
+### 27.5 スパイク・stateful 実行が見つけ、その場で直した欠陥
+
+- **`merge_taskfile` が parse 不能な Taskfile を書いて applied=True を返す**（CrossHair の
+  property を書く過程で発見）: 検証が「元からあったタスク」しか見ないため、`tasks: {}` や
+  parse 不能な target では**空虚に真**になり、インデントしたブロックを追記して壊していた。
+  → 追記後に「parse できる」かつ「追記したと主張したタスクが全部ある」を要求し、破れば巻き戻す
+- **`pyproject_merge` が malformed な target を誤診・例外**: (a) 元から parse しない
+  pyproject を「マージが壊した」と報告して adopt 全体を拒否していた（before の parse 検査を
+  after より後にやっていた）→ 順序を修正。(b) `dependencies = "httpx"` / `= 5` が
+  append ループで AttributeError / TypeError になっていた → 形を各セクションで検査し、
+  位置を名指しした note で残りを続行
+- **`test_batch.py` の load 依存 flake**（3.01s vs 3.217s）→ stopwatch 比較をやめ、
+  **ハンドシェイク**（互いに相手が in-flight でなければ完走できない 2 リクエスト）で並行性を証明
+
+### 27.6 PLAN §7 完了条件
+
+**8 件すべて達成**。最後の 1 件（README <130 行 + TL;DR）は **522 → 120 行**、カタログは
+`docs/reference/features.md` へ移動（生成ブロックも一緒に移動、`gen_docs --check` 緑、リンク解決済み）。
+
+### 27.7 残タスク（2026-09-14 時点）
+
+1. **V5 / T6 の残り**: merge の事後条件を invariants.yml 側へ（現在は実装内の検査）
+2. **V2 の次の一手**: rollback / recover 中の kill フックを `tools/adopt.py` に足し、
+   Quint が証明した「全クラッシュ点が覆われている」をテストでも標本化する
+3. **Quint モデルを CI へ**: モデル 2 本（+変種）を `models/` に置き、repo-only workflow で
+   `quint verify --backend=tlc`（~2s）。Node 22 + quint 0.32 が前提
+4. **§23.1 の残り**: `tests/support/` 共有モジュール、answers の単一情報源、`test_example.py` の分割
+   （所有権メモが解けたら）
+5. **§23.2 の残り**: CI の `paths:` フィルタ
+6. **§23.4 の残り**: 列挙の完全性（除外リストをカバレッジ出力に載せる）、`witnesses.jsonl` の陳腐化検出
+7. **T8 の残り**: `pixi` venv 共有の採否、`pytest-randomly` を夜間ジョブに入れるか
