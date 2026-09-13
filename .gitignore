@@ -87,6 +87,11 @@ data/external/*
 !data/external/.gitkeep
 models/*
 !models/.gitkeep
+# the adopt-protocol Quint models and their README are repo sources, not
+# generated artifacts (TODO.md §27.7 item 3); CI re-verifies them
+# (.github/workflows/quint.yml, models/README.md)
+!models/README.md
+!models/*.qnt
 reports/figures/*
 !reports/figures/.gitkeep
 outputs/*
