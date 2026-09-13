@@ -1,0 +1,97 @@
+# Support matrix for python-copier-template (PLAN-improvements W4).
+#
+# Tiers
+# -----
+# full        Executed end to end by the witness full tier: `uv sync`, the
+#             generated project's own pytest, basedpyright and its docs
+#             build. Measured at ~3 min per leaf (tests/test_witness_matrix.py
+#             FULL_SAMPLE), so only the eight leaves below run it.
+# fast        Rendered by the witness fast tier and kept ruff-format /
+#             ruff-check clean. 205 leaves at ~1.3 s per render: 10-20 s
+#             parallel, 3 m 40 s serial. Render-only -- no install, no run.
+# best_effort Declared so the questionnaire's existing answers keep rendering,
+#             but never CI-gated for execution: no `uv sync`, no pytest, no
+#             type checker. These are the long tail W4 keeps as answers
+#             instead of removing.
+# none        Reserved for a future W4 declaration: no witness leaf is
+#             unsupported today, so the policy table has no `none` row.
+#
+# `why` on every entry is the measured evidence for its tier.
+# tests/test_support_matrix.py checks the `supported` rows against the
+# witness ledger (tests/matrix/witnesses.json) and docs/reference/support.md
+# against this file.
+
+supported:
+  - combination: "project_type=library/gate=recommended"
+    tier: full
+    why: "recommended library path, executed end to end (~3 min): uv sync + generated pytest + basedpyright + docs"
+  - combination: "project_type=cli/gate=recommended"
+    tier: full
+    why: "recommended CLI path, executed end to end (~3 min): console-script entry point and its CLI tests in the generated pytest run"
+  - combination: "project_type=web_api/gate=recommended"
+    tier: full
+    why: "recommended web-API path, executed end to end (~3 min): FastAPI + SQLAlchemy + Alembic stack, tests against SQLite"
+  - combination: "project_type=data_science/gate=recommended"
+    tier: full
+    why: "recommended data-science path, executed end to end (~3 min): the torch dependency sync is the slowest leaf but still inside the sample"
+  - combination: "project_type=script/gate=recommended"
+    tier: full
+    why: "recommended script path, executed end to end (~3 min): flat stdlib-style workspace, pytest + basedpyright + docs run"
+  - combination: "project_type=micropython/gate=recommended"
+    tier: full
+    why: "recommended MicroPython path, executed end to end (~3 min): generated type checks pass against the micropython-*-stubs"
+  - combination: "project_type=online_judge/gate=recommended/oj=competitive_coding/atcoder"
+    tier: full
+    why: "AtCoder workspace, executed end to end (~3 min): the one online-judge leaf in the sample; the other judges render only"
+  - combination: "project_type=cli/gate=off:use_recommended_agent"
+    tier: full
+    why: "the only branch-only artifact set in the sample: the agent gate off renders prompts/, which no recommended leaf produces"
+
+best_effort:
+  - combination: "task_runner = make | poe | invoke | duty"
+    tier: best_effort
+    why: "measured: only lint/test/check execute (test_task_runners.py::test_lint_task_executes for all four, ::test_test_task_executes_on_make, ::test_check_task_executes_on_poe); fix/type-check/audit/license-check/docs/docs-serve are render-only on these runners, and no witness leaf selects one"
+  - combination: "package_manager = poetry"
+    tier: best_effort
+    why: "install/run zero: every witness leaf renders uv and tools/batch.py never sees a poetry.lock, so test_example.py::test_template_poetry asserts the rendered pyproject only"
+  - combination: "log_library = loguru | picologging"
+    tier: best_effort
+    why: "structlog is the default and the full sample exercises only it; loguru/picologging execute solely in the network-marked test_example cases (::test_template_log_library_loguru / ::test_template_log_library_picologging)"
+  - combination: "type_checker = ty"
+    tier: best_effort
+    why: "pyrefly is the checker with deps installed (test_generated_typecheck.py runs `pyrefly check`); ty is render-only (test_example.py::test_template_ty asserts the rendered pyproject)"
+  - combination: "project_type=ros2"
+    tier: best_effort
+    why: "the full tier omits it: the generated test/build recipes need a ROS distribution (/opt/ros/$ROS_DISTRO), not a bare runner; the fast tier still renders all 8 ros2 leaves"
+  - combination: "project_type=online_judge/.../oj=* except atcoder"
+    tier: best_effort
+    why: "the non-AtCoder judges (leetcode / yukicoder / aoj / ctf / kaggle) render and ruff-check in the fast tier but never get a venv; only atcoder is in the full sample"
+  - combination: "any leaf under an opt-in layer (include_ctf | include_data_science | include_scraping | include_web_api)"
+    tier: best_effort
+    why: "the layer leaves render and ruff-check in the fast tier; only the eight sampled leaves get the execution tier"
+  - combination: "any detailed-question branch (gate=off:use_recommended_*)"
+    tier: best_effort
+    why: "only cli/gate=off:use_recommended_agent is in the sample; the remaining gate-off branches are fast-tier renders, not executions"
+
+tier_policy:
+  - leaf_class: "project_type=*/gate=recommended (library, web_api, cli, data_science, script, micropython, online_judge)"
+    tier: full
+    why: "one leaf per project family is executed end to end; ros2 is deliberately not among them (see below)"
+  - leaf_class: "project_type=cli/gate=off:use_recommended_agent"
+    tier: full
+    why: "the branch-only prompts/ artifact set is only produced with the agent gate off, so its leaf is in the sample"
+  - leaf_class: "project_type=ros2/gate=recommended"
+    tier: fast
+    why: "render + ruff only: executing a ros2 leaf needs /opt/ros/$ROS_DISTRO on the runner"
+  - leaf_class: "project_type=*/gate=off:use_recommended_* (detailed branches)"
+    tier: fast
+    why: "rendered and ruff-checked; the 3 m/leaf execution cost limits the full tier to the sample above"
+  - leaf_class: "project_type=*/.../include=include_*"
+    tier: fast
+    why: "the opt-in layers (ctf / data_science / scraping / web_api) are coverable by rendering: their artifacts are file-set invariants"
+  - leaf_class: "project_type=online_judge/.../oj=*"
+    tier: fast
+    why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj / ctf / kaggle are render-only"
+  - leaf_class: "(reserved) no class today"
+    tier: none
+    why: "every declared witness leaf has a recorded fast-tier run; tests/matrix/witnesses.json keeps the tier:none + reason hook as the future exclusion mechanism"

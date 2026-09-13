@@ -343,6 +343,36 @@ flowchart TD
   files (SECURITY.md / Scorecard)
 - PyPI publishing, Docker containers, docs deployment to GitHub Pages
 
+<!-- BEGIN GENERATED: support-table (tools/gen_docs.py --write) -->
+**Supported** — executed end to end by CI:
+
+| combination | tier |
+|---|---|
+| `project_type=library/gate=recommended` | `full` |
+| `project_type=cli/gate=recommended` | `full` |
+| `project_type=web_api/gate=recommended` | `full` |
+| `project_type=data_science/gate=recommended` | `full` |
+| `project_type=script/gate=recommended` | `full` |
+| `project_type=micropython/gate=recommended` | `full` |
+| `project_type=online_judge/gate=recommended/oj=competitive_coding/atcoder` | `full` |
+| `project_type=cli/gate=off:use_recommended_agent` | `full` |
+
+**Best effort** — rendered by CI, but never executed:
+
+| combination | tier |
+|---|---|
+| `task_runner = make \| poe \| invoke \| duty` | `best_effort` |
+| `package_manager = poetry` | `best_effort` |
+| `log_library = loguru \| picologging` | `best_effort` |
+| `type_checker = ty` | `best_effort` |
+| `project_type=ros2` | `best_effort` |
+| `project_type=online_judge/.../oj=* except atcoder` | `best_effort` |
+| `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api)` | `best_effort` |
+| `any detailed-question branch (gate=off:use_recommended_*)` | `best_effort` |
+
+Full matrix and the evidence behind each tier: [docs/reference/support.md](docs/reference/support.md).
+<!-- END GENERATED: support-table -->
+
 ## Design decisions
 
 The option set has been consolidated over time. The key moves:

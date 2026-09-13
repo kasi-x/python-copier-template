@@ -12,8 +12,13 @@ repeats that data, so none of it can silently drift again:
 - `README.md`: the per-area recommended settings table, the ask-order mermaid
   graph (each gate's Yes/No branch) and the task-runner bullet of the Features
   section.
-- `README.md`: the support matrix table, generated from `support.yml` -- only
-  when that file exists (W4 owns it; no `support.yml`, no block).
+- `README.md`: a compact support summary (one row per declared combination),
+  generated from `support.yml`.
+- `docs/reference/support.md`: the full support matrix, prose included, also
+  generated from `support.yml`.
+
+The support blocks are only generated when `support.yml` exists (W4 owns
+that file; no `support.yml`, no block).
 
 Every generated region sits between an explicit marker pair::
 
@@ -52,6 +57,7 @@ from tools.questionnaire import Question  # noqa: E402
 
 README = TOP / "README.md"
 QUESTIONNAIRE_DOC = TOP / "docs" / "reference" / "questionnaire.md"
+SUPPORT_DOC = TOP / "docs" / "reference" / "support.md"
 SUPPORT_YML = TOP / "support.yml"
 
 BEGIN = "<!-- BEGIN GENERATED: {name} (tools/gen_docs.py --write) -->"
@@ -553,26 +559,105 @@ def _runner_list(question: Question) -> str:
     return " / ".join(parts)
 
 
-def render_support_table(support: dict[str, Any]) -> str:
-    """`README.md`: the support matrix, from `support.yml`'s `supported:` list.
+def _matrix_rows(rows: list[Any], *, drop: tuple[str, ...] = (), plain: tuple[str, ...] = ()) -> str:
+    """One markdown table over `rows`, deriving its columns from their keys.
 
-    The columns are the entry keys, in the order the file writes them, so the
-    table follows whatever shape W4 settles on instead of pinning one here.
+    `drop` removes keys that belong in the full reference but not in a
+    summary: README keeps one row per combination, while the `why` column
+    (the measured evidence) lives in `docs/reference/support.md`.
+
+    `plain` columns are prose cells, rendered without the code-span wrapping
+    `_support_cell` gives identifiers (`why` quotes commands and paths).
     """
-    rows = support.get("supported")
-    if not isinstance(rows, list) or not rows:
-        msg = "support.yml has no non-empty `supported:` list"
-        raise GenDocsError(msg)
     columns: list[str] = []
     for row in rows:
         if not isinstance(row, dict):
-            msg = "every `supported:` entry must be a mapping"
+            msg = "every support entry must be a mapping"
             raise GenDocsError(msg)
-        columns += [str(key) for key in row if str(key) not in columns]
+        columns += [str(key) for key in row if str(key) not in columns and str(key) not in drop]
+    if not columns:
+        msg = "a support section has no columns to render"
+        raise GenDocsError(msg)
     lines = [f"| {' | '.join(columns)} |", f"|{'---|' * len(columns)}"]
     for row in rows:
-        cells = [_cell(_support_cell(row.get(column))) for column in columns]
+        cells = [
+            _cell(str(row.get(column))) if column in plain else _cell(_support_cell(row.get(column)))
+            for column in columns
+        ]
         lines.append(f"| {' | '.join(cells)} |")
+    return "\n".join(lines)
+
+
+def _support_section(support: dict[str, Any], key: str) -> list[Any]:
+    """One `support.yml` section, validated as a non-empty list of mappings."""
+    rows = support.get(key)
+    if not isinstance(rows, list) or not rows:
+        msg = f"support.yml has no non-empty `{key}:` list"
+        raise GenDocsError(msg)
+    return rows
+
+
+def render_support_table(support: dict[str, Any]) -> str:
+    """`README.md`: the compact support summary, from `support.yml`.
+
+    One row per combination and no `why` column: the full matrix and its
+    evidence live in `docs/reference/support.md`, which the summary links to.
+    The columns are the entry keys, in the order the file writes them, so the
+    table follows whatever shape W4 settles on instead of pinning one here.
+    """
+    blocks = [
+        "**Supported** — executed end to end by CI:",
+        "",
+        _matrix_rows(_support_section(support, "supported"), drop=("why",)),
+    ]
+    best_effort = support.get("best_effort")
+    if best_effort is not None:
+        blocks += [
+            "",
+            "**Best effort** — rendered by CI, but never executed:",
+            "",
+            _matrix_rows(_support_section(support, "best_effort"), drop=("why",)),
+        ]
+    blocks += [
+        "",
+        f"Full matrix and the evidence behind each tier: [{_relative(SUPPORT_DOC)}]({_relative(SUPPORT_DOC)}).",
+    ]
+    return "\n".join(blocks)
+
+
+def render_support_doc(support: dict[str, Any]) -> str:
+    """`docs/reference/support.md`: the full support matrix, prose included."""
+    sections = {key: _support_section(support, key) for key in ("supported", "best_effort", "tier_policy")}
+    lines = [
+        "Every combination this template keeps working, the tier that guarantees",
+        "it, and the measured evidence behind that tier.",
+        "",
+        "## Supported",
+        "",
+        "Executed end to end in CI by the witness full tier: `uv sync`, the",
+        "generated project's own pytest, basedpyright and its docs build.",
+        f"Measured at ~3 minutes per leaf, so only these {len(sections['supported'])} run it.",
+        "",
+        _matrix_rows(sections["supported"], plain=("why",)),
+        "",
+        "## Best effort",
+        "",
+        "Declared so the questionnaire's existing answers keep rendering, but",
+        "never executed by CI. The witness fast tier renders and ruff-checks",
+        "these leaves (205 renders at ~1.3 s each, 10-20 s in parallel); a",
+        "regression that only breaks install or run is not caught there.",
+        "",
+        _matrix_rows(sections["best_effort"], plain=("why",)),
+        "",
+        "## Tier policy",
+        "",
+        "Which tier each class of witness leaf is declared for. `none` is",
+        "reserved for a future W4 exclusion: it is declared as `tier: none`",
+        "plus a `reason` in `tests/matrix/witnesses.json`, and no leaf uses it",
+        "today because every declared leaf has a recorded fast-tier run.",
+        "",
+        _matrix_rows(sections["tier_policy"], plain=("why",)),
+    ]
     return "\n".join(lines)
 
 
@@ -844,7 +929,8 @@ def targets(support: Path = SUPPORT_YML) -> list[Target]:
     """Every generated block, in file order.
 
     The support matrix is only generated when `support.yml` exists: W4 owns
-    that file, and its README block appears with it.
+    that file, and its blocks (README's summary and the full
+    `docs/reference/support.md` reference) appear with it.
     """
     blocks = [
         Target(QUESTIONNAIRE_DOC, "project-types", render_project_types),
@@ -857,6 +943,7 @@ def targets(support: Path = SUPPORT_YML) -> list[Target]:
     ]
     if support.is_file():
         blocks.append(Target(README, "support-table", _support_block(support)))
+        blocks.append(Target(SUPPORT_DOC, "support-matrix", _support_doc_block(support)))
     return blocks
 
 
@@ -866,12 +953,27 @@ def _mermaid_block(model: Model) -> str:
 
 
 def _support_block(support: Path) -> Callable[[Model], str]:
-    """A renderer for README's support matrix, bound to `support.yml`."""
+    """A renderer for README's compact support summary, bound to `support.yml`."""
 
     def render(_model: Model) -> str:
         return render_support_table(load_support(support))
 
     return render
+
+
+def _support_doc_block(support: Path) -> Callable[[Model], str]:
+    """A renderer for the full `docs/reference/support.md`, bound to `support.yml`."""
+
+    def render(_model: Model) -> str:
+        return render_support_doc(load_support(support))
+
+    return render
+
+
+def support_doc_text(support: Path = SUPPORT_YML) -> str:
+    """The complete `docs/reference/support.md`, markers included."""
+    target = Target(SUPPORT_DOC, "support-matrix", _support_doc_block(support))
+    return f"{target.begin()}\n{target.render_text(Model.load())}\n{target.end()}\n"
 
 
 def _relative(path: Path) -> str:
