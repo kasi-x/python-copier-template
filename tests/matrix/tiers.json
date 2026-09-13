@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 771,
+      "collected": 741,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -20,7 +20,6 @@
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
         "tests/test_mcp_server.py": 26,
-        "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
         "tests/test_pyproject_merge.py": 16,
@@ -35,7 +34,7 @@
         "tests/test_witness_matrix.py": 210,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "b100c2c0d142099b0f3e808977003f95f3c893dd7045b07fee4938b301cfacd7",
+      "ids_sha256": "e7b2c6428a6deac39fcc1b76561716165ae660e173b04197bbeb93c661ea12eb",
       "wall_seconds": 47.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
@@ -74,20 +73,20 @@
     "test-meta": {
       "task": "test-meta",
       "expression": "meta",
-      "collected": 7,
+      "collected": 8,
       "files": {
-        "tests/test_marker_drift.py": 7
+        "tests/test_marker_drift.py": 8
       },
-      "ids_sha256": "b059648fa46e340b32eed69bc57f66894a94685015fa999a6bf22ab8888d3f7e",
+      "ids_sha256": "6db2b8a7bb694f6395188ccd612ee6954ea6fdc1c61d7c1ebc8bf3ba843ce8b7",
       "wall_seconds": 10.5,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m meta",
-      "note": "time uv run --no-sync pytest -q -m meta (7 tests; 10.5s on the lightest of this re-record's runs, and almost all of it is collection: the membership check re-collects the six tiers in six pytest sessions, one startup each. Inside the edit loop that work overlapped 31 other workers, so the wall it saves there is smaller than 10.5s -- on this loaded machine it was not measurable at all (46s with the guard, 47s without), which is why this row exists: the guard costs a measurement of its own, not a slice of the loop's budget)"
+      "note": "time uv run --no-sync pytest -q -m meta (8 tests; 10.5s on the lightest of this re-record's runs, and almost all of it is collection: the membership check re-collects the seven tiers in seven pytest sessions, one startup each. Inside the edit loop that work overlapped 31 other workers, so the wall it saves there is smaller than 10.5s -- on this loaded machine it was not measurable at all (46s with the guard, 47s without), which is why this row exists: the guard costs a measurement of its own, not a slice of the loop's budget)"
     },
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 826,
+      "collected": 797,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -103,9 +102,8 @@
         "tests/test_gitleaks_config.py": 9,
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
-        "tests/test_marker_drift.py": 7,
+        "tests/test_marker_drift.py": 8,
         "tests/test_mcp_server.py": 26,
-        "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
         "tests/test_pyproject_merge.py": 16,
@@ -120,11 +118,50 @@
         "tests/test_witness_matrix.py": 219,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "32e057da446f25eee9e44914cf160d412318444960f63fd291188c6f42a779d9",
+      "ids_sha256": "251fa5ad07a9f54d4605417315bf8a3f8b32bc5d3552032cb5c6babd97616476",
       "wall_seconds": 138.9,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
       "note": "time uv run --no-sync pytest -q --cov --cov-report term (whole suite, warm caches; 337s on the run that populated .cache/renders)"
+    },
+    "test-randomly": {
+      "task": "test-randomly",
+      "expression": "not heavy and not slow and not meta",
+      "collected": 741,
+      "files": {
+        "tests/test_adopt.py": 35,
+        "tests/test_adopt_stateful.py": 1,
+        "tests/test_batch.py": 19,
+        "tests/test_copier_structure.py": 14,
+        "tests/test_detect.py": 22,
+        "tests/test_example.py": 112,
+        "tests/test_file_merge.py": 22,
+        "tests/test_generated_docs_sync.py": 9,
+        "tests/test_generated_lint.py": 106,
+        "tests/test_generation_docs.py": 1,
+        "tests/test_gitleaks_config.py": 9,
+        "tests/test_invariants.py": 19,
+        "tests/test_machine_gate.py": 13,
+        "tests/test_mcp_server.py": 26,
+        "tests/test_micropython_maintenance.py": 3,
+        "tests/test_pyproject_fmt.py": 26,
+        "tests/test_pyproject_merge.py": 16,
+        "tests/test_qa.py": 3,
+        "tests/test_questionnaire.py": 9,
+        "tests/test_recommended_path.py": 11,
+        "tests/test_render_invariants.py": 29,
+        "tests/test_support_matrix.py": 5,
+        "tests/test_task_runners.py": 9,
+        "tests/test_update_path.py": 1,
+        "tests/test_when_model.py": 3,
+        "tests/test_witness_matrix.py": 210,
+        "tests/test_workflow_security.py": 8
+      },
+      "ids_sha256": "e7b2c6428a6deac39fcc1b76561716165ae660e173b04197bbeb93c661ea12eb",
+      "wall_seconds": 50.3,
+      "measured": "2026-09-14",
+      "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta\"",
+      "note": "time uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta\" (741 tests, idle 16-core box, warm .cache/renders, pytest-randomly 5.0.0 active (seed 1067654068, printed in the header): 49.3s pytest wall, no order-dependence failures. The selection equals test-fast's (same ids_sha256); the delta over its 47s is the shuffle's reseeding cost. Nightly-only (ci.yml schedule): everywhere else the plugin is disabled by addopts' -p no:randomly"
     }
   },
   "witness": {

@@ -2043,9 +2043,9 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
 | ツール | 判定 | 根拠 |
 |---|---|---|
 | `pytest-testmon` | **却下** | `-m` と併用で選択が自動無効（この repo の fast tier はまさに `-m`）。さらに `.jinja` を追跡せず、`template/CHANGELOG.md.jinja` に 1 行足しても **26 件の render テストが選ばれない**（偽陰性を実測）。testmon は coverage トレーサ由来でデータファイルを読まない |
-| `pytest-randomly` | **条件付き採用**（夜間の seed ジョブ向け） | 8 回のランダム順で順序依存は出ず（xdist/serial 両方）。編集ループには入れない |
+| `pytest-randomly` | **採用（夜間 seed ジョブとして実装済み、§27.7-7）** | 8 回のランダム順で順序依存は出ず（xdist/serial 両方）。`-p no:randomly` を addopts に入れて全 tier 既定で無効化し、夜間ジョブ（ci.yml schedule の `test-randomly`）だけ `-p randomly` で有効化。実測 50.3s（741 テスト、seed はヘッダに出力） |
 | `syrupy` / `pytest-regressions` | **不要** | pytest 9.1.1 で動くことは確認したが、この suite は render の byte / 解析結果を見ており、snapshot は audit が意図的に消した「文言固定」に戻る |
-| `pixi` venv 共有 | レポート参照（`/tmp/spike-tools/REPORT.md`） | 依存差で偽陽性の risk を計測 |
+| `pixi` venv 共有 | **不採用**（実測 §27.7-7、詳細は `/tmp/spike-tools/REPORT.md` も参照） | 節約より危険が先に実測された: 共有 `UV_PROJECT_ENVIRONMENT` + `--inexact` は `-n auto` の下で **2.2-2.4 倍遅い**（28.5-30.3s → 63.9-71.7s。1 env = 1 本の uv 環境ロックで venv 作業が直列化）うえ、ベースラインでは出ない失敗が毎回 5-9 件（別ワーカの sync が editable を付け替え、他葉の木を collect）。依存差の偽陽性も単体で実測: 葉の lock から依存を除しても共有 env は生成 pytest 8/8 を通し、隔離 env では 2/8 失敗 |
 
 ### 27.5 スパイク・stateful 実行が見つけ、その場で直した欠陥
 
@@ -2107,4 +2107,26 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
      coverage 出力は「205 enumerated, 3 excluded (<names>)」を明示。
      `witnesses.jsonl` は in-process 再導出で陳腐化検出（失敗時に `task witness` を表示）。
      再導出の結果、現行ファイルは新鮮と実証
-7. **T8 の残り**: `pixi` venv 共有の採否、`pytest-randomly` を夜間ジョブに入れるか
+7. [x] **T8 の残り**: `pixi` venv 共有の採否、`pytest-randomly` を夜間ジョブに入れるか
+   → **完了（2026-09-14、両方とも実測で決着）**。
+     - **pixi / `UV_PROJECT_ENVIRONMENT` 共有 + `--inexact` は不採用**。`-m heavy` 43 テストを
+       16 core・ウォームキャッシュで実測: 現行の葉ごと venv は 28.5s / 30.3s、共有 env は
+       **63.9s / 71.7s（2.2-2.4 倍の悪化）**。16 xdist ワーカが 1 本の環境を取り合うため venv
+       作業が uv の環境ロックで直列化され、スパイクが見込んだ 5-7% の節約（隔離 12.3s → 共有
+       2.1s）は並列の下では符号が逆になる。さらに共有モードだけで毎回 5-9 件の失敗
+       （ベースライン 2 連続は全緑）: `uv run` の暗黙 sync が走っている隙に別ワーカの sync が
+       editable を付け替え、web_api 葉の生成 pytest が `No module named 'app'` で他葉の木を
+       collect した。§24.2 が禁止する「case A の依存欠けを case B の env が満たす」も単体で
+       実測: ある葉の lock から structlog を除して共有 env で走らせると生成 pytest は 8/8 パス
+       ・basedpyright も 0 エラー（漏れマスク）、同じ木を隔離 env で sync し直すと 2/8 失敗 +
+       `ModuleNotFoundError`。安全な代替は env 共有ではなく**キャッシュ共有**
+       （`UV_CACHE_DIR` 保持 + 葉ごと env。uv の hardlink が既にそれに近い安さ）であり、
+       env 共有が正しいのは「分布名が異なり依存集合が同一の葉」のときだけ —— このサンプルは
+       その逆のために存在する
+     - **pytest-randomly は夜間 seed ジョブとして採用・実装**: dev dep（5.0.0、`>=5.0,<6`）、
+       addopts に `-p no:randomly`（全 tier 既定で無効。編集ループは払わない）、`task
+       test-randomly` だけがコマンドラインで `-p randomly` を渡して再有効化。ci.yml の
+       schedule に `test-randomly` ジョブ（test-heavy の隣、`_test.yml` 経由なので SHA ピン/
+       permissions 契約はそのまま）。seed は毎回新規でヘッダに出力。実測 50.3s
+       （741 テスト、順序依存なし）。台帳側は test_marker_drift.py が「`-p randomly` を払う
+       タスクは test-randomly 一つ」と構造で固定し、tiers.json に test-randomly 行を記録
