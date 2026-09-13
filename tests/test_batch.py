@@ -14,6 +14,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -268,9 +269,10 @@ def _run_json(argv: list[str]) -> tuple[int, dict[str, Any]]:
 def test_jobs_change_only_the_schedule(tmp_path: Path):
     """--jobs N reorders nothing and swallows nothing.
 
-    The first line sleeps, so under --jobs 3 the later lines render first; the
-    report must still follow the JSONL. The second line fails an expectation,
-    so the run must still exit nonzero, with the same verdicts as `--jobs 1`.
+    The first line sleeps, so under --jobs 3 the later lines render while it
+    sleeps; the report must still follow the JSONL. The second line fails an
+    expectation, so the run must still exit nonzero, with the same verdicts as
+    `--jobs 1`.
     """
     path = write_lines(
         tmp_path,
@@ -280,14 +282,26 @@ def test_jobs_change_only_the_schedule(tmp_path: Path):
     )[0]
 
     serial_code, serial = _run_json([str(path), "--json", "--work", str(tmp_path / "serial")])
+    started = time.monotonic()
     parallel_code, parallel = _run_json([str(path), "--json", "--work", str(tmp_path / "parallel"), "--jobs", "3"])
+    wall = time.monotonic() - started
 
     assert serial_code == parallel_code == 1, "one line fails its expectation, so both runs exit 1"
     assert parallel["ok"] is False, "a failing request fails the run under --jobs too"
     assert [line["id"] for line in parallel["lines"]] == ["slow", "broken", "quick"], (
         "results follow the JSONL, not the completion order"
     )
-    assert parallel["lines"][0]["seconds"] > parallel["lines"][2]["seconds"], "the slow line really did finish last"
+    # `seconds` is what each line took inside its own worker. Pitting two
+    # lines against each other ("the sleeper finished last") reads scheduler
+    # noise as signal: on a busy machine a quick line's render can stretch by
+    # more than the sleeper's 0.8 s and invert the comparison. Overlap is
+    # asserted against the clock instead -- the wall must beat the sum of the
+    # lines' own durations, which only happens when the workers really run
+    # side by side.
+    assert parallel["lines"][0]["seconds"] >= 0.8, "the slow line really slept inside its worker"
+    assert wall < sum(line["seconds"] for line in parallel["lines"]), (
+        "three lines under --jobs 3 overlap: the wall beats the sum of the lines' own durations"
+    )
     assert _verdicts(parallel) == _verdicts(serial)
 
 
