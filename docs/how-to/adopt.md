@@ -1,13 +1,74 @@
 # How to adopt the template into an existing project
 
-`tools/adopt.py` is the transactional driver: it plans the adoption, applies
-it, verifies what happened, and rolls back if anything it promised not to
-touch changed.
+`tools/adopt.py` is the reversible driver: it plans the adoption, applies it,
+verifies what happened, and undoes what it did — whether it failed, was
+interrupted, or was killed outright.
+
+What that means precisely, because the word "transactional" alone overstates
+it:
+
+| How the run ends | What the project looks like afterwards |
+| --- | --- |
+| Verified and fitted | The adoption, plus a note of what to wire by hand |
+| A failure at any point (a collision it did not skip, a merge that rewrote a line, an unexpected exception) | Exactly as it was before the run, byte for byte, directories included; exit 1 |
+| Ctrl-C / `SIGINT` / `SIGTERM` mid-run | The same rollback, from a signal handler; exit 1 |
+| `SIGKILL`, a crash, or a power cut | Whatever the process had written stays on disk **with its journal**; `--recover` puts the project back exactly as it was (see [If the run is killed](#if-the-run-is-killed)) |
 
 ```shell
 task adopt DIR=/path/to/project CLI_ARGS="--dry-run"   # plan only
 task adopt DIR=/path/to/project                        # plan, then apply
+task adopt DIR=/path/to/project CLI_ARGS="--recover"   # undo a killed run
 ```
+
+## If the run is killed
+
+Nothing the driver writes is unrecoverable. Before it changes the first byte
+of your project it writes a journal — `.copier-adopt-journal.json`, inside the
+target — holding the old bytes of every file the run may modify and the path
+of every file it may create, and `fsync`s it and its directory. The journal is
+removed only when the run has committed or been rolled back, so finding one
+means the run it describes did not finish: the project is in a state nobody
+chose, and a new adoption refuses to start over it (exit 4) rather than
+building on an accident. A `--dry-run` refuses too — a plan built from that
+state would be a plan about an accident.
+
+```shell
+task adopt DIR=/path/to/project CLI_ARGS="--recover"
+# or, directly:
+python tools/adopt.py /path/to/project --recover
+```
+
+Recovery puts the recorded old bytes back, deletes every file that was not
+there before the run, removes the directories it created, and removes the
+journal last. It is idempotent: running it when the tree already matches
+rewrites nothing, and running it with no journal at all does nothing — both
+exit 0, so a retry is always safe. `--json` prints the result (`found`,
+`applied`, `restored`, `removed`) instead of the report.
+
+```console
+$ python tools/adopt.py /path/to/project --recover
+target:  /path/to/project
+journal: /path/to/project/.copier-adopt-journal.json
+recovered: 1 file(s) restored, 45 removed
+  nothing of the interrupted run is left; adopt again when you are ready
+
+$ python tools/adopt.py /path/to/project --recover      # nothing left to do
+target:  /path/to/project
+journal: /path/to/project/.copier-adopt-journal.json
+nothing to recover: this project has no journal
+  no journal: nothing to recover
+```
+
+`--recover` exits 0 when it recovered something or found nothing to recover,
+and 2 when the journal is there but cannot be used (unreadable, or written by
+a run in another project — the refusal names which). It never deletes a journal
+it cannot read, because one that is unreadable was written before the project
+was touched: if nothing has changed since, deleting it by hand is safe.
+
+The one thing the journal cannot cover is the instant of the commit itself:
+the run deletes the journal without flushing the rendered files to disk, so a
+power cut in that same instant can lose *new* content. Every crash before that
+point is recovered exactly; the commit is the last thing that happens.
 
 ## Why a driver and not just `copier copy`
 
@@ -29,7 +90,8 @@ The driver closes all three:
    file *and* directory sets. If anything did, the originals are restored,
    everything the run created is deleted (empty directories included), and the
    command exits 1 reporting what happened. A failed adoption leaves the
-   project exactly as it was.
+   project exactly as it was; a run that ends any other way leaves the journal
+   for [recovery](#if-the-run-is-killed).
 3. **The right revision**: `ref` is the latest tag *only if that tag declares
    the same questions as this checkout*; otherwise the default branch is used
    and the report says why ("latest tag 5.4.0 does not carry this
@@ -159,11 +221,14 @@ FAILED: InteractiveSessionError: Interactive session required: Consider using `-
 | `--skip PATH` | Path never to write over, repeatable. Default: the detected collisions. |
 | `--takeover` | Adopt over a foreign template's answers file (otherwise refused). |
 | `--no-merge` | Do not merge anything into the files you already have. |
+| `--recover` | Undo an interrupted run from its journal; exits 0 when there is nothing to undo. Refused with `--dry-run`. |
 | `--json` | Machine-readable result, including `created`, `unchanged`, `restored`, `removed`. |
 
-Exit codes: `0` adopted (or a clean dry run), `1` failed and rolled back, `2`
-invalid request (already generated by this template, not a directory),
-`3` refused (foreign template without `--takeover`).
+Exit codes: `0` adopted (or a clean dry run, or a recovery that had nothing to
+do), `1` failed and rolled back (a signal included), `2` invalid request
+(already generated by this template, not a directory, an unusable journal),
+`3` refused (foreign template without `--takeover`), `4` a previous run left
+its journal behind — recover it first.
 
 The same operation is available over MCP as `adopt_project`
 ([Check a Change Without the Full Suite](test-loop.md)), where `dry_run`

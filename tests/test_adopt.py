@@ -1,14 +1,20 @@
 """Tests for tools/adopt.py: adoption that can be undone.
 
 The point of the driver is the guarantee, not the render: every test here
-either checks the plan (ref judgement, dry run) or checks that a failed run
-leaves the project exactly as it was.
+either checks the plan (ref judgement, dry run), checks that a failed run
+leaves the project exactly as it was, or kills a real run and checks that the
+journal puts the project back byte for byte.
 """
 
+import hashlib
+import json
+import os
+import signal
 import subprocess
 import sys
 import tomllib
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -18,6 +24,7 @@ if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
 from tools import adopt  # noqa: E402
+from tools import batch  # noqa: E402
 
 
 def git(cwd: Path, *args: str) -> None:
@@ -40,6 +47,29 @@ def make_project(root: Path) -> Path:
 
 def tree(root: Path) -> dict[str, bytes]:
     return {str(path.relative_to(root)): path.read_bytes() for path in sorted(root.rglob("*")) if path.is_file()}
+
+
+def dirs(root: Path) -> set[str]:
+    return {str(path.relative_to(root)) for path in root.rglob("*") if path.is_dir()}
+
+
+def digest(root: Path) -> str:
+    """One hash over the tree: every path and every file's bytes."""
+    accumulator = hashlib.sha256()
+    for relative, content in sorted(tree(root).items()):
+        accumulator.update(f"{relative}\0".encode())
+        accumulator.update(hashlib.sha256(content).digest())
+    return accumulator.hexdigest()
+
+
+def run_cli(project: Path, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
+    """tools/adopt.py as a subprocess, the way a user runs it (and dies)."""
+    command = [sys.executable, str(TOP / "tools" / "adopt.py"), str(project), *args]
+    return subprocess.run(command, capture_output=True, text=True, env={**os.environ, **env}, check=False, timeout=300)
+
+
+def run_recover(project: Path, *, json_output: bool = False) -> subprocess.CompletedProcess[str]:
+    return run_cli(project, "--recover", *(["--json"] if json_output else []))
 
 
 def test_resolve_ref_uses_a_tag_only_when_it_carries_the_questionnaire(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -97,6 +127,8 @@ def test_adoption_keeps_existing_files_and_adds_the_rest(tmp_path: Path):
     assert (project / ".github" / "workflows" / "_hygiene.yml").exists()
     assert sorted(result.unchanged) == [".github/workflows/ci.yml", "README.md", "pyproject.toml", "renovate.json"]
     assert result.created and not result.removed and not result.restored
+    assert adopt.JOURNAL_NAME not in result.created, "the journal is the run's own bookkeeping"
+    assert not (project / adopt.JOURNAL_NAME).exists(), "a committed run leaves no journal"
 
 
 def test_a_collision_that_was_not_skipped_rolls_the_project_back(tmp_path: Path):
@@ -117,6 +149,7 @@ def test_a_collision_that_was_not_skipped_rolls_the_project_back(tmp_path: Path)
     assert tree(project) == before, "every file is back to its old bytes"
     directories = {str(path.relative_to(project)) for path in project.rglob("*") if path.is_dir()}
     assert directories == {".github", ".github/workflows"}, "not even an empty directory is left behind"
+    assert not (project / adopt.JOURNAL_NAME).exists(), "a rolled-back run leaves no journal"
 
 
 def test_adoption_merges_the_template_dependencies(tmp_path: Path):
@@ -389,3 +422,149 @@ def test_main_exit_codes(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
 def test_main_rejects_a_missing_directory(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
     assert adopt.main([str(tmp_path / "nope")]) == 2
     assert capsys.readouterr().err.strip(), "the refusal explains itself on stderr"
+
+
+# The crash drills: a real run, killed hard at a named point, then recovered.
+CRASH_POINTS = [
+    pytest.param("render:1", id="after-the-first-file"),
+    pytest.param("render:20", id="mid-render"),
+    pytest.param("merge:1", id="after-a-merge-write"),
+    pytest.param("verify", id="before-the-final-verify"),
+]
+
+
+@pytest.mark.parametrize("crash_at", CRASH_POINTS)
+def test_a_killed_adoption_is_recovered_byte_for_byte(tmp_path: Path, crash_at: str):
+    """SIGKILL at any point, and the journal gives the project back exactly.
+
+    The killed run cannot clean up after itself -- that is the point -- so the
+    journal it wrote before its first write is the only way back, and what it
+    restores is checked against the tree as it was before the run started.
+    """
+    project = make_project(tmp_path)
+    before = tree(project)
+    before_dirs = dirs(project)
+    identity = digest(project)
+
+    killed = run_cli(project, "--ref", "HEAD", "--yes", COPIER_ADOPT_CRASH_AT=crash_at)
+    assert killed.returncode == -signal.SIGKILL, killed.stderr
+    assert (project / adopt.JOURNAL_NAME).is_file(), "the journal has to survive the kill"
+    assert tree(project) != before, "the drill has to have written something to be worth recovering"
+
+    recovered = run_recover(project)
+    assert recovered.returncode == 0, recovered.stderr
+    assert "recovered" in recovered.stdout
+    assert tree(project) == before, "every file is back to its old bytes"
+    assert dirs(project) == before_dirs, "not even an empty directory the run made is left"
+    assert digest(project) == identity
+    assert not (project / adopt.JOURNAL_NAME).exists(), "the journal goes with the interrupted run"
+
+    again = run_recover(project)
+    assert again.returncode == 0
+    assert "nothing to recover" in again.stdout
+    assert tree(project) == before, "recovering twice changes nothing"
+    assert digest(project) == identity
+
+
+def test_the_journal_records_the_old_bytes_and_what_was_there(tmp_path: Path):
+    """The journal is written before the first change, so it cannot be missing
+    anything the run did next -- and it never mistakes its own file for part of
+    the project it is about to change."""
+    project = make_project(tmp_path)
+    before = tree(project)
+
+    killed = run_cli(project, "--ref", "HEAD", "--yes", COPIER_ADOPT_CRASH_AT="render:1")
+    assert killed.returncode == -signal.SIGKILL
+
+    journal = json.loads((project / adopt.JOURNAL_NAME).read_text())
+    assert journal["version"] == 1
+    assert journal["target"] == str(project), "the journal names the project it belongs to"
+    assert sorted(journal["old"]) == sorted(before), "the old bytes of every file the run may modify are recorded"
+    assert sorted(journal["existing"]) == sorted(before), "and every file that was there is listed"
+    assert adopt.JOURNAL_NAME not in journal["existing"], "the journal itself is not one of the files it records"
+    assert journal["dirs"] == [".github", ".github/workflows"], "the directories, so recovery can remove empty ones"
+
+
+def test_a_stale_journal_refuses_a_new_adoption(tmp_path: Path):
+    """Nobody chose this state, so a plan built from it would be about an accident."""
+    project = make_project(tmp_path)
+    killed = run_cli(project, "--ref", "HEAD", "--yes", COPIER_ADOPT_CRASH_AT="render:20")
+    assert killed.returncode == -signal.SIGKILL
+    interrupted = tree(project)
+
+    refused = run_cli(project, "--ref", "HEAD", "--yes")
+    assert refused.returncode == 4
+    assert "--recover" in refused.stderr, "the refusal says how to get out"
+    assert tree(project) == interrupted, "the refusal wrote nothing"
+    assert (project / adopt.JOURNAL_NAME).is_file(), "and it left the journal alone"
+
+    with pytest.raises(adopt.StaleJournalError):
+        adopt.adopt(project, ref="HEAD")
+
+
+def test_recovery_reports_json_and_succeeds_when_there_is_nothing_to_do(tmp_path: Path):
+    project = make_project(tmp_path)
+    before = tree(project)
+    killed = run_cli(project, "--ref", "HEAD", "--yes", COPIER_ADOPT_CRASH_AT="render:20")
+    assert killed.returncode == -signal.SIGKILL
+
+    recovered = run_recover(project, json_output=True)
+    assert recovered.returncode == 0
+    payload = json.loads(recovered.stdout)
+    assert payload["found"] is True and payload["applied"] is True
+    assert payload["removed"], "the files the render created are named"
+    assert payload["restored"] == [], "nothing existing had been changed yet"
+    assert tree(project) == before
+
+    nothing = run_recover(project, json_output=True)
+    assert nothing.returncode == 0
+    payload = json.loads(nothing.stdout)
+    assert payload["found"] is False and payload["applied"] is False
+    assert payload["restored"] == [] and payload["removed"] == []
+
+    refusal = run_cli(project, "--recover", "--dry-run")
+    assert refusal.returncode == 2, "the two flags promise opposite things"
+    assert "dry-run" in refusal.stderr
+
+
+def test_recovery_refuses_a_journal_from_another_project(tmp_path: Path):
+    """Recovery writes recorded bytes back, so it must be sure about the tree."""
+    project = make_project(tmp_path)
+    killed = run_cli(project, "--ref", "HEAD", "--yes", COPIER_ADOPT_CRASH_AT="render:20")
+    assert killed.returncode == -signal.SIGKILL
+    elsewhere = make_project(tmp_path / "elsewhere")
+    (elsewhere / adopt.JOURNAL_NAME).write_bytes((project / adopt.JOURNAL_NAME).read_bytes())
+    untouched = tree(elsewhere)
+
+    refused = run_recover(elsewhere)
+
+    assert refused.returncode == 2
+    assert "records" in refused.stderr, "the refusal says whose journal it is"
+    assert tree(elsewhere) == untouched
+
+
+@pytest.mark.parametrize("signum", [signal.SIGINT, signal.SIGTERM], ids=["SIGINT", "SIGTERM"])
+def test_a_signal_mid_run_rolls_the_project_back(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, signum: int):
+    """SIGINT/SIGTERM take the same way back as any other failure.
+
+    SIGKILL cannot be caught at all; the journal above is the answer to that.
+    """
+    project = make_project(tmp_path)
+    before = tree(project)
+    render = batch.render
+
+    def interrupted(*args: Any, **kwargs: Any) -> None:
+        render(*args, **kwargs)
+        signal.raise_signal(signum)
+        for _ in range(100):  # the handler runs at the next bytecode boundary
+            pass
+        message = "the signal did not interrupt the run"
+        raise AssertionError(message)
+
+    monkeypatch.setattr(batch, "render", interrupted)
+    result = adopt.adopt(project, ref="HEAD")
+
+    assert not result.ok and not result.applied
+    assert result.error is not None and "interrupted" in result.error, result.error
+    assert tree(project) == before, "a signal is a rollback, not a half-written project"
+    assert not (project / adopt.JOURNAL_NAME).exists(), "the journal goes with the rollback"
