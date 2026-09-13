@@ -27,9 +27,9 @@ driver -- not a reason to adjust the model.
 The template rendered here is a miniature one, built by the test, not
 `template/`: the subject is the protocol in tools/adopt.py, and a miniature
 template turns a 1.6s adoption into ~50ms, which is what makes 100 sequences
-affordable in the edit loop (measured on 16 cores: ~17s of worker time for the
-100, i.e. a second or so of the tier's wall, which is work-bound). No venv, no
-network, and the trees stay small.
+affordable in the edit loop (measured on 16 cores: ~13-19s of one worker's time
+for the 100, i.e. a second or so of the tier's wall, which is work-bound). No
+venv, no network, and the trees stay small.
 """
 
 from __future__ import annotations
@@ -359,6 +359,19 @@ class AdoptionMachine(RuleBasedStateMachine):
 
     # -- the adopter's own edits ---------------------------------------------
 
+    @precondition(lambda self: not self.files and not self.dirs)
+    @rule(with_pyproject=st.booleans(), content=PYPROJECT_TEXT)
+    def start_a_project(self, with_pyproject: bool, content: str) -> None:
+        """The project an adopter starts from: one that has a pyproject.toml, or an empty one.
+
+        An adopter who already has one exercises the merge from the first run;
+        one who has nothing at all is the fresh path. Both are real, and a
+        machine that only ever started empty would reach the merge planning
+        (and the confirmation prompt) far too rarely.
+        """
+        if with_pyproject:
+            self.write_file(PYPROJECT, content)
+
     @precondition(lambda self: not self.pending_journal)
     @rule(name=st.sampled_from(POOL), content=st.text(max_size=80))
     def put_file(self, name: str, content: str) -> None:
@@ -423,8 +436,10 @@ class AdoptionMachine(RuleBasedStateMachine):
     def adopt_and_answer_the_plan(self, answer: str) -> None:
         """The confirmation prompt: cancel rolls the render back, no keeps it.
 
-        With no plan to confirm the driver does not ask at all, and the run is an
-        everyday one -- which the model reads off the callback, not off a guess.
+        The precondition is the driver's own: there is a plan to confirm only
+        when the adopter already has a file the merge step would edit. When
+        there is none the driver does not ask at all, and the run is an everyday
+        one -- which the model reads off the callback, not off a guess.
         """
         asked: list[str] = []
 
