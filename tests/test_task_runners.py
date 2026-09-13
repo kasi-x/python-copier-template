@@ -157,6 +157,8 @@ def test_ci_lint_job_tasks_exist_in_the_model(tmp_path: Path, model_tasks: dict[
     assert set(requested) <= set(model_tasks), f"ci.yml requests non-model tasks: {set(requested) - set(model_tasks)}"
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 @pytest.mark.parametrize(
     ("runner", "lint_cmd"),
     [
@@ -175,6 +177,8 @@ def test_lint_task_executes(runner: str, lint_cmd: str, tmp_path: Path):
     run(lint_cmd)
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_test_task_executes_on_make(tmp_path: Path):
     """`make test` runs the generated pytest suite (coverage flags and all)
     through the makefile's per-line recipe serialization."""
@@ -183,6 +187,8 @@ def test_test_task_executes_on_make(tmp_path: Path):
     run("make test")
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_check_task_executes_on_poe(tmp_path: Path):
     """`poe check` walks the model's dependency graph (lint -> type-check ->
     test) through poe's sequence type, exercising every serializer branch

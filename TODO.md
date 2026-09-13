@@ -1326,10 +1326,16 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
       validator 等の未知キーを落とすため Z3 ガードの入力を劣化させる。`tools/questionnaire.py`
       --json は **109 問**（108 + existing_project）を正しく数え、JSON/MCP 層として役割分担。
       読み取り側は実装済み
-- [ ] **W10（新）**: `tasks.py` / `duties.py` への追記。現状は報告のみ。Python なので「関数を追記 + 必要な import が
-      無ければ報告」の形にし、`Taskfile.yml` と同じ承認ループに載せる
-- [ ] **W11（新）**: 既存 `ci.yml` への**ジョブ単位マージ**。現状は `copier-ci.yml` 併置で回避している。
-      ジョブ名が空いているときだけ承認つきで追記する（YAML 追記の安全性判定は `Taskfile.yml` の実装を流用）
+- [x] **W10（新）**: `tasks.py` / `duties.py` への追記 → **実装済み**（`tools/file_merge.py` の
+      `merge_python_tasks` + `adopt.py` の `TASK_APPEND_KINDS`/`_ask_about_task_files`）。
+      `ast` で欠落関数だけを末尾追記、デコレータ未 import なら追記せず報告、既存関数のバイト不変を
+      検証して破れば巻き戻し。`tests/test_file_merge.py`（報告/追記/冪等/import 欠落）と
+      `tests/test_adopt.py` で担保（43 passed を実測）
+- [x] **W11（新）**: 既存 `ci.yml` への**ジョブ単位マージ** → **実装済み**（`file_merge.merge_ci_jobs` +
+      `adopt._merge_ci_caller`/`_ask_about_ci_jobs`）。既定は非破壊の `copier-ci.yml` 併置で、承認時のみ
+      `ci.yml` に読み取り専用ジョブ（`lint`/`test`/`hygiene`）を追記。publish 系（`dist`/`release`/`docs`）は
+      追記しない。追記後は YAML 再パースで既存ジョブ不変を検証し、名前衝突は報告のみ。
+      `docs/how-to/adopt.md` を実装に合わせて更新済み
 
 ### 22.3 既知の罠（W0 が踏む・copier 9.18.1 で実測再現済み）
 
