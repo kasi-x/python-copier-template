@@ -13,6 +13,14 @@ on:
         type: string
         description: Which task runner drives the test task (task, just, poe, make, pixi)
         required: true
+      task:
+        type: string
+        description: The test task to run (the PR/push caller passes the fast tier, the nightly caller the heavy tier)
+        default: test
+      timeout-minutes:
+        type: number
+        description: Job timeout in minutes (the heavy tier builds venvs, so it needs more than the fast one)
+        default: 60
       postgres-host:
         type: string
         description: Host of the postgres service container, when the project needs a database
@@ -45,7 +53,7 @@ env:
 jobs:
   run:
     runs-on: ${{ inputs.runs-on }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ inputs.timeout-minutes }}
 
     steps:
       - name: Checkout
@@ -101,6 +109,10 @@ jobs:
       - name: Run tests
         env:
           TASK_RUNNER: ${{ inputs.task_runner }}
+          # The test task to run: `test` by default, `test-fast` / `test-heavy`
+          # from ci.yml so the PR/push run skips the venv tier and the nightly
+          # run exercises exactly it.
+          TEST_TASK: ${{ inputs.task }}
           # Postgres service container connection info (empty unless the
           # project opted in via ci.yml's postgres service).
           POSTGRES_HOST: ${{ inputs.postgres-host }}
@@ -112,17 +124,17 @@ jobs:
         run: |
           set -eu
           case "$TASK_RUNNER" in
-            task) task test ;;
-            just) just test ;;
-            make) make test ;;
+            task) task "$TEST_TASK" ;;
+            just) just "$TEST_TASK" ;;
+            make) make "$TEST_TASK" ;;
             poe)
               if [ -f poetry.lock ]; then
-                poetry run poe test
+                poetry run poe "$TEST_TASK"
               else
-                uv run --locked poe test
+                uv run --locked poe "$TEST_TASK"
               fi
               ;;
-            pixi) pixi run -e dev --locked test ;;
+            pixi) pixi run -e dev --locked "$TEST_TASK" ;;
             *) echo "Unknown task runner: $TASK_RUNNER" >&2; exit 1 ;;
           esac
 

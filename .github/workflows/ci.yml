@@ -4,7 +4,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # One lane per event: a push to main must not cancel the nightly heavy run
+  # (and vice versa); pushes/PRs still cancel their own predecessors.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 on:
@@ -14,24 +16,51 @@ on:
     tags:
       - '*'
   pull_request:
+  schedule:
+    # Nightly heavy tier: the venv/network tests (`-m heavy`) that the
+    # PR/push run skips. Staggered from the other scheduled workflows
+    # (check-upstream.yml MON 06:00, check-upstream-fork.yml TUE 06:00,
+    # scheduled-check.yml TUE 07:00, periodic.yml WED 08:00, scorecard.yml
+    # SAT 01:30) so a failure names exactly one workflow.
+    - cron: "0 3 * * *"
 
+# The scheduled run exists only for the heavy tier below: every other job
+# already runs on each push to main, and docs/example have side effects
+# (publishing, deploying the example repo) that a nightly run must not repeat.
 jobs:
   lint:
+    if: github.event_name != 'schedule'
     uses: ./.github/workflows/_tasks.yml
     with:
       task_runner: task
       task: lint,type-check
 
   hygiene:
+    if: github.event_name != 'schedule'
     uses: ./.github/workflows/_hygiene.yml
 
   test:
+    # PR/push: the fast tier (`-m "not heavy"`) -- no venv builds.
+    if: github.event_name != 'schedule'
     uses: ./.github/workflows/_test.yml
     with:
       runs-on: ubuntu-latest
       task_runner: task
+      task: test-fast
+
+  # Nightly: the heavy tier (`-m heavy`) the PR/push run skips.
+  test-heavy:
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/_test.yml
+    with:
+      runs-on: ubuntu-latest
+      task_runner: task
+      task: test-heavy
+      # The venv tier is the slow one; _test.yml's default timeout is 60.
+      timeout-minutes: 120
 
   docs:
+    if: github.event_name != 'schedule'
     uses: ./.github/workflows/_docs.yml
     with:
       task_runner: task
@@ -40,7 +69,7 @@ jobs:
 
   example:
     needs: test
-    if: github.ref_name == 'main'
+    if: github.ref_name == 'main' && github.event_name != 'schedule'
     uses: ./.github/workflows/_example.yml
     secrets:
       EXAMPLE_DEPLOY_KEY: ${{ secrets.EXAMPLE_DEPLOY_KEY }}

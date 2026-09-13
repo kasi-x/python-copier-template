@@ -29,6 +29,10 @@ from test_recommended_path import BASE
 
 TOP = Path(__file__).absolute().parent.parent
 
+# Every test here renders a project and runs `uv sync` in it: a venv build
+# against PyPI (the type checkers need the generated project's dependencies).
+pytestmark = [pytest.mark.heavy, pytest.mark.network]
+
 TYPECHECK_PATHS: list[dict[str, object]] = [
     {"project_type": "library"},
     {"project_type": "web_api"},

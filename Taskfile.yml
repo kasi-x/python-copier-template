@@ -32,13 +32,12 @@ tasks:
     desc: 'Run the tests that neither build a venv nor touch the network (edit loop)'
     cmd: >-
       uv run --locked pytest -q
-      --ignore=tests/test_example.py
-      --ignore=tests/test_generated_typecheck.py
+      -m "not heavy"
       {{ .CLI_ARGS }}
 
   test-heavy:
     desc: 'Run only the tests that build a venv / install deps (pre-push tier)'
-    cmd: uv run --locked pytest -q tests/test_example.py tests/test_generated_typecheck.py {{ .CLI_ARGS }}
+    cmd: uv run --locked pytest -q -m heavy {{ .CLI_ARGS }}
 
   mcp:
     desc: 'Run the repo MCP server (CLI_ARGS="--transport streamable-http")'

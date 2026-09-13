@@ -52,6 +52,16 @@ packages = []
 addopts = """
     --tb=native -vv -n auto
     """
+# Cost tiers. `-m "not heavy"` is the fast tier (edit loop, PR/push CI) and
+# `-m heavy` the tier that builds venvs / hits the network (pre-push, nightly
+# CI). fast/full are the witness render tiers; slow is anything else expensive.
+markers = [
+    "heavy: builds a virtualenv (uv sync), i.e. installs dependencies",
+    "network: touches the network (uv sync, uvx downloads, remote clones)",
+    "fast: witness render tier -- renders the template without a venv",
+    "full: witness full tier -- renders plus the expensive generated-project checks",
+    "slow: expensive, but neither a venv build nor network-bound",
+]
 # Doctest python code in docs, python code in src docstrings, test functions in tests
 testpaths = "tests"
 

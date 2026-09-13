@@ -94,6 +94,8 @@ def make_venv(project_path: Path) -> Callable[[str], str]:
     return run
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_defaults(tmp_path: Path):
     copy_project(tmp_path)
     run = make_venv(tmp_path)
@@ -112,6 +114,8 @@ def test_template_defaults(tmp_path: Path):
     run("uvx twine check --strict dist/*")
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_with_extra_code_and_api_docs(tmp_path: Path):
     copy_project(tmp_path, docs_type="sphinx", project_type="library")
     run = make_venv(tmp_path)
@@ -254,6 +258,8 @@ def test_template_adopt_mode_protects_existing_files(tmp_path: Path):
     assert "Adopt mode:" in (TOP / "copier.yml").read_text()
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_adopt_mode_update_interop(tmp_path: Path):
     """An adopt-mode project can run copier update: the recorded answers
     (including adopt_protect) do not break the update mechanics, protected
@@ -296,6 +302,8 @@ def test_template_adopt_mode_update_interop(tmp_path: Path):
     assert (tmp_path / "pyproject.toml").exists()
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_works_outside_git(tmp_path: Path):
     """Publish pipelines generate first and `git init` later. Without git
     metadata setuptools_scm used to abort every `uv sync` — the fallback
@@ -588,6 +596,8 @@ def test_template_aoj_workspace(tmp_path: Path):
     assert "aoj submit main.py --lang Python3" in readme
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_online_judge_repo_lints_clean(tmp_path: Path):
     """The empty workspace renders a ruff/type-check-clean repo (no sources)."""
     copy_project_recommended(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="atcoder")
@@ -777,6 +787,8 @@ def test_template_mcp_no_docker_no_task(tmp_path: Path):
     assert "mcp-serve" not in taskfile
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_mcp_runs_in_process(tmp_path: Path):
     """The generated MCP server must actually work against the installed v2
     SDK: sync the project, run the in-process client test, and type-check the
@@ -848,6 +860,8 @@ def test_template_mcp_on_web_api(tmp_path: Path):
     assert not list(tmp_path.rglob("src/*/mcp_server.py"))
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_mcp_runs_on_web_api_in_process(tmp_path: Path):
     """The app/-hosted MCP server must actually work: sync the web_api+MCP
     project and run its in-process client test plus the API tests."""
@@ -894,6 +908,8 @@ def test_template_include_ctf(tmp_path: Path):
     assert "challenges/**/vuln" in gitignore
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_include_ctf_runs(tmp_path: Path):
     """The generated solve.py starter must actually run: sync the project
     and execute both the starter directly and its generated test."""
@@ -947,6 +963,8 @@ def test_template_include_scraping_httpx(tmp_path: Path):
     assert "CHARTER.md" in readme
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_include_scraping_runs(tmp_path: Path):
     """The generated fetcher must actually run: sync the project and execute
     its offline test plus ruff on the fetcher."""
@@ -1144,6 +1162,8 @@ def test_template_log_library_default_is_structlog(tmp_path: Path):
     assert "import structlog" in logging_setup
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_log_library_loguru(tmp_path: Path):
     copy_project(tmp_path, log_library="loguru")
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
@@ -1160,6 +1180,8 @@ def test_template_log_library_loguru(tmp_path: Path):
     )
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_log_library_picologging(tmp_path: Path):
     copy_project(tmp_path, log_library="picologging")
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
@@ -1170,6 +1192,8 @@ def test_template_log_library_picologging(tmp_path: Path):
     run("uvx --from go-task-bin task check")
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_log_library_stdlib(tmp_path: Path):
     copy_project(tmp_path, log_library="logging")
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
@@ -1193,6 +1217,8 @@ def test_template_log_library_skipped_for_ros2(tmp_path: Path):
     assert not list(tmp_path.rglob("logging_setup.py"))
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 @pytest.mark.parametrize("log_library", ["structlog", "loguru", "picologging", "logging"])
 def test_template_log_library_gcp_json_fields(tmp_path: Path, log_library: str, monkeypatch: pytest.MonkeyPatch):
     """With cloud_provider=gcp, LOG_FORMAT=json should use the field names
@@ -1453,6 +1479,8 @@ def test_template_task_runner_pixi_with_task(tmp_path: Path):
     assert "[tool.pixi.feature.dev.tasks]" not in pyproject
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_task_runner_just_works(tmp_path: Path):
     copy_project(tmp_path, task_runner="just")
     run = make_venv(tmp_path)
@@ -1696,6 +1724,8 @@ def test_combo_guards_reject_incompatible_bases(tmp_path: Path):
     assert not any("fastapi" in d for d in pyproject_toml["project"]["dependencies"])
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_web_api_runs_in_process(tmp_path: Path):
     """The generated FastAPI scaffold must actually work: sync the project,
     run the HTTP tests (SQLite fallback), and keep it ruff/basedpyright-clean
@@ -1896,6 +1926,8 @@ def test_template_micropython_rp2_stub(tmp_path: Path):
     assert "micropython-esp32-stubs" not in reqs
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_template_micropython_core_test_runs(tmp_path: Path):
     """The device-independent core must be importable and testable under CPython."""
     copy_project_recommended(tmp_path, project_type="micropython", micropython_port="unix")
@@ -1907,6 +1939,8 @@ def test_dots_in_package_name(tmp_path: Path):
     copy_project(tmp_path, repo_name="dots.in.name")
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_example_repo_updates(tmp_path: Path):
     generated_path = tmp_path / "generated"
     example_url = "https://github.com/kasi-x/python-copier-template-example.git"
@@ -1980,6 +2014,8 @@ def test_gitignore_same():
     assert ".gitignore.jinja" not in (TOP / ".gitignore").read_text()
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_private_member_access(tmp_path: Path):
     code = """
 class MyClass:
@@ -2009,6 +2045,8 @@ print(obj._bar)
         run("ruff check")
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_pep8_naming(tmp_path: Path):
     code = """
 myVariable = "foo"
@@ -2044,6 +2082,8 @@ def test_basedpyright_works_in_basic_mode(tmp_path: Path):
     assert "type-check" not in (tmp_path / "Taskfile.yml").read_text()
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_basedpyright_works_with_external_deps(tmp_path: Path):
     copy_project(tmp_path)
     # Add an external dependency (regex insert -- log_library picks which
@@ -2085,6 +2125,8 @@ def test_full_strictness_mode(tmp_path: Path):
     assert "reportAny = true" in pyproject_toml.read_text()
 
 
+@pytest.mark.heavy
+@pytest.mark.network
 def test_works_with_pydocstyle(tmp_path: Path):
     # Use English docstrings (allow_japanese=False) so ruff's D415
     # (punctuation check) applies cleanly.
