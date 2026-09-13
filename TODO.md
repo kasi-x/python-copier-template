@@ -1300,8 +1300,9 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
 
 - [x] **W0: fork detach と既定経路の是正** → **実施済み（2026-09-13、ユーザー承認後に実行）**
       - 継承タグ 38 個を**ローカルとリモートの両方で削除**（`git push origin --delete <38 tags>`、
-        remote tags 0 を実測）し、HEAD に `6.0.0` を 1 つだけ作成して `git push origin main 6.0.0`
-        （remote: `refs/tags/6.0.0` と `main` が同一 commit `5a3b4a1e`）
+        remote tags 0 を実測）し、HEAD に `6.0.0` を 1 つだけ作成して `git push origin main 6.0.0`。
+        初回の 6.0.0 は自前 CI の lint が赤だったため、type-check 修正後の commit（CI 全ジョブ緑）へ
+        **force-update で付け替え**（作成直後・外部 consumer なしを確認。remote は `6.0.0` 1 本のみ）
       - `--vcs-ref` 前提の記述を撤去: README / docs/tutorials/{create-new,adopt-existing}.md /
         docs/explanations/template-dev.md / docs/how-to/{adopt,test-loop}.md / copier.yml の adopt
         `_tasks` メッセージ / 生成 README の update 行（`uvx copier update --trust --defaults`）。
