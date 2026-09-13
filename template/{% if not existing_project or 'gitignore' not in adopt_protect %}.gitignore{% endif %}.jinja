@@ -87,6 +87,11 @@ data/external/*
 !data/external/.gitkeep
 models/*
 !models/.gitkeep
+# un-ignored so the repo's own adopt-protocol Quint models (models/*.qnt,
+# re-verified by .github/workflows/quint.yml) and a directory README stay
+# trackable; inert in a generated project until such files exist
+!models/README.md
+!models/*.qnt
 reports/figures/*
 !reports/figures/.gitkeep
 outputs/*
