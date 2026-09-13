@@ -56,6 +56,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
@@ -102,6 +103,14 @@ UNCONDITIONAL_GATES: tuple[str, ...] = (
     "use_recommended_license",
     "use_recommended_integrations",
     "use_recommended_security",
+)
+
+# gates whose `when` the projection below mirrors explicitly.
+PROJECTED_GATES: tuple[str, ...] = (
+    "use_recommended_agent",
+    "use_recommended_data_science",
+    "use_recommended_web_api",
+    "use_recommended_scraping",
 )
 
 # Question types the questionnaire deliberately cannot render.
@@ -211,6 +220,7 @@ def _structure_module() -> ModuleType:
         msg = f"cannot import {STRUCTURE_TESTS}"
         raise SystemExit(msg)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module  # dataclasses/pickling resolve their module through sys.modules
     spec.loader.exec_module(module)
     return module
 
@@ -239,16 +249,11 @@ def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories
     """Assert the leaf-space restrictions on top of the questionnaire's variables."""
     gates = {name: z3.Bool(name) for name in questions if name.startswith(GATE_PREFIX)}
     includes = {name: z3.Bool(name) for name in INCLUDE_LAYERS}
-    unprojected = (
-        set(gates)
-        - set(UNCONDITIONAL_GATES)
-        - {
-            "use_recommended_agent",
-            "use_recommended_data_science",
-            "use_recommended_web_api",
-            "use_recommended_scraping",
-        }
-    )
+    for name in (*UNCONDITIONAL_GATES, *PROJECTED_GATES, *INCLUDE_LAYERS):
+        if name not in questions:
+            msg = f"{name!r} is declared in this tool but gone from the questionnaire; update the leaf space"
+            raise SystemExit(msg)
+    unprojected = set(gates) - set(UNCONDITIONAL_GATES) - set(PROJECTED_GATES)
     if unprojected:
         msg = f"gate(s) {sorted(unprojected)} have no projection; declare their `when` in this tool"
         raise SystemExit(msg)
