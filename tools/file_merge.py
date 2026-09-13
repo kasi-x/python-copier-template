@@ -173,6 +173,21 @@ def _taskfile_tasks(text: str) -> dict[str, Any]:
     return tasks if isinstance(tasks, dict) else {}
 
 
+def _parses_as_mapping(text: str) -> bool:
+    """True when `text` is YAML that reads back as a mapping (or empty).
+
+    `_taskfile_tasks` deliberately swallows a parse error (an unparseable
+    target simply has no *known* tasks), which would make a "were the old
+    tasks kept?" check vacuously true on a file that does not parse at all.
+    The append path needs the stricter question.
+    """
+    try:
+        document = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return False
+    return document is None or isinstance(document, dict)
+
+
 def merge_taskfile(target_path: Path, source_path: Path, *, append: bool = False) -> TextMerge:
     """Report the tasks a YAML task file is missing — and append them when asked.
 
@@ -210,9 +225,14 @@ def merge_taskfile(target_path: Path, source_path: Path, *, append: bool = False
     appended += "\n".join(blocks[name] for name in sorted(missing)) + "\n"
     target_path.write_text(appended, encoding="utf-8")
     after = _taskfile_tasks(appended)
-    if not all(name in after and after[name] == value for name, value in before.items()):
+    kept = all(name in after and after[name] == value for name, value in before.items())
+    # An empty `before` makes `kept` vacuously true, so the append must also be
+    # re-parseable and must actually carry the tasks it claims: a target with
+    # `tasks: {}` (or one that does not parse at all) would otherwise take the
+    # indented blocks, fail to parse, and still be reported as applied.
+    if not (_parses_as_mapping(appended) and kept and all(name in after for name in missing)):
         target_path.write_text(target_text, encoding="utf-8")
-        result.notes.append("appending the tasks changed an existing one; undone")
+        result.notes.append("appending the tasks produced a task list that does not hold them; undone")
         result.reported = sorted(missing)
         return result
     result.added = sorted(missing)

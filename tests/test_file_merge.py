@@ -192,6 +192,27 @@ def test_taskfile_is_not_appended_when_tasks_are_not_last(tmp_path: Path):
     assert target.read_text() == before
 
 
+def test_taskfile_append_is_refused_when_the_result_would_not_parse(tmp_path: Path):
+    """`tasks: {}` (and an unparseable target) made the old check vacuous.
+
+    The verification compared only the tasks that were there before, so an
+    empty `before` accepted anything - including indented blocks appended after
+    an inline `{}`, which does not parse. The file must come back untouched.
+    """
+    source = tmp_path / "source.yml"
+    source.write_text("version: '3'\ntasks:\n  lint:\n    cmds:\n      - ruff check .\n")
+
+    for target_text in ("version: '3'\ntasks: {}\n", "version: '3'\ntasks:\n  mine: [oops\n"):
+        target = tmp_path / "Taskfile.yml"
+        target.write_text(target_text)
+
+        result = file_merge.merge_taskfile(target, source, append=True)
+
+        assert not result.applied, f"an append that cannot parse was reported as applied: {target_text!r}"
+        assert result.reported == ["lint"]
+        assert target.read_text() == target_text, "the refused append left the file untouched"
+
+
 def test_ci_caller_keeps_only_the_read_only_jobs():
     caller, kept, dropped = file_merge.ci_caller(CI_SOURCE)
 
