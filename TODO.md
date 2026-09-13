@@ -1338,8 +1338,18 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
       guard-the-guard（scratch で `when` を false 化 → 未到達 9 葉を名指しして fail）も実測
       - **成果**: full tier が実欠陥 3 件を検出 → 修正済み（micropython の basedpyright include / OJ の docs /
         cli+agent の reportAny）。修正後は 205/205 pass
-      - 未実施の残り: 既存テストの「文言固定 assert」監査（PLAN W3 acceptance の最後の項）
-- [ ] **W4: サポートマトリクスの宣言と長尾の整理**（`support.yml`、W3 の後）
+      - 未実施の残り: 既存テストの「文言固定 assert」監査 → **完了（2026-09-13）**: 15 モジュールで
+        assert 152 行削除 / 128 行追加、テスト関数の削除ゼロ。repo ソースの文字列 pin・help/docstring/
+        log の文言・`pytest.raises(match=...)`・substring での YAML/TOML/JSON 読み・形状 pin を除去し、
+        挙動/境界/不変条件/実エラー/生成物契約（存在・パース結果・実行結果）・byte 不変・冪等に置換
+- [x] **W4: サポートマトリクスの宣言と長尾の整理** → **実施済み（2026-09-13）**
+      - `support.yml`: full tier が実行する 8 組合せ（ledger の `source: full`）を `supported`、
+        長尾（make/poe/invoke/duty の非実走タスク、poetry、loguru/picologging、ty、ros2、
+       非 AtCoder の judge、layer 葉、gate-off 分岐）を `best_effort` として根拠付きで宣言
+      - `docs/reference/support.md` は `tools/gen_docs.py` の生成物（README は要約ブロック）。
+        `tests/test_support_matrix.py` が「supported は ledger で pass」「生成物と一致」
+        「`tier: none` には reason 必須」を担保。`--check` = 9 blocks in sync
+      - ledger の降格は行わない（全葉が fast tier で実行済み。`tier: none` は「実行を止める」将来用）
 - [x] **W5: ドキュメントを質問票から生成** → **実施済み（2026-09-13）**
       - `tools/gen_docs.py`: `tools/questionnaire.py` のモデルから README の Features 領域リスト・mermaid・
         task runner 行と `docs/reference/questionnaire.md` の 4 ブロックを生成（`--check` / `--write`、
@@ -1391,18 +1401,20 @@ micropython プロジェクトでは sphinx が不要な制限は、テンプレ
       追記しない。追記後は YAML 再パースで既存ジョブ不変を検証し、名前衝突は報告のみ。
       `docs/how-to/adopt.md` を実装に合わせて更新済み
 
-### 22.2.1 今回の実行で判明した未修正の欠陥（証人マトリクス由来。優先度順）
+### 22.2.1 今回の実行で判明した欠陥（証人マトリクス由来。全て修正済み）
 
-- [ ] **`micropython_port=mimxrt` の stubs が解決不能**: `requirements-dev.txt.jinja` の
-      `micropython-mimxrt-stubs~=1.29.0` に公開版が無く `just stubs` が exit 1 → その port の
-      firmware type-check が走らない（他 7 port は `just check` exit 0 を実測）。PyPI 上の実在版を確認して pin を直す
-- [ ] **flat レイアウト + `use_recommended_agent=false`**: flat 側 `agent.py` の `help=f"..."` が 92 文字で
-      ruff line-too-long → そのレンダの `just check` が赤（witness の葉は src レイアウトのみ。src 側は修正済み）
-- [ ] **`oj_code` の生成 docs `index.md`**: Home に `pip install <dist>` / `from <pkg> import __version__` の
-      Usage 断片が残る（そのレイアウトにパッケージは無い）。docs build は緑だが記述が誤り
-- [ ] **W4**: `support.yml` + `docs/reference/support.md`。入力の `tests/matrix/witnesses.json`（205 葉・
-      全 pass・full 8 葉）と実行コスト実測は揃っている
-- [ ] **W3 の残り**: 既存テストの「文言固定 assert」監査（削除は W3 の裁量、`test_example.py` の実行テストは残す）
+- [x] **`micropython_port=mimxrt` の stubs が解決不能** → **修正済み**: その port は PyPI に
+      `1.26.1.post1` しか公開が無い（他 7 port は `1.29.0.post1`）。テンプレートは port 別に
+      最新公開系列を pin（`~=1.26.1`）し、upstream 追随時に上げるコメントを付与。
+      `just stubs` exit 0、mimxrt の firmware type-check も exit 0（pin を外すと stubs 不在で exit 3 になるため
+      「除外」ではなく pin を選択）
+- [x] **flat レイアウト + `use_recommended_agent=false`** → **修正済み**: `help=f"..."` を src 版と同様に折返し。
+      flat の `just check` exit 0、src 版は byte-identical
+- [x] **`oj_code` の生成 docs `index.md`** → **修正済み**: `{% elif oj_code %}` を追加し、パッケージを持たない
+      ワークスペース向けの説明に変更（install/import 断片を削除）。atcoder の `just docs` exit 0、
+      library の断片は従来どおり
+- [x] **W4**: `support.yml` + 生成 `docs/reference/support.md` + `tests/test_support_matrix.py`
+- [x] **W3 の残り**: 文言固定 assert の監査（15 モジュール、関数削除ゼロ）
 
 ### 22.3 既知の罠（W0 が踏む・copier 9.18.1 で実測再現済み）
 
@@ -1439,6 +1451,24 @@ clean clone から render する形に修正済み。
 `test_generated_project_is_ruff_format_clean` が 24 件落ちた。対策としてキャッシュは repo-only の
 `tests/render_cache.py` に置き、共有 conftest は空のまま。`_test.yml` への入場追加も、生成側 `ci.yml` が
 `task:` を渡さない前提（既定 `test`）と、`schedule:` を共有ファイルに置かないことを守って実装した。
+
+### 22.5 PLAN §7「完了条件」の判定（2026-09-13 実測）
+
+| # | 条件 | 判定 | 根拠 |
+|---|---|---|---|
+| 1 | 引数なし `copier copy` が exit 0 | ✅ | `tests/test_generation_docs.py::test_default_copy_sees_the_fork_questionnaire`（6.0.0 を解決） |
+| 2 | 全葉が ledger に登録され、`tier != none` の全葉に実行済みの証人 | ✅ | `coverage: {total: 205, executed_fast: 205, executed_full: 8, none: 0, unexecuted: []}`、results 全部 pass |
+| 3 | タスク名集合が全ランナーでモデル一致 + `test`/`check` の実走 | ✅ | `test_task_runners.py` の構造比較 7 ランナー + `make test` / `poe check` 実走 |
+| 4 | `copier update` が全 fixture ref で conflict なし | ✅ | `tests/test_update_path.py` 5 passed（タグ生成 → HEAD へ update） |
+| 5 | README が <130 行 + TL;DR、`gen_docs.py --check` 緑 | ⚠️ 部分 | `--check` は緑（9 blocks）。**README は 496 行**で、行数削減は W5 の非目標として別 WP 送り（未着手） |
+| 6 | 全 workflow に `timeout-minutes` + `task check` が通る | ✅ | W7 で付与。`task check` 相当を実測: lint ✓ / type-check ✓ / fast tier 657 passed ✓ / **heavy tier 43 passed**（venv 構築含む） |
+| 7 | adopt の T1 衝突 | ✅ | W8（解決済み）+ `tools/detect.py` の `COLLISIONS` |
+| 8 | `-m "not heavy"` がヘビー tier を外しレンダ被覆を失わない | ✅ | 435 + 30 = 465 を検証、witness fast tier は render 205 件を維持 |
+
+残る唯一の未達は #5 の README 行数削減（別 WP）。あわせて repo 設定側の未整備:
+**タグ push で走る `release` ジョブが 403**（`Resource not accessible by integration`。
+Settings → Actions → General → Workflow permissions を "Read and write" にするか PAT が必要。
+6.0.0 の GitHub Release / PyPI 公開はこれが理由で未作成。テンプレート側の欠陥ではない）
 
 ## 23. テストの簡易化・実行の簡易化・MCP 整備・論理検証の到達点（2026-09-13 監査）
 
