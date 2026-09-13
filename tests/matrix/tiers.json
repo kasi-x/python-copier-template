@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 733,
+      "collected": 738,
       "files": {
         "tests/test_adopt.py": 32,
         "tests/test_adopt_stateful.py": 1,
@@ -17,7 +17,7 @@
         "tests/test_generated_lint.py": 106,
         "tests/test_generation_docs.py": 1,
         "tests/test_gitleaks_config.py": 9,
-        "tests/test_invariants.py": 16,
+        "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
         "tests/test_mcp_server.py": 26,
         "tests/test_micropython_maintenance.py": 3,
@@ -31,10 +31,10 @@
         "tests/test_task_runners.py": 9,
         "tests/test_update_path.py": 1,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 208,
+        "tests/test_witness_matrix.py": 210,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "2b30d1e018c66b0413f8323d10252b04f0d00237c767d03787da40aab6767b5b",
+      "ids_sha256": "54aed6da6bf149f55b36588f8abece0c191ebaa42b5e8821456fa8f70cf6f4ce",
       "wall_seconds": 47.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
@@ -86,7 +86,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 788,
+      "collected": 793,
       "files": {
         "tests/test_adopt.py": 32,
         "tests/test_adopt_stateful.py": 1,
@@ -100,7 +100,7 @@
         "tests/test_generated_typecheck.py": 6,
         "tests/test_generation_docs.py": 1,
         "tests/test_gitleaks_config.py": 9,
-        "tests/test_invariants.py": 16,
+        "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
         "tests/test_marker_drift.py": 7,
         "tests/test_mcp_server.py": 26,
@@ -115,10 +115,10 @@
         "tests/test_task_runners.py": 15,
         "tests/test_update_path.py": 5,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 217,
+        "tests/test_witness_matrix.py": 219,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "4fb53f70673f1114c7c1f7289919f65664f0443e333d8dc9467799650306a153",
+      "ids_sha256": "b52ca06e7a96adc8b750d2ffa891ab77332cd7b976a0225fb16d6c5e7f5903a2",
       "wall_seconds": 138.9,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -130,11 +130,11 @@
       "workflow": ".github/workflows/witness.yml",
       "job": "fast",
       "expression": "fast",
-      "collected": 208,
+      "collected": 210,
       "files": {
-        "tests/test_witness_matrix.py": 208
+        "tests/test_witness_matrix.py": 210
       },
-      "ids_sha256": "db43a61eeabaff310f0064764464cb8bc0e8c3489cf0244942f25f2b8718c15f",
+      "ids_sha256": "5a0597ac7081c26c74a9ef9d3cc405d8512a93021286a47791bf52c5980607f4",
       "wall_seconds": 39.4,
       "measured": "2026-09-14",
       "timeout_seconds": 1800,

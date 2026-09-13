@@ -15,6 +15,10 @@ a class's invariants:
   raises ``InvariantError`` naming the row;
 - every ``project_type`` the questionnaire offers must be selected by a row,
   and a row may not select an excluded one;
+- every ``excluded`` entry is held against the live questionnaire: an excluded
+  ``project_type`` must not be offered again, an excluded ``question`` must
+  still be declared -- either way a stale exclusion fails at load, not in the
+  witness output;
 - a leaf whose answers carry a dimension value no row selects (a new judge, a
   new layer, a gate nobody declared) is reported by ``unclaimed`` and refused
   by ``expect_for`` instead of quietly resolving to the common layout.
@@ -27,7 +31,8 @@ selects.
 Consumers:
 
 - ``tools/z3_witnesses.py`` builds each §C6 request's ``expect`` with
-  ``expect_for`` and takes the excluded question types from ``excluded``;
+  ``expect_for`` and takes everything the leaf space keeps out (the excluded
+  project types and the excluded questions) from ``excluded``/``excluded_questions``;
 - ``tests/test_recommended_path.py`` derives its fast-path ``MARKERS`` (branch
   tells) with ``markers_for`` and its per-case content checks with
   ``content_for``;
@@ -177,6 +182,7 @@ class Invariants:
     source: Path
     predicates: dict[str, str]
     excluded: dict[str, str]
+    excluded_questions: dict[str, str]
     vocabulary: Vocabulary
     rows: tuple[LeafClass, ...]
 
@@ -300,9 +306,10 @@ def _oj_kind_choices(questions: dict[str, dict], category: str) -> list[str]:
     return [str(value) for value in yaml.safe_load(rendered)]
 
 
-def questionnaire_vocabulary() -> Vocabulary:
+def questionnaire_vocabulary(questions: dict[str, dict] | None = None) -> Vocabulary:
     """The questionnaire's names, read with copier's own loader."""
-    questions, _order = when_model.load_questions()
+    if questions is None:
+        questions, _order = when_model.load_questions()
     categories = tuple(_static_choices(questions, "oj_category"))
     return Vocabulary(
         project_types=tuple(_static_choices(questions, "project_type")),
@@ -329,11 +336,20 @@ def load(path: Path | None = None) -> Invariants:
         msg = f"{source}: unknown section(s) {unknown}; the schema is version/predicates/excluded/leaf_classes"
         raise InvariantError(msg)
     predicates = _predicates(payload.get("predicates"), source)
-    excluded = _excluded(payload.get("excluded"), source)
-    vocabulary = questionnaire_vocabulary()
+    excluded, excluded_questions = _excluded(payload.get("excluded"), source)
+    questions, _order = when_model.load_questions()
+    vocabulary = questionnaire_vocabulary(questions)
     rows = _rows(payload.get("leaf_classes"), vocabulary, predicates, excluded, source)
-    invariants = Invariants(source=source, predicates=predicates, excluded=excluded, vocabulary=vocabulary, rows=rows)
+    invariants = Invariants(
+        source=source,
+        predicates=predicates,
+        excluded=excluded,
+        excluded_questions=excluded_questions,
+        vocabulary=vocabulary,
+        rows=rows,
+    )
     _check_project_type_coverage(invariants)
+    _check_excluded_questions(invariants, questions)
     return invariants
 
 
@@ -390,30 +406,42 @@ def _predicates(value: Any, source: Path) -> dict[str, str]:
     return found
 
 
-def _excluded(value: Any, source: Path) -> dict[str, str]:
-    """The excluded question types: project_type -> the reason it cannot render."""
+def _excluded(value: Any, source: Path) -> tuple[dict[str, str], dict[str, str]]:
+    """The exclusions: name -> why, split by kind.
+
+    A ``project_type`` entry names a non-goal the questionnaire must not offer
+    again (its witness generator keeps it out of the leaf space); a
+    ``question`` entry names a live question the leaf space deliberately never
+    varies. Either kind carries the one-line reason the coverage output prints.
+    """
     where = f"{source}: excluded"
     if value is None:
-        return {}
+        return {}, {}
     if not isinstance(value, list):
         msg = f"{where}: must be a list"
         raise InvariantError(msg)
-    found: dict[str, str] = {}
+    project_types: dict[str, str] = {}
+    questions: dict[str, str] = {}
     for index, entry in enumerate(value):
         row = _mapping(entry, f"{where}[{index}]")
-        unknown = sorted(set(row) - {"project_type", "why"})
+        unknown = sorted(set(row) - {"project_type", "question", "why"})
         if unknown:
             msg = f"{where}[{index}]: unknown key(s) {unknown}"
             raise InvariantError(msg)
-        name = row.get("project_type")
+        if "project_type" in row and "question" in row:
+            msg = f"{where}[{index}]: declare `project_type` or `question`, not both"
+            raise InvariantError(msg)
+        kind = "project_type" if "project_type" in row else "question"
+        name = row.get(kind)
         if not isinstance(name, str) or not name:
-            msg = f"{where}[{index}]: `project_type` must be a non-empty string"
+            msg = f"{where}[{index}]: `{kind}` must be a non-empty string"
             raise InvariantError(msg)
-        if name in found:
-            msg = f"{where}: project_type {name!r} is excluded twice"
+        if name in project_types or name in questions:
+            msg = f"{where}: {name!r} is excluded twice"
             raise InvariantError(msg)
-        found[name] = _why(row, f"{where}[{index}] ({name})")
-    return found
+        target = project_types if kind == "project_type" else questions
+        target[name] = _why(row, f"{where}[{index}] ({name})")
+    return project_types, questions
 
 
 def _select(value: Any, vocabulary: Vocabulary, excluded: dict[str, str], where: str) -> dict[str, Any]:
@@ -586,4 +614,17 @@ def _check_project_type_coverage(invariants: Invariants) -> None:
     for name, reason in invariants.excluded.items():
         if name in invariants.vocabulary.project_types:
             msg = f"{invariants.source}: {name!r} is excluded ({reason}) but the questionnaire still offers it"
+            raise InvariantError(msg)
+
+
+def _check_excluded_questions(invariants: Invariants, questions: dict[str, dict]) -> None:
+    """An excluded question must still be one the questionnaire declares.
+
+    The entry exists to say why the leaf space never varies a live question;
+    once the question is gone the reason describes nothing, and a renamed
+    question would otherwise silently un-exclude itself.
+    """
+    for name, reason in invariants.excluded_questions.items():
+        if name not in questions:
+            msg = f"{invariants.source}: {name!r} is excluded ({reason}) but the questionnaire no longer declares it"
             raise InvariantError(msg)

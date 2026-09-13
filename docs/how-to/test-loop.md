@@ -6,10 +6,10 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 733 | ~47s † |
+| Edit loop | `task test-fast` | 738 | ~47s † |
 | Slow | `task test-slow` | 5 | ~72s |
 | Pre-push / nightly | `task test-heavy` | 43 | ~29s |
-| Everything | `task test` | 788 | ~139s |
+| Everything | `task test` | 793 | ~139s |
 | Cost ledger guard | `task test-meta` | 7 | ~11s † |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
@@ -110,7 +110,7 @@ disagree); the times are the measurements recorded with them.
 | `ci.yml` (`_test.yml`) | push / PR | `task test-fast` — the edit loop |
 | `ci.yml` (`_test.yml`) | push / PR | `task test-meta` — the ledger's own guard, its own job so the edit loop does not pay for six extra pytest startups |
 | `ci.yml` (nightly) | schedule | `task test-heavy` |
-| `witness.yml` (fast) | PR | `pytest -q tests/test_witness_matrix.py -m fast` — renders every leaf, no venv: 208 tests (205 renders plus three leaf-list checks), 39 s locally with the render cache emptied, against the job's 30-minute timeout |
+| `witness.yml` (fast) | PR | `pytest -q tests/test_witness_matrix.py -m fast` — renders every leaf, no venv: 210 tests (205 renders plus five leaf-list checks), 39 s locally with the render cache emptied, against the job's 30-minute timeout |
 | `witness.yml` (full) | schedule / manual | `pytest -q tests/test_witness_matrix.py -m full` — the 8-leaf venv sample plus the batch runner |
 
 The witness tiers are the [W3 matrix](../explanations/verification.md): `fast`
