@@ -1,13 +1,14 @@
 """Lint the rendered output of the questionnaire's recommended (fast) paths.
 
 test_recommended_path.py proves those paths *render*; this module proves the
-rendered tree is clean under the generated project's own ruff config. We run
-`run_copy(..., skip_tasks=True)` so no uv sync is needed -- ruff (from this
-repo's venv) is pointed at the generated project, whose pyproject.toml holds
-the `[tool.ruff]` that the generated project's own CI would use. A failure
-here means the template's .jinja sources emit code the generated ruff config
-rejects, which the heavy task-check tests in test_example.py would only catch
-after a full uv sync.
+rendered tree is clean under the generated project's own ruff config. Renders
+come from the session-wide cache in render_cache.py, which runs copier with
+`skip_tasks=True` (no uv sync needed) once per (answers, template) and copies
+that tree per test. ruff (from this repo's venv) is pointed at the generated
+project, whose pyproject.toml holds the `[tool.ruff]` that the generated
+project's own CI would use. A failure here means the template's .jinja
+sources emit code the generated ruff config rejects, which the heavy
+task-check tests in test_example.py would only catch after a full uv sync.
 """
 
 import shutil
@@ -16,8 +17,12 @@ import sys
 from pathlib import Path
 
 import pytest
-from copier import run_copy
 
+from render_cache import RenderCache
+
+# Imported so pytest can inject the fixture (the cache lives here, not in
+# conftest.py: the template renders that file into generated projects).
+from render_cache import render_cache as render_cache  # noqa: PLC0414
 from test_recommended_path import BASE
 from test_recommended_path import FAST_PATHS
 
@@ -112,31 +117,21 @@ def _ruff_bin() -> Path:
     return Path(which)
 
 
-def _render(tmp_path: Path, answers: dict[str, object]) -> None:
-    run_copy(
-        src_path=str(TOP),
-        dst_path=tmp_path,
-        data={**BASE, **answers},
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,
-    )
+def _render(cache: RenderCache, tmp_path: Path, answers: dict[str, object]) -> None:
+    """Materialize BASE + answers into tmp_path, reusing the session cache.
+
+    The tiers below all need the same renders; the cache does the copier run
+    once per combination and copies that tree here verbatim, with the same
+    answers and the same skip_tasks a fresh render would get.
+    """
+    cache.render(tmp_path, {**BASE, **answers})
 
 
 @pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
-def test_generated_project_is_ruff_clean(tmp_path: Path, answers: dict[str, object]):
-    run_copy(
-        src_path=str(TOP),
-        dst_path=tmp_path,
-        data={**BASE, **answers},
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,  # REUSE-copy tasks need a checkout; ruff is what we test
-    )
+def test_generated_project_is_ruff_clean(tmp_path: Path, render_cache: RenderCache, answers: dict[str, object]):
+    # skip_tasks=True all the way down (REUSE-copy tasks need a checkout;
+    # ruff is what we test).
+    _render(render_cache, tmp_path, answers)
     ruff = _ruff_bin()
     proc = subprocess.run(
         [str(ruff), "check", "--no-cache", "."],
@@ -162,7 +157,7 @@ def _run_ruff_format_check(tmp_path: Path) -> subprocess.CompletedProcess[str]:
 
 
 @pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
-def test_generated_project_is_ruff_format_clean(tmp_path: Path, answers: dict[str, object]):
+def test_generated_project_is_ruff_format_clean(tmp_path: Path, render_cache: RenderCache, answers: dict[str, object]):
     """The rendered tree must already match `ruff format`'s output.
 
     A .jinja source whose static content only happens to match one
@@ -174,7 +169,7 @@ def test_generated_project_is_ruff_format_clean(tmp_path: Path, answers: dict[st
     test_qa.py.jinja width dependency) used to hide in the heavy
     test_example.py tier where only some combinations reach it.
     """
-    _render(tmp_path, answers)
+    _render(render_cache, tmp_path, answers)
     proc = _run_ruff_format_check(tmp_path)
     assert proc.returncode == 0, (
         f"generated project is not ruff-format-clean under its own [tool.ruff]:\n{proc.stdout}{proc.stderr}"
@@ -182,14 +177,16 @@ def test_generated_project_is_ruff_format_clean(tmp_path: Path, answers: dict[st
 
 
 @pytest.mark.parametrize("answers", JAPANESE_VARIANTS, ids=[_id(a) for a in JAPANESE_VARIANTS])
-def test_generated_project_is_ruff_format_clean_per_line_length(tmp_path: Path, answers: dict[str, object]):
+def test_generated_project_is_ruff_format_clean_per_line_length(
+    tmp_path: Path, render_cache: RenderCache, answers: dict[str, object]
+):
     """ruff format --check for both allow_japanese values (line-length 120/88).
 
     The base RENDERED_PATHS cases inherit allow_japanese's default, so the
     two line-length settings the template generates are only both exercised
     by these explicit variants.
     """
-    _render(tmp_path, answers)
+    _render(render_cache, tmp_path, answers)
     pyproject = (tmp_path / "pyproject.toml").read_text()
     expected_length = "120" if answers["allow_japanese"] else "88"
     assert f"line-length = {expected_length}" in pyproject, (
@@ -248,13 +245,13 @@ def _iter_text_files(root: Path):
 
 
 @pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
-def test_generated_toml_parses(tmp_path: Path, answers: dict[str, object]):
+def test_generated_toml_parses(tmp_path: Path, render_cache: RenderCache, answers: dict[str, object]):
     """pyproject.toml (and pixi.toml for the ros2-pixi flavour) must be valid
     TOML: ruff only reads it as *config*, so syntax breaks in the poetry /
     pixi / poe table variants would pass the ruff tiers undetected."""
     import tomllib
 
-    _render(tmp_path, answers)
+    _render(render_cache, tmp_path, answers)
     # adopt mode protects the pyproject: an existing one is never written,
     # so there is nothing to parse for that path.
     if (tmp_path / "pyproject.toml").exists():
@@ -270,7 +267,7 @@ def test_generated_toml_parses(tmp_path: Path, answers: dict[str, object]):
 
 
 @pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
-def test_generated_files_end_with_single_newline(tmp_path: Path, answers: dict[str, object]):
+def test_generated_files_end_with_single_newline(tmp_path: Path, render_cache: RenderCache, answers: dict[str, object]):
     """Rendered text files must end with exactly one newline.
 
     Jinja sources that end with `{% include %}` / `{% if %}` tags silently
@@ -280,16 +277,7 @@ def test_generated_files_end_with_single_newline(tmp_path: Path, answers: dict[s
     file must end in exactly one ``\\n`` (no trailing blank line, no missing
     final newline).
     """
-    run_copy(
-        src_path=str(TOP),
-        dst_path=tmp_path,
-        data={**BASE, **answers},
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,
-    )
+    _render(render_cache, tmp_path, answers)
     offenders: list[str] = []
     for path in _iter_text_files(tmp_path):
         data = path.read_bytes()

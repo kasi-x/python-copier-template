@@ -16,8 +16,12 @@ import sys
 from pathlib import Path
 
 import pytest
-from copier import run_copy
 
+from render_cache import RenderCache
+
+# Imported so pytest can inject the fixture (the cache lives here, not in
+# conftest.py: the template renders that file into generated projects).
+from render_cache import render_cache as render_cache  # noqa: PLC0414
 from test_generated_lint import RENDERED_PATHS  # same renders test_generated_lint lints
 from test_recommended_path import BASE
 
@@ -42,23 +46,18 @@ def _id(answers: dict[str, object]) -> str:
 
 
 @pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
-def test_pyproject_fmt_accepts_rendered_pyproject(tmp_path: Path, answers: dict[str, object]):
+def test_pyproject_fmt_accepts_rendered_pyproject(
+    tmp_path: Path, render_cache: RenderCache, answers: dict[str, object]
+):
     """pyproject-fmt runs cleanly on the rendered pyproject.toml.
 
     Exit 0/1 means it parsed and formatted the file (0 = no change, 1 = it
     would reformat); exit 2 means a configuration error or unparsable input,
     which would be a template bug.
     """
-    run_copy(
-        src_path=str(TOP),
-        dst_path=tmp_path,
-        data={**BASE, **answers},
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,
-    )
+    # The lint module lints these exact combinations; the cache means the
+    # second consumer of each render pays a copytree, not a copier run.
+    render_cache.render(tmp_path, {**BASE, **answers})
     pyproject = tmp_path / "pyproject.toml"
     if not pyproject.exists():
         pytest.skip("this render produces no pyproject.toml (ros2 cpp?)")
