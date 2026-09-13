@@ -38,7 +38,17 @@ tiers skip it and the coverage assertion stops requiring a run for it.
 Guard for the guard: test_witness_leaves_match_the_generator and
 test_witness_leaves_are_reachable fail -- naming the leaves -- when a
 questionnaire edit makes a declared leaf unreachable, e.g. forcing a gate's
-``when`` to false.
+``when`` to false. The first of the two is also the committed JSONL's
+staleness detection (TODO.md §23.4): each §C6 request pins ``ref: HEAD``, so
+the file carries no freshness of its own -- the check re-derives every leaf
+through tools/z3_witnesses.py's ``build()`` and fails with the regeneration
+command when the questionnaire has moved on. The exclusions are accounted
+for the same way: every name the leaf space keeps out is declared in
+tests/matrix/invariants.yml's ``excluded`` with a one-line reason, pinned to
+the live questionnaire (test_excluded_names_hold_against_the_questionnaire),
+and the generator prints both numbers -- ``leaves: N enumerated, M
+excluded`` -- which test_the_coverage_output_accounts_for_both_numbers holds
+against its own payload.
 """
 
 from __future__ import annotations
@@ -66,6 +76,7 @@ if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools
 
 from tools import batch  # noqa: E402
 from tools import when_model  # noqa: E402
+from tools import z3_witnesses  # noqa: E402
 
 # Imported so pytest can inject the session render cache (it lives in
 # render_cache.py, not conftest.py: the template renders conftest.py into every
@@ -75,7 +86,6 @@ from render_cache import render_cache as render_cache  # noqa: E402, PLC0414
 
 WITNESSES = TOP / "tests" / "matrix" / "witnesses.jsonl"
 COVERAGE = TOP / "tests" / "matrix" / "witnesses.json"
-GENERATOR = TOP / "tools" / "z3_witnesses.py"
 
 # The ledger is written by several xdist workers at once (every verdict merges
 # into it) and rewritten on every run, so both the read-modify-write lock and
@@ -117,7 +127,13 @@ FULL_SAMPLE: tuple[str, ...] = (
 # needs the wider budget.
 FULL_TIMEOUT = 550
 BATCH_TIMEOUT = 1800
-GENERATOR_TIMEOUT = 300
+
+# The staleness failure's last line: exactly what `task witness` runs
+# (Taskfile.yml), so a stale witnesses.jsonl is one command from fresh.
+REGENERATE = (
+    "regenerate with: task witness (uv run --locked python tools/z3_witnesses.py"
+    f" --jsonl {WITNESSES} && uv run --locked python tools/batch.py {WITNESSES} --json)"
+)
 
 # tools/batch.py --jobs for the whole-JSONL run: the requests are independent
 # (each renders into its own directory), so the 205-leaf verdict is bounded by
@@ -284,17 +300,17 @@ def _run_python(args: list[str], *, timeout: int) -> subprocess.CompletedProcess
 def test_witness_leaves_match_the_generator() -> None:
     """The committed JSONL is exactly what tools/z3_witnesses.py enumerates.
 
-    A questionnaire edit that makes a projected branch unsatisfiable makes the
-    generator abort (its own reachability assertion), and an edit that changes
-    an answer or an expected artifact set changes a request line. Either way
-    the committed witness list is stale, and the failing leaves are named here.
+    This is the committed file's staleness detection (TODO.md §23.4): its
+    ``ref: HEAD`` request lines pin no commit, so the file carries no
+    freshness of its own and this check re-derives every leaf through the
+    generator's ``build()``. A questionnaire edit that makes a projected
+    branch unsatisfiable makes the generator abort (its own reachability
+    assertion), and an edit that changes an answer or an expected artifact
+    set changes a request line; either way the failing leaves are named and
+    the message is the regeneration command.
     """
-    proc = _run_python([str(GENERATOR), "--json"], timeout=GENERATOR_TIMEOUT)
-    assert proc.returncode == 0, (
-        f"tools/z3_witnesses.py can no longer enumerate the leaf space, so the "
-        f"{len(LEAVES)} committed leaves are unverifiable:\n{proc.stderr[-4000:]}"
-    )
-    generated = {str(leaf["id"]): leaf for leaf in json.loads(proc.stdout)["leaves"]}
+    _leaf_space, leaves = z3_witnesses.build()
+    generated = {leaf.id: leaf.as_request() for leaf in leaves}
     declared = {leaf.id: leaf for leaf in LEAVES}
 
     uncovered = sorted(set(declared) - set(generated))
@@ -303,7 +319,7 @@ def test_witness_leaves_match_the_generator() -> None:
         f"{WITNESSES.name} is out of sync with the questionnaire:\n"
         f"  declared but no longer generated ({len(uncovered)}): {uncovered[:10]}\n"
         f"  generated but not declared ({len(stale)}): {stale[:10]}\n"
-        f"regenerate with: python tools/z3_witnesses.py --jsonl {WITNESSES}"
+        f"{REGENERATE}"
     )
 
     drifted = sorted(
@@ -313,9 +329,82 @@ def test_witness_leaves_match_the_generator() -> None:
         or generated[leaf_id]["expect"] != declared[leaf_id].expect
     )
     assert not drifted, (
-        f"{len(drifted)} declared leaf/leaves changed answers or expectations: {drifted[:10]}\n"
-        f"regenerate with: python tools/z3_witnesses.py --jsonl {WITNESSES}"
+        f"{len(drifted)} declared leaf/leaves changed answers or expectations: {drifted[:10]}\n{REGENERATE}"
     )
+
+
+@pytest.mark.fast
+@pytest.mark.full
+def test_excluded_names_hold_against_the_questionnaire() -> None:
+    """Every exclusion the leaf space declares must still describe reality.
+
+    tests/matrix/invariants.yml's ``excluded`` names what the enumeration
+    leaves out, one line of reason each (TODO.md §23.4). This pins every name
+    to the live questionnaire so the list rots loudly instead of excluding
+    nothing: an excluded project_type must be a genuine non-goal -- absent
+    from the questionnaire's choices, so its return is a decision someone
+    makes here, not a leaf the generator quietly skips -- and an excluded
+    question must still be asked, without having become a leaf-space layer
+    behind the file's back. Every include_* question the questionnaire asks
+    must be accounted for: a layer, or declared excluded.
+    """
+    questions, _order = when_model.load_questions()
+    choices = when_model.static_str_choices(questions["project_type"])
+    excluded = z3_witnesses.exclusions()
+
+    assert excluded, "the leaf space declares no exclusions; name what it keeps out and why"
+    rotten = []
+    for name, reason in excluded.items():
+        kind, _, key = name.partition("=")
+        if not reason.strip():
+            rotten.append(f"{name}: excluded without a one-line reason")
+        if kind == "project_type" and key in choices:
+            rotten.append(f"{name}: is excluded but the questionnaire still offers it")
+        if kind == "question" and key not in questions:
+            rotten.append(f"{name}: is excluded but the questionnaire no longer declares it")
+        if kind == "question" and key in z3_witnesses.INCLUDE_LAYERS:
+            rotten.append(f"{name}: is excluded but also a leaf-space layer")
+    unaccounted = sorted(
+        name
+        for name in questions
+        if name.startswith("include_")
+        and name not in z3_witnesses.INCLUDE_LAYERS
+        and f"question={name}" not in excluded
+    )
+    rotten += [f"{name}: the leaf space neither varies it nor declares it excluded" for name in unaccounted]
+    assert not rotten, "the leaf space's exclusion list no longer describes the questionnaire:\n  " + "\n  ".join(
+        rotten
+    )
+
+
+@pytest.mark.fast
+@pytest.mark.full
+def test_the_coverage_output_accounts_for_both_numbers(capsys: pytest.CaptureFixture[str]) -> None:
+    """The tool's accounting line states 'enumerated' and 'excluded' as numbers.
+
+    tools/z3_witnesses.py prints ``leaves: N enumerated, M excluded (...)`` on
+    every run (TODO.md §23.4), on stderr so stdout stays one JSON document.
+    This runs the tool's own ``main()`` and holds the line against the
+    payload printed next to it, so both numbers are the enumeration's own,
+    and pins the excluded names, so a change to the exclusions is deliberate.
+    """
+    assert z3_witnesses.main(["--json"]) == 0
+    out, err = capsys.readouterr()
+    payload = json.loads(out)
+    leaf_space = payload["leaf_space"]
+    excluded: dict[str, str] = leaf_space["excluded"]
+    assert leaf_space["enumerated"] == len(payload["leaves"]), (
+        f"leaf_space claims {leaf_space['enumerated']} enumerated leaves but carries {len(payload['leaves'])}"
+    )
+    expected = f"leaves: {len(payload['leaves'])} enumerated, {len(excluded)} excluded ({', '.join(sorted(excluded)) or 'none'})"
+    assert err.strip() == expected, (
+        f"the accounting line must state both numbers:\n  got: {err.strip()!r}\n  want: {expected!r}"
+    )
+    assert sorted(excluded) == [
+        "project_type=web_django",
+        "question=include_mcp",
+        "question=include_sentry",
+    ], f"the declared exclusions changed; re-pin them here deliberately: {sorted(excluded)}"
 
 
 def _conditional_answers(leaf: Witness) -> list[str]:

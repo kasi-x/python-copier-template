@@ -34,11 +34,21 @@ are encoded as Z3 constraints:
 Everything else stays at its copier default (tools/batch.py renders with
 `defaults=True`): the detail questions an off gate reveals keep their
 defaults, so a leaf is one branch of the questionnaire, not a second full
-question matrix. `project_type` is its static choices minus web_django,
-which aborts generation by design (`_tasks.jinja` exits 1 for it) and so
-cannot render. include_mcp/include_sentry are integration detail questions
-behind use_recommended_integrations, not layers, and stay at their default
-false.
+question matrix. `project_type` is its static choices minus the excluded
+project types, and the include dimension is INCLUDE_LAYERS minus nothing:
+every name the leaf space keeps out -- web_django, which aborts generation
+by design (`_tasks.jinja` exits 1 for it) and so cannot render, and the
+integration detail questions include_mcp/include_sentry behind
+use_recommended_integrations, which are not layers -- is declared in
+tests/matrix/invariants.yml's `excluded` with a one-line reason (TODO §23.4).
+That file is the single source for exclusions, as it is for every leaf
+class's invariants, and this tool accounts for the whole questionnaire:
+an include question that is neither a layer nor declared excluded is an
+error, and every exclusion must still describe the live questionnaire. The
+one-line accounting is printed on every run, so "enumerated" and "excluded"
+are both numbers a reader can trust:
+
+    leaves: 205 enumerated, 3 excluded (project_type=web_django, ...)
 
 Usage:
 
@@ -165,6 +175,31 @@ class Space:
         return [self.pt, self.oj_category, self.oj_kind, *self.gates.values(), *self.includes.values()]
 
 
+def _check_includes(questions: dict[str, dict]) -> None:
+    """Every include_* question the questionnaire asks is accounted for.
+
+    It is either a layer varied here or a declared exclusion
+    (tests/matrix/invariants.yml's ``excluded``, which also names the excluded
+    project types), never a silent default (TODO §23.4).
+    """
+    excluded_questions = INVARIANTS.excluded_questions
+    overlapped = sorted(set(excluded_questions) & set(INCLUDE_LAYERS))
+    if overlapped:
+        msg = f"{overlapped} are both leaf-space layers and declared excluded; the leaf space contradicts itself"
+        raise SystemExit(msg)
+    unaccounted = sorted(
+        name
+        for name in questions
+        if name.startswith("include_") and name not in INCLUDE_LAYERS and name not in excluded_questions
+    )
+    if unaccounted:
+        msg = (
+            f"include question(s) {unaccounted} are neither a leaf-space layer nor declared excluded; "
+            f"add them to INCLUDE_LAYERS or to tests/matrix/invariants.yml's `excluded` with a reason"
+        )
+        raise SystemExit(msg)
+
+
 def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories: list[str]) -> Space:
     """Assert the leaf-space restrictions on top of the questionnaire's variables."""
     gates = {name: z3.Bool(name) for name in questions if name.startswith(GATE_PREFIX)}
@@ -182,6 +217,7 @@ def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories
         if when is not None and name != "use_recommended_toolchain":
             msg = f"gate {name!r} is no longer unconditional (when={when!r}); project its `when` here"
             raise SystemExit(msg)
+    _check_includes(questions)
 
     index = {name: position for position, name in enumerate(pt_domain)}
     pt = z3.Int("project_type")
@@ -306,6 +342,31 @@ def _leaf(
     )
 
 
+def exclusions() -> dict[str, str]:
+    """Every name the leaf space keeps out, kind-prefixed, with its reason.
+
+    The single source is tests/matrix/invariants.yml's `excluded` section: a
+    `project_type=` entry is a non-goal the questionnaire must not offer
+    again, a `question=` entry is a live question every leaf keeps at its
+    copier default. The prefix keeps the two kinds apart in the coverage
+    output and in the `--json` leaf space.
+    """
+    excluded = {f"project_type={name}": why for name, why in INVARIANTS.excluded.items()}
+    excluded.update((f"question={name}", why) for name, why in INVARIANTS.excluded_questions.items())
+    return excluded
+
+
+def completeness(leaf_space: dict[str, Any], leaves: list[Leaf]) -> str:
+    """The one-line accounting of the enumeration (TODO §23.4).
+
+    "Enumerated" and "excluded" are both numbers a reader can trust: the
+    leaves the projection produced, and the named exclusions it did not.
+    """
+    excluded = leaf_space["excluded"]
+    names = ", ".join(sorted(excluded)) or "none"
+    return f"leaves: {len(leaves)} enumerated, {len(excluded)} excluded ({names})"
+
+
 def build() -> tuple[dict[str, Any], list[Leaf]]:
     """Return the declared leaf space and its enumerated leaves."""
     questions, _order = when_model.load_questions()
@@ -332,7 +393,8 @@ def build() -> tuple[dict[str, Any], list[Leaf]]:
             "a gate may only be off, and an include only on, where its own `when` holds",
             "every other question stays at its copier default",
         ],
-        "excluded": dict(INVARIANTS.excluded),
+        "enumerated": len(leaves),
+        "excluded": exclusions(),
     }
     return leaf_space, leaves
 
@@ -348,6 +410,10 @@ def main(argv: list[str] | None = None) -> int:
     """Entry point: enumerate, then print and/or write the §C6 request lines."""
     args = _parse_args(argv)
     leaf_space, leaves = build()
+    # The accounting goes to stderr: stdout stays one JSON document for the
+    # consumers that parse it (`--json`), and `task witness`'s log keeps the
+    # numbers next to the generation it just did.
+    print(completeness(leaf_space, leaves), file=sys.stderr)
     if args.jsonl is not None:
         args.jsonl.parent.mkdir(parents=True, exist_ok=True)
         lines = "".join(json.dumps(leaf.as_request(), sort_keys=False) + "\n" for leaf in leaves)

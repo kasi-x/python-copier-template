@@ -75,11 +75,22 @@ predicates:
   - id: docs-nav
     why: "every zensical.toml / mkdocs.yml nav target exists in the render"
 
-# Question types the questionnaire deliberately cannot render. The witness
-# generator keeps them out of the leaf space and reports this reason.
+# Names the witness leaf space deliberately keeps out, one line of reason
+# each (TODO.md §23.4: "enumerated" and "excluded" are both numbers). A
+# `project_type` entry is a non-goal the questionnaire must not offer again --
+# the generator subtracts it from the leaf domain and this file fails if the
+# questionnaire offers it anyway. A `question` entry is a question the
+# questionnaire still asks but the leaf space never varies: every witness leaf
+# keeps it at its copier default. The generator refuses an include question
+# that is neither a leaf-space layer nor declared here, so nothing can leave
+# the enumeration silently.
 excluded:
   - project_type: web_django
     why: "generation aborts by design: the _tasks.jinja web_django task exits 1"
+  - question: include_mcp
+    why: "an integration detail question behind use_recommended_integrations, not a leaf-space layer; every leaf keeps it at its default false"
+  - question: include_sentry
+    why: "an integration detail question behind use_recommended_integrations, not a leaf-space layer; every leaf keeps it at its default false"
 
 # One row per leaf class, in composition order (base first, override last).
 leaf_classes:

@@ -15,6 +15,9 @@ loader's contract and the migration it exists for:
   unknown key, an unknown select value, an unknown predicate or tier, a
   duplicate id, a contradiction, a missing reason, or a project type with no
   row all raise ``InvariantError`` naming the row;
+- a stale exclusion fails at load: an excluded ``project_type`` the
+  questionnaire offers again, and an excluded ``question`` the questionnaire
+  no longer declares, are both refused;
 - a leaf whose class no row declares is refused, not resolved to the common
   layout.
 """
@@ -158,6 +161,25 @@ def _excluded_project_type(payload: dict[str, Any]) -> None:
     _row(payload, "project_type=library")["select"]["project_type"] = ["web_django"]
 
 
+def _excluded_live_project_type(payload: dict[str, Any]) -> None:
+    """Exclude a project type the questionnaire still offers.
+
+    The row that selects it is re-pointed first, so the error raised is the
+    exclusion rot check (an exclusion must not be offered) and not the
+    row-selector refusal a live exclusion would trip on the way there.
+    """
+    payload["excluded"].append({"project_type": "library", "why": "not a non-goal"})
+    _row(payload, "project_type=library")["select"]["project_type"] = ["cli"]
+
+
+def _excluded_unknown_question(payload: dict[str, Any]) -> None:
+    payload["excluded"].append({"question": "include_nope", "why": "the questionnaire declares no such question"})
+
+
+def _excluded_entry_of_both_kinds(payload: dict[str, Any]) -> None:
+    payload["excluded"].append({"project_type": "ros2", "question": "include_ctf", "why": "two kinds, one entry"})
+
+
 def _unknown_predicate(payload: dict[str, Any]) -> None:
     _row(payload, "common")["predicates"] = ["pyprojectt"]
 
@@ -188,6 +210,9 @@ CASES: tuple[tuple[str, Callable[[dict[str, Any]], None], str], ...] = (
     ("unknown select value", _unknown_select_value, "unknown project_type"),
     ("unknown gate", _unknown_gate, "unknown gate_off"),
     ("excluded project type", _excluded_project_type, "excluded project_type"),
+    ("excluded live project type", _excluded_live_project_type, "still offers it"),
+    ("excluded unknown question", _excluded_unknown_question, "no longer declares it"),
+    ("excluded entry of both kinds", _excluded_entry_of_both_kinds, "not both"),
     ("unknown predicate", _unknown_predicate, "unknown predicate"),
     ("unknown tier", _unknown_tier, "unknown tier"),
     ("duplicate id", _duplicate_id, "duplicate leaf class id"),
