@@ -4,9 +4,9 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 733,
+      "collected": 736,
       "files": {
-        "tests/test_adopt.py": 32,
+        "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_batch.py": 19,
         "tests/test_copier_structure.py": 14,
@@ -34,7 +34,7 @@
         "tests/test_witness_matrix.py": 208,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "2b30d1e018c66b0413f8323d10252b04f0d00237c767d03787da40aab6767b5b",
+      "ids_sha256": "9a55a2bea904753ad3544ccb73dc22ee9ce7830882a23423dfc1bda27ebf445f",
       "wall_seconds": 47.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
@@ -86,9 +86,9 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 788,
+      "collected": 791,
       "files": {
-        "tests/test_adopt.py": 32,
+        "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_batch.py": 19,
         "tests/test_copier_structure.py": 14,
@@ -118,7 +118,7 @@
         "tests/test_witness_matrix.py": 217,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "4fb53f70673f1114c7c1f7289919f65664f0443e333d8dc9467799650306a153",
+      "ids_sha256": "030341d4b9c344fc9e0bda4e62e0217b0ae7f6f6ea5a9fad4f80d68e588d7e69",
       "wall_seconds": 138.9,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",

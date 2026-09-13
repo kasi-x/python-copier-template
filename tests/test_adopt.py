@@ -2,8 +2,9 @@
 
 The point of the driver is the guarantee, not the render: every test here
 either checks the plan (ref judgement, dry run), checks that a failed run
-leaves the project exactly as it was, or kills a real run and checks that the
-journal puts the project back byte for byte.
+leaves the project exactly as it was, or kills a real run -- or the rollback
+or recovery undoing it -- and checks that the journal puts the project back
+byte for byte.
 """
 
 import hashlib
@@ -62,14 +63,24 @@ def digest(root: Path) -> str:
     return accumulator.hexdigest()
 
 
+def without_journal(snapshot: dict[str, bytes]) -> dict[str, bytes]:
+    """A tree snapshot minus the journal, which is the run's own bookkeeping."""
+    return {name: content for name, content in snapshot.items() if name != adopt.JOURNAL_NAME}
+
+
+def pre_existing(snapshot: dict[str, bytes], before: dict[str, bytes]) -> dict[str, bytes]:
+    """The part of a tree snapshot that was there before the run started."""
+    return {name: content for name, content in snapshot.items() if name in before}
+
+
 def run_cli(project: Path, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
     """tools/adopt.py as a subprocess, the way a user runs it (and dies)."""
     command = [sys.executable, str(TOP / "tools" / "adopt.py"), str(project), *args]
     return subprocess.run(command, capture_output=True, text=True, env={**os.environ, **env}, check=False, timeout=300)
 
 
-def run_recover(project: Path, *, json_output: bool = False) -> subprocess.CompletedProcess[str]:
-    return run_cli(project, "--recover", *(["--json"] if json_output else []))
+def run_recover(project: Path, *, json_output: bool = False, **env: str) -> subprocess.CompletedProcess[str]:
+    return run_cli(project, "--recover", *(["--json"] if json_output else []), **env)
 
 
 def test_resolve_ref_uses_a_tag_only_when_it_carries_the_questionnaire(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
@@ -469,6 +480,92 @@ def test_a_killed_adoption_is_recovered_byte_for_byte(tmp_path: Path, crash_at: 
     assert "nothing to recover" in again.stdout
     assert tree(project) == before, "recovering twice changes nothing"
     assert digest(project) == identity
+
+
+def test_a_kill_during_the_rollback_is_recovered_byte_for_byte(tmp_path: Path):
+    """SIGKILL inside the undo itself: the journal finishes the rollback.
+
+    A rollback is a crash region like the render -- the protocol model crashes
+    in every state, the undo included -- so a kill while it is still deleting
+    has to leave the journal (dropped only once the undo is done) over a
+    half-undone tree, and `--recover` finishes what the kill interrupted.
+    """
+    project = make_project(tmp_path)
+    before = tree(project)
+    before_dirs = dirs(project)
+    identity = digest(project)
+
+    # `--skip` naming a path that does not exist is the uncovered collision:
+    # the render writes, the run fails, and the rollback starts.
+    killed = run_cli(
+        project, "--ref", "HEAD", "--yes", "--skip", "nothing-actually-collides", COPIER_ADOPT_CRASH_AT="rollback"
+    )
+    assert killed.returncode == -signal.SIGKILL, killed.stderr
+    assert (project / adopt.JOURNAL_NAME).is_file(), "the journal outlives a rollback killed mid-undo"
+    interrupted = without_journal(tree(project))
+    assert interrupted != before, "the drill has to catch the undo in progress, not before it"
+    assert set(interrupted) - set(before), "some of what the run created is still there for recovery to remove"
+    assert pre_existing(interrupted, before) == before, (
+        "the undo was killed putting old bytes back and deleting, not rewriting: the adopter's files are intact"
+    )
+
+    recovered = run_recover(project)
+    assert recovered.returncode == 0, recovered.stderr
+    assert "recovered" in recovered.stdout
+    assert tree(project) == before, "recovery finished the rollback the kill interrupted"
+    assert dirs(project) == before_dirs, "not even an empty directory survives the finished undo"
+    assert digest(project) == identity
+    assert not (project / adopt.JOURNAL_NAME).exists(), "the journal goes once the undo is done"
+
+    again = run_recover(project)
+    assert again.returncode == 0
+    assert "nothing to recover" in again.stdout
+    assert digest(project) == identity, "recovering after a finished undo changes nothing"
+
+
+@pytest.mark.parametrize(
+    "killed_at",
+    [pytest.param("render:20", id="after-a-render-write"), pytest.param("merge:1", id="after-a-merge-write")],
+)
+def test_a_kill_during_the_recovery_converges_on_the_next_one(tmp_path: Path, killed_at: str):
+    """SIGKILL inside `--recover`: the next `--recover` finishes the undo.
+
+    The recovery drops the journal last precisely so that a kill while it
+    applies -- old bytes going back, the run's files being deleted -- leaves
+    the same journal it started from, and every step it applies is decided by
+    what the tree holds now: the next run converges instead of doubling.
+    """
+    project = make_project(tmp_path)
+    before = tree(project)
+    before_dirs = dirs(project)
+    identity = digest(project)
+
+    killed = run_cli(project, "--ref", "HEAD", "--yes", COPIER_ADOPT_CRASH_AT=killed_at)
+    assert killed.returncode == -signal.SIGKILL, killed.stderr
+    assert (project / adopt.JOURNAL_NAME).is_file()
+
+    dying = run_recover(project, COPIER_ADOPT_CRASH_AT="recover")
+    assert dying.returncode == -signal.SIGKILL, dying.stderr
+    assert (project / adopt.JOURNAL_NAME).is_file(), "the journal survives the recovery it was mid-way through"
+    interrupted = without_journal(tree(project))
+    assert interrupted != before, "the drill has to catch the recovery in progress, not before it"
+    assert pre_existing(interrupted, before) == before, (
+        "the recovery died with the original bytes already back: only the run's own files are in question"
+    )
+    assert set(interrupted) - set(before), "and some of what the run created is still there to remove"
+
+    recovered = run_recover(project)
+    assert recovered.returncode == 0, recovered.stderr
+    assert "recovered" in recovered.stdout
+    assert tree(project) == before, "the second recovery finishes what the first could not"
+    assert dirs(project) == before_dirs
+    assert digest(project) == identity
+    assert not (project / adopt.JOURNAL_NAME).exists()
+
+    again = run_recover(project)
+    assert again.returncode == 0
+    assert "nothing to recover" in again.stdout
+    assert digest(project) == identity, "a recovery after a converged one changes nothing"
 
 
 def test_the_journal_records_the_old_bytes_and_what_was_there(tmp_path: Path):

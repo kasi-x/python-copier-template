@@ -13,7 +13,10 @@ the tree against a model that knows the contract rather than the code:
 - a failed, cancelled or dry run leaves the tree exactly as the model says;
 - a run killed mid-flight leaves a journal, an unseen but bounded selection of
   new files, and no damage to the model's files -- and `--recover` puts the
-  tree back byte for byte, directories included;
+  tree back byte for byte, directories included; the undo is a crash region
+  like the run it undoes: a rollback killed while it undoes an uncovered
+  collision, and a recovery killed before it drops the journal, are sampled
+  too, and the next `--recover` still lands byte for byte;
 - the journal exists while a run is unfinished and is gone once it commits or
   rolls back, and a run started over a stale journal is refused untouched.
 
@@ -38,6 +41,7 @@ import re
 import sys
 import tempfile
 import tomllib
+from collections.abc import Callable
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -155,6 +159,13 @@ PYPROJECT_TEXT = st.builds(
 )
 
 CRASH_POINTS = ("render:1", "verify", "merge:1")
+# The undo paths are crash regions too -- the Quint model (adopt_crash.qnt)
+# enables `crash` in every state, its three undo steps included: `rollback`
+# dies inside a failing run's undo and `recover` inside `--recover`, before it
+# drops the journal. Neither can fire in adopt_and_die -- a run that succeeds
+# never rolls back, and the recovery is a separate call -- so each is pinned
+# to the rule below that actually reaches it. The real SIGKILL drills for both
+# live in tests/test_adopt.py.
 
 # Every rule here runs a real render, and the fast tier's budget decides how
 # many of 100 sequences can afford: the measured wall time is reported with the
@@ -359,7 +370,7 @@ class AdoptionMachine(RuleBasedStateMachine):
 
     # -- the adopter's own edits ---------------------------------------------
 
-    @precondition(lambda self: not self.files and not self.dirs)
+    @precondition(lambda self: not self.files and not self.dirs and not self.pending_journal)
     @rule(with_pyproject=st.booleans(), content=PYPROJECT_TEXT)
     def start_a_project(self, with_pyproject: bool, content: str) -> None:
         """The project an adopter starts from: one that has a pyproject.toml, or an empty one.
@@ -367,7 +378,11 @@ class AdoptionMachine(RuleBasedStateMachine):
         An adopter who already has one exercises the merge from the first run;
         one who has nothing at all is the fresh path. Both are real, and a
         machine that only ever started empty would reach the merge planning
-        (and the confirmation prompt) far too rarely.
+        (and the confirmation prompt) far too rarely. The `pending_journal`
+        guard is the sibling rules': this rule's bookkeeping calls
+        `expect_settled`, and a tree a run died in the middle of is not
+        settled -- the journal it left decides when the model may again claim
+        the tree settled, and only a recovery (or a refusal) does.
         """
         if with_pyproject:
             self.write_file(PYPROJECT, content)
@@ -463,12 +478,29 @@ class AdoptionMachine(RuleBasedStateMachine):
     def adopt_and_die(self, point: str) -> None:
         """Kill the run at `point` the way SIGKILL does: nothing gets rolled back.
 
-        `KeyboardInterrupt` stands in for the signal -- like SIGKILL it is not an
-        `except Exception`, so the driver's rollback never runs and the journal is
-        what is left behind. The real SIGKILL drill is in tests/test_adopt.py;
-        this one stays in-process because 100 sequences cannot afford a process.
+        The run got past the crash point without being killed when nothing was
+        left to write there, which is an ordinary run.
         """
-        # The crash hook is the seam tools/adopt.py documents for exactly this.
+        with self.monkeypatch.context() as patch:
+            patch.setattr(adopt, "_crash_at", self._die_at(point))
+            patch.setenv(adopt.CRASH_POINT_ENV, point)
+            try:
+                result = adopt.adopt(self.target, ref="HEAD")
+            except KeyboardInterrupt:
+                self.expect_interrupted(merged=point.startswith("merge"))
+            else:
+                assert result.ok and result.applied, f"a run past {point} failed: {result.error}"
+                self.expect_settled(new=self.expected_new(merge=True), merged=True)
+
+    def _die_at(self, point: str) -> Callable[[str], None]:
+        """A `_crash_at` that dies at `point` the way SIGKILL would: no cleanup.
+
+        `KeyboardInterrupt` stands in for the signal -- like SIGKILL it is not
+        an `except Exception`, so the driver's rollback never runs and the
+        journal is what is left behind. The real SIGKILL drills are in
+        tests/test_adopt.py; this one stays in-process because 100 sequences
+        cannot afford a process.
+        """
         real_crash_at = adopt._crash_at  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
 
         def crash_at(hit: str) -> None:
@@ -476,18 +508,55 @@ class AdoptionMachine(RuleBasedStateMachine):
                 raise KeyboardInterrupt(hit)
             real_crash_at(hit)
 
+        return crash_at
+
+    @precondition(lambda self: self.can_adopt())
+    @rule()
+    def adopt_a_collision_and_die_rolling_it_back(self) -> None:
+        """Kill the rollback while it is undoing an uncovered collision.
+
+        `skip=[]` is the run that fails: copier stops on the first file it may
+        not write, the run refuses, and the rollback starts -- the crash point
+        fires at its first real write, so the tree keeps some of what the run
+        created and the journal stays. A draw where nothing collides is an
+        ordinary successful run past a point that never fired, and one where
+        the render stopped before its first write is a rollback with nothing
+        in it to kill.
+        """
         with self.monkeypatch.context() as patch:
-            patch.setattr(adopt, "_crash_at", crash_at)
-            patch.setenv(adopt.CRASH_POINT_ENV, point)
+            patch.setattr(adopt, "_crash_at", self._die_at("rollback"))
             try:
-                result = adopt.adopt(self.target, ref="HEAD")
+                result = adopt.adopt(self.target, ref="HEAD", skip=[])
             except KeyboardInterrupt:
-                self.expect_interrupted(merged=point.startswith("merge"))
+                self.expect_interrupted(merged=False)
             else:
-                # The run got past the crash point without being killed (nothing
-                # was left to write there), so it is an ordinary one.
-                assert result.ok and result.applied, f"a run past {point} failed: {result.error}"
-                self.expect_settled(new=self.expected_new(merge=True), merged=True)
+                if result.ok:
+                    assert result.applied, "a clean adoption must be applied"
+                    self.expect_settled(new=self.expected_new(merge=True), merged=True)
+                else:
+                    assert not result.applied, "a failed run must not stay applied"
+                    self.expect_settled(new=set())
+
+    @precondition(lambda self: self.pending_journal)
+    @rule()
+    def recover_and_die(self) -> None:
+        """Kill `--recover` itself, before it can drop the journal.
+
+        The journal is dropped last precisely for this kill: whatever the
+        half-finished recovery left -- some old bytes back, some of the run's
+        files deleted -- is still journal country, and the model only loosens
+        to "any prefix of the render" until the next recovery lands. A draw
+        whose recovery had nothing on disk to change finishes without reaching
+        the crash point, which is the no-op recovery -- also success.
+        """
+        with self.monkeypatch.context() as patch:
+            patch.setattr(adopt, "_crash_at", self._die_at("recover"))
+            try:
+                adopt.recover(self.target)
+            except KeyboardInterrupt:
+                self.expect_interrupted(merged=True)
+            else:
+                self.expect_settled(new=set())
 
     # -- recovery and refusal ------------------------------------------------
 
