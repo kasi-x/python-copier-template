@@ -45,9 +45,38 @@ Schema (one line per request; unknown keys anywhere are an error):
 that phase is present.
 
 Usage:
-    python tools/batch.py batch/smoke.jsonl
-    python tools/batch.py batch/smoke.jsonl --only web-api --keep
-    python tools/batch.py batch/smoke.jsonl --json > verdict.json
+    python tools/batch.py batches/smoke.jsonl
+    python tools/batch.py batches/smoke.jsonl --only web-api --keep
+    python tools/batch.py batches/smoke.jsonl --json > verdict.json
+    python tools/batch.py tests/matrix/witnesses.jsonl --json --jobs 16
+
+Concurrency (`--jobs N`, default 1 = strictly serial in file order):
+
+Every request owns its work dir -- `dest` is a subdirectory of `--work`, and
+the loader rejects duplicate or nested dests -- plus the temp clones copier
+makes for itself. So the verdicts do not depend on completion order: the human
+report, `--json` and the exit code all follow the JSONL, whichever request
+happens to finish first.
+
+The workers are *processes*, not threads, because rendering is not thread-safe
+in this process: for a local template copier's `clone()` wraps its checkout in
+plumbum's `local.cwd(...)`, which is `os.chdir` -- process-wide state. Two
+renders interleaved in one process chdir into each other's clone (measured:
+`fatal: not a git repository: '.git'`). Jinja rendering is GIL-bound on top of
+that: the same 24 leaves of this repo's witness file took 13.0s in one thread
+and 11.6s spread over 8 (1.1x, one line lost to the race above), where
+`--jobs 16` renders the whole 205-leaf file in 10.2s against 113.8s serial
+(11x). Processes also keep `--prepare` installs and request commands from
+sharing a cwd.
+
+What `--jobs` does *not* make independent: the template tree itself. Every
+render runs `git status --porcelain` on it (copier's dirty-tree check, plus
+`update_precondition` for lines with an `update` phase) and clones it, all
+read-only; a git `index.lock` collision there surfaces as a failed line, not
+as a wrong verdict. And `--jobs` never parallelizes *within* a request: its
+phases and commands still run in the declared order. `--fail-fast` under
+`--jobs N` stops starting new requests at the first failure and drains the
+in-flight ones, so it can report more than one failing line.
 
 Exit codes: 0 all lines passed, 1 a check failed, 2 the input is invalid.
 """
@@ -66,6 +95,10 @@ import tempfile
 import time
 import tomllib
 from collections.abc import Generator
+from concurrent.futures import FIRST_COMPLETED
+from concurrent.futures import Future
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import wait
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
@@ -265,8 +298,30 @@ def _parse_request(raw: Any, index: int) -> Request:
     )
 
 
+def _check_dests(requests: list[Request]) -> None:
+    """Every request must own its work dir: no duplicate and no nested dests.
+
+    `run_request` wipes `work / dest` before rendering, so two requests
+    sharing a dest -- or one request's dest living inside another's -- would
+    have them destroy each other's render. That is a request-list bug, not a
+    failing expectation, so it is refused up front; it is also what makes
+    `--jobs N` safe to hand each request to its own worker.
+    """
+    owner: dict[Path, str] = {}
+    for request in requests:
+        dest = Path(request.dest)
+        for other, other_id in owner.items():
+            if dest == other or dest in other.parents or other in dest.parents:
+                msg = (
+                    f"{request.id}: dest {request.dest!r} overlaps {str(other)!r} ({other_id})"
+                    " -- each request needs its own work dir"
+                )
+                raise SpecError(msg)
+        owner[dest] = request.id
+
+
 def load_requests(paths: list[Path]) -> list[Request]:
-    """Parse and validate every JSONL file, rejecting duplicate ids."""
+    """Parse and validate every JSONL file, rejecting duplicate ids and dests."""
     requests: list[Request] = []
     seen: set[str] = set()
     index = 0
@@ -291,6 +346,7 @@ def load_requests(paths: list[Path]) -> list[Request]:
     if not requests:
         msg = "no requests found"
         raise SpecError(msg)
+    _check_dests(requests)
     return requests
 
 
@@ -608,6 +664,77 @@ def run_request(request: Request, work: Path, repo: Path, *, prepare: bool = Fal
     return result
 
 
+def _run_one(request: Request, work: Path, repo: Path, *, prepare: bool) -> LineResult:
+    """Pool entry point: one request in this worker process (see --jobs).
+
+    Module-level so the worker can unpickle it, and the child silences its own
+    stdout the same way the serial driver does -- copier and the post-render
+    tasks print to fd 1, which would otherwise pollute `--json`.
+    """
+    with report_stream_only():
+        return run_request(request, work, repo, prepare=prepare)
+
+
+def _run_parallel(  # noqa: PLR0913  WHYNOT: the four options are main's own CLI flags; a bag object would hide them.
+    requests: list[Request], work: Path, repo: Path, *, jobs: int, prepare: bool, fail_fast: bool
+) -> list[LineResult]:
+    """Run requests in `jobs` worker processes, reporting in request order."""
+    slots: list[LineResult | None] = [None] * len(requests)
+    with ProcessPoolExecutor(max_workers=jobs) as pool:
+        pending: dict[Future[LineResult], int] = {}
+        queue = iter(enumerate(requests))
+        stop = False
+
+        def start_more() -> None:
+            """Keep `jobs` requests in flight, never starting past a failure."""
+            for position, request in queue:
+                pending[pool.submit(_run_one, request, work, repo, prepare=prepare)] = position
+                if len(pending) >= jobs:
+                    return
+
+        start_more()
+        while pending:
+            finished, _ = wait(list(pending), return_when=FIRST_COMPLETED)
+            for future in finished:
+                position = pending.pop(future)
+                result = future.result()
+                slots[position] = result
+                if fail_fast and not result.ok:
+                    stop = True
+            if not stop:
+                start_more()
+
+    return [result for result in slots if result is not None]
+
+
+def run_requests(  # noqa: PLR0913  WHYNOT: the four options are main's own CLI flags; a bag object would hide them.
+    requests: list[Request],
+    work: Path,
+    repo: Path,
+    *,
+    jobs: int = 1,
+    prepare: bool = False,
+    fail_fast: bool = False,
+) -> list[LineResult]:
+    """Run every request and return the verdicts in request order.
+
+    `jobs` is the number of requests in flight: 1 keeps the original serial
+    behaviour (and its exact `--fail-fast` stop point); higher values spread
+    them over worker processes, which is what makes a 205-leaf batch usable --
+    see the `--jobs` notes in the module docstring, including why the worker
+    is a process rather than a thread.
+    """
+    if jobs <= 1 or len(requests) == 1:
+        results: list[LineResult] = []
+        for request in requests:
+            result = run_request(request, work, repo, prepare=prepare)
+            results.append(result)
+            if fail_fast and not result.ok:
+                break
+        return results
+    return _run_parallel(requests, work, repo, jobs=min(jobs, len(requests)), prepare=prepare, fail_fast=fail_fast)
+
+
 def _print_human(results: list[LineResult], work: Path) -> None:
     for result in results:
         status = "PASS" if result.ok else "FAIL"
@@ -657,12 +784,35 @@ def open_shell(dest: Path) -> None:
     subprocess.run([shell], cwd=dest, check=False, timeout=None)  # noqa: S603
 
 
+def _jobs(value: str) -> int:
+    """`--jobs N`: N >= 1, or argparse reports the bad value."""
+    try:
+        count = int(value)
+    except ValueError as exc:
+        msg = f"--jobs: {value!r} is not an integer"
+        raise argparse.ArgumentTypeError(msg) from exc
+    if count < 1:
+        msg = "--jobs must be at least 1"
+        raise argparse.ArgumentTypeError(msg)
+    return count
+
+
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run a JSONL batch of copier requests and verdict them.")
     parser.add_argument("jsonl", nargs="+", type=Path, help="JSONL request file(s), executed in order")
     parser.add_argument("--repo", type=Path, default=TOP, help="repository the answers_file paths are relative to")
     parser.add_argument("--work", type=Path, default=None, help="work dir for generated projects (default: a temp dir)")
     parser.add_argument("--only", default=None, help="regex: run only requests whose id matches")
+    parser.add_argument(
+        "--jobs",
+        type=_jobs,
+        default=1,
+        metavar="N",
+        help=(
+            "run up to N requests concurrently (default 1: serial, in file order). Results stay in JSONL order; "
+            "rendering is not thread-safe (copier chdirs), so the workers are processes. See the module docstring"
+        ),
+    )
     parser.add_argument("--keep", action="store_true", help="keep the work dir (default: delete it on success)")
     parser.add_argument(
         "--prepare", action="store_true", help="install each rendered project's environment (implies --keep)"
@@ -697,13 +847,10 @@ def main(argv: list[str] | None = None) -> int:
     work = args.work or Path(tempfile.mkdtemp(prefix="copier-batch-"))
     work.mkdir(parents=True, exist_ok=True)
 
-    results: list[LineResult] = []
     with report_stream_only():
-        for request in requests:
-            result = run_request(request, work, args.repo, prepare=args.prepare)
-            results.append(result)
-            if args.fail_fast and not result.ok:
-                break
+        results = run_requests(
+            requests, work, args.repo, jobs=args.jobs, prepare=args.prepare, fail_fast=args.fail_fast
+        )
 
     if args.json:
         payload = {

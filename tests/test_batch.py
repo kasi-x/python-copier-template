@@ -2,16 +2,20 @@
 
 The runner exists so a batch of copier requests can be judged without a
 human reading any output, so what matters here is that a *wrong* request
-line is rejected loudly (unknown key, duplicate id, bad expectation shape)
-and that a *failing* expectation really fails. The end-to-end test renders
-one real project from the real template; every other test is offline.
+line is rejected loudly (unknown key, duplicate id, overlapping dest, bad
+expectation shape), that a *failing* expectation really fails, and that
+`--jobs N` changes only the schedule. The end-to-end and `--jobs` tests
+render real projects from the real template; every other test is offline.
 """
 
+import contextlib
+import io
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -223,3 +227,82 @@ def test_run_request_end_to_end(tmp_path: Path):
     assert result.error is None
     assert not failed, failed
     assert result.ok
+
+
+def _script_answers() -> dict[str, Any]:
+    return {**BASE_ANSWERS, "project_type": "script"}
+
+
+def _verdicts(payload: dict[str, Any]) -> list[tuple[object, ...]]:
+    """Everything in a --json report that must not depend on --jobs.
+
+    `seconds`, `dest` and `work` are deliberately left out: they are the
+    scheduling difference, not the verdict.
+    """
+    return [
+        (
+            line["id"],
+            line["index"],
+            line["ok"],
+            line["error"],
+            [(check["name"], check["ok"]) for check in line["checks"]],
+        )
+        for line in payload["lines"]
+    ]
+
+
+def _run_json(argv: list[str]) -> tuple[int, dict[str, Any]]:
+    """Run `main` with `--json` and return its exit code and parsed report.
+
+    `sys.stdout` is redirected around the call rather than read from pytest's
+    capture: the runner reassigns fd 1 for the duration of the renders (see
+    `report_stream_only`), which is exactly what keeps copier's chatter out of
+    the JSON, and pytest's own capture is not a stable place to read it from.
+    """
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        code = batch.main(argv)
+    return code, json.loads(out.getvalue())
+
+
+def test_jobs_change_only_the_schedule(tmp_path: Path):
+    """--jobs N reorders nothing and swallows nothing.
+
+    The first line sleeps, so under --jobs 3 the later lines render first; the
+    report must still follow the JSONL. The second line fails an expectation,
+    so the run must still exit nonzero, with the same verdicts as `--jobs 1`.
+    """
+    path = write_lines(
+        tmp_path,
+        {"id": "slow", "answers": _script_answers(), "commands": [{"run": "sleep 0.8"}]},
+        {"id": "broken", "answers": _script_answers(), "expect": {"files": ["not-rendered.txt"]}},
+        {"id": "quick", "answers": _script_answers()},
+    )[0]
+
+    serial_code, serial = _run_json([str(path), "--json", "--work", str(tmp_path / "serial")])
+    parallel_code, parallel = _run_json([str(path), "--json", "--work", str(tmp_path / "parallel"), "--jobs", "3"])
+
+    assert serial_code == parallel_code == 1, "one line fails its expectation, so both runs exit 1"
+    assert parallel["ok"] is False, "a failing request fails the run under --jobs too"
+    assert [line["id"] for line in parallel["lines"]] == ["slow", "broken", "quick"], (
+        "results follow the JSONL, not the completion order"
+    )
+    assert parallel["lines"][0]["seconds"] > parallel["lines"][2]["seconds"], "the slow line really did finish last"
+    assert _verdicts(parallel) == _verdicts(serial)
+
+
+def test_rejects_overlapping_dests(tmp_path: Path):
+    """Two lines may not share a work dir: rendering one would wipe the other."""
+    with pytest.raises(batch.SpecError) as excinfo:
+        batch.load_requests(write_lines(tmp_path, request(id="outer"), request(id="inner", dest="outer/nested")))
+    assert "overlaps" in str(excinfo.value), "the refusal says why"
+    with pytest.raises(batch.SpecError) as excinfo:
+        batch.load_requests(write_lines(tmp_path, request(), request(id="twin", dest="case")))
+    assert "overlaps" in str(excinfo.value), "a duplicated dest is refused too"
+
+
+def test_rejects_jobs_below_one(tmp_path: Path):
+    path = write_lines(tmp_path, request())[0]
+    with pytest.raises(SystemExit) as excinfo:
+        batch.main([str(path), "--jobs", "0"])
+    assert excinfo.value.code == 2, "argparse refuses --jobs 0 before anything renders"
