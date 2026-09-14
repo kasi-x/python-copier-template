@@ -95,6 +95,15 @@ tasks:
       unification candidates and shortcut suggestions (--json for the machine report)
     cmd: uv run --locked python tools/predicates.py {{ .CLI_ARGS }}
 
+  question-graph:
+    desc: >-
+      Show the questionnaire's dependency graph: the definition order grouped by fragment,
+      what each question/internal reads and feeds, recomputed forward-reference violations
+      (the tests check this after the fact; a backward reference silently reads falsy), and
+      a placement guide -- --where NAME [--refs A,B,C] answers where a new internal/question
+      may live and what occupies that spot (--json for the machine report)
+    cmd: uv run --locked python tools/question_graph.py {{ .CLI_ARGS }}
+
   detect:
     desc: 'Report what a target project already has and which mode fits (DIR=... CLI_ARGS=...)'
     cmd: uv run --locked python tools/detect.py {{ .DIR | default "." }} {{ .CLI_ARGS }}

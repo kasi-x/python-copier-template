@@ -113,6 +113,15 @@ Enforced by `test_question_references_are_forward_only` and
 `test_fragments_are_complete_and_duplicate_free` in
 `tests/test_copier_structure.py`.
 
+To see and plan the order instead of only checking it after the fact, run
+`task question-graph` (`tools/question_graph.py`): it prints the whole
+dependency graph in definition order, grouped by fragment, with what each
+question/internal reads and feeds, recomputes the forward-reference rule
+(violations name both positions), and — with
+`--where NAME --refs A,B,C` — answers "where may this new internal live":
+the legal position window after the last definition it reads, what
+currently occupies that spot, and which fragment the insertion lands in.
+
 ## Question `when:`s read raw answers; render reads effective internals
 
 The questionnaire keeps two vocabularies apart, and every condition below
@@ -360,7 +369,7 @@ up:
 | `standalone` | `check_upstream`, `check_upstream_fork`, `check_questionnaire_diff`, `generate_license_template` | maintenance/CI scripts that import nothing from `tools/` (a pristine checkout or a released tarball is their world) |
 | `foundations` | `answers`, `questionnaire`, `when_model`, `render_inputs` | the questionnaire model and shared primitives: data and meaning, no behavior on real trees |
 | `machinery` | `file_merge`, `pyproject_merge`, `invariants`, `z3_witnesses` | pure transformations and verifiers over template/adoption artifacts |
-| `drivers` | `detect`, `batch`, `adopt`, `predicates` | act on real trees with copier/subprocess; consume the machinery |
+| `drivers` | `detect`, `batch`, `adopt`, `predicates`, `question_graph` | act on real trees with copier/subprocess; consume the machinery |
 | `frontends` | `cli`, `gen_docs`, `mcp_server` | the entry points a human or an agent calls; consume the drivers |
 
 Rules:
