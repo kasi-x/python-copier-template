@@ -71,7 +71,10 @@ Both paths expand this fork's newest release tag;
 [Create a new project](docs/tutorials/create-new.md) covers the flags, the
 presets, adoption and pinning an exact release, and
 [generating a project non-interactively](docs/reference/non-interactive.md)
-covers `--defaults` with an answers file for CI.
+covers `--defaults` with an answers file for CI. For the inverse question —
+you know the features you want, not the answers that produce them —
+`task answers-for -- --require <name>=<value>` searches the verified answer
+space (the same page's *Tell the template what you want*).
 
 ## Everyday commands
 
