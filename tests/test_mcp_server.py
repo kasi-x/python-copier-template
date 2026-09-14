@@ -25,6 +25,7 @@ from typing import Any
 from typing import cast
 
 import pytest
+import yaml
 from mcp import Client
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import LATEST_PROTOCOL_VERSION
@@ -36,6 +37,7 @@ if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
 from tools import answers  # noqa: E402
+from tools import answers_for  # noqa: E402
 from tools import mcp_server  # noqa: E402
 
 # The shared Project Details (tools/answers.py) with this tool's own package
@@ -49,6 +51,7 @@ TOOL_NAMES = {
     "list_batch_requests",
     "list_questions",
     "list_witnesses",
+    "recommend_answers",
     "render_diff",
     "render_project",
     "run_batch",
@@ -354,6 +357,28 @@ async def test_witnesses_resource_serves_the_same_inventory(client: Client):
     second = await client.read_resource("template://witnesses")
     assert isinstance(second.contents[0], TextResourceContents)
     assert first.contents[0].text == second.contents[0].text, "the payload is deterministic"
+
+
+@pytest.mark.anyio
+async def test_recommend_answers_finds_the_leaves_and_refuses_unknown_names(
+    client: Client, monkeypatch: pytest.MonkeyPatch
+):
+    """The inverse template on the MCP surface, over crafted contexts (no copier pass)."""
+    contexts = {
+        "project_type=cli/gate=off:use_recommended_agent": {"project_type": "cli", "docs_type": "zensical"},
+        "project_type=web_api/gate=off:use_recommended_agent": {"project_type": "web_api", "docs_type": "sphinx"},
+    }
+    monkeypatch.setattr(answers_for, "load_contexts", lambda root=None: contexts)
+    payload = await call(client, "recommend_answers", {"constraints": ["project_type=cli"]})
+    assert payload["matched"] == 1
+    (leaf,) = payload["leaves"]
+    assert leaf["id"] == "project_type=cli/gate=off:use_recommended_agent"
+    assert yaml.safe_load(leaf["answers_yaml"]) == leaf["answers"]
+    assert leaf["ships"], "the ships list comes from the invariants matrix"
+    no_match = await call(client, "recommend_answers", {"constraints": ["docs_type=zensical", "docs_type!=zensical"]})
+    assert no_match["matched"] == 0 and no_match["diagnostic"]["nearest"]["of"] == 2
+    bad = await client.call_tool("recommend_answers", {"constraints": ["doc_typ=zensical"]})
+    assert bad.is_error is True and "docs_type" in str(bad.content), "the error suggests the closest real names"
 
 
 @pytest.mark.anyio

@@ -91,6 +91,7 @@ from mcp.server.transport_security import TransportSecuritySettings  # noqa: E40
 from starlette.requests import Request  # noqa: E402
 from starlette.responses import JSONResponse  # noqa: E402
 from tools import adopt  # noqa: E402
+from tools import answers_for  # noqa: E402
 from tools import batch  # noqa: E402
 from tools import detect  # noqa: E402
 from tools import gen_docs  # noqa: E402
@@ -603,6 +604,35 @@ def list_witnesses() -> dict[str, Any]:
     order. Filesystem only -- no render, no network.
     """
     return _witness_inventory()
+
+
+@server.tool()
+def recommend_answers(constraints: list[str], *, render: bool = False) -> dict[str, Any]:
+    """Find the witness answers that produce the features you name (the inverse template).
+
+    Each constraint is `name`, `name=value`, `-name` or `name!=value`, naming
+    any question or derived internal the render context exposes (`docker`,
+    `mcp_effective`, `sphinx`, `license_effective`, ...); an unknown name is
+    rejected with the closest real names. Returns {"constraints", "matched",
+    "shown", "leaves", "diagnostic", "render"}: every matching witness leaf
+    with its full `answers`, the same answers as a `--data-file`-ready YAML
+    string (`answers_yaml`) and the artifacts its class ships (`ships`). The
+    match is exact over the declared 225-leaf space, so a combination no leaf
+    carries is reported as such, not guessed: with no match, `diagnostic`
+    names the constraint that eliminated the most leaves and the nearest leaf
+    with what it misses. `render=True` also renders the top match and proves
+    every constraint against the rendered tree (a fresh context pass over the
+    render's own recorded answers, plus the name-gated artifacts -- e.g.
+    `docker` -> `.dockerignore`, `use_gpu_effective` -> `Dockerfile.gpu`);
+    that is one real render (~1-2s, no install, no network). Without it:
+    filesystem + copier's questionnaire pass -- ~50 ms warm, ~25 s on the
+    first call (cached under `.cache/answers-for/` until the questionnaire or
+    the witnesses move).
+    """
+    try:
+        return answers_for.recommend(constraints, render=render, keep=True)
+    except answers_for.ConstraintError as exc:
+        raise ToolError(str(exc)) from exc
 
 
 WITNESS_MARKERS = {
