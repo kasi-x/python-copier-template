@@ -93,6 +93,7 @@ from starlette.responses import JSONResponse  # noqa: E402
 from tools import adopt  # noqa: E402
 from tools import batch  # noqa: E402
 from tools import detect  # noqa: E402
+from tools import gen_docs  # noqa: E402
 from tools import questionnaire  # noqa: E402
 from tools.render_inputs import RENDER_INPUT_DIRS  # noqa: E402
 from tools.render_inputs import RENDER_INPUT_FILES  # noqa: E402
@@ -763,6 +764,19 @@ def witnesses_resource() -> str:
     caller can diff it between runs.
     """
     return json.dumps(_witness_inventory(), indent=2, sort_keys=True)
+
+
+@server.resource("template://support")
+def support_resource() -> str:
+    """The declared support contract (`support.yml`) as JSON.
+
+    What the project promises to have executed, per combination and per leaf
+    class, each entry carrying the measured `why`. Read through
+    tools/gen_docs.py's loader -- the same one the generated docs blocks and
+    tests/test_support_matrix.py use -- so a caller sees the live declaration
+    rather than a second reading of the file.
+    """
+    return json.dumps(gen_docs.load_support(gen_docs.SUPPORT_YML), indent=2, sort_keys=True)
 
 
 @server.custom_route("/health", methods=["GET"])

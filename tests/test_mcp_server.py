@@ -356,6 +356,31 @@ async def test_witnesses_resource_serves_the_same_inventory(client: Client):
 
 
 @pytest.mark.anyio
+async def test_support_resource_serves_the_declared_contract(client: Client):
+    """The declaration the docs and the support tests read, on the MCP surface.
+
+    The point of the resource is a caller asking "what has CI actually run?",
+    so the payload must be the live `support.yml` and not a copy of it: every
+    declared `supported` combination is cross-checked against the witness
+    inventory the sibling tool reports.
+    """
+    result = await client.read_resource("template://support")
+    assert isinstance(result.contents[0], TextResourceContents)
+    payload = json.loads(result.contents[0].text)
+    assert {"supported", "best_effort", "tier_policy"} <= set(payload)
+
+    inventory = await call(client, "list_witnesses")
+    recorded = {leaf["id"]: leaf for leaf in inventory["leaves"]}
+    declared = {str(row["combination"]) for row in payload["supported"]}
+    assert declared <= set(recorded), f"declared but not a witness leaf: {sorted(declared - set(recorded))}"
+    assert all(recorded[leaf]["tier"] == "full" for leaf in declared), "a supported combination is a full-tier leaf"
+
+    second = await client.read_resource("template://support")
+    assert isinstance(second.contents[0], TextResourceContents)
+    assert second.contents[0].text == result.contents[0].text, "the payload is deterministic"
+
+
+@pytest.mark.anyio
 async def test_run_witness_returns_a_verdict_per_test(client: Client):
     """One leaf, so this pins the tool's pytest plumbing (~4s), not the suite."""
     verdict = await call(client, "run_witness", {"tier": "fast", "only": "ros2 and use_recommended_license"})

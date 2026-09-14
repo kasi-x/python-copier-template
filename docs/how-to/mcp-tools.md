@@ -80,6 +80,7 @@ nothing about the answers. Every other byte is compared as it is.
 | --- | --- |
 | `template://questionnaire` | the full questionnaire as JSON, internal variables included |
 | `template://witnesses` | each witness leaf with its recorded tier and result, plus the ledger's coverage counters -- sorted and declaration-ordered, so it diffs between runs |
+| `template://support` | the declared support contract (`support.yml`): what CI promises to execute per combination and per leaf class, each entry with the measured `why` |
 
 ## The HTTP transport and its allowlist
 
