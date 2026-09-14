@@ -1099,19 +1099,42 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       - `questions/_internal.yml` の `pkg_dir` / `import_pkg` は既に配置を計算しているため、
         path 側を `template/{{ pkg_dir }}/fetcher.py` 式に寄せ、真正に置き場が違うもの
         （`app/` vs `<pkg>`、`firmware/`、`src/utils`）だけ wrapper 残しにする
-- [ ] **OJ 判定の3流儀を1つに統一する**（`not online_judge` / `not (online_judge and not kaggle)` /
+- [x] **OJ 判定の3流儀を1つに統一する**
+      → **完了（2026-09-14、1dbd8ecb）**: インベントリで全サイトを分類した結果、
+        3構文は3つの異なる意図だったことが判明（`not online_judge`=PyPI/リリース/
+        パッケージツリー領域でkaggle含むOJ全体、`not (online_judge and not kaggle)`=
+        docker/vulture領域でkaggleのみ免除・CTFは対象外、リスト除外=layout/log_library領域）。
+        意図ごとに命名: `oj_bare`（=online_judge and not kaggle。oj_code との差=CTFの
+        有無をコメントで明記）と `no_pkg`（=micropython_pkg or oj_code、8サイトの共起を
+        置換）を新設し、生式を8サイト置換。**41コンボで byte-identical**。
+        生形式の再発と内部変数の逸脱を落とす guard テスト2本を新設（意図的に壊して
+        検出済み）。`not online_judge`/`oj_code` スコープのサイトは意図どおり現状維持（`not online_judge` / `not (online_judge and not kaggle)` /
       `project_type not in [...]` が混在。kaggle に Docker は付くが PyPI は付かない等、
       意図か事故か判別できない）
       - `oj_bare`（= oj_code 相当）または `no_pkg`（micropython / oj_code 等）系 internal を
         新設し、docker / pypi / log_library / setuptools / setuptools_scm / testpaths /
         basedpyright-exclude の全参照を置き換える
-- [ ] **raw / effective 混在を排除し、template 側は effective のみ参照にする**
+- [x] **raw / effective 混在を排除し、template 側は effective のみ参照にする**
+      → **完了（2026-09-14、212cd59c）**: 原則を template-dev.md に固定（質問の when は
+        raw、render 側は effective、ゲート葉 `include_sentry`/`use_recommended_agent`/
+        `include_mcp` は raw のままで正しい——派生元が無いため「直さない」旨も明記）。
+        実際の混在バグ1件を修正: 生成READMEの環境変数節が `.env.example` ゲートから
+        `bot_effective` を漏らし、bot レンダで `.env.example` だけが ship される状態
+        （一致テスト新設）。include_mcp.when の `web_api` エイリアス参照は
+        forward-reference 規則（_internal は _common_b の後で include される）のため
+        不能と実証 → 既知例外として when にコメント
       - 例: `include_mcp.when` の `project_type == 'web_api' or include_web_api` と
         `mcp_effective` の `cli or web_api(effective)` の二重定義、`.env.example` ファイル名の
         raw/effective 混在、`kaggle` vs `data_science` vs `has_*` の混在使用
       - 方針: 質問の `when` は raw、render（template 本体・ファイル名・`_tasks.jinja`・
         Dockerfile・task ブロック）は effective のみ。混在箇所を洗い出して置き換える
-- [ ] **`layout` 除外リスト・`combinable` 三重ガードを一元化する**
+- [x] **`layout` 除外リスト・`combinable` 三重ガードを一元化する**
+      → **完了（2026-09-14、212cd59c）**: 3つの除外リストは**同じリストではなかった**
+        （matrix 実測: layout は ds+web_api を排除、use_src_layout は script を排除し
+        oj_ctf を再加入、log_library は no-pkg 3種のみ）——統一せず、各サイトに差分の
+        理由を1行コメントし、3リストの集合を正確に固定するテストで無音ドリフトを防止。
+        combinable 三重ガードは --data-file 強制リーク防止の意図設計（when=false の質問に
+        も data が適用される実証テストあり）として _combo.yml に文書化、崩さない
       - `layout.when` / `use_src_layout` / `log_library.when` の除外リストを
         `needs_layout_choice` 系 internal に集約し、各 `when` から参照する
       - `include_web_api.when` + `combinable` + `has_web_api` + 各ファイルの `{% if web_api %}`
@@ -1144,7 +1167,13 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       - micropython + sphinx の zensical フォールバックと memorious 選択時の AGPL-3.0 強制は
         現状 silent。ask 順で validator が書ける側は validator 化、書けない側は
         `_tasks` / CI の警告または `test_example.py` の assert（render 結果と回答の一致）で可視化する
-- [ ] **`git_platform` を先に聞くか `repo_url` / `docs_url` を platform 別にする**
+- [x] **`git_platform` を先に聞くか `repo_url` / `docs_url` を platform 別にする**
+      → **完了（2026-09-14、4a018b27）**: `repo_url` / `docs_url` を platform 条件付きに
+        （gitlab.com では gitlab.com/<group>/<repo> と <group>.gitlab.io、github 側は
+        byte-identical を実証）。pyproject の urls ラベルも条件化。GitLab で残る
+        github 固有部分（conf.py スイッチャ、ghcr.io、scorecard バッジ等）は
+        template-dev.md の「GitLab scope」節に事実として記録。質問順の変更は見送り
+        （security/scorecard の effective ガードは ask 順の合図として文書済みで機能中）
       （現状: Project Details で後聞きのため `security_policy` / `scorecard` の `when` で
       絞れず `*_effective` の render 時ガードに迂回し、GitLab でも `repo_url` / `docs_url`
       が github.com 固定になる）
