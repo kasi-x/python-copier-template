@@ -22,7 +22,7 @@ Practical step-by-step guides for the more experienced user.
 - [Pixi Projects](how-to/pixi.md)
 - [Web API Service Scaffolding](how-to/web-api.md)
 - [MCP Server Scaffolding](how-to/mcp.md)
-- [Chat Bot Scaffolding (Discord / Slack)](how-to/bot.md)
+- [Chat Bot Scaffolding (Discord / Slack / LINE)](how-to/bot.md)
 - [Polite Web Fetching](how-to/scraping.md)
 - [Code Coverage](how-to/coverage.md)
 - [Check Docs Style](how-to/check-docs-style.md)

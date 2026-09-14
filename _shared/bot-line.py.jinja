@@ -1,0 +1,231 @@
+"""LINE bot for {{ package_name }} — the long-running layer's platform module.
+
+Run it against the LINE Messaging API (both credentials come from the
+environment):
+
+    uv run bot-line-{{ repo_name }}
+
+The Messaging API has no long-polling transport and no socket: LINE pushes
+every event to your **webhook** as a signed HTTPS POST, so this module runs
+its own small FastAPI app and answers
+
+    POST /callback   the webhook URL you register with LINE
+
+on `BOT_PORT` (default 8000, bound on all interfaces so the container's
+published port and a local tunnel both reach it). That app is the bot
+process, not part of the generated `app/` package: the bot layer starts its
+own process on every base (`__main__.py` stays the CLI), so on a `web_api`
+base this file only moves to `app/bot_line.py` — it is still run, never
+mounted into the generated API.
+
+Two credentials are REQUIRED and the scaffold refuses to start without either:
+
+- `LINE_CHANNEL_SECRET` verifies the webhook. LINE signs every request body
+  with HMAC-SHA256 keyed by the channel secret and sends the base64 digest in
+  the `X-Line-Signature` header; the SDK's WebhookParser recomputes it over
+  the raw body and raises `InvalidSignatureError` when it does not match, so
+  an unsigned or forged POST is rejected before a single event is read. That
+  check is what makes publishing the webhook URL safe — the URL is not a
+  secret, the channel secret is (and it never travels on the wire).
+- `LINE_CHANNEL_ACCESS_TOKEN` authorizes the Messaging API call that sends the
+  reply.
+
+Copy `.env.example` to `.env` (git ignored, loaded by direnv) and put both
+there — never commit them. `LOG_FORMAT=json` works here too: this module's own
+logging goes through the generated `logging_setup`, so the webhook process
+logs in the same format as the CLI.
+
+The handler answers a text `ping` with `pong`, over the single-use
+`reply_token` the event carries. That reply is a Messaging API call, which is
+the seam the tests fake: `build_app(reply=...)` takes the call as a parameter,
+so tests/test_bot_line.py drives `POST /callback` over httpx's ASGITransport
+with a recording `reply` — a signed body in, `pong` out, no token, no client
+and no network, with the unsigned and wrongly signed bodies asserted to be
+rejected without a reply.
+"""
+
+# line-bot-sdk ships no type stubs (no py.typed), so basedpyright reads every
+# member of it as unknown. These three rules are off for this file — the module
+# whose whole job is that SDK — and stay on everywhere else in the project;
+# `reportAny` stays on here too, so the SDK's untyped returns are still named
+# with a cast rather than left to flow.
+# pyright: reportUnknownMemberType=false
+# pyright: reportUnknownArgumentType=false
+# pyright: reportUnknownVariableType=false
+
+from __future__ import annotations
+
+import argparse
+import os
+from collections.abc import Callable
+from collections.abc import Sequence
+from typing import cast
+
+import uvicorn
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
+from fastapi import status
+from linebot.v3 import WebhookParser
+from linebot.v3.exceptions import InvalidSignatureError
+from linebot.v3.messaging import ApiClient
+from linebot.v3.messaging import Configuration
+from linebot.v3.messaging import MessagingApi
+from linebot.v3.messaging import ReplyMessageRequest
+from linebot.v3.messaging import TextMessage
+from linebot.v3.webhooks import Event
+from linebot.v3.webhooks import MessageEvent
+from linebot.v3.webhooks import TextMessageContent
+
+from {{ import_pkg }}.logging_setup import logger
+
+__all__ = ["Reply", "build_app", "main"]
+
+# The reply seam: (reply_token, text) -> None. A deployment that routes replies
+# itself hands its own callable to build_app(); the default is the Messaging
+# API client.
+Reply = Callable[[str, str], None]
+
+# The port `main()` serves on when `BOT_PORT` says nothing else: the one the
+# Messaging API's own Python examples use, and the one the generated Dockerfile
+# publishes.
+DEFAULT_PORT = 8000
+
+
+def _messaging_api_reply(reply_token: str, text: str) -> None:
+    """Send one text reply — the default `reply`, a real Messaging API call.
+
+    The client is built here, per reply, on purpose: importing this module must
+    not require a credential (the generated tests build the app with no token
+    and drive it in-process), so nothing can be constructed at import time and
+    the access token is read from the environment at the moment of the call.
+    `ApiClient` is the SDK's context manager around the connection it opens.
+    """
+    access_token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
+    if not access_token:
+        # Unreachable through main() (which refuses to start without it), and
+        # kept because reaching it means the process was started some other
+        # way: fail loudly rather than send a tokenless request.
+        msg = "LINE_CHANNEL_ACCESS_TOKEN is not set: main() refuses to start without it"
+        raise RuntimeError(msg)
+    with ApiClient(Configuration(access_token=access_token)) as api_client:
+        # The generated pydantic models name their constructor parameters after
+        # the JSON aliases — replyToken, quickReply, quoteToken — and their
+        # aliased optional fields carry no default for a type checker to see,
+        # so all of them are passed explicitly (the aliases are what the wire
+        # format uses, and pydantic accepts either).
+        MessagingApi(api_client).reply_message(
+            ReplyMessageRequest(
+                replyToken=reply_token,
+                messages=[TextMessage(text=text, quickReply=None, quoteToken=None)],
+                notificationDisabled=None,
+            )
+        )
+
+
+def _parse_webhook(secret: str, body: str, signature: str) -> list[Event]:
+    """Verify LINE's signature, then parse `body` into its events.
+
+    `WebhookParser.parse()` recomputes the body's HMAC-SHA256 with the channel
+    secret before it decodes a single event, and raises `InvalidSignatureError`
+    when the header does not match, so the handler only ever sees events from a
+    body LINE signed. The cast puts the SDK's own event type on a call an
+    untyped package returns as `Any` (line-bot-sdk has no py.typed).
+    """
+    return cast("list[Event]", WebhookParser(secret).parse(body, signature))
+
+
+def build_app(reply: Reply | None = None) -> FastAPI:
+    """Build the webhook app — no server, no client, no credentials.
+
+    Split from main() the way the other platforms split their `build_*()` out:
+    a deployment reuses the app behind its own ASGI server, and the generated
+    tests build it with a recording `reply` and drive the route in-process.
+    Both credentials are read from the environment inside the handler, which
+    is what keeps the build itself offline (and main() is what refuses to
+    serve without them).
+    """
+    respond = _messaging_api_reply if reply is None else reply
+    app = FastAPI(title="{{ repo_name }} LINE bot")
+
+    @app.post("/callback")
+    async def callback(request: Request) -> dict[str, str]:
+        """Verify LINE's signature, then answer a text `ping` with `pong`."""
+        body = (await request.body()).decode()
+        secret = os.environ.get("LINE_CHANNEL_SECRET")
+        if not secret:
+            # Fail closed: with no secret, no signature can be verified, so no
+            # body can be trusted — not even to read an event out of it.
+            # main() refuses to start in this state; this is the state a
+            # process started some other way (a bare ASGI server) is in.
+            logger.error("webhook rejected", reason="LINE_CHANNEL_SECRET is not set")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="LINE_CHANNEL_SECRET is not set",
+            )
+        signature = request.headers.get("X-Line-Signature", "")
+        try:
+            events = _parse_webhook(secret, body, signature)
+        except InvalidSignatureError:
+            logger.warning("webhook rejected", reason="invalid signature")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="invalid signature",
+            ) from None
+        for event in events:
+            # Only a text message says `ping`; `reply_token` is optional in the
+            # webhook schema, so it is checked before the reply seam is called.
+            if (
+                isinstance(event, MessageEvent)
+                and event.reply_token is not None
+                and isinstance(event.message, TextMessageContent)
+                and event.message.text == "ping"
+            ):
+                respond(event.reply_token, "pong")
+                logger.info("pong", command="/callback")
+        return {"status": "ok"}
+
+    return app
+
+
+def main(args: Sequence[str] | None = None) -> None:
+    """Serve the webhook with uvicorn."""
+    # No options yet: the parser is here for `--help` and because
+    # parser.error() is what gives the refusal below its exit code 2, the same
+    # shape the other platforms' token checks build on.
+    parser = argparse.ArgumentParser(description="LINE bot for {{ repo_name }}")
+    parser.parse_args(args)
+    secret = os.environ.get("LINE_CHANNEL_SECRET")
+    access_token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
+    if not secret or not access_token:
+        credentials = (
+            ("LINE_CHANNEL_SECRET", secret),
+            ("LINE_CHANNEL_ACCESS_TOKEN", access_token),
+        )
+        missing = [name for name, value in credentials if not value]
+        # parser.error() is the refusal: exit code 2 on stderr, naming the
+        # variable that is not set (never a half-started server that would
+        # then reject every webhook). Both are needed before the first request
+        # — the secret verifies LINE's signature, the access token sends the
+        # reply — and the secret is the one a deployment forgets, because the
+        # token is what you copy first to send anything at all.
+        parser.error(
+            "the LINE webhook needs both credentials in the environment; "
+            + ", ".join(missing)
+            + " not set. Create a Messaging API channel at developers.line.biz, "
+            "issue a channel access token, and copy the channel secret (in the "
+            "channel's Messaging API settings) and that token into .env — "
+            "`.env.example` documents the two variables and `.env` is ignored "
+            "by git"
+        )
+    port = int(os.environ.get("BOT_PORT", str(DEFAULT_PORT)))
+    logger.info("webhook listening", port=port)
+    # All interfaces on purpose: the webhook exists to be reached from LINE
+    # over the internet — through the published port in Docker, or through a
+    # tunnel while developing. ruff's S104 flags the literal, which is exactly
+    # the intent here.
+    uvicorn.run(build_app(), host="0.0.0.0", port=port)  # noqa: S104
+
+
+if __name__ == "__main__":
+    main()

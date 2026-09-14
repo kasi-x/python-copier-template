@@ -1,0 +1,223 @@
+"""In-process tests for the LINE bot scaffold.
+
+`build_app(reply=...)` is called directly — no uvicorn, no token, no client —
+and `POST /callback` is driven over httpx's ASGITransport (no starlette
+TestClient, for the reason tests/test_app.py gives: it keeps the tests
+warning-free under `filterwarnings = error` across starlette versions). Each
+test signs its body the way LINE does (HMAC-SHA256 of the raw body, base64,
+keyed by the channel secret) and asserts what reaches the reply seam. The
+unsigned and wrongly signed cases are here because that signature check is the
+whole security story of a public webhook URL: both must be rejected without a
+single reply call.
+
+This is also the worked example for testing your own webhook routes: build the
+app with the reply call you want to observe, hand the transport a body you
+signed yourself, and assert on the seam instead of on LINE.
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import hmac
+import json
+from collections.abc import AsyncIterator
+
+import pytest
+from httpx import ASGITransport
+from httpx import AsyncClient
+
+from {{ import_pkg }} import bot_line
+
+
+def channel_secret() -> str:
+    """The channel secret these tests sign with and set in the environment.
+
+    A function, not a `..._SECRET = "..."` constant: ruff's flake8-bandit rule
+    (S105) rejects any hardcoded value bound to a name that looks like a
+    credential, and this one is a fixture, not a credential — the route only
+    compares the recomputed HMAC against the header, and nothing here reaches
+    LINE (every reply goes to RecordingReply).
+    """
+    return "test-channel-secret"
+
+
+def webhook_body() -> str:
+    """A LINE webhook POST: one text message from a user."""
+    return json.dumps(
+        {
+            # The shapes here are the Messaging API's own: `destination` is the
+            # bot, `events[]` carries the message and the single-use reply
+            # token the handler answers on.
+            "destination": "U" + "0" * 32,
+            "events": [
+                {
+                    "type": "message",
+                    "mode": "active",
+                    "timestamp": 1700000000000,
+                    "source": {"type": "user", "userId": "U" + "1" * 32},
+                    "webhookEventId": "01H" + "0" * 29,
+                    "deliveryContext": {"isRedelivery": False},
+                    "replyToken": "reply-token",
+                    "message": {
+                        "type": "text",
+                        "id": "1",
+                        "text": "ping",
+                        "quoteToken": "quote",
+                    },
+                }
+            ],
+        }
+    )
+
+
+def signature_of(body: str, *, secret: str | None = None) -> str:
+    """The `X-Line-Signature` LINE sends: base64(HMAC-SHA256(secret, body)).
+
+    `secret` overrides the channel secret, which is how a test signs a body
+    with the wrong key — what a forged request looks like.
+    """
+    key = (channel_secret() if secret is None else secret).encode()
+    digest = hmac.new(key, body.encode(), hashlib.sha256).digest()
+    return base64.b64encode(digest).decode()
+
+
+class RecordingReply:
+    """The reply seam, recording `(reply_token, text)` instead of calling LINE."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str]] = []
+
+    def __call__(self, reply_token: str, text: str) -> None:
+        self.calls.append((reply_token, text))
+
+
+@pytest.fixture
+def reply() -> RecordingReply:
+    return RecordingReply()
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+@pytest.fixture
+async def client(
+    monkeypatch: pytest.MonkeyPatch,
+    reply: RecordingReply,
+) -> AsyncIterator[AsyncClient]:
+    """An httpx client wired to `build_app()`, with the channel secret set.
+
+    The route reads the secret from the environment at request time — that is
+    what lets `build_app()` be built with no credential at all — so the fixture
+    sets it the way `.env` does.
+    """
+    monkeypatch.setenv("LINE_CHANNEL_SECRET", channel_secret())
+    transport = ASGITransport(app=bot_line.build_app(reply=reply))
+    async with AsyncClient(transport=transport, base_url="http://line") as http_client:
+        yield http_client
+
+
+@pytest.mark.anyio
+async def test_a_signed_ping_is_answered_pong(
+    client: AsyncClient,
+    reply: RecordingReply,
+) -> None:
+    """The happy path: LINE's own signature gets a 200 and the pong reply."""
+    body = webhook_body()
+    response = await client.post(
+        "/callback",
+        content=body,
+        headers={"X-Line-Signature": signature_of(body)},
+    )
+    assert response.status_code == 200
+    assert reply.calls == [("reply-token", "pong")]
+
+
+@pytest.mark.anyio
+async def test_an_unsigned_body_is_rejected_without_a_reply(
+    client: AsyncClient,
+    reply: RecordingReply,
+) -> None:
+    """No `X-Line-Signature` header at all: 400, and nothing reaches the reply seam."""
+    response = await client.post("/callback", content=webhook_body())
+    assert response.status_code == 400
+    assert reply.calls == []
+
+
+@pytest.mark.anyio
+async def test_a_wrongly_signed_body_is_rejected_without_a_reply(
+    client: AsyncClient,
+    reply: RecordingReply,
+) -> None:
+    """A well-formed signature that is not ours: 400, no reply.
+
+    This is the case that matters for a public webhook URL — anyone who learns
+    the URL can POST to it, and only the channel secret (which never travels
+    on the wire) separates LINE from a forgery.
+    """
+    body = webhook_body()
+    headers = {"X-Line-Signature": signature_of(body, secret="not-the-channel-secret")}
+    response = await client.post("/callback", content=body, headers=headers)
+    assert response.status_code == 400
+    assert reply.calls == []
+
+
+@pytest.mark.anyio
+async def test_a_missing_channel_secret_rejects_without_a_reply(
+    monkeypatch: pytest.MonkeyPatch,
+    reply: RecordingReply,
+) -> None:
+    """No channel secret configured: the route trusts nothing.
+
+    `main()` refuses to start without it, so this is the state of a process
+    started another way (a bare ASGI server): no signature can be verified, so
+    a body signed with anything — including the right secret — is not acted on.
+    """
+    monkeypatch.delenv("LINE_CHANNEL_SECRET", raising=False)
+    body = webhook_body()
+    transport = ASGITransport(app=bot_line.build_app(reply=reply))
+    async with AsyncClient(transport=transport, base_url="http://line") as http_client:
+        response = await http_client.post(
+            "/callback",
+            content=body,
+            headers={"X-Line-Signature": signature_of(body)},
+        )
+    assert response.status_code == 500
+    assert reply.calls == []
+
+
+def test_main_refuses_to_start_without_the_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The startup env check: no webhook without both credentials (exit code 2)."""
+    monkeypatch.delenv("LINE_CHANNEL_SECRET", raising=False)
+    monkeypatch.delenv("LINE_CHANNEL_ACCESS_TOKEN", raising=False)
+    with pytest.raises(SystemExit) as excinfo:
+        bot_line.main([])
+    assert excinfo.value.code == 2
+    refusal = capsys.readouterr().err
+    assert "LINE_CHANNEL_SECRET" in refusal
+    assert "LINE_CHANNEL_ACCESS_TOKEN" in refusal
+
+
+def test_refusal_names_the_missing_credential(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """With the access token set, the refusal names only the channel secret.
+
+    That is the value a deployment forgets: the token is the one you copy
+    first, because nothing can be sent without it, while the channel secret
+    only becomes relevant when LINE starts calling the webhook.
+    """
+    monkeypatch.setenv("LINE_CHANNEL_ACCESS_TOKEN", "test-access-token")
+    monkeypatch.delenv("LINE_CHANNEL_SECRET", raising=False)
+    with pytest.raises(SystemExit) as excinfo:
+        bot_line.main([])
+    assert excinfo.value.code == 2
+    refusal = capsys.readouterr().err
+    assert "LINE_CHANNEL_SECRET" in refusal
+    assert "LINE_CHANNEL_ACCESS_TOKEN" not in refusal

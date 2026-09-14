@@ -402,6 +402,31 @@ channel it is in (`@your-bot ping`) and it replies `pong`.
 `tests/test_bot_slack.py` registers the listeners on a recording stand-in and
 drives the mention listener with a fake `say`, so the bot is tested
 in-process with no socket, no token and no WebClient.
+{% endif %}{% if bot_line_effective %}
+The project also ships a **LINE bot** (`{{ import_pkg }}/bot_line.py`,
+[line-bot-sdk](https://developers.line.biz/en/docs/messaging-api/)). The
+Messaging API has no socket and no long-polling: LINE pushes every event to a
+**webhook**, so the bot serves it itself — a small FastAPI app answering
+`POST /callback` on `BOT_PORT` (default 8000, all interfaces):
+
+```sh
+# put both credentials in .env first (cp .env.example .env)
+uv run bot-line-{{ repo_name }}
+```
+
+`LINE_CHANNEL_SECRET` verifies the `X-Line-Signature` LINE signs every request
+body with, and `LINE_CHANNEL_ACCESS_TOKEN` authorizes the reply; both are
+required — the bot refuses to start without either and names the one that is
+missing (see `.env.example`; `.env` is git-ignored). Expose the port over
+HTTPS (a tunnel is enough while developing) and register
+`https://<your host>/callback` as the channel's webhook URL. The signature
+check is what makes that public URL safe: an unsigned or forged POST is
+rejected before any event is read. Send the bot `ping` and it replies `pong`.
+
+`build_app()` is split from `main()` and takes the reply call as a parameter:
+`tests/test_bot_line.py` drives `POST /callback` over httpx's ASGITransport
+with a recording reply, so the whole route — signature check included — is
+tested in-process, with no token and no network.
 {% endif %}{% else %}```python
 from {{package_name}} import __version__
 
@@ -492,6 +517,35 @@ channel it is in (`@your-bot ping`) and it replies `pong`.
 `tests/test_bot_slack.py` registers the listeners on a recording stand-in and
 drives the mention listener with a fake `say`, so the bot is tested
 in-process with no socket, no token and no WebClient.
+{% endif %}{% if bot_line_effective %}
+
+The project also ships a **LINE bot** (`{{ pkg_dir }}/bot_line.py`,
+[line-bot-sdk](https://developers.line.biz/en/docs/messaging-api/)). The
+Messaging API has no socket and no long-polling: LINE pushes every event to a
+**webhook**, so the bot serves it itself — a small FastAPI app answering
+`POST /callback` on `BOT_PORT` (default 8000, all interfaces):
+
+```sh
+# put both credentials in .env first (cp .env.example .env)
+uv run bot-line-{{ repo_name }}
+
+# or without installing:
+uv run python -m {{ package_name }}.bot_line
+```
+
+`LINE_CHANNEL_SECRET` verifies the `X-Line-Signature` LINE signs every request
+body with, and `LINE_CHANNEL_ACCESS_TOKEN` authorizes the reply; both are
+required — the bot refuses to start without either and names the one that is
+missing (see `.env.example`; `.env` is git-ignored). Expose the port over
+HTTPS (a tunnel is enough while developing) and register
+`https://<your host>/callback` as the channel's webhook URL. The signature
+check is what makes that public URL safe: an unsigned or forged POST is
+rejected before any event is read. Send the bot `ping` and it replies `pong`.
+
+`build_app()` is split from `main()` and takes the reply call as a parameter:
+`tests/test_bot_line.py` drives `POST /callback` over httpx's ASGITransport
+with a recording reply, so the whole route — signature check included — is
+tested in-process, with no token and no network.
 {% endif %}{% if scraping_effective %}
 
 The project also ships a **polite web-fetching layer** under the

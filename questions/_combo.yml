@@ -89,9 +89,9 @@ include_bot:
         Add a long-running chat bot on top of this project (the long-running
         layer's second platform after the MCP server)?
         If yes, a bot module with its own entry point is generated and the
-        detail questions follow when answered Yes. Discord and Slack are the
-        generated platforms; LINE and Gmail are planned choices on the same
-        question, never new project types.
+        detail questions follow when answered Yes. Discord, Slack and LINE are
+        the generated platforms; Gmail is a planned choice on the same
+        question, never a new project type.
 use_recommended_bot:
     type: bool
     when: "{{ include_bot }}"
@@ -101,8 +101,8 @@ use_recommended_bot:
         Recommended: discord = discord.py — the de-facto Discord library
         (async, typed, slash commands via app_commands, actively maintained,
         unlike the py-cord / nextcord forks).
-        Answer No to pick a platform instead (discord and slack are the
-        choices today; LINE and Gmail are planned).
+        Answer No to pick a platform instead (discord, slack and line are the
+        choices today; Gmail is planned).
 bot_platform:
     type: str
     when: "{{ include_bot and not use_recommended_bot }}"
@@ -116,11 +116,20 @@ bot_platform:
           listener that answers pong, and SLACK_BOT_TOKEN + SLACK_APP_TOKEN
           from the environment with a startup check that refuses to start
           without either).
-        LINE and Gmail are planned platforms, not generated yet — they will
-        be added here as new choices, not as new project types.
+        - line: a line-bot-sdk bot on the Messaging API (no long-polling and
+          no socket, so the module serves LINE's webhook itself: a small
+          FastAPI app whose POST /callback verifies the X-Line-Signature
+          HMAC before answering a text ping with pong, and
+          LINE_CHANNEL_SECRET + LINE_CHANNEL_ACCESS_TOKEN from the
+          environment with a startup check that refuses to start without
+          either). LINE listens on BOT_PORT (default 8000), unlike discord
+          and slack, which only dial out.
+        Gmail is a planned platform, not generated yet — it will be added
+        here as a new choice, not as a new project type.
     choices:
         - discord
         - slack
+        - line
     default: discord
 
 combinable:
