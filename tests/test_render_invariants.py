@@ -340,6 +340,23 @@ def _feature_present(feature: Feature, root: Path, pyproject: dict[str, Any]) ->
     return any(_table(pyproject, table) for table in feature.tables)
 
 
+def _resolved_answers(root: Path, answers: dict[str, object]) -> dict[str, object]:
+    """The answers the render itself records, merged over the requested ones.
+
+    The fixtures no longer pin the two names copier derives from
+    `package_name` (`repo_name` / `distribution_name` -- tools/answers.py), and
+    this is where the resolved truth lives: copier writes `.copier-answers.yml`
+    into every render with its own answers, derived defaults included. Reading
+    that file beats re-implementing the derivation here, which is the drift
+    this module would otherwise have to be kept in step with by hand.
+    """
+    recorded = yaml.safe_load((root / ".copier-answers.yml").read_text(encoding="utf-8"))
+    if not isinstance(recorded, dict):
+        msg = f"{root}/.copier-answers.yml is not a mapping"
+        raise RuntimeError(msg)
+    return {**answers, **recorded}
+
+
 def _metadata_problems(leaf_id: str, root: Path, pyproject: dict[str, Any], answers: dict[str, object]) -> list[str]:
     """``[project]`` names, urls and file references vs the answers that made them."""
     project = _table(pyproject, ("project",))
@@ -413,7 +430,7 @@ def _pyproject_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]
         pyproject = tomllib.loads(path.read_text())
     except tomllib.TOMLDecodeError as exc:
         return [f"{leaf.id}: pyproject.toml does not parse: {exc}"]
-    return _metadata_problems(leaf.id, root, pyproject, leaf.answers) + _dependency_problems(
+    return _metadata_problems(leaf.id, root, pyproject, _resolved_answers(root, leaf.answers)) + _dependency_problems(
         leaf.id, root, pyproject, counters
     )
 
