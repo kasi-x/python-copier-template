@@ -19,7 +19,9 @@ The cost-tier scanner in tests/test_marker_drift.py follows
 stays visible to the heavy/network marker guard.
 """
 
+import contextlib
 import functools
+import io
 import os
 import shlex
 import subprocess
@@ -82,6 +84,19 @@ def copy_project(project_path: Path, **kwargs: object):
         defaults=True,
     )
     run_pipe("git add .", cwd=str(project_path))
+
+
+def copy_project_capturing_stderr(project_path: Path, **kwargs: object) -> str:
+    """copy_project, returning everything the render wrote to stderr.
+
+    The generation-time warnings (copier.yml's `_tasks_pre`: the answers
+    copier overrides silently) are how an override becomes visible, so the
+    tests that pin an override pin its warning too.
+    """
+    stderr = io.StringIO()
+    with contextlib.redirect_stderr(stderr):
+        copy_project(project_path, **kwargs)
+    return stderr.getvalue()
 
 
 def copy_project_recommended(project_path: Path, **kwargs: object):

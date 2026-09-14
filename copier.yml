@@ -100,6 +100,17 @@ _skip_if_exists:
     - CHANGELOG.md
 
 _tasks:
+    # The two answers copier overrides silently (questions/_internal.yml:
+    # `zensical`'s micropython redirect and `license_effective`'s AGPL force).
+    # Validators can neither warn nor rewrite, and in both cases the overriding
+    # answer is asked after the answer it overrides -- and copier has no
+    # pre-copy task stage -- so the first generation tasks say so on stderr.
+    - command: >-
+        echo "WARNING: micropython projects cannot build sphinx docs (nothing importable to autodoc); this render uses zensical instead of your sphinx answer." >&2
+      when: "{{ micropython_pkg and docs_type == 'sphinx' }}"
+    - command: >-
+        echo "WARNING: memorious4 is AGPL-3.0; this render licenses the project AGPL-3.0 instead of your {{ license }} answer." >&2
+      when: "{{ scraping_memorious_effective and license != 'AGPL-3.0' }}"
     - command: >-
         python -c "print('Adopt mode: your own files (README.md, LICENSE, pyproject.toml, .gitignore, .python-version, src/tests) were protected and not touched.'); print('Added infrastructure: .github/workflows, .gitleaks.toml, renovate.json, AGENTS.md and more — see git status.'); print('Wire the tooling into your own pyproject.toml, e.g.: uv add --dev ruff pytest pytest-cov typos deptry vulture basedpyright'); print('Task entry points to copy: see justfile / Taskfile.yml.'); print('Files the template also ships (.github/workflows/ci.yml, renovate.json, cliff.toml, ...) are replaced unless you passed --skip <path>; git diff shows exactly what changed.'); print('Update later with: uvx copier update --trust --defaults')"
       when: "{{ existing_project }}"

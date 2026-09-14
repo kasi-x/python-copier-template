@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from support import copy_project
+from support import copy_project_capturing_stderr
 from support import copy_project_recommended
 from support import make_venv
 
@@ -16,12 +16,15 @@ def test_template_micropython_sphinx_falls_back_to_zensical(tmp_path: Path):
     """docs_type has static choices (for --data-file validation), so sphinx
     is answerable for micropython even though the firmware has nothing for
     autodoc to import — render must redirect that answer to zensical."""
-    copy_project(
+    stderr = copy_project_capturing_stderr(
         tmp_path,
         project_type="micropython",
         micropython_port="esp32",
         use_recommended_docs=False,
         docs_type="sphinx",
+    )
+    assert "WARNING" in stderr and "zensical instead of your sphinx answer" in stderr, (
+        "the silent docs_type override must say so at generation time"
     )
     assert (tmp_path / "zensical.toml").exists()
     assert not (tmp_path / "docs" / "conf.py").exists()

@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from support import copy_project
+from support import copy_project_capturing_stderr
 from support import copy_project_recommended
 from support import make_venv
 
@@ -327,13 +328,16 @@ def test_template_scraping_engine_choices(tmp_path: Path):
 def test_template_scraping_memorious_forces_agpl(tmp_path: Path):
     """memorious4 is AGPL-3.0: the generated project license must be AGPL-3.0
     even when MIT was asked."""
-    copy_project(
+    stderr = copy_project_capturing_stderr(
         tmp_path,
         project_type="cli",
         include_scraping=True,
         use_recommended_scraping=False,
         scraping_engine="memorious",
         license="MIT",
+    )
+    assert "WARNING" in stderr and "AGPL-3.0 instead of your MIT answer" in stderr, (
+        "the silent license override must say so at generation time"
     )
     pyproject = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert pyproject["project"]["license"] == "AGPL-3.0"
