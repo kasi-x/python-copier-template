@@ -113,6 +113,51 @@ Enforced by `test_question_references_are_forward_only` and
 `test_fragments_are_complete_and_duplicate_free` in
 `tests/test_copier_structure.py`.
 
+## Question `when:`s read raw answers; render reads effective internals
+
+The questionnaire keeps two vocabularies apart, and every condition below
+lives on one side of the line:
+
+- **Question `when:` conditions use raw answers.** A question is offered
+  based on what was actually answered — the base `project_type`, the raw
+  `include_*` opt-ins — never on a derived internal.
+- **Everything render-side uses the effective internal.** Template bodies,
+  file-name conditions (`{% if ... %}` in `template/` paths), `_tasks.jinja`
+  and copier.yml's `_tasks` blocks read the `*_effective` family (plus the
+  effective `web_api` / `data_science`, `pkg_dir`, `import_pkg`, ...) from
+  `questions/_internal.yml`, so "the base *or* the combo opt-in" is resolved
+  in exactly one place and render conditions cannot drift from the layer
+  rules they encode.
+
+The `include_*.when` gates and the `mcp_effective` / `bot_effective` base
+guards are therefore the same predicate written in the two vocabularies;
+when you change one, mirror the other. Two pinned consequences:
+
+- `include_mcp.when` spells out
+  `(project_type == 'cli' or project_type == 'web_api' or include_web_api)`
+  instead of the `web_api` alias. The alias lives in
+  `questions/_internal.yml`, which the include chain puts *after*
+  `questions/_common_b.yml`, so referencing it from the question would be a
+  forward reference (Undefined — the question would silently never ask).
+  `has_web_api` would resolve, but it is an effective, and a `when` reads
+  raw answers. This is a known, deliberate exception to "one predicate, one
+  definition": keep it in sync with `mcp_effective` by hand (the comment on
+  the question says so).
+- Gate answers with no effective of their own (`include_sentry`,
+  `use_recommended_agent`, `include_mcp`) are leaves: nothing derives them,
+  so render conditions use them raw and that is correct. Do not "fix"
+  `include_sentry` in the `.env.example` / README conditions into an
+  internal — there is no base guard it needs that its own `when` does not
+  already settle.
+
+The render-side agreement between a file-name gate and the README section
+documenting the same file is enforced by
+`tests/test_bot_layer.py::test_env_example_gate_and_readme_section_agree`
+(the bot layer regressed exactly this way: `.env.example` shipped the bot
+tokens while the README's "Environment variables" section stayed hidden);
+the forward-reference half is `test_question_references_are_forward_only`
+in `tests/test_copier_structure.py`.
+
 ## Adding a question or project type: keep the Z3 reachability green
 
 Every asked question's `when` must be satisfiable for some combination of

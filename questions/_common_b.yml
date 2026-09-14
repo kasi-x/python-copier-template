@@ -14,6 +14,11 @@ use_recommended_polish:
 
 layout:
     type: str
+    # Own exclusion list — NOT use_src_layout's (questions/_internal.yml) or
+    # log_library's below: data_science and web_api are here because neither
+    # takes a layout choice. The three lists are pinned as deliberately
+    # different by tests/test_copier_structure.py::
+    # test_layout_exclusion_lists_stay_deliberately_different.
     when: "{{ project_type not in ['data_science', 'online_judge', 'ros2', 'micropython', 'web_api'] and not use_recommended_polish }}"
     help: |
         Which layout would you like to use for the package?
@@ -268,6 +273,14 @@ include_sentry:
 
 include_mcp:
     type: bool
+    # The base guard mirrors mcp_effective's (questions/_internal.yml) in raw
+    # answers, per the raw/effective rule (docs/explanations/template-dev.md).
+    # The `web_api` alias cannot be referenced here: questions resolve in
+    # include order and questions/_internal.yml is included after this
+    # fragment, so it would be a forward reference (Undefined — the question
+    # would never ask). `has_web_api` would resolve but is an effective, and
+    # a `when` uses raw answers. Known exception: keep this disjunction in
+    # sync with mcp_effective's base guard by hand.
     when: "{{ not use_recommended_integrations and (project_type == 'cli' or project_type == 'web_api' or include_web_api) }}"
     help: |
         Publish this project as an MCP (Model Context Protocol) server?
@@ -295,6 +308,10 @@ ci_provider:
 
 log_library:
     type: str
+    # Own exclusion list — exactly the three no-Python-package types. Not the
+    # same list as layout.when or use_src_layout (see their comments); pinned
+    # by tests/test_copier_structure.py::
+    # test_layout_exclusion_lists_stay_deliberately_different.
     when: "{{ not use_recommended_integrations and project_type not in ['ros2', 'micropython', 'online_judge'] }}"
     help: |
         Which logging library should logging_setup.py use?
