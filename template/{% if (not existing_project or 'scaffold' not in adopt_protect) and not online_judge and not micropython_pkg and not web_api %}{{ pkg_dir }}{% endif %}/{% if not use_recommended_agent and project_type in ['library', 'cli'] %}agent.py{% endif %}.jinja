@@ -27,9 +27,11 @@ from {{ package_name }}.tools import example
 __all__ = ["agent", "main", "run"]
 
 DEFAULT_MODEL = "openai:gpt-4o-mini"
-# agent.py lives in <package>/ (flat layout); prompts/agent.md sits one
+{% if use_src_layout %}# agent.py lives in src/<package>/ (src layout) or <package>/ (flat layout);
+# prompts/agent.md sits two (src) or one (flat) directory above it.
+{% else %}# agent.py lives in <package>/ (flat layout); prompts/agent.md sits one
 # directory above it.
-_PROMPT_PARENTS = 1
+{% endif %}_PROMPT_PARENTS = {% if use_src_layout %}2{% else %}1{% endif %}
 PROMPT_FILE = Path(__file__).resolve().parents[_PROMPT_PARENTS] / "prompts" / "agent.md"
 
 
