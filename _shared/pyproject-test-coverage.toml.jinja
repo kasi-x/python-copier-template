@@ -4,7 +4,12 @@ addopts = """
     --tb=native -vv{% if sphinx %} --doctest-modules --doctest-glob="*.rst"{% endif %}
     """
 # https://iscinumpy.gitlab.io/post/bound-version-constraints/#watch-for-warnings
-filterwarnings = "error"
+{# The Discord bot layer imports discord.py, which imports audioop (PEP 594):
+   importing it warns on 3.11/3.12 (it is removed in 3.13, which discord.py
+   guards) while the test module is collected, so that one not-ours warning is
+   ignored before the blanket error. Renders without the bot keep the string
+   form byte-for-byte. -#}
+filterwarnings = {% if bot_discord_effective %}["error", "ignore:'audioop' is deprecated.*:DeprecationWarning"]{% else %}"error"{% endif %}
 # Doctest python code in docs, python code in src docstrings, test functions in tests
 testpaths = "{% if sphinx %}docs {% endif %}{{ 'tests' if micropython_pkg or oj_code else (pkg_dir ~ ' tests') }}"
 {% if micropython_pkg %}# firmware/ is not pip-installed; put the repo root on sys.path so the

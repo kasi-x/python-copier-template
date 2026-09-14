@@ -1,0 +1,77 @@
+"""In-process tests for the Discord bot scaffold.
+
+`build_bot()` is called directly and the /ping callback is driven with a
+fake interaction — no Gateway connection, no token, no network. This is also
+the worked example for testing your own commands: build the bot, grab the
+command off its tree, call the callback with the interaction surface your
+command uses.
+"""
+
+from __future__ import annotations
+
+from typing import cast
+
+import discord
+import pytest
+
+from {{ import_pkg }} import bot_discord
+
+
+class FakeResponse:
+    """The slice of `discord.InteractionResponse` the /ping callback uses."""
+
+    def __init__(self) -> None:
+        self.messages: list[str] = []
+
+    async def send_message(self, content: str, **_kwargs: object) -> None:
+        self.messages.append(content)
+
+
+class FakeInteraction:
+    """The slice of `discord.Interaction` the /ping callback uses."""
+
+    response: FakeResponse
+    user: str
+
+    def __init__(self) -> None:
+        self.response = FakeResponse()
+        self.user = "tester#0"
+
+
+@pytest.fixture
+def anyio_backend() -> str:
+    return "asyncio"
+
+
+@pytest.fixture
+def bot() -> bot_discord.Bot:
+    return bot_discord.build_bot()
+
+
+def test_ping_command_is_registered(bot: bot_discord.Bot) -> None:
+    command = bot.tree.get_command("ping")
+    assert command is not None
+    assert command.description == "Check the bot is alive."
+
+
+@pytest.mark.anyio
+async def test_ping_replies_pong(bot: bot_discord.Bot) -> None:
+    """The callback answers the fake interaction, exactly as over the wire."""
+    command = bot.tree.get_command("ping")
+    assert isinstance(command, discord.app_commands.Command)
+    interaction = FakeInteraction()
+    # discord.py's Command types its callback with an unbound ParamSpec, so a
+    # direct call reads as possibly-missing arguments, and the fake is typed
+    # as the Interaction surface it implements (object first, so the cast is
+    # honest); at runtime the signature is (Interaction) -> None.
+    fake = cast("discord.Interaction", cast("object", interaction))
+    await command.callback(fake)  # pyright: ignore[reportCallIssue]
+    assert interaction.response.messages == ["pong"]
+
+
+def test_main_refuses_to_start_without_a_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The startup env check: no DISCORD_BOT_TOKEN, no bot (exit code 2)."""
+    monkeypatch.delenv("DISCORD_BOT_TOKEN", raising=False)
+    with pytest.raises(SystemExit) as excinfo:
+        bot_discord.main([])
+    assert excinfo.value.code == 2
