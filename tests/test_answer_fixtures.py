@@ -38,6 +38,49 @@ BATCH_BASE = yaml.safe_load((TOP / "batches" / "base.yml").read_text(encoding="u
 
 GATE_PREFIX = "use_recommended_"
 
+# Answers that deliberately restate their question's default. Like
+# invariants.yml's `excluded`, the registry is declared, not discovered: the
+# test below refuses an undeclared repeat, and refuses a declared key that has
+# stopped repeating (a stale entry is the same lie in the other direction).
+DEFAULT_REPEATS_ALLOWED: dict[str, dict[str, str]] = {
+    "tools/answers.py BASE": {
+        "git_platform": "BASE is what the committed tests/matrix/witnesses.json(l) leaves were derived"
+        " from, so dropping the key would rewrite byte-frozen fixtures; it leaves only with a"
+        " deliberate witness regeneration",
+    },
+    "batches/base.yml": {
+        "git_platform": "must equal answers.BASE (checked below), so it repeats what the witness bytes pin",
+    },
+    "test_mcp_server.BASE_ANSWERS": {
+        "git_platform": "inherited from answers.BASE, which the witness bytes pin",
+    },
+    "test_batch.BASE_ANSWERS": {
+        "git_platform": "inherited from answers.BASE, which the witness bytes pin",
+    },
+    "test_recommended_path.FAST_PATHS": {
+        "project_type": "tools/invariants.facts refuses a case without a stated project_type, so the"
+        " dimension is named even at its default",
+        "oj_category": "oj_kind's choices are resolved from oj_category (kaggle exists only under"
+        " data_science), so the case declares the pair",
+    },
+    "test_generated_lint.EXTRA_PATHS": {
+        "micropython_port": "the case names the branch it renders; the value is the variant's subject",
+        "pkg_language": "the case names the branch it renders; the value is the variant's subject",
+        "ros_distro": "the case names the branch it renders; the value is the variant's subject",
+        "ros2_package_manager": "the case names the branch it renders; the value is the variant's subject",
+    },
+    "test_generated_lint.MANAGER_PATHS": {
+        "project_type": "tools/invariants.facts refuses a case without a stated project_type",
+    },
+    "test_generated_lint.LAYER_PATHS": {
+        "project_type": "tools/invariants.facts refuses a case without a stated project_type",
+    },
+    "test_generated_lint.JAPANESE_VARIANTS": {
+        "allow_japanese": "the off state is the variant's subject (its sibling states True), so"
+        " restating it is the variant, not drift",
+    },
+}
+
 
 def _fixtures() -> Mapping[str, Sequence[Mapping[str, Any]]]:
     """Every answer set this repo renders with, labelled for the failure message.
@@ -75,7 +118,15 @@ def test_every_fixture_answer_names_a_real_question():
 
 
 def test_every_fixture_choice_is_offered_by_its_question():
-    """A value outside the declared choices cannot be produced by answering the questionnaire."""
+    """A value outside the declared choices cannot be produced by answering the questionnaire.
+
+    The same value-level reading holds against the default (TODO §23.1): each
+    fixture is defaults() plus its override diff, so a value equal to its
+    question's default renders identically if dropped and the next editor
+    cannot tell intent from boilerplate. example-answers.yml is exactly that
+    shape (every gate off plus its non-default overrides); the repeats in
+    DEFAULT_REPEATS_ALLOWED are the declared, load-bearing exceptions.
+    """
     offenders: dict[str, list[tuple[str, object, object]]] = {}
     for label, cases in _fixtures().items():
         for case in cases:
@@ -86,6 +137,39 @@ def test_every_fixture_choice_is_offered_by_its_question():
                 if value not in question.choices:
                     offenders.setdefault(label, []).append((key, value, question.choices))
     assert not offenders, f"a fixture answers a value its question does not offer: {offenders}"
+
+    observed = _default_repeats()
+    undeclared = {
+        label: sorted(set(keys) - set(DEFAULT_REPEATS_ALLOWED.get(label, {})))
+        for label, keys in observed.items()
+        if set(keys) - set(DEFAULT_REPEATS_ALLOWED.get(label, {}))
+    }
+    assert not undeclared, (
+        "a fixture answers its question's current default, so the render is the same without the key "
+        "and the next editor cannot tell intent from boilerplate: drop the key, or declare it in "
+        f"DEFAULT_REPEATS_ALLOWED with the reason it is load-bearing: {undeclared}"
+    )
+    stale = {
+        label: sorted(set(DEFAULT_REPEATS_ALLOWED[label]) - set(observed.get(label, [])))
+        for label in DEFAULT_REPEATS_ALLOWED
+        if set(DEFAULT_REPEATS_ALLOWED[label]) - set(observed.get(label, []))
+    }
+    assert not stale, (
+        "DEFAULT_REPEATS_ALLOWED declares a repeat that no longer exists, so the registry is stale in "
+        f"the other direction and must drop the entry: {stale}"
+    )
+
+
+def _default_repeats() -> dict[str, list[str]]:
+    """Fixture label -> the answer keys whose value equals the question's default."""
+    observed: dict[str, list[str]] = {}
+    for label, cases in _fixtures().items():
+        for case in cases:
+            for key, value in case.items():
+                question = QUESTIONS.get(key)
+                if question is not None and question.default is not None and question.default == value:
+                    observed.setdefault(label, []).append(key)
+    return observed
 
 
 def test_example_answers_keeps_every_gate_off():
