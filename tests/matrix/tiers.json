@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 841,
+      "collected": 843,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -33,6 +33,7 @@
         "tests/test_mcp_server.py": 29,
         "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
+        "tests/test_predicate_classifier.py": 2,
         "tests/test_pyproject_fmt.py": 26,
         "tests/test_pyproject_merge.py": 16,
         "tests/test_qa.py": 3,
@@ -46,7 +47,7 @@
         "tests/test_witness_matrix.py": 231,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "9444277d49d2c00dd8db322a3451825c8d528b9375656e034011124be5123c5d",
+      "ids_sha256": "15df61d508e95cda08dc72355f2145ffc2622a3f3d06b6ed3c9a19957d5bd793",
       "wall_seconds": 43.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
@@ -106,7 +107,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 901,
+      "collected": 903,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -137,6 +138,7 @@
         "tests/test_mcp_server.py": 29,
         "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
+        "tests/test_predicate_classifier.py": 2,
         "tests/test_pyproject_fmt.py": 26,
         "tests/test_pyproject_merge.py": 16,
         "tests/test_qa.py": 3,
@@ -150,7 +152,7 @@
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "42df75e4c2b3bf62500f997c3138b93a9aa8bcaaf343bbf724adfa4d8aef83c7",
+      "ids_sha256": "e8ebe0826d768643fb085fe2ebaee6a6f8bf0737e097b88a08709d94e12c16b8",
       "wall_seconds": 88.2,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -159,7 +161,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta",
-      "collected": 841,
+      "collected": 843,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -188,6 +190,7 @@
         "tests/test_mcp_server.py": 29,
         "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
+        "tests/test_predicate_classifier.py": 2,
         "tests/test_pyproject_fmt.py": 26,
         "tests/test_pyproject_merge.py": 16,
         "tests/test_qa.py": 3,
@@ -201,7 +204,7 @@
         "tests/test_witness_matrix.py": 231,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "9444277d49d2c00dd8db322a3451825c8d528b9375656e034011124be5123c5d",
+      "ids_sha256": "15df61d508e95cda08dc72355f2145ffc2622a3f3d06b6ed3c9a19957d5bd793",
       "wall_seconds": 44.3,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta\"",

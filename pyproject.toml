@@ -272,6 +272,9 @@ task-tags = [
 "tests/test_when_model.py" = [
     "SLF001", # private-member-access  CONTEXT: the oracle must be copier's own questionnaire pass (Worker._ask), not a re-implementation of it.
 ]
+"tools/predicates.py" = [
+    "SLF001", # private-member-access  CONTEXT: same oracle as tests/test_when_model.py: the evaluator runs copier's own pass (Worker._ask + _render_context) per witness leaf.
+]
 "tools/*" = [
     "INP001", # implicit-namespace-package  CONTEXT: standalone maintenance scripts, not a package.
 ]

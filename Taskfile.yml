@@ -88,6 +88,13 @@ tasks:
       - uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
       - uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
 
+  predicates:
+    desc: >-
+      Classify every condition site (question whens, internals, template body/filename ifs,
+      _tasks whens) over the 225 witness leaves: classification tree, equivalence classes,
+      unification candidates and shortcut suggestions (--json for the machine report)
+    cmd: uv run --locked python tools/predicates.py {{ .CLI_ARGS }}
+
   detect:
     desc: 'Report what a target project already has and which mode fits (DIR=... CLI_ARGS=...)'
     cmd: uv run --locked python tools/detect.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
