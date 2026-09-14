@@ -2198,3 +2198,18 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
        permissions 契約はそのまま）。seed は毎回新規でヘッダに出力。実測 50.3s
        （741 テスト、順序依存なし）。台帳側は test_marker_drift.py が「`-p randomly` を払う
        タスクは test-randomly 一つ」と構造で固定し、tiers.json に test-randomly 行を記録
+8. **`task test`（全 879 件）を `-n auto`（32 ワーカ）で回すと、full tier の docs ビルドが
+   無音で空を残すことがある**（2026-09-14 実測。CI の選択には出ない）
+   - 症状: `tests/test_witness_matrix.py::test_witness_full_tier[...]` が
+     「the docs build produced no site/ output」で 1〜5 件落ちる（毎回同じ葉ではない）。
+     docs コマンド自体は `_run` が rc=0 を要求しているので**成功している**のに
+     `site/**/*.html` が空。落ちた葉の tmp（例: online_judge/atcoder）で
+     `VIRTUAL_ENV=<venv> uv run --no-sync zensical build` を手で回すと 0.23s で 230 ファイル出る
+   - **今日のコミット由来ではない**: `acb9af30` の内容に戻した同じ木でも 3 件落ちた。
+     `-n 8` では全緑（873 passed/112s）、単体実行も緑（12s）。`-n auto` の負荷下だけ再現
+   - 副作用が本体: 落ちた verdict は `tests/matrix/witnesses.json` に `fail` として
+     記録され、`test_support_matrix.py::test_supported_combinations_have_a_recorded_full_tier_pass`
+     まで赤くなる（クリーンな `-m full` 再実行で消える）
+   - 次の一手（未着手）: `_run(docs, ...)` の出力を失敗時に添えて rc=0 と空出力の
+     組み合わせを捕まえる。または full tier の並列度を明示（CI は 4 コアなので実害なし）。
+     `task test` を「全件」のまま -n auto で回す前提を疑うなら、台帳の wall も取り直す
