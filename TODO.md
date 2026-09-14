@@ -9,6 +9,8 @@
 
 ## 設計原則（2026-09 合意・更新: AGENTS.md / online_judge / kaggle 再編を反映）
 
+> 節1〜26 のチェックボックスは 2026-09-14 に実装ツリーと突き合わせて更新した履歴。現行の残作業は節27.7 と各節の `- [ ]` を正とし、`- [x]` は記録であって現状の主張ではない。
+
 以下の原則に従って、オプションの追加・削除・再編を判断する。原則に反する提案は
 肥大化のもとなので、このTODOに載せる前に再考する。
 
@@ -188,6 +190,7 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
         生成テスト（fake interaction の ping/pong + 拒否）、docs 一式、check_upstream ピン。
         葉空間 205 → 225（旧205葉は byte-identical を実証）、test_mcp_server の葉数ピンも追従。
         残り: slack（Socket Mode）/ LINE（Webhook 署名検証）/ Gmail（OAuth）の各 platform
+      → **残り（2026-09-14 監査）**: 未実装は LINE（Webhook 署名検証）と Gmail（OAuth）。discord は着地済み（questions/_combo.yml / questions/_internal.yml / _shared/bot-discord.py.jinja / tests/test_bot_layer.py）、slack（Socket Mode）は同日セッションで着地中
       - 置き場所: `cli` / `web_api` の上に載る opt-in レイヤー（MCP と同型）。
         library には載せない（import される側に実行可能サーバを載せる動機が薄い。
         include_mcp と同じ理由）。`include_bot`（bool）+ `use_recommended_bot` ゲート +
@@ -425,7 +428,8 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
         <pkg> と app の両方から include（詳しくは docs/explanations/template-dev.md）
       - **「複雑な web_api が欲しい場合は upstream full-stack-fastapi-template を案内」**
         と help / docs に明記（web_django 方式。フロント・認証等はスコープ外）
-- [ ] **将来拡張: app 構造を選べるようにする**（2026-09 相談で保留 → 結論: 追加しない）
+- [x] **将来拡張: app 構造を選べるようにする**（2026-09 相談で保留 → 結論: 追加しない）
+      → **完了（2026-09-14 監査）**: 「追加しない」の決定を docs/explanations/vision.md「What this is deliberately not」と docs/how-to/web-api.md:17-20（API-only）に明記
       - 現状は top-level `app/` のレイヤード構造（`app/models.py` + `app/schemas.py` +
         `app/routers/`）固定。benavlabs/FastAPI-boilerplate のような **vertical-slice**
         （機能ごとの `modules/<feature>/{model,schema,router}.py`）は**詳細質問に追加しない**
@@ -670,7 +674,8 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
         `load_template_config` で解決可能かを検証。uv sync 不要・オフラインで
         ミリ秒オーダーに終わるため、test_example.py の重いレンダーテストより先に
         壊れを検出できる
-- [ ] **将来拡張: ジャンル別サブディレクトリ（_subdirectory 切替）は不採用**
+- [x] **将来拡張: ジャンル別サブディレクトリ（_subdirectory 切替）は不採用**
+      → **完了（2026-09-14 監査）**: 不採用の決定を本文に記録（2026-09）。目的だった肥大化解消は questions/ の !include 分割（questions/ros2.yml / questions/micropython.yml / questions/online_judge.yml / questions/data_science.yml / questions/web_api.yml）で達成済み
       - template/ をジャンル別ツリーに分け `_subdirectory: template/{{ project_type }}` で
         切替える案は調査・実験の結果**不採用**（2026-09）。全8ジャンル共通ファイルが64あり、
         各ツリーへの symlink 共有が過大。質問票の !include 分割（上記）で主目的
@@ -740,10 +745,11 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       `_not_offered_elsewhere` / `test_template_scraping_engine_choices` /
       `test_template_scraping_memorious_forces_agpl`（他 project_type に
       scraping 関連の依存/質問が漏れないことも検証）
-- [ ] **将来拡張**: CAPTCHA 回避以外のポライトネス拡張（sitemap.xml 優先探索、
+- [x] **将来拡張**: CAPTCHA 回避以外のポライトネス拡張（sitemap.xml 優先探索、
       条件付き GET の ETag/If-Modified-Since 対応）は要望が出てから検討。
       現状は feed/API 優先探索 + robots.txt + レート制限 + キャッシュで
       「行儀の良いデフォルト」を満たしていると判断し、初期スコープに含めない
+      → **完了（2026-09-14 監査）**: 「初期スコープに含めない」の決定を本文に記録。行儀の良い既定（feed/API 優先 + robots.txt + レート制限 + キャッシュ）は docs/explanations/good-future.md に記載
 
 ## 15. 検知・運用の残課題（2026-09-05、Strategy.md 実装後に判明）
 
@@ -1025,7 +1031,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 ### スコープ規律(やらないことリスト——これも標準化戦略の一部)
 
-- [ ] 新規 `project_type` の追加は当面凍結し、既存の組み合わせ(現状
+- [x] 新規 `project_type` の追加は当面凍結し、既存の組み合わせ(現状
       library/cli/web_api/data_science/online_judge×5/script/ros2/micropython
       + レイヤー)の安定化・ドキュメント・テスト強化を優先する。「対応範囲の広さ」
       は差別化点だが、伸ばし続けると kitchen-sink 化して新規参入者の意思決定
@@ -1033,6 +1039,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       (README 参照)を、他の際どい追加候補(GUI 質問票、他言語全般対応 等)にも
       同様に適用し、`docs/explanations/vision.md`「What this is deliberately not」
       に追記していく
+      → **完了（2026-09-14 監査）**: 凍結を docs/explanations/vision.md「What this is deliberately not」（Django / フルスタック、認証・管理画面・キュー、GUI wizard、他言語）に追記
 
 ## 17. 非インタラクティブ生成の改善（2026-09-05 フィードバック）
 
@@ -1051,6 +1058,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 - [ ] 生成物の `dependencies = []` を project_type に応じて自動設定する改善
       （web_api / data_science は既に設定済み。library の空依存は
       「依存ゼロで始める」設計として維持するか、質問にするかは要検討）
+      → **残り（2026-09-14 監査）**: web_api / data_science は設定済み。library の空依存を「維持」とするか「質問化」するかが未決
 
 ### 2026-09-06 に解消（節15.5 で対応。詳細はそちら）
 
@@ -1147,17 +1155,21 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 > （本節は CI コストの話に限定。marker の負債と `test-loop.md` の乖離も節23 が持つ）。
 
 - [ ] **uv / graphviz / uvx ツールのキャッシュを入れる**
+      → **残り（2026-09-14 監査）**: setup-uv の enable-cache / .venv の actions/cache / uvx 冷起動は対応済み。docs の graphviz だけ未対応（.github/workflows/_docs.yml の apt-get install graphviz に actions/cache が無い）
       - `astral-sh/setup-uv` の cache 有効化 + `.venv` の `actions/cache`、
         docs run の `apt-get install graphviz` 常駐化、hygiene run の
         `uvx conventional-pre-commit / nbstripout / cffconvert` 冷起動のキャッシュ
-- [ ] **CI を fast / heavy に分割する**
+- [x] **CI を fast / heavy に分割する**
+      → **完了（2026-09-14 監査）**: .github/workflows/ci.yml — job 単位の docs-only ゲート（`changes`）と PR/push の `test` = test-fast、夜間の `test-heavy` / `test-randomly`
       - PR 毎は `test_machine_gate` / `test_copier_structure` / `test_qa` /
         生成 docs / gitleaks / lint の fast のみ、heavy（`test_example` / typecheck）は
         `main` / nightly または `paths:` フィルタに。`pytest -m "not slow"` markers +
         `make_venv` 系の `--dist loadfile` グルーピング、事前 sync 済み base venv 再利用を検討
-- [ ] **`timeout-minutes` を全 workflow に付ける**（例: test 60 / docs 20 / hygiene 10）、
+- [x] **`timeout-minutes` を全 workflow に付ける**（例: test 60 / docs 20 / hygiene 10）、
       matrix 復活時は `fail-fast`、タグ時の `_docs.yml: sleep 60` を `concurrency` で解消する
+      → **完了（2026-09-14 監査）**: timeout-minutes を全 workflow に付与（.github/workflows/_docs.yml:19 = 20、_hygiene.yml:10、_test.yml、ci.yml）。`_docs.yml` の sleep 60 は concurrency で解消
 - [ ] **network 系テストの扱いを見直す**
+      → **残り（2026-09-14 監査）**: ローカル diff 化（tests/test_update_path.py）と hypothesis の実使用（tests/test_adopt_stateful.py）は済み。z3 の `importorskip` 黙り skip が残る（tests/test_copier_structure.py:398 ほか / tests/test_when_model.py:66 / tests/test_witness_matrix.py:430）
       - `test_example_repo_updates`（example リポジトリの clone + `copier update` + diff）は
         ローカル `--vcs-ref=HEAD` diff に置き換えるか `scheduled-check` 専用に移す
       - `z3` の `importorskip` 黙り skip をやめ、必須化または skip 件数を assert する
@@ -1191,6 +1203,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 - [ ] **コピペで通る導入導線にする**（2026-09-09 更新: `--with` は不要になった。
       copier-template-extensions 依存を排除したため残りは `--trust` / `--vcs-ref` の2 flag）
+      → **残り（2026-09-14 監査）**: wrapper script / alias が未着手（本文の §W6）で、docs/tutorials/adopt-existing.md:28 / :43 の経路不整合も残る
       - ~~tutorials/installation.md に `--with` を足す~~ → 不要（依存排除で解消）
       - `tutorials/adopt-existing.md:28` の skeleton 経路と :43 非 skeleton 経路の不整合を解消する
       - `--vcs-ref=main` の理由説明3箇所の矛盾を解消する（README は「v1.0 で re-tag 済み」、
@@ -1211,6 +1224,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
         機能カタログは `docs/reference/features.md` へ分離。README は 120 行の
         エントリポイントに（§22.5 #5 も解消）。mermaid の CTF / scraping 分岐も導入済み
 - [ ] **生成ドキュメントを堅くする**
+      → **残り（2026-09-14 監査）**: 生成 README 側が未着手（`<details>` の Linux/macOS ノイズ、`**pkg** is a Python package ...` プレースホルダ、docs 無効時の `See ... (.github/CONTRIBUTING.md)` 代替）
       - ~~生成 `CONTRIBUTING.md.jinja`（30行・外部 how-to URL 依存・`_commit.split` pin 脆弱）を
         `AGENTS.md` と同じコマンドブロック内蔵型にし、offline でも作業可能にする~~
         → **完了（2026-09-14、031be19b）**: Common commands 節が `_tasks.jinja` の
@@ -1221,6 +1235,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
         プレースホルダの ship しやすさに対処（validator / コメント誘導）、docs 無効時の
         `See ... (.github/CONTRIBUTING.md)` 弱代替を手当てする（生成 README 側は未着手）
 - [ ] **質問票の小粒改善**
+      → **残り（2026-09-14 監査）**: docs/tutorials/create-new.md の commit 手順が `uv sync` 固定のまま（runner 分岐が未対応）
       - ~~`project_type=web_django` の罠選択肢（選ぶと abort）を choices から外し、文書ポインタにする~~
         → **完了（§22.2 W6）**: choice・help・`_tasks` ガードとも除去済み
       - ~~`license` help の40行 SPDX ダンプを端末向けに短縮（全文は docs 参照）~~
@@ -1516,7 +1531,8 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
 
 ### 23.1 テストの簡易化（書く側）
 
-- [ ] **`when` パーサと Z3 エンコーダをテストファイルから `tools/` へ出す**
+- [x] **`when` パーサと Z3 エンコーダをテストファイルから `tools/` へ出す**
+      → **完了（2026-09-14 監査）**: tools/when_model.py（tokenize_when / when_expr_satisfiable / str_domains）へ抽出し、tests/test_copier_structure.py は import に置換（z3_witnesses.py の importlib 逆輸入は §26.1 で消滅）
       - 現在 `tests/test_copier_structure.py:427-633`（`_tokenize_when` / `_when_expr_satisfiable` /
         パーサクラス）にプロダクション相当のロジックがあり、`tools/z3_witnesses.py` が
         `_structure_module()`（`STRUCTURE_TESTS` を importlib でパス読み込み）で逆輸入している。
@@ -1529,7 +1545,8 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
       - 併せて `test_copier_structure.py` 向けの per-file-ignores
         （`C901` / `PLR0911` / `PLR0912` / `EM102` / `RUF010`）をプロダクション側の
         正当な ignore へ移せる
-- [ ] **共有サポートモジュールを作る（`tests/support/`。`conftest.py` へは置かない）**
+- [x] **共有サポートモジュールを作る（`tests/support/`。`conftest.py` へは置かない）**
+      → **完了（2026-09-14 監査）**: tests/support.py（run_pipe / make_venv / copy_project）として着地（§27.7-4、a30747e8。ディレクトリでなく単一モジュール）
       - 理由は `tests/render_cache.py:1-13` に実測記録がある: このリポの `conftest.py` は
         `template/.../tests/conftest.py` の symlink 経由で**生成物へ render される**ため、
         copier / fcntl を持ち込めない。`render_cache.py` はその規約の唯一の実例で、
@@ -1538,7 +1555,8 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
         `run_copy` ラッパ（8 ファイルで個別実装）、ファイル集合 assert
         （`test_recommended_path.py:52-100` の MARKERS と `z3_witnesses.py` の
         `COMMON_FILES` / `PROJECT_TYPE_FILES` が二重定義、後者は「mirrors」とコメントで手動同期）
-- [ ] **answers の単一情報源を作る**
+- [x] **answers の単一情報源を作る**
+      → **完了（2026-09-14 監査）**: tools/answers.py の BASE が単一源（tests/support.py / tests/test_recommended_path.py / tests/test_answer_fixtures.py が消費し、fixture の質問名を質問票と照合）
       - 現状 5 系統が独立に literal を持つ: `example-answers.yml`、`RENDERED_PATHS`（23 組合せ）、
         `test_recommended_path.py` の BASE、`z3_witnesses.py:BASE`、`test_mcp_server.py:BASE_ANSWERS`
       - `tools/questionnaire.py` の JSON モデル（109 問）を既定値の源にし、各 fixture は
@@ -1549,15 +1567,17 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
         「同一 answers の venv 1 回」まで（依存差で偽陽性が出る組合せは PLAN §W9-3 の計測後）。
         まずファイル分割（library / cli / web_api / daemon / oj）で見通しを戻す
       - PLAN §W9 の所有権メモ（ユーザー編集中は触らない）が解けるまで着手しない
-- [ ] **文言固定 assert の整理は W3 の Acceptance に統合する**（節22.2 W3 の
+- [x] **文言固定 assert の整理は W3 の Acceptance に統合する**（節22.2 W3 の
       「4,303 行のうち文言固定だけの assert を洗い出す」が正。ここでは二重管理しない）
+      → **完了（2026-09-14 監査）**: §22.2 W3（「文言固定 assert の監査」）に統合済み。ここでは二重管理しない
       - 実例: `tests/test_example.py:751-774` は生成 `mcp_server.py` / `Taskfile.yml` /
         `.env.example` に `"streamable-http"` / `"MCP_ALLOWED_HOSTS"` の**文字列が含まれる**
         ことだけを見る。生成物を実走する検証に置換できる（23.3 の allowlist 実走と同じ作業）
 
 ### 23.2 実行テストの簡易化（回す側）
 
-- [ ] **marker の負債を返済する**
+- [x] **marker の負債を返済する**
+      → **完了（2026-09-14 監査）**: docs/how-to/test-loop.md の tier 表と docs/explanations/verification.md が fast/full/slow/heavy/meta の意味を固定し、tests/matrix/tiers.json が台帳、Taskfile.yml が test-fast / test-slow / test-heavy / test-meta（未使用 marker の宣言も解消）
       - `fast` / `full` / `slow` は `pyproject.toml` の `markers` で宣言済みだが使用 0、
         `network` は `heavy` と同時にしか付かない。W3 の witness tier を `fast` / `full` に
         割り当てるならその時に使い、使わないなら宣言を消す（second convention を作らない）
@@ -1566,23 +1586,28 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
         実装は `-m "not heavy"` で `test_example.py` も **112/136 件が走る**（実測。
         `test_generated_typecheck.py` 側は 6/6 が heavy なので除外で正しい）。
         docs を実装に合わせて書き直す
-- [ ] **marker ドリフトのガードテストを足す**
+- [x] **marker ドリフトのガードテストを足す**
+      → **完了（2026-09-14 監査）**: tests/test_marker_drift.py — venv / network 作業を持つテストに heavy / network をソース走査で強制（tier 収集集合と台帳・docs の一致も検証）
       - 「`make_venv` / `uv sync` / ネットワーク clone を含むテストは `heavy`（必要なら
         `network`）を持つ」ことをソース走査で強制する。今は 18/18 正しいが、新規テストが
         1 本 marker を忘れると fast tier が無音で 20 秒級になる
       - 件数（429 / 36）はテストで固定しない（検証内容ではなく実装の写し）
-- [ ] **`tools/batch.py` に `--jobs N` を足す**
+- [x] **`tools/batch.py` に `--jobs N` を足す**
+      → **完了（2026-09-14 監査）**: tools/batch.py の --jobs N（ProcessPoolExecutor）。実測 113.8s → 10.2s、Taskfile.yml の `witness` が既定 numCPU で使う（§26.1）
       - 現在 `jsonl` は直列（`--fail-fast` のみ）。witness 205 葉のレンダだけで
         205 × ~1.3s ≈ 4.5 分が下限（`render_cache.py` の実測コメント）。
         リクエストごとに独立した作業ディレクトリを持つため thread pool で安全に並列化できる
       - `render_cache`（同一 answers の重複排除）とは役割が違い、両方入って初めて
         205 葉が実用時間になる
-- [ ] **`task witness` を追加する**（`z3_witnesses.py --jsonl` → `batch.py --json` の一発化）
+- [x] **`task witness` を追加する**（`z3_witnesses.py --jsonl` → `batch.py --json` の一発化）
+      → **完了（2026-09-14 監査）**: Taskfile.yml の `witness`（tools/z3_witnesses.py --jsonl → tools/batch.py --json --jobs）
       - 現状 Taskfile に witness を回す口が無く、`--jsonl` の再生成も手打ち。
         W3 が `tests/test_witness_matrix.py` + `witness.yml` を作る際の入口になる
-- [ ] **CI に `paths:` フィルタを入れる**（docs のみ / pyproject のみの変更で venv tier と
+- [x] **CI に `paths:` フィルタを入れる**（docs のみ / pyproject のみの変更で venv tier と
       render matrix を回さない）。節19 の fast/heavy 分割・キャッシュとは別物として残す
-- [ ] **ローカル編集ループのエルゴノミクスを docs に固定する**
+      → **完了（2026-09-14 監査）**: .github/workflows/ci.yml の job 単位 docs-only ゲート + witness.yml / update-path.yml の paths-ignore（必須チェックを Pending にしないため workflow 級 `paths:` にはしない。§27.7-5、f4838b75）
+- [x] **ローカル編集ループのエルゴノミクスを docs に固定する**
+      → **完了（2026-09-14 監査）**: docs/how-to/test-loop.md「Ergonomic flags」（task test-fast CLI_ARGS="--lf" / -x / --durations=25）と tier 表
       - `task test-fast CLI_ARGS="--lf"` / `-x` / `--durations=25` は既に動くが
         `test-loop.md` に記述が無い。`task batch ... --shell` と合わせて
         「1 ケース（2s）→ ファイル（17s）→ フル（37s）」の3段として明文化する
@@ -1599,6 +1624,7 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
       → **完了（2026-09-14、36b7fc7d）**: ルート `.mcp.json` + `docs/how-to/mcp-tools.md`
         （tool 一覧ページ）。`task mcp` と同一の stdio 起動
 - [ ] **開発ループの実 tool を足す**（12 tool まで拡充済み。残りは `run_tests(tier)` のみ）
+      → **残り（2026-09-14 監査）**: `run_tests(tier)`（fast / heavy の構造化 verdict）のみ。render_diff / lint_render / list_witnesses / run_witness / template_fingerprint は実装済み（tools/mcp_server.py）
       - `run_tests(tier)` — `fast` / `heavy` / `witness` を回して**構造化 verdict** を返す。
         本命: エージェントが pytest のテキストを解釈せずに済む（`batch.py` の verdict 形式を流用）
       - [x] `render_diff(answers_a, answers_b)` — 2 レンダのファイル単位 byte 比較
@@ -1616,9 +1642,11 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
       - [x] `tests/test_mcp_server.py` の tool docstring 検査は「cost と戻り値の形を
         docstring に書く」規約の強制として動作中（docstring が両方書かないと fail）
 - [ ] **resource を増やす**（`template://questionnaire` のみ）
+      → **残り（2026-09-14 監査）**: `template://witnesses` は追加済み（tools/mcp_server.py:758）。`template://support`（support.yml）が未露出
       - `template://witnesses`（205 葉の一覧と tier）、W4 後は `template://support`（`support.yml`）。
         エージェントが「何が検証済みか」を 1 resource で読める
-- [ ] **生成 scaffold と repo server の関係を 1 つに決める**（drift の芽）
+- [x] **生成 scaffold と repo server の関係を 1 つに決める**（drift の芽）
+      → **完了（2026-09-14 監査）**: 「統合しない」の結論を docs/how-to/mcp-tools.md「Relationship to the generated scaffold's server」と tools/mcp_server.py:44-50 に明記
       - 前者は「型付き tool の見本 + security 実装」（`_shared/mcp_server.py.jinja`）、
         後者は「テンプレート保守用」（`tools/mcp_server.py`）。共通コードはゼロで、
         `TransportSecuritySettings` の扱いだけが二重実装になっている。目的が違うため
@@ -1640,34 +1668,40 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
 Z3 の力は「どこを実行すれば十分か」を確定できる点にある（実行コストは 205 葉 × 検証で有界）。
 その形に寄せるための残タスク:
 
-- [ ] **`when` モデルの差分テスト（最優先。これが無いと Z3 の結論が信用できない）**
+- [x] **`when` モデルの差分テスト（最優先。これが無いと Z3 の結論が信用できない）**
+      → **完了（2026-09-14 監査）**: tests/test_when_model.py:181 — copier の Worker._ask とモデルの真偽を全葉・probe で突き合わせ（約 9,800 比較。§26.1）
       - Z3 側の `when` 解釈は `test_copier_structure.py:427-633` の**再実装**（projection）であり、
         `tools/z3_witnesses.py` の `PROJECTED_GATES` は手書き +「mirror できなければ SystemExit」で
         保守している。Jinja の実評価とモデルの判定が食い違えば、緑のまま**偽の安心**になる
       - 全葉（または全 `when` × 代表 answers）で「実 Jinja の真偽」と「Z3 モデルの真偽」を突き合わせ、
         乖離したら fail させる。sweep の meta テスト（:704-741）と同じ精神を
         **モデル本体**に適用する
-- [ ] **不変条件を宣言的単一源にする**
+- [x] **不変条件を宣言的単一源にする**
+      → **完了（2026-09-14 監査）**: tests/matrix/invariants.yml + tools/invariants.py が単一源（§27.2 T6 で z3_witnesses / test_recommended_path / test_render_invariants の dict を集約）
       - 今は「葉が満たすべきファイル集合」が Python の dict で `z3_witnesses.py`（`COMMON_FILES` /
         `PROJECT_TYPE_FILES` / `INCLUDE_FILES`）と `test_recommended_path.py:52-100` に二重定義され、
         コメントで手動同期している。`tests/matrix/invariants.yml`（or `support.yml` の隣）に一本化し、
         W3 のランナー / `test_recommended_path` / W4 の `support.yml` / W5 の docs 生成が同じ源を読む
       - 「仕様 = 1 ファイル」になれば、テストの追加は「不変条件を 1 行足す」に縮む（23.1 の簡素化と同根）
-- [ ] **列挙の完全性を明示する**
+- [x] **列挙の完全性を明示する**
+      → **完了（2026-09-14 監査）**: tests/matrix/invariants.yml の `excluded:`（web_django + 統合 2 問、理由付き）+ tools/z3_witnesses.py のカバレッジ出力（§27.7-6、bb6a9e53）
       - 205 葉は projection の全モデルであるべき。除外（`EXCLUDED_PROJECT_TYPES` の web_django、
         `when` を mirror しないゲート）は**明示リスト**にしてカバレッジ出力に載せる。
         「列挙した」「除外した」を数字で言えるようにする（現在は unprojected が居たら SystemExit）
       - `witnesses.jsonl` が質問票の現行版と同期しているかも検証する（`ref: HEAD` の陳腐化検出）
-- [ ] **不変条件を content 述語まで広げる**（ファイル集合 → 中身）
+- [x] **不変条件を content 述語まで広げる**（ファイル集合 → 中身）
+      → **完了（2026-09-14 監査）**: tests/matrix/invariants.yml の `predicates:`（pyproject / agents-md / readme-links / docs-nav）と tests/test_render_invariants.py の実装
       - `pyproject.toml` が parse でき、依存集合が質問票モデルから導出した期待集合と一致する
       - タスクランナーのタスク集合が宣言モデルと一致する（W2 で手作業検証した「1684 ファイル全ハッシュ一致」は
         23.3 の `render_diff` tool 化 + この不変条件で自動化）
       - AGENTS.md のコマンド表がタスクモデルと一致する / 生成 README の内部リンクが実在する
       - いずれも**レンダ後に決定的に判定できる**述語だけを不変条件にする（実行・network は入れない）
 - [ ] **手書きテストを不変条件へ移す棚卸し**（W3 Acceptance の「文言固定 assert の洗い出し」と同一作業）
+      → **残り（2026-09-14 監査）**: 単一源と述語は着地済みだが移行は未完（§26.4-1b T12 の「他で回していない」render sweep 6 本 ≈60s を L1 へ移す）
       - 465 本のうち「葉 × 不変条件」で置換できるものを移し、実行テスト（heavy）は
         **不変条件で表現できない領域だけ**に絞る。これが「Z3 + 全葉検証」の比率を上げる唯一の道
-- [ ] **非目標を明文化する**（ここを曖昧にすると「Z3 で全部安全」の看板が嘘になる）
+- [x] **非目標を明文化する**（ここを曖昧にすると「Z3 で全部安全」の看板が嘘になる）
+      → **完了（2026-09-14 監査）**: docs/explanations/verification.md「Non-goals」（Z3 は入力空間のみ。venv / pytest / network / Docker は heavy tier、目標は3点セット）
       - venv 構築 / 実際の pytest 実行 / network / Docker / 外部 CI は Z3 でも不変条件でも覆えない。
         heavy tier は「残った実行領域」として意図的に保持する（PLAN §W9 の非目標と同じ）
       - 目標は「Z3 が入力空間 / 不変条件が仕様 / 全葉実行が証明」の3点セットであって、
@@ -1775,14 +1809,17 @@ P6 は方針の裏付けでもある: **L3 サンプルは 8 葉で 3 件の実�
         前回比 +30% で fail。tier ごとの wall time も同時に記録
       - 受け入れ: `test-loop.md` の表（現在「17s」「ファイル除外」と実装に 9 倍乖離）を
         `tools/gen_docs.py` が台帳から生成し、`--check` が drift を fail させる
-- [ ] **T6: 不変条件の単一源**（節23.4 と同一。24.2 の「拡大は L2 に寄せる」の前提）
-- [ ] **T7: 拡大の受け入れゲートを docs 化する**（P5）
+- [x] **T6: 不変条件の単一源**（節23.4 と同一。24.2 の「拡大は L2 に寄せる」の前提）
+      → **完了（2026-09-14 監査）**: §27.7-1 / §27.2 に統合済み（tests/matrix/invariants.yml + tools/invariants.py。§23.4 の同一項目も完了）
+- [x] **T7: 拡大の受け入れゲートを docs 化する**（P5）
+      → **完了（2026-09-14 監査）**: docs/explanations/verification.md の「Growth rules」「Before adding a check: five questions」+ support.yml / docs/reference/support.md のマシン可読契約
       - `docs/explanations/` に「検証の3層 / tier 予算 / 拡大の5問（既存の何の上に載るか・葉の増分・
         不変条件の行・tier・support level）」を 1 ページ。W4 の `support.yml` をマシン可読な契約にする
       - 24.1 の成長則（+1 層 = +76 葉 ≈ +3s、+1 gate = +22 葉、include は排他を崩すと指数的）を
         そのページに載せ、**設計判断のたびに葉の増分を見積もる**習慣にする
-- [ ] **T8: 外部ツールのスパイクを 1 本ずつ**（24.3）。各スパイクは
+- [x] **T8: 外部ツールのスパイクを 1 本ずつ**（24.3）。各スパイクは
       「置換対象 / 期待削減 / 偽陰性リスク / 撤退条件」を 1 行で書いてから着手する
+      → **完了（2026-09-14 監査）**: §27.4 / §26.4-8 に統合済み（§27.7-7: pytest-testmon 却下・pytest-randomly 採用=夜間 job・syrupy 不要・pixi venv 共有却下を実測で確定）
 
 ## 25. 形式検証をどこまで持ち込むか（2026-09-14 追記）
 
@@ -1866,16 +1903,19 @@ P6 は方針の裏付けでもある: **L3 サンプルは 8 葉で 3 件の実�
         または staging + `os.replace` で原子的に差し替える
       - 受け入れ: レンダ中 / マージ中の任意の時点で SIGKILL しても `--recover` で byte-identical に戻る
         （テストで再現可能。現在は復旧不能）
-- [ ] **V2: adopt/update のプロトコルを Quint（または TLA+）で小さく書く**
+- [x] **V2: adopt/update のプロトコルを Quint（または TLA+）で小さく書く**
+      → **完了（2026-09-14 監査）**: §27.3 / §26.4-5 に統合済み（models/adopt_crash.qnt + .github/workflows/quint.yml。TLC 51 状態で不変成立、late-journal 変種の反例を CI が毎回確認）
       - crash action を含む反例を出し、V1 のジャーナルが全クラッシュ点を覆うことを確認する。
         非目標: 全機能のモデル化。骨格だけ
-- [ ] **V3: Crosshair + deal を merge の 1 関数に試す**（`merge_ci_jobs` の既存不変。撤退条件つき）
+- [x] **V3: Crosshair + deal を merge の 1 関数に試す**（`merge_ci_jobs` の既存不変。撤退条件つき）
+      → **完了（2026-09-14 監査）**: §27.3 / §26.4-6 に統合済み（V3 却下: merge_ci_jobs の記号実行は 10 分で決着せず。§27.5 で merge_taskfile の欠陥を発見）
 - [x] **V4: Hypothesis stateful で adopt を回す**（既存 dev dep。§24.3 の判定を「採用」で確定させる）
       → **完了（2026-09-14、a4275e36）**: `tests/test_adopt_stateful.py`。
         ランダムな木 + 操作列で参照モデルと毎ステップ照合。
         vulture は `@rule` / `@invariant` を見えないため `ignore_decorators` に追加
         （§26.4 item 7 と同一）
-- [ ] **V5: merge の事後条件を artifact 化**（§24.4 T6 と同一。形式手法のオラクル）
+- [x] **V5: merge の事後条件を artifact 化**（§24.4 T6 と同一。形式手法のオラクル）
+      → **完了（2026-09-14 監査）**: §27.7-1 に統合済み（2a907080: tests/matrix/invariants.yml の `merges:` + tests/test_merge_contracts.py）
 
 ## 26. 実装状況の検証と、今回見つけて直したもの（2026-09-14 実測）
 
