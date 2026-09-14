@@ -35,18 +35,12 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
+from tools import answers  # noqa: E402
 from tools import mcp_server  # noqa: E402
 
-BASE_ANSWERS = {
-    "package_name": "mcp_example",
-    "description": "An example project",
-    "git_platform": "github.com",
-    "github_org": "kasi-x",
-    "author_name": "kasi-x",
-    "author_email": "kashimiya.exe@gmail.com",
-    "repo_name": "mcp-example",
-    "distribution_name": "mcp-example",
-}
+# The shared Project Details (tools/answers.py) with this tool's own package
+# name; repo_name/distribution_name are copier's derivation, not restated here.
+BASE_ANSWERS = {**answers.BASE, "package_name": "mcp_example"}
 
 TOOL_NAMES = {
     "adopt_project",

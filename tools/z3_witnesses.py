@@ -81,6 +81,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:  # tests import tools/ the same way (no root package)
     sys.path.insert(0, str(TOP))
 
+from tools import answers  # noqa: E402
 from tools import invariants  # noqa: E402
 from tools import when_model  # noqa: E402
 
@@ -90,17 +91,9 @@ from tools import when_model  # noqa: E402
 INVARIANTS = invariants.load()
 
 # The Project Details every leaf pins, so fixtures stay self-consistent
-# (validators, URLs): mirrors tests/test_recommended_path.py:25-34.
-BASE: dict[str, Any] = {
-    "package_name": "smoke_example",
-    "description": "An example project",
-    "git_platform": "github.com",
-    "github_org": "kasi-x",
-    "author_name": "kasi-x",
-    "author_email": "kashimiya.exe@gmail.com",
-    "repo_name": "smoke-example",
-    "distribution_name": "smoke-example",
-}
+# (validators, URLs): the shared set from tools/answers.py, not a copy of
+# tests/test_recommended_path.py's (TODO §23.1).
+BASE: dict[str, Any] = answers.BASE
 
 # The opt-in layers (questions/_combo.yml) that make up the include
 # dimension of the leaf space. include_mcp / include_sentry are detail

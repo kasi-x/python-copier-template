@@ -23,6 +23,7 @@ TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach tools/
     sys.path.insert(0, str(TOP))
 
+from tools import answers  # noqa: E402
 from tools import invariants  # noqa: E402
 
 # The one source for what a leaf class must ship, must not ship, and which
@@ -31,17 +32,11 @@ INVARIANTS = invariants.load()
 
 
 # Answers shared by every case: the required "Project Details" plus values
-# that keep generated content self-consistent (URLs, validators, ...).
-BASE = {
-    "package_name": "smoke_example",
-    "description": "An example project",
-    "git_platform": "github.com",
-    "github_org": "kasi-x",
-    "author_name": "kasi-x",
-    "author_email": "kashimiya.exe@gmail.com",
-    "repo_name": "smoke-example",
-    "distribution_name": "smoke-example",
-}
+# that keep generated content self-consistent (URLs, validators, ...). The one
+# literal lives in tools/answers.py so the witness tool, the batch sample and
+# the other render tests cannot drift from this module (TODO §23.1);
+# tests/test_answer_fixtures.py checks its keys against the questionnaire.
+BASE = answers.BASE
 
 # One fast-path case per project_type reachable with every use_recommended_*
 # gate at its default (true): accept the recommendation, answer only the

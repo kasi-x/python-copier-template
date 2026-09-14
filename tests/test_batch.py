@@ -23,18 +23,12 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
+from tools import answers  # noqa: E402
 from tools import batch  # noqa: E402
 
-BASE_ANSWERS = {
-    "package_name": "batch_example",
-    "description": "An example project",
-    "git_platform": "github.com",
-    "github_org": "kasi-x",
-    "author_name": "kasi-x",
-    "author_email": "kashimiya.exe@gmail.com",
-    "repo_name": "batch-example",
-    "distribution_name": "batch-example",
-}
+# The shared Project Details (tools/answers.py) with this module's own package
+# name; repo_name/distribution_name are copier's derivation, not restated here.
+BASE_ANSWERS = {**answers.BASE, "package_name": "batch_example"}
 
 
 def write_lines(tmp_path: Path, *requests: dict) -> list[Path]:
