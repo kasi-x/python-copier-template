@@ -373,8 +373,14 @@ def when_expr_satisfiable(
                 )
             # bool identifiers, or a bool against a str: free. Jinja would say
             # False for the mixed case, but an unpinned str reference is a free
-            # boolean here, so the model cannot tell the two apart.
-            return z3.Bool(f"eq_{self.i}")
+            # boolean here, so the model cannot tell the two apart. The free
+            # boolean is named by its OPERANDS, not the parser position, so the
+            # same comparison repeated inside one expression is the same
+            # unknown (a caller comparing two texts -- e.g. the XOR
+            # equivalence check in tools/predicates.py -- would otherwise see
+            # each copy as an independent boolean and call identical
+            # predicates different).
+            return z3.Bool(f"eq_{left}_{right}")
 
         def _member(self, elem: object, container: object) -> object:
             if isinstance(elem, _Var) and isinstance(container, _List):
