@@ -2,6 +2,11 @@
 #
 # use_recommended_* are all false so every detailed question below is asked
 # (the point of this file is to exercise every option, not the fast path).
+#
+# Every key here is a deliberate override: a question whose answer differs
+# from the questionnaire's default. Anything absent rides that default
+# (CI renders with copier's --defaults), so restating a default here would
+# be indistinguishable from intent; tests/test_answer_fixtures.py refuses it.
 use_recommended_toolchain: false
 use_recommended_data_science: false
 use_recommended_polish: false
@@ -10,31 +15,19 @@ use_recommended_quality: false
 use_recommended_license: false
 use_recommended_integrations: false
 use_recommended_security: false
-security_policy: true
-scorecard: false
 author_email: kashimiya.exe@gmail.com
 author_name: kashi-x
 description: An expanded https://github.com/kasi-x/python-copier-template to illustrate how it looks with all the options enabled.
 distribution_name: kasi-x-python-copier-template-example
 docker: true
-docs_type: zensical
-git_platform: github.com
 github_org: kasi-x
 gitlab_group: mygroup
 package_name: python_copier_template_example
 package_manager: uv
 task_runner: task
 allow_japanese: true
-layout: src
 project_type: data_science
 repo_name: python-copier-template-example
-type_checker: pyrefly
-strictness: recommended
-cloud_provider: none
-include_sentry: false
-include_mcp: false
-ci_provider: github_actions
-log_library: structlog
 pypi: true
 license: Apache-2.0
 fair: true
