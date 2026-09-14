@@ -92,19 +92,26 @@ bot_effective:
     default: "{{ include_bot and (project_type == 'cli' or web_api) }}"
     when: false
 # Bot platform selection. use_recommended_bot keeps its default (true) when
-# unasked (include_bot off); bot_platform keeps its default (discord). Discord
-# and Slack are the generated platforms today: adding LINE / Gmail later is a
-# new choice here plus new _shared bodies, not a new project type.
+# unasked (include_bot off); bot_platform keeps its default (discord). Discord,
+# Slack and LINE are the generated platforms today: adding Gmail later is a
+# new choice here plus a new _shared body, not a new project type.
 bot_discord_effective:
     type: bool
     default: "{{ bot_effective and (use_recommended_bot or bot_platform == 'discord') }}"
     when: false
-# The other half of the Bot platform selection above: the two are mutually
-# exclusive (one is recommended-or-discord, this one is custom-and-slack), so
-# exactly one bot module is ever rendered.
+# The other half of the Bot platform selection above: the three are mutually
+# exclusive (this one is recommended-or-discord, the next is custom-and-slack,
+# the last custom-and-line), so exactly one bot module is ever rendered.
 bot_slack_effective:
     type: bool
     default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'slack' }}"
+    when: false
+# LINE is the one platform that cannot dial out: the Messaging API delivers
+# events to a webhook, so its module owns a FastAPI app and a listening port
+# where discord/slack own a client connection (bot_line.py's docstring).
+bot_line_effective:
+    type: bool
+    default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'line' }}"
     when: false
 # oj_category == 'ctf'). The base guard keeps the CTF deps and workspace out
 # of other project types when render tests force the answer on them

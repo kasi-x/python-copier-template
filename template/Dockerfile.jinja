@@ -114,4 +114,13 @@ EXPOSE 8000{% endif %}{% if bot_discord_effective %}
 # EXPOSE) and runs with both tokens from the environment; bot_slack.py
 # refuses to start without either:
 #   docker run --rm -e SLACK_BOT_TOKEN -e SLACK_APP_TOKEN \
-#     --entrypoint bot-slack-{{ repo_name }} {{ repo_name }}{% endif %}{% endif %}{% endif %}
+#     --entrypoint bot-slack-{{ repo_name }} {{ repo_name }}{% endif %}{% if bot_line_effective %}
+# The image also ships the LINE bot console script. The Messaging API pushes
+# events to a webhook, so this one DOES listen: it serves POST /callback
+# (signature-verified) on :8000 and runs with both credentials from the
+# environment; bot_line.py refuses to start without either:
+#   docker run --rm -p 8000:8000 \
+#     -e LINE_CHANNEL_SECRET -e LINE_CHANNEL_ACCESS_TOKEN \
+#     --entrypoint bot-line-{{ repo_name }} {{ repo_name }}
+# Point the channel's webhook URL at https://<your host>/callback.
+EXPOSE 8000{% endif %}{% endif %}{% endif %}

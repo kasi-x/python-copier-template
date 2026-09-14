@@ -1,4 +1,4 @@
-# Chat bot layer (Discord / Slack)
+# Chat bot layer (Discord / Slack / LINE)
 
 The template can layer a **long-running chat bot** onto a `cli` or `web_api`
 project. It is the second implementation of the
@@ -9,13 +9,14 @@ never a new project type.
 
 Answering **Yes** to `include_bot` (asked for the `cli` / `web_api` bases)
 generates the **discord** scaffold, the recommended platform. Answer **No**
-to `use_recommended_bot` to pick from `bot_platform`, whose second choice is
-**slack**:
+to `use_recommended_bot` to pick from `bot_platform`, whose other choices are
+**slack** and **line**:
 
-| `bot_platform` | Module | Runtime dependency | Tokens |
+| `bot_platform` | Module | Runtime dependency | Credentials |
 |---|---|---|---|
 | `discord` (recommended) | `bot_discord.py` | `discord.py>=2,<3` | `DISCORD_BOT_TOKEN` |
 | `slack` | `bot_slack.py` | `slack-bolt>=1.21,<2` | `SLACK_BOT_TOKEN` + `SLACK_APP_TOKEN` |
+| `line` | `bot_line.py` | `line-bot-sdk>=3,<4` + `fastapi` / `uvicorn[standard]` | `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN` |
 
 Whichever platform is selected, the layer ships:
 
@@ -35,10 +36,11 @@ Whichever platform is selected, the layer ships:
   passed through from the host environment. The task follows the selected
   platform: one entry point, one token set.
 
-Both generated platforms reach their service over an **outbound** connection,
-so neither needs a public endpoint: Discord over the Gateway, Slack over
-Socket Mode. That is the property the MCP stdio transport has too, and the
-reason the layer works on a laptop and behind NAT.
+Two of the three generated platforms reach their service over an **outbound**
+connection, so neither needs a public endpoint: Discord over the Gateway,
+Slack over Socket Mode. That is the property the MCP stdio transport has too,
+and the reason those two work on a laptop and behind NAT. LINE is the
+exception — the Messaging API can only push, so its bot serves a webhook.
 
 ## Discord
 
@@ -130,16 +132,88 @@ no `WebClient`, no socket. `build_app(token=...)` passes
 `token_verification_enabled=False`, because `App` would otherwise call
 `auth.test` while the app is being built.
 
+## LINE
+
+### Getting the two LINE credentials
+
+LINE splits the credential the same way Slack does, but along a different
+axis: a **channel secret** verifies the webhook, and a **channel access
+token** authorizes the Messaging API calls the bot makes when it replies. The
+scaffold refuses to start without either and names the missing one.
+
+1. Create a provider and a **Messaging API** channel at
+   <https://developers.line.biz/console/>.
+2. **Messaging API** tab → **Channel access token (long-lived)** → issue one.
+   That value is `LINE_CHANNEL_ACCESS_TOKEN`.
+3. **Basic settings** tab → **Channel secret**. That value is
+   `LINE_CHANNEL_SECRET`; it is what LINE signs every webhook body with.
+4. Copy `.env.example` to `.env` and set both variables. `.env` is
+   git-ignored and loaded by direnv — never commit either value. A leaked
+   access token sends messages as your channel; a leaked channel secret lets
+   anyone forge a webhook.
+5. Add the bot as a friend (the channel's QR code is on the **Messaging API**
+   tab). A LINE user can only message a bot they added.
+
+### Run it
+
+```sh
+uv run bot-line-<name>
+```
+
+Unlike the other two platforms this one listens: the bot serves
+`POST /callback` on `BOT_PORT` (default 8000, all interfaces), so it needs an
+HTTPS URL LINE can reach. Deploy it behind a reverse proxy, or tunnel to it
+while developing:
+
+```sh
+cloudflared tunnel --url http://localhost:8000   # or: ngrok http 8000
+```
+
+Then, on the **Messaging API** tab:
+
+1. **Webhook settings** → **Webhook URL**:
+   `https://<that host>/callback` → **Verify** (LINE sends a signed test
+   request; the scaffold answers it, so the check passes).
+2. **Use webhook** → on, and turn **Auto-reply messages** off so the
+   channel's canned replies do not answer first.
+3. Send the bot `ping` in the chat — it replies `pong`.
+
+Logging goes through the generated `logging_setup`, so `LOG_FORMAT=json`
+gives the webhook process the same structured logs as the CLI. With Docker:
+`task bot-serve` / `just bot-serve` (needs both credentials in the
+environment; this is the one bot container that publishes a port — `8000`).
+
+### Why the signature check is what makes a public URL safe
+
+The webhook URL is public by design: LINE has to reach it, so anyone who
+learns it can POST to `/callback`. What separates LINE from a forger is the
+channel secret, which never travels over the wire. LINE sends the base64
+HMAC-SHA256 of the raw request body in the `X-Line-Signature` header, and the
+scaffold's `WebhookParser` recomputes it over the exact bytes received and
+rejects the request — `400`, no reply, no event parsed — when it does not
+match. An unsigned body and a body signed with the wrong secret are both that
+same 400.
+
+`tests/test_bot_line.py` asserts exactly that, plus the happy path: a
+correctly signed `ping` gets the `pong` reply, the two forged bodies get
+rejected without a single reply call, and the startup refusal names the
+missing credential. `build_app()` is split from `main()` and takes the reply
+call as a parameter, so the whole route — signature check included — runs
+in-process over httpx's `ASGITransport` with a recording reply: no token, no
+client, no network. (The transport is httpx's rather than starlette's
+`TestClient` for the reason `tests/test_app.py` documents: the generated
+project sets `filterwarnings = error`, and starlette 1.x deprecates httpx
+inside `TestClient`.)
+
 ## Non-goals
 
 The generated bots are working starting points, not frameworks: no moderation
 tooling, no databases/persistence, no scheduled tasks, no voice, no i18n, no
 command catalogue. Platform-specific operational concerns (rate-limit handling
-and reconnection backoff are discord.py's / Bolt's own, on by default) are not
-re-implemented. Add the web_api layer (or any other) on top by answering the
-same gates.
+and reconnection backoff are discord.py's / Bolt's / line-bot-sdk's own, on by
+default) are not re-implemented. Add the web_api layer (or any other) on top
+by answering the same gates.
 
-LINE (`line-bot-sdk`, Webhook signature verification) and Gmail
-(`google-api-python-client` + OAuth) are **planned platforms, not offered
-yet**: they will join `bot_platform` as new choices with their own shared
-bodies — no new project type, no new question axis.
+Gmail (`google-api-python-client` + OAuth) is a **planned platform, not
+offered yet**: it will join `bot_platform` as a new choice with its own shared
+body — no new project type, no new question axis.

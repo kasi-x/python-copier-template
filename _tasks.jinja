@@ -148,20 +148,30 @@
                               ~ '-e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 '
                               ~ '--entrypoint mcp-server-' ~ repo_name ~ ' ' ~ repo_name
                               ~ ' --transport streamable-http --host 0.0.0.0']}] %}
-{# Same one-off shape as `mcp-serve`: the bot needs Slack / Discord's servers
-   (and your tokens, passed through from the host environment), so it is a
-   `docker run` recipe, not part of `check`. The entry point and the token
-   variables follow the selected platform — both platforms' Dockerfiles ship
-   only their own console script. #}
-{% set bot_entry = ('bot-discord-' if bot_discord_effective else 'bot-slack-') ~ repo_name %}
-{% set bot_token_env = '-e DISCORD_BOT_TOKEN ' if bot_discord_effective else '-e SLACK_BOT_TOKEN -e SLACK_APP_TOKEN ' %}
+{# Same one-off shape as `mcp-serve`: the bot needs LINE / Slack / Discord's
+   servers (and your credentials, passed through from the host environment),
+   so it is a `docker run` recipe, not part of `check`. The entry point and
+   the credential variables follow the selected platform — each platform's
+   Dockerfile ships only its own console script. #}
+{% set bot_entry = ('bot-discord-' if bot_discord_effective
+                    else ('bot-slack-' if bot_slack_effective else 'bot-line-')) ~ repo_name %}
+{% set bot_token_env = ('-e DISCORD_BOT_TOKEN ' if bot_discord_effective
+                        else ('-e SLACK_BOT_TOKEN -e SLACK_APP_TOKEN ' if bot_slack_effective
+                              else '-e LINE_CHANNEL_SECRET -e LINE_CHANNEL_ACCESS_TOKEN ')) %}
 {% set bot_desc = 'Build and run the Discord bot in Docker (Gateway; needs DISCORD_BOT_TOKEN)'
                   if bot_discord_effective
-                  else 'Build and run the Slack bot in Docker (Socket Mode; needs SLACK_BOT_TOKEN and SLACK_APP_TOKEN)' %}
+                  else ('Build and run the Slack bot in Docker (Socket Mode; needs SLACK_BOT_TOKEN and SLACK_APP_TOKEN)'
+                        if bot_slack_effective
+                        else 'Build and run the LINE bot in Docker (webhook on :8000; needs '
+                             'LINE_CHANNEL_SECRET and LINE_CHANNEL_ACCESS_TOKEN)') %}
+{# LINE is the platform that listens: the Messaging API posts to its webhook,
+   so only its recipe publishes a port (discord and slack dial out). #}
+{% set bot_publish = '-p 8000:8000 ' if bot_line_effective else '' %}
 {% set bot_tasks = [{'name': 'bot-serve',
                       'desc': bot_desc,
                       'shell': true,
                       'run': ['docker build -t ' ~ repo_name ~ ' . && docker run --rm '
+                              ~ bot_publish
                               ~ bot_token_env
                               ~ '--entrypoint ' ~ bot_entry ~ ' ' ~ repo_name]}] %}
 {# The single declarative assembly: conditions that used to gate eight

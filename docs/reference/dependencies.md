@@ -29,7 +29,7 @@ new type):
 | Option | Adds |
 |---|---|
 | `include_ctf` (`library` / `cli` base) | `ctf` extra: `pwntools`, `z3-solver` |
-| `include_bot` (`cli` / `web_api` base) | `discord.py>=2,<3` (the recommended platform, `bot_platform=discord`) or `slack-bolt>=1.21,<2` (`bot_platform=slack`) + `anyio` (dev, the in-process discord test); entry point `bot-discord-<name>` / `bot-slack-<name>` |
+| `include_bot` (`cli` / `web_api` base) | `discord.py>=2,<3` (the recommended platform, `bot_platform=discord`), `slack-bolt>=1.21,<2` (`bot_platform=slack`) or `line-bot-sdk>=3,<4` + `fastapi` + `uvicorn[standard]` (`bot_platform=line`, which serves LINE's webhook itself instead of dialling out) + `anyio` and, for line, `httpx` (dev, the in-process tests); entry point `bot-discord-<name>` / `bot-slack-<name>` / `bot-line-<name>` |
 | `include_scraping` (`cli` base) | `httpx` (recommended engine), `scrapy` / `memorious4` (AGPL-3.0!) / `playwright` per `scraping_engine`, or all four with `all` |
 | `license_check` (on by default) | dev: `pip-licenses` (runs `task license-check` in `type-check`) |
 | `include_sentry` | `sentry-sdk` (initialised from `SENTRY_DSN`) |
@@ -42,13 +42,21 @@ new type):
 
 - `web_api` / `include_mcp` dev add `anyio` (in-process client test); the
   discord bot layer adds it the same way (the fake-interaction test — the
-  slack listener is driven synchronously, so it needs none).
+  slack listener is driven synchronously, so it needs none), and so does the
+  line bot, which additionally adds `httpx` for the transport its generated
+  test drives `POST /callback` over (`httpx.ASGITransport`, the same reason
+  the web_api tests use it: starlette's TestClient is not warning-free under
+  the generated `filterwarnings = error`).
 - `include_bot` (`cli` / `web_api` base) adds one platform runtime floor —
   `discord.py>=2,<3` by default, `slack-bolt>=1.21,<2` with
-  `use_recommended_bot=No` + `bot_platform=slack` — and the matching
-  `bot-discord-<name>` / `bot-slack-<name>` entry point. Both floors are
-  checked against PyPI by `tools/check_upstream.py` ("PyPI floor [bot]
-  discord.py", "PyPI floor [bot] slack-bolt").
+  `use_recommended_bot=No` + `bot_platform=slack`, `line-bot-sdk>=3,<4` (plus
+  the `fastapi` / `uvicorn[standard]` its webhook server runs on, which a
+  `web_api` base already declares) with `bot_platform=line` — and the matching
+  `bot-discord-<name>` / `bot-slack-<name>` / `bot-line-<name>` entry point.
+  Every floor is checked against PyPI by `tools/check_upstream.py` ("PyPI
+  floor [bot] discord.py", "PyPI floor [bot] slack-bolt", "PyPI floor [bot]
+  line-bot-sdk"); `fastapi` / `uvicorn` are pinned by its "PyPI floor
+  [web_api]" rows, which read the same declarations.
 - `data_science` / `kaggle` dev add `ipykernel`, `nbclient`, `nbstripout`,
   `pandas`, `tomli`, `quartodoc`.
 - `include_ctf` adds a `ctf` extra (`pwntools`, `z3-solver`) — installed with

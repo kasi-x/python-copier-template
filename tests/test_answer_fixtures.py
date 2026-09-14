@@ -58,6 +58,7 @@ def _fixtures() -> Mapping[str, Sequence[Mapping[str, Any]]]:
         "test_mcp_server.BASE_ANSWERS": [test_mcp_server.BASE_ANSWERS],
         "test_batch.BASE_ANSWERS": [test_batch.BASE_ANSWERS],
         "test_bot_layer.SLACK_ANSWERS": [test_bot_layer.SLACK_ANSWERS],
+        "test_bot_layer.LINE_ANSWERS": [test_bot_layer.LINE_ANSWERS],
     }
 
 

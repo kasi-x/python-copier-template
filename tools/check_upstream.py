@@ -232,7 +232,7 @@ def extract_pins() -> list[Pin]:
         "kaggle/DS": r'"(torch|torchvision|lightgbm|xgboost|optuna|hydra-core|polars|duckdb|pyarrow)[^"]*"',
         "ctf": r'"(pwntools|z3-solver)[^"]*"',
         "mcp": r'"(mcp\[[^\]]*\]|mcp)[^"]*"',
-        "bot": r'"(discord\.py|discord-py|slack-bolt|slack_bolt)[^"]*"',
+        "bot": r'"(discord\.py|discord-py|slack-bolt|slack_bolt|line-bot-sdk|line_bot_sdk)[^"]*"',
     }.items():
         for dep in sorted(set(re.findall(pattern, pyproject_src))):
             floor_m = re.search(rf'"{re.escape(dep)}([^"]*)"', pyproject_src)
