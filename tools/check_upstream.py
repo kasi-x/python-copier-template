@@ -38,6 +38,7 @@ import http.client
 import json
 import re
 import sys
+import time
 from dataclasses import dataclass
 from datetime import UTC
 from datetime import datetime as datetime_
@@ -68,16 +69,36 @@ class Pin:
     checkable: bool = False
 
 
-def https_get(host: str, path: str, headers: dict[str, str] | None = None) -> tuple[int, str, str]:
-    """GET a resource over https. Returns (status, body, content-type)."""
-    conn = http.client.HTTPSConnection(host, timeout=20)
-    try:
-        conn.request("GET", path, headers={"User-Agent": "python-copier-template-upstream-check", **(headers or {})})
-        resp = conn.getresponse()
-        body = resp.read().decode("utf-8", "replace")
-        return resp.status, body, resp.getheader("Content-Type", "")
-    finally:
-        conn.close()
+def https_get(host: str, path: str, headers: dict[str, str] | None = None, attempts: int = 3) -> tuple[int, str, str]:
+    """GET a resource over https. Returns (status, body, content-type).
+
+    The weekly check walks ~20 endpoints from one IP, and a throttled or
+    reset response is a transient condition of that burst -- retrying 429/5xx
+    and connection errors with a short backoff keeps one unlucky request from
+    turning into a phantom upstream-drift report.
+    """
+    for attempt in range(attempts):
+        try:
+            conn = http.client.HTTPSConnection(host, timeout=20)
+            try:
+                conn.request(
+                    "GET", path, headers={"User-Agent": "python-copier-template-upstream-check", **(headers or {})}
+                )
+                resp = conn.getresponse()
+                body = resp.read().decode("utf-8", "replace")
+                status, ctype = resp.status, resp.getheader("Content-Type", "")
+            finally:
+                conn.close()
+        except OSError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(2 * (attempt + 1))
+            continue
+        if status in (429, 500, 502, 503, 504) and attempt < attempts - 1:
+            time.sleep(2 * (attempt + 1))
+            continue
+        return status, body, ctype
+    raise AssertionError("unreachable")
 
 
 def https_get_json(host: str, path: str) -> dict[str, object] | list[object]:
@@ -117,11 +138,20 @@ def pypi_has_version(package: str, version: str) -> bool:
 
 
 def pypi_latest(package: str) -> str | None:
-    """Return the latest version of a PyPI package."""
-    try:
-        data = https_get_json("pypi.org", f"/pypi/{package}/json")
-    except RuntimeError:
+    """Return the latest version of a PyPI package.
+
+    None means PyPI itself says the package does not exist (HTTP 404) -- the
+    only state that may be reported as a REMOVED floor. A persistent lookup
+    failure (throttling, outage) raises instead, so the caller reports an
+    unresolved check rather than phantom drift.
+    """
+    status, body, _ = https_get("pypi.org", f"/pypi/{package}/json")
+    if status == 404:
         return None
+    if status != 200:
+        msg = f"GET https://pypi.org/pypi/{package}/json -> HTTP {status} (persistent after retries)"
+        raise RuntimeError(msg)
+    data = json.loads(body)
     if isinstance(data, dict):
         info = data.get("info")
         if isinstance(info, dict):
@@ -383,7 +413,10 @@ def _resolve_pypi_floor(name: str, current: str) -> str | None:
     if not floor_m:
         return "unpinned (no floor to check)"
     floor = floor_m.group(1)
-    latest = pypi_latest(pkg)
+    try:
+        latest = pypi_latest(pkg)
+    except (RuntimeError, OSError) as exc:
+        return f"lookup failed ({exc}; re-run before treating this as drift)"
     # The floor is a >= constraint: it is satisfiable whenever any release
     # >= the floor exists, which for a live package means latest >= floor.
     # (An exact-version check false-positives when the floor version only
@@ -445,7 +478,7 @@ def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911, PLR0912,
     return None
 
 
-def _is_drift(pin: Pin) -> tuple[bool, str]:
+def _is_drift(pin: Pin) -> tuple[bool, str]:  # noqa: PLR0911  WHYNOT: one branch per pin family; a dispatch table would separate each verdict from its evidence
     """Return (drift, message) for a resolved pin."""
     if pin.upstream in (None, "?"):
         return False, f"[info]   {pin.name}: {pin.current} (upstream unknown)"
@@ -504,22 +537,33 @@ def _is_drift(pin: Pin) -> tuple[bool, str]:
         if name.startswith(prefix):
             if any(m in upstream for m in markers):
                 return True, f"[DRIFT]  {name}: {current} ({upstream})"
+            if "lookup failed" in upstream:
+                # an unresolved check is a red run, but it is not drift: the
+                # drift-issue step greps for [DRIFT] and must not file
+                return True, f"[warn]   {name}: {current} ({upstream})"
             return False, f"[ok]     {name}: {current} ({upstream})"
     return False, f"[info]   {name}: {current} ({upstream})"
 
 
 def report(pins: list[Pin]) -> int:
     drift = False
+    warn = False
     for pin in pins:
         if not pin.checkable:
             print(f"[info]   {pin.name}: {pin.current}")
             continue
         is_drift, message = _is_drift(pin)
         print(message)
-        drift = drift or is_drift
+        if message.startswith("[warn]"):
+            warn = True
+        else:
+            drift = drift or is_drift
     print()
     if drift:
         print("Template pins are behind upstream. See the [DRIFT] lines above for what to bump.")
+        return 1
+    if warn:
+        print("Some upstream lookups failed (a throttling or outage burst). Re-run before drawing conclusions.")
         return 1
     print("Template pins are up to date.")
     return 0

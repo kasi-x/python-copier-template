@@ -4,13 +4,14 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 843,
+      "collected": 848,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_answer_fixtures.py": 4,
         "tests/test_batch.py": 19,
         "tests/test_bot_layer.py": 34,
+        "tests/test_check_upstream.py": 5,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 22,
         "tests/test_example_adopt.py": 1,
@@ -47,7 +48,7 @@
         "tests/test_witness_matrix.py": 231,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "15df61d508e95cda08dc72355f2145ffc2622a3f3d06b6ed3c9a19957d5bd793",
+      "ids_sha256": "9363fb7b735d0d97c1f411c2611b54379f70702dd6d78c530cde76ac51ef7278",
       "wall_seconds": 43.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
@@ -107,13 +108,14 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 903,
+      "collected": 908,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_answer_fixtures.py": 4,
         "tests/test_batch.py": 19,
         "tests/test_bot_layer.py": 37,
+        "tests/test_check_upstream.py": 5,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 22,
         "tests/test_example_adopt.py": 3,
@@ -152,7 +154,7 @@
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "e8ebe0826d768643fb085fe2ebaee6a6f8bf0737e097b88a08709d94e12c16b8",
+      "ids_sha256": "ace22a763556eda8cf4fd0323b35e2aa15e77923f6e30c37e8b1a672bdb6a5f0",
       "wall_seconds": 88.2,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -161,13 +163,14 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta",
-      "collected": 843,
+      "collected": 848,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_answer_fixtures.py": 4,
         "tests/test_batch.py": 19,
         "tests/test_bot_layer.py": 34,
+        "tests/test_check_upstream.py": 5,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 22,
         "tests/test_example_adopt.py": 1,
@@ -204,7 +207,7 @@
         "tests/test_witness_matrix.py": 231,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "15df61d508e95cda08dc72355f2145ffc2622a3f3d06b6ed3c9a19957d5bd793",
+      "ids_sha256": "9363fb7b735d0d97c1f411c2611b54379f70702dd6d78c530cde76ac51ef7278",
       "wall_seconds": 44.3,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta\"",

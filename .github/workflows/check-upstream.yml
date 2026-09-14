@@ -37,6 +37,13 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           body=$(python3 tools/check_upstream.py 2>&1 || true)
+          # File only on real drift: a [warn] run means an upstream lookup
+          # failed transiently, and a red run is the signal to re-run, not to
+          # open a "pins are behind upstream" issue about nothing.
+          if ! printf '%s' "$body" | grep -q '\[DRIFT\]'; then
+            echo "The report has no [DRIFT] line: an unresolved lookup, not drift. Not filing."
+            exit 0
+          fi
           existing=$(gh issue list --search "Template pins are behind upstream" \
             --state open --json number --jq 'length')
           if [ "$existing" -eq 0 ]; then
