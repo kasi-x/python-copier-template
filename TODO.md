@@ -179,6 +179,15 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
         CLI / 常駐の二重起動を構造的に防げる
 - [ ] **botter 向け（discord / slack / LINE / Gmail）: 常駐レイヤーの platform として
       実装する**（2026-09-08 方針確定: bot も実装する。project_type は増やさない）
+      → **第一スライス着地（2026-09-14、734844aa + bbaa98e0 + b275e98b + 17d2a8f3）**:
+        `include_bot` / `use_recommended_bot` / `bot_platform`（選択肢は discord のみ。
+        slack / LINE / Gmail は help に計画として記載、実装は「1つずつ潰す」方針どおり次の
+        スライス）。`bot_effective` / `bot_discord_effective`、`_shared/bot-discord.py.jinja`
+        （build_bot/main 分離、`DISCORD_BOT_TOKEN` 起動拒否、logging_setup 統合、
+        bot-discord-<name> エントリポイント、bot-serve タスク）、ラッパ3配置、
+        生成テスト（fake interaction の ping/pong + 拒否）、docs 一式、check_upstream ピン。
+        葉空間 205 → 225（旧205葉は byte-identical を実証）、test_mcp_server の葉数ピンも追従。
+        残り: slack（Socket Mode）/ LINE（Webhook 署名検証）/ Gmail（OAuth）の各 platform
       - 置き場所: `cli` / `web_api` の上に載る opt-in レイヤー（MCP と同型）。
         library には載せない（import される側に実行可能サーバを載せる動機が薄い。
         include_mcp と同じ理由）。`include_bot`（bool）+ `use_recommended_bot` ゲート +
