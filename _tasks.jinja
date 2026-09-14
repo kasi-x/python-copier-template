@@ -87,7 +87,7 @@
     run ~ secondary,
 ] + ([run ~ 'basedpyright -p firmware/pyrightconfig.json'] if micropython_pkg else []) + ([
     run ~ 'vulture ' ~ ('firmware' if micropython_pkg else pkg_dir) ~ ' --min-confidence 80',
-] if not (online_judge and not kaggle) else []) + [
+] if not oj_bare else []) + [
     run ~ 'deptry .',
     run ~ 'typos .',
 ] %}

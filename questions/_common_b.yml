@@ -212,7 +212,7 @@ use_recommended_integrations:
 
 docker:
     type: bool
-    when: "{{ not use_recommended_integrations and project_type != 'micropython' and not (online_judge and not kaggle) }}"
+    when: "{{ not use_recommended_integrations and project_type != 'micropython' and not oj_bare }}"
     help: |
         Would you like to publish your project in a Docker container?
         You should select this if you are making a service.

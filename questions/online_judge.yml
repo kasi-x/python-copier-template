@@ -74,6 +74,17 @@ oj_code:
     default: "{{ online_judge and oj_kind in ['atcoder', 'leetcode', 'yukicoder', 'aoj'] }}"
     when: false
 
+# An OJ workspace without kaggle's real package: the four code-submission
+# judges AND ctf. Deliberately not the same as oj_code — ctf is included
+# here (its challenges/ + solve.py workspace is still package-less), which is
+# what the docker gate and the vulture domain list want. kaggle is excluded:
+# it is a data competition with a real src/utils package, so those gates
+# treat it like a non-OJ.
+oj_bare:
+    type: bool
+    default: "{{ online_judge and not kaggle }}"
+    when: false
+
 # CTF competitions: participant workspace (challenges/ + solve.py starter),
 # optionally under online_judge (oj_category == 'ctf') or as a layer on
 # library / cli (include_ctf). Both paths share the same generated shape.
@@ -81,6 +92,19 @@ oj_ctf:
     type: bool
     default: "{{ online_judge and oj_kind == 'ctf' }}"
     when: false
+
+# Renders no installable/importable CPython package: micropython firmware
+# (deployed with mpremote, never pip-installed) and the bare code-submission
+# workspaces (oj_code). Both skip setuptools_scm and the logging_setup hooks
+# and collapse the dependencies/testpaths gates to the package-less form.
+# Defined here (not in questions/micropython.yml) because oj_code — its
+# later operand — is defined above, and this fragment is included after
+# questions/micropython.yml, so both operands already exist.
+no_pkg:
+    type: bool
+    default: "{{ micropython_pkg or oj_code }}"
+    when: false
+
 oj_allow_ai:
     type: bool
     when: "{{ online_judge and (oj_kind == 'atcoder' or oj_kind == 'leetcode') }}"

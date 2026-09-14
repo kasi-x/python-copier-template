@@ -1,7 +1,7 @@
 {% import "_shared/macros.jinja" as m with context -%}
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = [ "setuptools>=77"{% if not ros2_pkg and not micropython_pkg and not oj_code %}, "setuptools-scm[toml]>=8"{% endif %} ]
+requires = [ "setuptools>=77"{% if not ros2_pkg and not no_pkg %}, "setuptools-scm[toml]>=8"{% endif %} ]
 
 [project]
 name = "{{ distribution_name }}"
@@ -170,7 +170,7 @@ packages = ["app"]
 # packages explicitly.
 [tool.setuptools]
 packages = ["{{ package_name }}", "{{ package_name }}.tools"]
-{% endif %}{% if not micropython_pkg and not oj_code %}[tool.setuptools_scm]
+{% endif %}{% if not no_pkg %}[tool.setuptools_scm]
 version_file = "{{ pkg_dir }}/_version.py"
 # Publish pipelines generate first and `git init` later: without git
 # metadata setuptools_scm aborts every uv sync, so fall back to a
@@ -197,7 +197,7 @@ extend-exclude = ["tools", ".github/pages", "alembic"{% if sphinx %}, "docs"{% e
 line-length = {{ 88 if not allow_japanese else 120 }}
 # 挙動を変える可能性があるため、自動修正は safe-fix に限定する。
 unsafe-fixes = false
-{% if not micropython_pkg and not oj_code %}lint.logger-objects = ["{{ import_pkg }}.logging_setup.get_logger"]
+{% if not no_pkg %}lint.logger-objects = ["{{ import_pkg }}.logging_setup.get_logger"]
 {% endif %}
 {# ruff select/ignore/task-tags bodies are shared (see _shared/pyproject-ruff-lint.toml.jinja). #}{% include "_shared/pyproject-ruff-lint.toml.jinja" %}
 
@@ -207,7 +207,7 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-format = true
-{% if not micropython_pkg and not oj_code %}# logging_setup.py has long logging-library setup calls that format
+{% if not no_pkg %}# logging_setup.py has long logging-library setup calls that format
 # differently at line-length 88 vs 120 (allow_japanese), so exclude it from
 # formatting (E501 is already ignored for it).
 exclude = ["{{ pkg_dir }}/logging_setup.py"]

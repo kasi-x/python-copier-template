@@ -11,7 +11,7 @@ addopts = """
    form byte-for-byte. -#}
 filterwarnings = {% if bot_discord_effective %}["error", "ignore:'audioop' is deprecated.*:DeprecationWarning"]{% else %}"error"{% endif %}
 # Doctest python code in docs, python code in src docstrings, test functions in tests
-testpaths = "{% if sphinx %}docs {% endif %}{{ 'tests' if micropython_pkg or oj_code else (pkg_dir ~ ' tests') }}"
+testpaths = "{% if sphinx %}docs {% endif %}{{ 'tests' if no_pkg else (pkg_dir ~ ' tests') }}"
 {% if micropython_pkg %}# firmware/ is not pip-installed; put the repo root on sys.path so the
 # CPython core tests can `from firmware.core import ...`.
 pythonpath = ["."]

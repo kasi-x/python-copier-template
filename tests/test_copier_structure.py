@@ -12,6 +12,10 @@ This module guards the questionnaire's shape:
   reference — the ascii_banner removal regressed exactly this way);
 - every `when: false` internal variable is actually used somewhere (no dead
   hidden variables);
+- the two OJ predicate internals (`oj_bare` / `no_pkg`) keep exactly their
+  documented derivations and the raw inline forms they replaced
+  (`online_judge and not kaggle`, the `micropython_pkg`+`oj_code` pair in one
+  condition) never reappear in the template sources;
 - the questionnaire fragments under questions/ are complete (their union
   equals the resolved questionnaire, no duplicate keys across fragments) and
   every question reference is forward-only (a question must only reference
@@ -274,6 +278,85 @@ def test_no_dead_internal_variables():
     for var in sorted(internal):
         assert var in referenced, (
             f"internal variable {var!r} is never referenced — remove it or its last consumer regressed"
+        )
+
+
+# ---------------------------------------------------------------------------
+# OJ predicate rot-guard (TODO §18 item 2).
+#
+# The template used to re-derive two predicates inline at every consumer:
+# `online_judge and not kaggle` (now the `oj_bare` internal — the four
+# code-submission judges AND ctf, i.e. an OJ workspace without kaggle's real
+# package) and the `micropython_pkg … oj_code` pair (now the `no_pkg`
+# internal — renders no installable/importable CPython package). These tests
+# keep the named internals authoritative: the raw forms must not reappear in
+# template/ file names or bodies, _shared/ partials, _tasks.jinja or
+# copier.yml, and the internals themselves must keep their documented
+# derivations (so a "simplification" of `oj_bare` to `oj_code` — which would
+# push ctf's package-less workspace through the package gates — cannot drift
+# in silently).
+# ---------------------------------------------------------------------------
+
+OJ_BARE_DEFINITION = "{{ online_judge and not kaggle }}"
+NO_PKG_DEFINITION = "{{ micropython_pkg or oj_code }}"
+
+# `micropython_pkg`/`oj_code` joined by and/or inside one expression — the
+# shape `no_pkg` replaced. Co-occurrences in *different* conditions are fine
+# (separate {% if %} tags or distinct ternaries sharing a line, e.g. the
+# basedpyright excludes), so bare co-occurrence is not the test.
+_PAIR_IN_ONE_CONDITION = re.compile(
+    r"\b(?:micropython_pkg|oj_code)\s+(?:and|or)\s+(?:not\s+)?(?:micropython_pkg|oj_code)\b"
+)
+
+
+def _rot_guard_sources() -> list[str]:
+    """File names + bodies the raw predicate forms are banned from: template/
+    (paths carry copier's {% if %} name conditionals), _shared/ partials,
+    _tasks.jinja and copier.yml. questions/ is deliberately excluded — it
+    holds the internals' documented definitions, asserted separately below.
+    """
+    sources = [COPIER_YML.read_text(encoding="utf-8")]
+    for f in template_files():
+        if f.is_dir():
+            continue
+        sources.append(str(f.relative_to(TOP)))
+        with suppress(UnicodeDecodeError, OSError):
+            sources.append(f.read_text(encoding="utf-8"))
+    return sources
+
+
+def test_oj_predicate_raw_forms_are_named_internals():
+    """The raw predicate forms §18 item 2 eliminated never reappear.
+
+    Nothing is allow-listed: after the unification there are zero occurrences
+    outside questions/online_judge.yml, where the internals are defined.
+    """
+    banned = "online_judge and not kaggle"
+    for src in _rot_guard_sources():
+        assert banned not in src, (
+            f"raw OJ predicate reappeared — write the `oj_bare` internal instead: {src[:160]!r}"
+        )
+        match = _PAIR_IN_ONE_CONDITION.search(src)
+        if match is not None:
+            raise AssertionError(
+                f"micropython_pkg+oj_code pair in one condition reappeared — "
+                f"write the `no_pkg` internal instead: {match.group(0)!r} in {src[:160]!r}"
+            )
+
+
+def test_oj_predicate_internals_keep_documented_definitions():
+    """`oj_bare` / `no_pkg` keep exactly the derivation the template relies on.
+
+    `oj_bare` is deliberately NOT `oj_code` (ctf is in, kaggle is out); both
+    expressions are load-bearing for docker / vulture / setuptools_scm /
+    testpaths / dependencies gates, so the exact strings are pinned.
+    """
+    questions, _ = when_model.load_questions()
+    for name, definition in (("oj_bare", OJ_BARE_DEFINITION), ("no_pkg", NO_PKG_DEFINITION)):
+        assert name in questions, f"{name} internal is missing from questions/"
+        assert questions[name].get("when") is False, f"{name} must stay an internal (when: false)"
+        assert questions[name].get("default") == definition, (
+            f"{name} drifted from its documented derivation {definition!r}: got {questions[name].get('default')!r}"
         )
 
 
