@@ -6,28 +6,24 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 809 | ~47s † |
-| Slow | `task test-slow` | 5 | ~72s |
-| Pre-push / nightly | `task test-heavy` | 45 | ~29s |
-| Nightly, shuffled | `task test-randomly` | 809 | ~50s |
-| Everything | `task test` | 867 | ~139s |
-| Cost ledger guard | `task test-meta` | 8 | ~11s † |
+| Edit loop | `task test-fast` | 819 | ~32s |
+| Slow | `task test-slow` | 5 | ~23s |
+| Pre-push / nightly | `task test-heavy` | 46 | ~30s |
+| Nightly, shuffled | `task test-randomly` | 819 | ~22s |
+| Everything | `task test` | 878 | ~78s |
+| Cost ledger guard | `task test-meta` | 8 | ~13s |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
 it is the cost ledger's own guard (`tests/test_marker_drift.py`) split out of
 the edit loop, and CI runs it as its own job on every push and PR.
 
-Those times are the lightest of the runs measured on 2026-09-14 with
-`time uv run --no-sync pytest -q -m "<the task's own selection>"`. The two rows
-marked † were measured for this version of the ledger with unrelated work
-filling the machine's 32 logical CPUs (load average 64–117), so they are
-observations of that contention rather than of a quiet box: the same tree with
-the guard still in the edit-loop selection (then 738 tests) took 46s at load 85
-in the same session, and the 30s budget remains the contract. A cold
-`.cache/renders` (the first run after changing the template) turned `task test`
-into 337s. That spread is why the budget is the contract and a time is only an
-observation — `tests/matrix/tiers.json` holds each measurement with the
-conditions it was taken under.
+Those times were measured on 2026-09-14 with `time uv run --locked pytest`
+plus the task's own selection, on this box with nothing else running, against a
+warm `.cache/renders`: the same day, the same tree under another agent's venv
+builds took 47s instead of 32s, and a cold render cache turned `task test` into
+337s. That spread is why the edit loop's 30s budget is the contract and a time
+is only an observation — `tests/matrix/tiers.json` holds each measurement with
+the conditions it was taken under.
 
 The tiers are a contract, not a habit: each one is a marker expression the
 Taskfile passes to pytest, and a check that belongs to a tier only if its cost
