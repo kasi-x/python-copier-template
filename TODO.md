@@ -1115,7 +1115,11 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       - `template/pyproject.toml.jinja` の `strictness == 'none'` / `'basic'` 分岐は
         約30行ほぼ逐語重複。`dev_base` + `{% if strictness in ['recommended','full'] %}`
         append に書き換える
-- [ ] **`run` prefix と python-version 三重定義を `_shared/macros.jinja` に抽出する**
+- [x] **`run` prefix と python-version 三重定義を `_shared/macros.jinja` に抽出する**
+      → **完了（2026-09-14、c586ed9e）**: run prefix 8箇所 + python-version 6箇所を
+        `run_prefix()` / `python_version()` / `classifiers()` マクロに集約。
+        13コンボで byte-identical 実証。check_upstream の Python floor ピンも
+        マクロ源に向け直し（97a-followup）、macros.jinja ヘッダに権威の所在を記載
       - 現状: `run` / `run_x` / `ros_source` が `_tasks.jinja`・`README.md.jinja`・
         `Dockerfile.jinja` に分散、`requires-python` + classifiers +
         `[tool.basedpyright]pythonVersion` + ty-checkers `python-version` +
