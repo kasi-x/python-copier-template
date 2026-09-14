@@ -39,10 +39,10 @@ does. [Verification](../explanations/verification.md) states the three layers
   that neither builds a virtualenv nor touches the network, minus the serial
   batch runner and minus the cost ledger's own guards (`tests/test_marker_drift.py`,
   see `task test-meta` below). That is the whole edit loop and what CI runs on
-  every push and PR. It does **not** exclude `tests/test_example.py` — 112 of
-  that file's 135 tests run; the 23 that build a venv are marked `heavy`.
-  `tests/test_generated_typecheck.py` is excluded in practice, because all 7 of
-  its tests are `heavy`.
+  every push and PR. Nothing is excluded by filename: the split
+  `tests/test_example_*.py` modules contribute 112 of their 135 tests to it,
+  and the 23 that build a venv carry `heavy`. `tests/test_generated_typecheck.py`
+  is excluded in practice, because all 7 of its tests are `heavy`.
 - `task test-meta` runs `-m meta`: the guards in `tests/test_marker_drift.py`,
   which check that expensive work carries its markers, that every tier still
   collects what `tests/matrix/tiers.json` records, and that no recorded wall
@@ -151,7 +151,7 @@ cold measurement next to the timeout it has to fit in, which is what makes
 task test-fast CLI_ARGS="--lf"            # only what failed last time
 task test-fast CLI_ARGS="-x"              # stop at the first failure
 task test-fast CLI_ARGS="--durations=25"  # where the time goes
-task test-fast CLI_ARGS="tests/test_example.py -k web_api"
+task test-fast CLI_ARGS="tests/test_example_web_api.py -k web_api"
 ```
 
 ## Investigating one combination

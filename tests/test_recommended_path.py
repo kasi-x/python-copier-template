@@ -1,16 +1,17 @@
 """Smoke-test the recommended (fast) path of the questionnaire.
 
-The heavy integration tests in test_example.py exercise the long tail: they
-copy with example-answers.yml, which sets every `use_recommended_*` gate to
-false so every detail question is asked. What they never render is the path a
-real user actually takes -- accept every "use the recommended ...?" default
-and only answer project_type + Project Details. Those fast paths are covered
-here.
+The heavy integration tests in the `test_example_*.py` modules exercise the
+long tail: they copy with example-answers.yml, which sets every
+`use_recommended_*` gate to false so every detail question is asked. What they
+never render is the path a real user actually takes -- accept every "use the
+recommended ...?" default and only answer project_type + Project Details.
+Those fast paths are covered here.
 
 Rendering uses `skip_tasks=True`: copier's `_tasks` (the REUSE LICENSES/
-copy, ...) need a checkout or external tools, and test_example.py
-already runs them. This module only checks that the whole `template/` tree
-survives jinja rendering for the fast path, without paying for uv sync/docs.
+copy, ...) need a checkout or external tools, and the `test_example_*`
+modules already run them. This module only checks that the whole `template/`
+tree survives jinja rendering for the fast path, without paying for uv
+sync/docs.
 """
 
 import sys
@@ -41,9 +42,9 @@ BASE = answers.BASE
 # One fast-path case per project_type reachable with every use_recommended_*
 # gate at its default (true): accept the recommendation, answer only the
 # required Project Details. data_science/ros2/micropython are reachable too but
-# test_example.py's copy_project_recommended already renders those exact paths,
-# so they are not repeated here. The combo cases prove the two supported
-# simultaneous layouts render on the fast path as well.
+# the test_example_* modules' copy_project_recommended already renders those
+# exact paths, so they are not repeated here. The combo cases prove the two
+# supported simultaneous layouts render on the fast path as well.
 FAST_PATHS: list[dict[str, object]] = [
     {"project_type": "library"},
     {"project_type": "web_api"},
