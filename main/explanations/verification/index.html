@@ -472,6 +472,8 @@
       
         
       
+        
+      
     
     
     
@@ -957,6 +959,33 @@
     
   
   MCP Server
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/bot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Discord Bot
 
     
   </span>
@@ -1984,8 +2013,8 @@ different jobs — no layer replaces another.</p>
 <td><strong>L2 — output invariants</strong></td>
 <td>every leaf's render satisfies its declared file-set and content predicates</td>
 <td>install, run, network, docs build — anything needing a venv or an external tool</td>
-<td>all <strong>205</strong> leaves</td>
-<td><strong>0.58 s/leaf</strong> serial (119 s ÷ 205); 205 leaves ≈ <strong>10 s</strong> with 16 xdist workers and the session render cache</td>
+<td>all <strong>225</strong> leaves</td>
+<td><strong>≈0.6 s/leaf</strong> serial; 225 leaves ≈ <strong>20 s</strong> with 16 xdist workers and the session render cache</td>
 </tr>
 <tr>
 <td><strong>L3 — execution</strong></td>
@@ -2004,7 +2033,7 @@ questionnaire: is every <code>when</code> satisfiable, and does the sweep detect
 gates, self-contradictions and impossible genre combinations (the detectors
 have meta-tests that break them on purpose to prove they still detect).
 <code>tools/z3_witnesses.py</code> turns the same model into the leaf list
-(<code>tests/matrix/witnesses.jsonl</code>, 205 leaves), and
+(<code>tests/matrix/witnesses.jsonl</code>, 225 leaves), and
 <code>tests/test_witness_matrix.py::test_witness_leaves_match_the_generator</code> keeps
 the committed list equal to what the generator enumerates.</p>
 <p>L1 <strong>cannot</strong> say anything about rendered content, cross-file consistency, the
@@ -2079,7 +2108,7 @@ check moves between tiers, the budget moves with it.</p>
 <td>Slow</td>
 <td><code>task test-slow</code></td>
 <td><code>-m slow</code></td>
-<td>the serial 205-leaf batch runner (<code>tools/batch.py</code> over <code>tests/matrix/witnesses.jsonl</code>)</td>
+<td>the serial 225-leaf batch runner (<code>tools/batch.py</code> over <code>tests/matrix/witnesses.jsonl</code>)</td>
 </tr>
 <tr>
 <td>Pre-push / nightly</td>
@@ -2091,7 +2120,7 @@ check moves between tiers, the budget moves with it.</p>
 <td>Witness render</td>
 <td><code>uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast</code></td>
 <td><code>fast</code></td>
-<td>L2 over all 205 leaves</td>
+<td>L2 over all 225 leaves</td>
 </tr>
 <tr>
 <td>Witness execution</td>
@@ -2220,7 +2249,7 @@ correct" — is false:</p>
 </ul>
 <h3 id="why-l3-stays-the-evidence">Why L3 stays: the evidence<a class="headerlink" href="#why-l3-stays-the-evidence" title="Permanent link">&para;</a></h3>
 <p>The 8-leaf sample is not ceremony. On 2026-09-13 it failed <strong>three leaves</strong>, all
-of them invisible to L2 (whose 205 leaves stayed green at the same time):</p>
+of them invisible to L2 (whose 225 leaves stayed green at the same time):</p>
 <ol>
 <li><code>project_type=micropython/gate=recommended</code> — basedpyright exited 3 with
    <code>File or directory ".../smoke_example" does not exist</code>: the shared
@@ -2275,9 +2304,9 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 </thead>
 <tbody>
 <tr>
-<td>205 leaves, 108 with no include layer, 97 with exactly one (max 1)</td>
+<td>225 leaves, 108 with no include layer, 117 with exactly one (max 1)</td>
 <td><code>tests/matrix/witnesses.jsonl</code> (count of <code>include=</code> per leaf)</td>
-<td>2026-09-14, current tree</td>
+<td>2026-09-14, current tree (bot layer)</td>
 </tr>
 <tr>
 <td>L1 model vs real Jinja: 10,128 comparisons (9,840 leaf verdicts + 6 probes × 48 expressions), both polarities asserted per expression</td>
@@ -2285,7 +2314,7 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 <td>2026-09-14, this tree</td>
 </tr>
 <tr>
-<td>L2 ≈ 0.58 s/leaf (119 s ÷ 205), 205 leaves ≈ 10 s at 16 workers + cache</td>
+<td>L2 ≈ 0.58 s/leaf at the 205-leaf tree of the 2026-09-13 audit (119 s ÷ 205; 225 leaves ≈ 10 s at 16 workers + cache)</td>
 <td>the serial batch runner's <code>--durations</code> entry (119 s) in the 2026-09-13 audit</td>
 <td>TODO §23.0 / §24.0 P4 / §24.1</td>
 </tr>
@@ -2330,8 +2359,8 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 <td>TODO §24.2</td>
 </tr>
 <tr>
-<td>"all 205 leaves executed would be ~10 hours"</td>
-<td>the <code>FULL_SAMPLE</code> rationale comment: 205 × (venv build + docs) at ~3 min</td>
+<td>"all 225 leaves executed would be ~11 hours"</td>
+<td>the <code>FULL_SAMPLE</code> rationale comment: 225 × (venv build + docs) at ~3 min</td>
 <td><code>tests/test_witness_matrix.py</code></td>
 </tr>
 </tbody>

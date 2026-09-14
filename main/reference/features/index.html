@@ -472,6 +472,8 @@
       
         
       
+        
+      
     
     
     
@@ -957,6 +959,33 @@
     
   
   MCP Server
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/bot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Discord Bot
 
     
   </span>
@@ -2111,10 +2140,10 @@ are asked — <a href="../questionnaire/">the questionnaire reference</a> lists 
     G_toolchain_yes --&gt; D2
     G_toolchain_no --&gt; D2
     D2{"online_judge?"}
-    D2 --&gt;|Yes| Q6["ask: oj_category (data_science / competitive_coding / ctf), oj_kind&lt;br/&gt;(kaggle / atcoder / leetcode / yukicoder / aoj / ctf),&lt;br/&gt;oj_allow_ai (atcoder / leetcode)"]
-    Q6 --&gt; INC
+    D2 --&gt;|Yes| Q7["ask: oj_category (data_science / competitive_coding / ctf), oj_kind&lt;br/&gt;(kaggle / atcoder / leetcode / yukicoder / aoj / ctf),&lt;br/&gt;oj_allow_ai (atcoder / leetcode)"]
+    Q7 --&gt; INC
     D2 --&gt;|No| INC
-    INC["ask: include_data_science, include_web_api, include_ctf,&lt;br/&gt;include_scraping&lt;br/&gt;(each only for the bases it combines with)"]
+    INC["ask: include_data_science, include_web_api, include_ctf,&lt;br/&gt;include_scraping, include_bot&lt;br/&gt;(each only for the bases it combines with)"]
     INC --&gt; L3{"include_scraping?"}
     L3 --&gt;|Yes| G_scraping{"use_recommended_scraping?&lt;br/&gt;(a cli base answers Yes to include_scraping)"}
     L3 --&gt;|No| L4
@@ -2122,9 +2151,16 @@ are asked — <a href="../questionnaire/">the questionnaire reference</a> lists 
     G_scraping --&gt;|No| G_scraping_no["ask: scraping_engine"]
     G_scraping_yes --&gt; L4
     G_scraping_no --&gt; L4
-    L4{"data science layer?"}
-    L4 --&gt;|Yes| G_data_science{"use_recommended_data_science?&lt;br/&gt;(the data_science layer is present)"}
-    L4 --&gt;|No| G_polish
+    L4{"include_bot?"}
+    L4 --&gt;|Yes| G_bot{"use_recommended_bot?&lt;br/&gt;(a cli / web_api base answers Yes to include_bot)"}
+    L4 --&gt;|No| L5
+    G_bot --&gt;|Yes| G_bot_yes["discord = discord.py — the de-facto Discord library"]
+    G_bot --&gt;|No| G_bot_no["ask: bot_platform"]
+    G_bot_yes --&gt; L5
+    G_bot_no --&gt; L5
+    L5{"data science layer?"}
+    L5 --&gt;|Yes| G_data_science{"use_recommended_data_science?&lt;br/&gt;(the data_science layer is present)"}
+    L5 --&gt;|No| G_polish
     G_data_science --&gt;|Yes| G_data_science_yes["GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer)."]
     G_data_science --&gt;|No| G_data_science_no["ask: use_gpu"]
     G_data_science_yes --&gt; G_polish
@@ -2152,11 +2188,11 @@ are asked — <a href="../questionnaire/">the questionnaire reference</a> lists 
     G_integrations{"use_recommended_integrations?"}
     G_integrations --&gt;|Yes| G_integrations_yes["no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP…"]
     G_integrations --&gt;|No| G_integrations_no["ask: docker, pypi, cloud_provider, aws_services, include_sentry,&lt;br/&gt;include_mcp, ci_provider, log_library"]
-    G_integrations_yes --&gt; L5
-    G_integrations_no --&gt; L5
-    L5{"web api layer?"}
-    L5 --&gt;|Yes| G_web_api{"use_recommended_web_api?&lt;br/&gt;(the web_api layer is present)"}
-    L5 --&gt;|No| G_security
+    G_integrations_yes --&gt; L6
+    G_integrations_no --&gt; L6
+    L6{"web api layer?"}
+    L6 --&gt;|Yes| G_web_api{"use_recommended_web_api?&lt;br/&gt;(the web_api layer is present)"}
+    L6 --&gt;|No| G_security
     G_web_api --&gt;|Yes| G_web_api_yes["a FastAPI app in a top-level app/ package"]
     G_web_api --&gt;|No| G_web_api_no["ask: prometheus, rate_limit, cors"]
     G_web_api_yes --&gt; G_security
@@ -2467,7 +2503,7 @@ element to a combinable base:</p>
 <td><code>best_effort</code></td>
 </tr>
 <tr>
-<td><code>any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api)</code></td>
+<td><code>any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api \| include_bot)</code></td>
 <td><code>best_effort</code></td>
 </tr>
 <tr>

@@ -472,6 +472,8 @@
       
         
       
+        
+      
     
     
     
@@ -957,6 +959,33 @@
     
   
   MCP Server
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/bot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Discord Bot
 
     
   </span>
@@ -1834,6 +1863,10 @@ new type):</p>
 <td><code>ctf</code> extra: <code>pwntools</code>, <code>z3-solver</code></td>
 </tr>
 <tr>
+<td><code>include_bot</code> (<code>cli</code> / <code>web_api</code> base)</td>
+<td><code>discord.py&gt;=2,&lt;3</code> (recommended platform) + <code>anyio</code> (dev, the in-process bot test); entry point <code>bot-discord-&lt;name&gt;</code></td>
+</tr>
+<tr>
 <td><code>include_scraping</code> (<code>cli</code> base)</td>
 <td><code>httpx</code> (recommended engine), <code>scrapy</code> / <code>memorious4</code> (AGPL-3.0!) / <code>playwright</code> per <code>scraping_engine</code>, or all four with <code>all</code></td>
 </tr>
@@ -1865,8 +1898,11 @@ new type):</p>
 </table>
 <h2 id="dev-experiment-groups">Dev / experiment groups<a class="headerlink" href="#dev-experiment-groups" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>web_api</code> dev adds <code>anyio</code> (MCP in-process test), <code>aiosqlite</code> + <code>httpx</code>
-  (SQLite-fallback HTTP tests).</li>
+<li><code>web_api</code> / <code>include_mcp</code> dev add <code>anyio</code> (in-process client test); the bot
+  layer adds it the same way (the fake-interaction test).</li>
+<li><code>include_bot</code> (<code>cli</code> / <code>web_api</code> base) adds the <code>discord.py&gt;=2,&lt;3</code> runtime
+  floor and the <code>bot-discord-&lt;name&gt;</code> entry point — checked against PyPI by
+  <code>tools/check_upstream.py</code> ("PyPI floor [bot] discord.py").</li>
 <li><code>data_science</code> / <code>kaggle</code> dev add <code>ipykernel</code>, <code>nbclient</code>, <code>nbstripout</code>,
   <code>pandas</code>, <code>tomli</code>, <code>quartodoc</code>.</li>
 <li><code>include_ctf</code> adds a <code>ctf</code> extra (<code>pwntools</code>, <code>z3-solver</code>) — installed with

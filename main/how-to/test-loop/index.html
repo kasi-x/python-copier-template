@@ -468,6 +468,8 @@
       
         
       
+        
+      
     
     
     
@@ -953,6 +955,33 @@
     
   
   MCP Server
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Discord Bot
 
     
   </span>
@@ -1712,7 +1741,7 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td>733</td>
+<td>809</td>
 <td>~47s †</td>
 </tr>
 <tr>
@@ -1724,19 +1753,25 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Pre-push / nightly</td>
 <td><code>task test-heavy</code></td>
-<td>43</td>
+<td>45</td>
 <td>~29s</td>
+</tr>
+<tr>
+<td>Nightly, shuffled</td>
+<td><code>task test-randomly</code></td>
+<td>809</td>
+<td>~50s</td>
 </tr>
 <tr>
 <td>Everything</td>
 <td><code>task test</code></td>
-<td>788</td>
+<td>867</td>
 <td>~139s</td>
 </tr>
 <tr>
 <td>Cost ledger guard</td>
 <td><code>task test-meta</code></td>
-<td>7</td>
+<td>8</td>
 <td>~11s †</td>
 </tr>
 </tbody>
@@ -1767,7 +1802,7 @@ does. <a href="../../explanations/verification/">Verification</a> states the thr
   see <code>task test-meta</code> below). That is the whole edit loop and what CI runs on
   every push and PR. It does <strong>not</strong> exclude <code>tests/test_example.py</code> — 112 of
   that file's 135 tests run; the 23 that build a venv are marked <code>heavy</code>.
-  <code>tests/test_generated_typecheck.py</code> is excluded in practice, because all 6 of
+  <code>tests/test_generated_typecheck.py</code> is excluded in practice, because all 7 of
   its tests are <code>heavy</code>.</li>
 <li><code>task test-meta</code> runs <code>-m meta</code>: the guards in <code>tests/test_marker_drift.py</code>,
   which check that expensive work carries its markers, that every tier still
@@ -1776,7 +1811,15 @@ does. <a href="../../explanations/verification/">Verification</a> states the thr
   membership check re-collects every tier in its own pytest session (six
   startups); <code>ci.yml</code> runs them as its own job. They are also part of
   <code>task test</code>, so the pre-release gate still runs them.</li>
-<li><code>task test-slow</code> runs <code>-m slow</code>: the serial 205-leaf witness batch runner
+<li><code>task test-randomly</code> runs the edit-loop selection again with pytest-randomly
+  active (<code>-p randomly</code>): the same 809 tests in a freshly shuffled order, so
+  order dependence and shared state surface in the nightly run instead of in
+  someone's local loop. The plugin is a dev dependency but stays disabled
+  everywhere else — <code>addopts</code> carries <code>-p no:randomly</code>, and this task is the
+  only command line that re-enables it — so no other tier pays for the
+  reshuffle (TODO §24.3 / §27.4: conditional adopt, nightly seed job only).
+  Each run's seed is random and printed in the pytest header for reproduction.</li>
+<li><code>task test-slow</code> runs <code>-m slow</code>: the serial 225-leaf witness batch runner
   (<code>tests/test_witness_matrix.py::test_witness_batch_runner_executes_every_leaf</code>,
   the one test the edit loop cannot afford) and the four <code>copier update</code> cases.
   Neither builds a venv; both are far too slow for the edit loop.</li>
@@ -1846,9 +1889,14 @@ disagree); the times are the measurements recorded with them.</p>
 <td><code>task test-heavy</code></td>
 </tr>
 <tr>
+<td><code>ci.yml</code> (nightly)</td>
+<td>schedule</td>
+<td><code>task test-randomly</code> — the edit-loop selection in a shuffled order (pytest-randomly), the seed job the plugin is kept installed for</td>
+</tr>
+<tr>
 <td><code>witness.yml</code> (fast)</td>
-<td>PR</td>
-<td><code>pytest -q tests/test_witness_matrix.py -m fast</code> — renders every leaf, no venv: 208 tests (205 renders plus three leaf-list checks), 39 s locally with the render cache emptied, against the job's 30-minute timeout</td>
+<td>PR (except docs-only)</td>
+<td><code>pytest -q tests/test_witness_matrix.py -m fast</code> — renders every leaf, no venv: 230 tests (225 renders plus five leaf-list checks), 19 s locally with the render cache emptied, against the job's 30-minute timeout</td>
 </tr>
 <tr>
 <td><code>witness.yml</code> (full)</td>
@@ -1857,6 +1905,17 @@ disagree); the times are the measurements recorded with them.</p>
 </tr>
 </tbody>
 </table>
+<p>Docs-only pull requests do not start the render matrix. <code>ci.yml</code> runs a
+<code>changes</code> job first and skips <code>test-fast</code> / <code>test-meta</code> when every changed file
+is under <code>docs/</code> or is a markdown file, and <code>witness.yml</code> (fast) and
+<code>update-path.yml</code> apply the same rule as workflow-level <code>paths-ignore</code>. The
+<code>ci.yml</code> skip is a job-level <code>if</code>, not path filtering on the workflow: a
+workflow skipped by path filtering never reports its checks, so a required
+check would sit "Pending" and block merging, while a skipped <em>job</em> reports
+<code>skipped</code> — a check status that required checks count as success and that
+<code>required-checks-passed</code>'s own jq already tolerates. <code>lint</code> and <code>hygiene</code> are
+not gated (<code>lint</code> runs <code>typos</code>, which is exactly the check a docs change
+needs), and the <code>docs</code> build is the check a docs-only PR is for.</p>
 <p>The witness tiers are the <a href="../../explanations/verification/">W3 matrix</a>: <code>fast</code>
 renders all 205 leaves and checks the artifacts each one declares, <code>full</code> runs
 <code>uv sync</code> on a bounded sample. <code>-m full</code> tests also carry <code>heavy</code>, so a local

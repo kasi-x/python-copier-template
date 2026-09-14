@@ -468,6 +468,8 @@
       
         
       
+        
+      
     
     
     
@@ -953,6 +955,33 @@
     
   
   MCP Server
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Discord Bot
 
     
   </span>
@@ -1641,7 +1670,7 @@
 
 
 <h1 id="how-to-check-code-coverage">How to check code coverage<a class="headerlink" href="#how-to-check-code-coverage" title="Permanent link">&para;</a></h1>
-<p>Code coverage is reported to the command line and to a <code>cov.xml</code> file by the command <code>task test</code> (in generated projects; the test CI job uploads it). The file is uploaded to the Codecov service in CI.</p>
+<p>Code coverage is reported to the command line by the command <code>task test</code>. In this repository the XML report lands in <code>.cache/cov.xml</code> (git-ignored: it is a local artifact nobody reads); a generated project writes <code>cov.xml</code> at its root, where the test CI job picks it up to upload to the Codecov service.</p>
 <h2 id="installing-codecov-github-app">Installing Codecov GitHub app<a class="headerlink" href="#installing-codecov-github-app" title="Permanent link">&para;</a></h2>
 <p>If your repo is hosted in an org where the codecov GitHub app is already
 installed, then you don't need to do anything.</p>
