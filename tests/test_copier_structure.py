@@ -333,9 +333,7 @@ def test_oj_predicate_raw_forms_are_named_internals():
     """
     banned = "online_judge and not kaggle"
     for src in _rot_guard_sources():
-        assert banned not in src, (
-            f"raw OJ predicate reappeared — write the `oj_bare` internal instead: {src[:160]!r}"
-        )
+        assert banned not in src, f"raw OJ predicate reappeared — write the `oj_bare` internal instead: {src[:160]!r}"
         match = _PAIR_IN_ONE_CONDITION.search(src)
         if match is not None:
             raise AssertionError(
