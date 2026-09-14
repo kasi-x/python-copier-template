@@ -4,7 +4,7 @@ Fast, offline, no uv sync: parses every .jinja source with Jinja2, every
 questions/*.yml with YAML, and asserts the resolved questionnaire loads via
 copier's own loader. A syntax break (unbalanced if/endif, bad YAML) fails
 here in milliseconds instead of surfacing as a cryptic render error in the
-slow test_example.py suite.
+slow test_example_* suites.
 """
 
 from pathlib import Path
@@ -120,7 +120,7 @@ def test_render_matrix_renders_and_parses(tmp_path: Path, answers: dict[str, obj
     Catches unbalanced Jinja that only triggers on one branch (e.g. a
     missing endif inside {% if oj_code %}) and TOML-breaking output, in
     seconds (skip_tasks, no uv sync). Deep content assertions belong to
-    test_example.py; this gate proves renderability.
+    tests/test_example_*.py; this gate proves renderability.
     """
     import tomllib
 

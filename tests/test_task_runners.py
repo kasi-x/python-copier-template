@@ -15,9 +15,9 @@ The contract is pinned structurally — each runner's parsed task table
 pixi `[tool.pixi.feature.dev.tasks]` table, which is a direct
 serialization of `_tasks.jinja` — and at runtime, where `lint` executes
 on the runners whose CLIs install from PyPI, `test` executes via make and
-`check` (lint + type-check + test) via poe. task and just execute in
-test_example.py's runtime tests; pixi is excluded from the runtime tests
-because a conda solve is too heavy for the suite.
+`check` (lint + type-check + test) via poe. task and just execute in the
+`tests/test_example_toolchain.py` runtime tests; pixi is excluded from the
+runtime tests because a conda solve is too heavy for the suite.
 """
 
 import re
@@ -27,8 +27,8 @@ from pathlib import Path
 import pytest
 import yaml
 
+from support import copy_project
 from support import make_venv
-from test_example import copy_project
 
 RENDER_ARGS: dict[str, dict[str, object]] = {
     "task": {"use_recommended_toolchain": False, "task_runner": "task"},
@@ -171,7 +171,7 @@ def test_ci_lint_job_tasks_exist_in_the_model(tmp_path: Path, model_tasks: dict[
 def test_lint_task_executes(runner: str, lint_cmd: str, tmp_path: Path):
     """`lint` must actually EXECUTE on the runners whose CLIs install from
     PyPI. Render-only asserts cannot see a non-shell `cmd` type or a broken
-    recipe indent. task/just execute in test_example's runtime tests."""
+    recipe indent. task/just execute in tests/test_example_toolchain.py's runtime tests."""
     project = _render(runner, tmp_path)
     run = make_venv(project)
     run(lint_cmd)

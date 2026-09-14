@@ -3,10 +3,10 @@
 basedpyright / pyrefly cannot produce meaningful results without the
 project's dependencies resolved (reportMissingImports floods otherwise), so
 unlike test_generated_lint.py this module runs `uv sync` per rendered path.
-It stops short of test_example.py's heavy tail: no pytest run, no
+It stops short of the test_example_* heavy tail: no pytest run, no
 build/twine, no docs build -- the type checkers are the only goal.
 
-Path selection: test_example.py already type-checks most project types, but
+Path selection: tests/test_example_*.py already type-check most project types, but
 through example-answers.yml's explicit overrides (every use_recommended_*
 gate false), so the *recommended* answer combinations -- the ones real users
 take -- were never type-checked with deps installed. TYPECHECK_PATHS picks
@@ -15,7 +15,7 @@ web_api = FastAPI/SQLAlchemy/Alembic, script = flat stdlib-ish, cli+mcp =
 the MCP SDK, cli+bot = discord.py, cli+ctf = the ctf extra,
 oj_atcoder = bare stdlib) while
 skipping the multi-minute torch syncs (data_science / kaggle), whose fast
-path differs from test_example.py's coverage only in answer gates.
+path differs from the test_example_* coverage only in answer gates.
 """
 
 import os

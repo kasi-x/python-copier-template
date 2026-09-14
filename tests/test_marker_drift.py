@@ -126,7 +126,7 @@ NETWORK_COMMANDS = (
     ("git", "pull"),
     ("git", "ls-remote"),
 )
-# A helper whose *name* says venv (``make_venv`` in test_example.py, reached
+# A helper whose *name* says venv (``make_venv`` in tests/support.py, reached
 # from test_task_runners.py by import) is a venv build whatever it does inside.
 VENV_HELPER = re.compile(r"venv")
 # A bare URL is the network only where something is asked to fetch it: as a
@@ -497,7 +497,7 @@ import pytest
 
 from copier import run_copy
 
-from test_example import run_pipe
+from support import run_pipe
 
 
 def _provisioned(project):

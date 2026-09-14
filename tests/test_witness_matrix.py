@@ -524,7 +524,7 @@ def test_witness_render_invariants(
 
 
 def _run(cmd: str, dest: Path, venv: Path) -> str:
-    """Run a command in a rendered project's own venv (test_example.py's recipe)."""
+    """Run a command in a rendered project's own venv (tests/support.py's recipe)."""
     proc = subprocess.run(
         shlex.split(cmd),
         cwd=dest,
@@ -542,7 +542,7 @@ def _render_leaf(dest: Path, leaf: Witness) -> None:
     """Render one leaf the way example-answers-based heavy tests do (git-tracked).
 
     The git repo matters: the generated project versions itself with
-    setuptools_scm, which needs one (tests/test_example.py's heavy recipe).
+    setuptools_scm, which needs one (tests/support.py's heavy recipe).
     """
     from copier import run_copy  # noqa: PLC0415  WHYNOT: only the heavy tier needs copier's API.
 

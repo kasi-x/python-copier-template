@@ -10,7 +10,7 @@ that tree per test. ruff (from this repo's venv) is pointed at the generated
 project, whose pyproject.toml holds the `[tool.ruff]` that the generated
 project's own CI would use. A failure here means the template's .jinja
 sources emit code the generated ruff config rejects, which the heavy
-task-check tests in test_example.py would only catch after a full uv sync.
+task-check tests in tests/test_example_*.py would only catch after a full uv sync.
 """
 
 import shutil
@@ -38,7 +38,7 @@ def _id(answers: dict[str, object]) -> str:
 
 # Extra recommended-path cases beyond FAST_PATHS: the project families whose
 # generated Python is ruff-checked. (FAST_PATHS deliberately skips these
-# because test_example.py's copy_project_recommended already renders them;
+# because the test_example_* renders already cover them;
 # this module needs them here to lint the output.)
 EXTRA_PATHS: list[dict[str, object]] = [
     {"project_type": "data_science"},
@@ -96,7 +96,7 @@ RENDERED_PATHS = FAST_PATHS + EXTRA_PATHS + MANAGER_PATHS + LAYER_PATHS
 # `allow_japanese` (and therefore ruff's line-length 88 vs 120) never varies
 # unless we vary it here. copier applies a data-supplied value even when the
 # question's `when` is false (see copy_project_recommended's docstring in
-# test_example.py), so passing allow_japanese directly is enough to flip the
+# tests/support.py), so passing allow_japanese directly is enough to flip the
 # generated [tool.ruff] width for these two cases.
 JAPANESE_VARIANTS: list[dict[str, object]] = [
     {"project_type": "cli", "allow_japanese": True},
@@ -170,7 +170,7 @@ def test_generated_project_is_ruff_format_clean(tmp_path: Path, render_cache: Re
     pure syntax/style), so this runs in the same skip_tasks=True tier as
     test_generated_project_is_ruff_clean -- the bug this guards (the
     test_qa.py.jinja width dependency) used to hide in the heavy
-    test_example.py tier where only some combinations reach it.
+    test_example_*.py tier where only some combinations reach it.
     """
     _render(render_cache, tmp_path, answers)
     proc = _run_ruff_format_check(tmp_path)

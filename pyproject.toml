@@ -112,7 +112,7 @@ reportUnusedCallResult = false
 reportUnannotatedClassAttribute = false
 reportIgnoreCommentWithoutRule = false
 reportCallInDefaultInitializer = false
-reportImplicitRelativeImport = false # tests はパッケージ化せず平置きのため、test_example からの import は暗黙相対でOK
+reportImplicitRelativeImport = false # tests はパッケージ化せず平置きのため、support / test_recommended_path からの import は暗黙相対でOK
 reportImplicitStringConcatenation = false # コメントを挟んだ意図的な文字列連結は既存コードに多用
 
 [tool.pyrefly]
@@ -252,7 +252,7 @@ task-tags = [
     "D",      # pydocstyle  CONTEXT: テスト docstring の整形は要求しない。
     "RUF003", # ambiguous-unicode-character-comment  CONTEXT: 全角引用符コメント。
     "PLC0415",# import-outside-top-level  CONTEXT: fixtures が setup 後に import する。
-    "N999",   # invalid-module-name  CONTEXT: test_example.py は既存の命名。
+    "N999",   # invalid-module-name  CONTEXT: test_example_*.py は分割前からの命名で、ledger と docs が名前で参照する。
     "PLW1510",# subprocess-run-without-check  CONTEXT: run_pipe は returncode を assert する。
     "PT006",  # pytest-parametrize-names-wrong-type  CONTEXT: 既存の parametrize 名。
 ]
@@ -334,7 +334,7 @@ ignore_decorators = ["*tool*", "*resource*", "*route*", "*fixture*", "@rule", "@
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
 per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage|pytest-randomly,DEP003=python-copier-template,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
-# tests/ は pytest の暗黙パッケージ import (test_example) があり依存検査と相性が悪い。
+# tests/ は pytest の暗黙パッケージ import (support, test_recommended_path) があり依存検査と相性が悪い。
 # .cache/ は tests/render_cache.py が置くレンダ済みプロジェクト（生成コード）で、
 # deptry は .gitignore を見ないのでここで除外する。
 exclude = ["template", "tests", "docs", ".cache", ".venv", ".pixi", ".tox", "build", "dist"]
