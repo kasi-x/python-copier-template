@@ -981,7 +981,7 @@
   <span class="md-ellipsis">
     
   
-  Discord Bot
+  Chat Bots
 
     
   </span>
@@ -1741,55 +1741,51 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td>809</td>
-<td>~47s †</td>
+<td>819</td>
+<td>~32s</td>
 </tr>
 <tr>
 <td>Slow</td>
 <td><code>task test-slow</code></td>
 <td>5</td>
-<td>~72s</td>
+<td>~23s</td>
 </tr>
 <tr>
 <td>Pre-push / nightly</td>
 <td><code>task test-heavy</code></td>
-<td>45</td>
-<td>~29s</td>
+<td>46</td>
+<td>~30s</td>
 </tr>
 <tr>
 <td>Nightly, shuffled</td>
 <td><code>task test-randomly</code></td>
-<td>809</td>
-<td>~50s</td>
+<td>819</td>
+<td>~22s</td>
 </tr>
 <tr>
 <td>Everything</td>
 <td><code>task test</code></td>
-<td>867</td>
-<td>~139s</td>
+<td>878</td>
+<td>~78s</td>
 </tr>
 <tr>
 <td>Cost ledger guard</td>
 <td><code>task test-meta</code></td>
 <td>8</td>
-<td>~11s †</td>
+<td>~13s</td>
 </tr>
 </tbody>
 </table>
 <p><code>task test-meta</code> is the odd row: it is not a speed to pick by what you changed,
 it is the cost ledger's own guard (<code>tests/test_marker_drift.py</code>) split out of
 the edit loop, and CI runs it as its own job on every push and PR.</p>
-<p>Those times are the lightest of the runs measured on 2026-09-14 with
-<code>time uv run --no-sync pytest -q -m "&lt;the task's own selection&gt;"</code>. The two rows
-marked † were measured for this version of the ledger with unrelated work
-filling the machine's 32 logical CPUs (load average 64–117), so they are
-observations of that contention rather than of a quiet box: the same tree with
-the guard still in the edit-loop selection (then 738 tests) took 46s at load 85
-in the same session, and the 30s budget remains the contract. A cold
-<code>.cache/renders</code> (the first run after changing the template) turned <code>task test</code>
-into 337s. That spread is why the budget is the contract and a time is only an
-observation — <code>tests/matrix/tiers.json</code> holds each measurement with the
-conditions it was taken under.</p>
+<p>Those times were measured on 2026-09-14 with <code>time uv run --locked pytest</code>
+plus the task's own selection, on this box with nothing else running, against a
+warm <code>.cache/renders</code>: the same day, the same tree under another agent's venv
+builds took 47s instead of 32s, and a cold render cache turned <code>task test</code> into
+337s. That spread is why the edit loop's 30s budget is the contract and a time
+is only an observation — <code>tests/matrix/tiers.json</code> holds each measurement with
+the conditions it was taken under.</p>
 <p>The tiers are a contract, not a habit: each one is a marker expression the
 Taskfile passes to pytest, and a check that belongs to a tier only if its cost
 does. <a href="../../explanations/verification/">Verification</a> states the three layers
@@ -1800,10 +1796,10 @@ does. <a href="../../explanations/verification/">Verification</a> states the thr
   that neither builds a virtualenv nor touches the network, minus the serial
   batch runner and minus the cost ledger's own guards (<code>tests/test_marker_drift.py</code>,
   see <code>task test-meta</code> below). That is the whole edit loop and what CI runs on
-  every push and PR. It does <strong>not</strong> exclude <code>tests/test_example.py</code> — 112 of
-  that file's 135 tests run; the 23 that build a venv are marked <code>heavy</code>.
-  <code>tests/test_generated_typecheck.py</code> is excluded in practice, because all 7 of
-  its tests are <code>heavy</code>.</li>
+  every push and PR. Nothing is excluded by filename: the split
+  <code>tests/test_example_*.py</code> modules contribute 112 of their 135 tests to it,
+  and the 23 that build a venv carry <code>heavy</code>. <code>tests/test_generated_typecheck.py</code>
+  is excluded in practice, because all 7 of its tests are <code>heavy</code>.</li>
 <li><code>task test-meta</code> runs <code>-m meta</code>: the guards in <code>tests/test_marker_drift.py</code>,
   which check that expensive work carries its markers, that every tier still
   collects what <code>tests/matrix/tiers.json</code> records, and that no recorded wall
@@ -1928,7 +1924,7 @@ cold measurement next to the timeout it has to fit in, which is what makes
 <div class="highlight"><pre><span></span><code>task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--lf"</span><span class="w">            </span><span class="c1"># only what failed last time</span>
 task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"-x"</span><span class="w">              </span><span class="c1"># stop at the first failure</span>
 task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--durations=25"</span><span class="w">  </span><span class="c1"># where the time goes</span>
-task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"tests/test_example.py -k web_api"</span>
+task<span class="w"> </span>test-fast<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"tests/test_example_web_api.py -k web_api"</span>
 </code></pre></div>
 <h2 id="investigating-one-combination">Investigating one combination<a class="headerlink" href="#investigating-one-combination" title="Permanent link">&para;</a></h2>
 <p><code>tools/batch.py</code> renders real projects from a JSONL request list

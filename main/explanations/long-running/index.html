@@ -985,7 +985,7 @@
   <span class="md-ellipsis">
     
   
-  Discord Bot
+  Chat Bots
 
     
   </span>
@@ -1360,10 +1360,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-second-implementation-the-discord-bot" class="md-nav__link">
+  <a href="#the-second-implementation-the-chat-bot-discord-slack" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The second implementation: the Discord bot
+        The second implementation: the chat bot (Discord / Slack)
       </span>
     </span>
   </a>
@@ -1771,10 +1771,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-second-implementation-the-discord-bot" class="md-nav__link">
+  <a href="#the-second-implementation-the-chat-bot-discord-slack" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The second implementation: the Discord bot
+        The second implementation: the chat bot (Discord / Slack)
       </span>
     </span>
   </a>
@@ -1870,37 +1870,44 @@ project, adds the <code>mcp</code> SDK dependency plus a <code>mcp-server-&lt;na
 script, and starts the server with stdio (the default, driven by an MCP host
 or the console script) or <code>--transport streamable-http</code> for the HTTP
 transport. See the <a href="../../how-to/mcp/">MCP how-to</a> for the concrete workflow.</p>
-<h2 id="the-second-implementation-the-discord-bot">The second implementation: the Discord bot<a class="headerlink" href="#the-second-implementation-the-discord-bot" title="Permanent link">&para;</a></h2>
+<h2 id="the-second-implementation-the-chat-bot-discord-slack">The second implementation: the chat bot (Discord / Slack)<a class="headerlink" href="#the-second-implementation-the-chat-bot-discord-slack" title="Permanent link">&para;</a></h2>
 <p><code>include_bot</code> (on the same <code>cli</code> / <code>web_api</code> bases) is the layer's second
 implementation, and the first with its own platform axis: a
 <code>use_recommended_bot</code> gate (design principle 5 — one recommendation,
-No for custom) reveals <code>bot_platform</code>, whose only choice today is
-<strong>discord</strong> (<code>discord.py</code>; Slack / LINE / Gmail are planned choices, not new
-questions). The generated <code>bot_discord.py</code> follows the same recipe as the
-MCP server, point by point:</p>
+No for custom) reveals <code>bot_platform</code>, whose choices are <strong>discord</strong>
+(<code>discord.py</code>, the recommendation) and <strong>slack</strong> (<code>slack-bolt</code>; LINE / Gmail
+are planned choices, not new questions). The generated <code>bot_discord.py</code> /
+<code>bot_slack.py</code> follows the same recipe as the MCP server, point by point:</p>
 <ol>
 <li>an <strong>opt-in layer question</strong> (<code>include_bot</code>) adds the platform SDK
-   (<code>discord.py</code>) and the module;</li>
+   (<code>discord.py</code> / <code>slack-bolt</code>) and the module — one module, the platform
+   the answers selected;</li>
 <li>the bot module keeps its <strong>own <code>main()</code></strong> and is started directly through
    its own <code>[project.scripts]</code> entry (<code>bot-discord-&lt;name&gt;</code> /
-   <code>python -m &lt;pkg&gt;.bot_discord</code>), so the CLI / Docker <code>ENTRYPOINT</code> contract
-   is untouched;</li>
-<li>the token is read from the <strong>environment</strong> (<code>DISCORD_BOT_TOKEN</code>;
-   <code>.env.example</code> documents it, never committed) and a startup check
-   refuses to start without it — the same refusal <code>mcp_server.py</code> makes for
-   a public bind without <code>MCP_ALLOWED_HOSTS</code>;</li>
+   <code>bot-slack-&lt;name&gt;</code>, <code>python -m &lt;pkg&gt;.bot_&lt;platform&gt;</code>), so the CLI / Docker
+   <code>ENTRYPOINT</code> contract is untouched;</li>
+<li>the token(s) are read from the <strong>environment</strong> (<code>DISCORD_BOT_TOKEN</code>; the
+   Slack pair <code>SLACK_BOT_TOKEN</code> (xoxb-) + <code>SLACK_APP_TOKEN</code> (xapp-) —
+   <code>.env.example</code> documents them, never committed) and a startup check
+   refuses to start without them, naming the missing variable — the same
+   refusal <code>mcp_server.py</code> makes for a public bind without
+   <code>MCP_ALLOWED_HOSTS</code>;</li>
 <li>logging goes through the generated <code>logging_setup.py</code>, so <code>structlog</code> /
    <code>loguru</code> / ... and <code>LOG_FORMAT=json</code> work unchanged inside the event loop;</li>
-<li>a <strong><code>build_bot()</code> / <code>main()</code> split</strong> extends the recipe with a
-   testability seam the MCP layer gets for free from its in-process client:
-   the generated tests call the <code>/ping</code> callback with a fake interaction —
-   the real bot object, no Gateway connection, no token.</li>
+<li>a <strong><code>build_bot()</code> / <code>build_app()</code> + <code>main()</code> split</strong> extends the recipe
+   with a testability seam the MCP layer gets for free from its in-process
+   client: the generated tests call the <code>/ping</code> callback with a fake
+   interaction (Discord) or the <code>/app_mention</code> listener with a fake <code>say</code>
+   (Slack) — the real object, no connection, no token.</li>
 </ol>
-<p>Docker (<code>bot-serve</code>, the <code>mcp-serve</code> twin) and the token variable in
-<code>.env.example</code> complete the mirror. See the
+<p>Both platforms connect <strong>outbound</strong> — Discord's Gateway, Slack's Socket Mode
+WebSocket — so neither publishes an inbound port, the property that makes the
+layer runnable on a laptop and behind NAT. Docker (<code>bot-serve</code>, the
+<code>mcp-serve</code> twin, following the selected platform's entry point and tokens)
+and the token variables in <code>.env.example</code> complete the mirror. See the
 <a href="../../how-to/bot/">bot how-to</a> for the concrete workflow.</p>
-<p>Future platforms — Slack / LINE / Gmail bots — are expected to follow the
-same recipe rather than grow the questionnaire:</p>
+<p>Further platforms — LINE / Gmail bots — are expected to follow the same
+recipe rather than grow the questionnaire:</p>
 <ol>
 <li>an <strong>opt-in layer question</strong>, which adds the platform SDK and the module;</li>
 <li>the bot module keeps its <strong>own <code>main()</code></strong> and is started directly (and,

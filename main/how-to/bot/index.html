@@ -27,7 +27,7 @@
     
     
       
-        <title>Discord bot layer - python-copier-template</title>
+        <title>Chat bot layer (Discord / Slack) - python-copier-template</title>
       
     
     
@@ -83,7 +83,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#discord-bot-layer" class="md-skip">
+        <a href="#chat-bot-layer-discord-slack" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Discord bot layer
+              Chat bot layer (Discord / Slack)
             
           </span>
         </div>
@@ -996,7 +996,7 @@
   <span class="md-ellipsis">
     
   
-  Discord Bot
+  Chat Bots
 
     
   </span>
@@ -1013,7 +1013,7 @@
   <span class="md-ellipsis">
     
   
-  Discord Bot
+  Chat Bots
 
     
   </span>
@@ -1039,6 +1039,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#discord" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Discord
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discord">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#getting-a-discord-token" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1048,8 +1060,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#run-it" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1059,8 +1071,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#privileged-intents-and-scaling" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1068,6 +1080,50 @@
       </span>
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#slack" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Slack
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Slack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-the-two-slack-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Getting the two Slack tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-it_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1738,6 +1794,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#discord" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Discord
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Discord">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#getting-a-discord-token" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1747,8 +1815,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#run-it" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1758,8 +1826,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#privileged-intents-and-scaling" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1767,6 +1835,50 @@
       </span>
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#slack" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Slack
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Slack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-the-two-slack-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Getting the two Slack tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-it_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1799,34 +1911,65 @@
   
 
 
-<h1 id="discord-bot-layer">Discord bot layer<a class="headerlink" href="#discord-bot-layer" title="Permanent link">&para;</a></h1>
-<p>The template can layer a <strong>long-running Discord bot</strong> onto a <code>cli</code> or
-<code>web_api</code> project. It is the second implementation of the
+<h1 id="chat-bot-layer-discord-slack">Chat bot layer (Discord / Slack)<a class="headerlink" href="#chat-bot-layer-discord-slack" title="Permanent link">&para;</a></h1>
+<p>The template can layer a <strong>long-running chat bot</strong> onto a <code>cli</code> or <code>web_api</code>
+project. It is the second implementation of the
 <a href="../../explanations/long-running/">long-running-executables layer model</a>
 (the first is the <a href="../mcp/">MCP server</a>): an opt-in question that generates a
 bot module with its own entry point onto an otherwise ordinary project —
 never a new project type.</p>
-<p>Answering <strong>Yes</strong> to <code>include_bot</code> (asked for the <code>cli</code> / <code>web_api</code> bases;
-answer <strong>No</strong> to <code>use_recommended_bot</code> to pick the platform) generates the
-<a href="https://discordpy.readthedocs.io">discord.py</a> scaffold:</p>
+<p>Answering <strong>Yes</strong> to <code>include_bot</code> (asked for the <code>cli</code> / <code>web_api</code> bases)
+generates the <strong>discord</strong> scaffold, the recommended platform. Answer <strong>No</strong>
+to <code>use_recommended_bot</code> to pick from <code>bot_platform</code>, whose second choice is
+<strong>slack</strong>:</p>
+<table>
+<thead>
+<tr>
+<th><code>bot_platform</code></th>
+<th>Module</th>
+<th>Runtime dependency</th>
+<th>Tokens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>discord</code> (recommended)</td>
+<td><code>bot_discord.py</code></td>
+<td><code>discord.py&gt;=2,&lt;3</code></td>
+<td><code>DISCORD_BOT_TOKEN</code></td>
+</tr>
+<tr>
+<td><code>slack</code></td>
+<td><code>bot_slack.py</code></td>
+<td><code>slack-bolt&gt;=1.21,&lt;2</code></td>
+<td><code>SLACK_BOT_TOKEN</code> + <code>SLACK_APP_TOKEN</code></td>
+</tr>
+</tbody>
+</table>
+<p>Whichever platform is selected, the layer ships:</p>
 <ul>
-<li><code>&lt;pkg&gt;/bot_discord.py</code> (or <code>app/bot_discord.py</code> on a <code>web_api</code> base) —
-  a <code>Bot</code> subclass with default Gateway intents, a <code>/ping</code> slash command
-  (the liveness example every platform starts with), command-tree sync on
-  login, and a <code>build_bot()</code> / <code>main()</code> split so tests drive the commands
-  without connecting to the Gateway. Adds the <code>discord.py&gt;=2,&lt;3</code> runtime
-  dependency.</li>
-<li>a <code>bot-discord-&lt;name&gt;</code> console script — the dedicated entry point for the
-  long-running process (<code>python -m &lt;pkg&gt;.bot_discord</code> works too). The CLI's
-  <code>__main__.py</code>, the Docker <code>ENTRYPOINT</code> and their tests are untouched.</li>
-<li><code>tests/test_bot_discord.py</code> — in-process tests: the <code>/ping</code> callback is
-  driven with a fake interaction (no Gateway connection, no token), and the
-  startup refusal is asserted.</li>
-<li>the <code>DISCORD_BOT_TOKEN</code> variable in <code>.env.example</code>, plus a <code>bot-serve</code>
-  task (<code>docker and include_bot</code>) that builds the image and runs the bot
-  with the token passed through from the host environment.</li>
+<li><code>&lt;pkg&gt;/bot_&lt;platform&gt;.py</code> (or <code>app/bot_&lt;platform&gt;.py</code> on a <code>web_api</code> base) —
+  the platform's client configured in <code>build_*()</code>, a listener that answers
+  <code>pong</code> (the liveness example every platform starts with), and a <code>main()</code>
+  split so tests drive the listener without connecting. Adds the platform's
+  runtime dependency.</li>
+<li>a <code>bot-&lt;platform&gt;-&lt;name&gt;</code> console script — the dedicated entry point for
+  the long-running process (<code>python -m &lt;pkg&gt;.bot_&lt;platform&gt;</code> works too). The
+  CLI's <code>__main__.py</code>, the Docker <code>ENTRYPOINT</code> and their tests are untouched.</li>
+<li><code>tests/test_bot_&lt;platform&gt;.py</code> — in-process tests: the listener is driven
+  with a fake client (no connection, no token, no network), and the startup
+  refusal is asserted.</li>
+<li>the token variable(s) in <code>.env.example</code>, plus a <code>bot-serve</code> task (<code>docker
+  and include_bot</code>) that builds the image and runs the bot with the tokens
+  passed through from the host environment. The task follows the selected
+  platform: one entry point, one token set.</li>
 </ul>
-<h2 id="getting-a-discord-token">Getting a Discord token<a class="headerlink" href="#getting-a-discord-token" title="Permanent link">&para;</a></h2>
+<p>Both generated platforms reach their service over an <strong>outbound</strong> connection,
+so neither needs a public endpoint: Discord over the Gateway, Slack over
+Socket Mode. That is the property the MCP stdio transport has too, and the
+reason the layer works on a laptop and behind NAT.</p>
+<h2 id="discord">Discord<a class="headerlink" href="#discord" title="Permanent link">&para;</a></h2>
+<h3 id="getting-a-discord-token">Getting a Discord token<a class="headerlink" href="#getting-a-discord-token" title="Permanent link">&para;</a></h3>
 <ol>
 <li>Create an application at <a href="https://discord.com/developers/applications">https://discord.com/developers/applications</a>
    (New Application).</li>
@@ -1836,7 +1979,7 @@ answer <strong>No</strong> to <code>use_recommended_bot</code> to pick the platf
 <li>Invite the bot to a server: <strong>OAuth2 → URL Generator</strong>, scopes
    <code>bot</code> + <code>applications.commands</code>, then open the generated URL.</li>
 </ol>
-<h2 id="run-it">Run it<a class="headerlink" href="#run-it" title="Permanent link">&para;</a></h2>
+<h3 id="run-it">Run it<a class="headerlink" href="#run-it" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>bot-discord-&lt;name&gt;
 </code></pre></div>
 <p>Slash commands are registered on login by <code>setup_hook</code>: <strong>globally</strong> by
@@ -1849,23 +1992,66 @@ inside one guild for development:</p>
 <code>LOG_FORMAT=json</code> gives the Gateway process the same structured logs as the
 CLI. With Docker: <code>task bot-serve</code> / <code>just bot-serve</code> (needs
 <code>DISCORD_BOT_TOKEN</code> in the environment).</p>
-<h2 id="privileged-intents-and-scaling">Privileged intents and scaling<a class="headerlink" href="#privileged-intents-and-scaling" title="Permanent link">&para;</a></h2>
+<h3 id="privileged-intents-and-scaling">Privileged intents and scaling<a class="headerlink" href="#privileged-intents-and-scaling" title="Permanent link">&para;</a></h3>
 <p>The scaffold subscribes to <code>discord.Intents.default()</code> only: <strong>no privileged
 intent</strong> is requested, so a default bot token works with no Developer-portal
 toggles and no verification friction. Turn on <code>members</code> /
 <code>message_content</code> in both the portal and <code>_intents()</code> only when you actually
 read member lists or message bodies.</p>
+<h2 id="slack">Slack<a class="headerlink" href="#slack" title="Permanent link">&para;</a></h2>
+<h3 id="getting-the-two-slack-tokens">Getting the two Slack tokens<a class="headerlink" href="#getting-the-two-slack-tokens" title="Permanent link">&para;</a></h3>
+<p>Slack splits the credential in two: a <strong>bot token</strong> authorizes the Web API
+calls the listeners make (<code>say()</code> posts a message), and an <strong>app-level token</strong>
+opens the Socket Mode connection. The scaffold refuses to start without either
+and names the missing one.</p>
+<ol>
+<li>Create the app at <a href="https://api.slack.com/apps">https://api.slack.com/apps</a> → <strong>Create New App</strong> →
+   <strong>From scratch</strong> (pick the workspace).</li>
+<li><strong>Socket Mode</strong> → toggle it on. Slack offers to generate an <strong>app-level
+   token</strong> for you; it needs the <code>connections:write</code> scope. That <code>xapp-…</code>
+   value is <code>SLACK_APP_TOKEN</code>.</li>
+<li><strong>OAuth &amp; Permissions</strong> → <strong>Scopes → Bot Token Scopes</strong> → add
+   <code>app_mentions:read</code> (receive <code>@mentions</code>) and <code>chat:write</code> (post the
+   reply). Then <strong>Install to Workspace</strong> and copy the <strong>Bot User OAuth
+   Token</strong> <code>xoxb-…</code> as <code>SLACK_BOT_TOKEN</code>.</li>
+<li><strong>Event Subscriptions</strong> → toggle it on → <strong>Subscribe to bot events</strong> →
+   add <code>app_mention</code>. Socket Mode delivers these over the socket, so no
+   Request URL is involved (and no request signing secret to configure).</li>
+<li>Copy <code>.env.example</code> to <code>.env</code> and set both variables. <code>.env</code> is
+   git-ignored and loaded by direnv — never commit either token. Both are
+   secrets: a leaked <code>xoxb-</code> posts as your bot, a leaked <code>xapp-</code> opens your
+   socket.</li>
+<li>Invite the bot to a channel you will use: <code>/invite @your-bot</code>. A bot only
+   receives mentions in channels it is a member of.</li>
+</ol>
+<h3 id="run-it_1">Run it<a class="headerlink" href="#run-it_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>bot-slack-&lt;name&gt;
+</code></pre></div>
+<p>Socket Mode connects out to Slack, so nothing listens on a port and there is
+nothing to expose (the generated Dockerfile therefore adds no <code>EXPOSE</code> for
+it). Mention the bot — <code>@your-bot ping</code> — in a channel it is in, and it
+replies <code>pong</code>. Logging goes through the generated <code>logging_setup</code>, so
+<code>LOG_FORMAT=json</code> gives the socket process the same structured logs as the
+CLI; Bolt keeps its own stdlib loggers, the way the Discord module leaves
+discord.py's alone. With Docker: <code>task bot-serve</code> / <code>just bot-serve</code> (needs
+both <code>SLACK_BOT_TOKEN</code> and <code>SLACK_APP_TOKEN</code> in the environment).</p>
+<p><code>register_listeners()</code> is split from <code>build_app()</code> and <code>main()</code>:
+<code>tests/test_bot_slack.py</code> registers the listeners on a recording stand-in for
+<code>slack_bolt.App</code> and calls the mention listener with a fake <code>say</code> — no token,
+no <code>WebClient</code>, no socket. <code>build_app(token=...)</code> passes
+<code>token_verification_enabled=False</code>, because <code>App</code> would otherwise call
+<code>auth.test</code> while the app is being built.</p>
 <h2 id="non-goals">Non-goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
-<p>The generated bot is a working starting point, not a framework: no
-moderation tooling, no databases/persistence, no scheduled tasks, no
-voice, no i18n, no command catalogue. Discord-specific operational concerns
-(rate-limit handling and reconnection backoff are discord.py's own, on by
-default) are not re-implemented. Add the web_api layer (or any other) on
-top by answering the same gates.</p>
-<p>Slack (<code>slack-bolt</code>), LINE (<code>line-bot-sdk</code>) and Gmail
-(<code>google-api-python-client</code>) are <strong>planned platforms, not offered yet</strong>:
-they will join <code>bot_platform</code> as new choices with their own shared bodies —
-no new project type, no new question axis.</p>
+<p>The generated bots are working starting points, not frameworks: no moderation
+tooling, no databases/persistence, no scheduled tasks, no voice, no i18n, no
+command catalogue. Platform-specific operational concerns (rate-limit handling
+and reconnection backoff are discord.py's / Bolt's own, on by default) are not
+re-implemented. Add the web_api layer (or any other) on top by answering the
+same gates.</p>
+<p>LINE (<code>line-bot-sdk</code>, Webhook signature verification) and Gmail
+(<code>google-api-python-client</code> + OAuth) are <strong>planned platforms, not offered
+yet</strong>: they will join <code>bot_platform</code> as new choices with their own shared
+bodies — no new project type, no new question axis.</p>
 
 
 

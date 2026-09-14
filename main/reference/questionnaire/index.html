@@ -985,7 +985,7 @@
   <span class="md-ellipsis">
     
   
-  Discord Bot
+  Chat Bots
 
     
   </span>
@@ -2383,11 +2383,14 @@ their build or execution shape cannot be combined.</p>
 </ul>
 <h3 id="use_recommended_bot"><code>use_recommended_bot</code><a class="headerlink" href="#use_recommended_bot" title="Permanent link">&para;</a></h3>
 <p>Use the recommended bot platform? Recommended: discord = discord.py — the de-facto Discord library (async, typed, slash commands via app_commands, actively maintained, unlike the py-cord / nextcord forks).</p>
-<p>Answer <strong>No</strong> to pick a platform instead (discord is the only choice today; slack / LINE / Gmail are planned).</p>
+<p>Answer <strong>No</strong> to pick a platform instead (discord and slack are the choices today; LINE and Gmail are planned).</p>
 <ul>
 <li><strong><code>bot_platform</code></strong> (str; default <code>discord</code>) — Which chat platform should the bot layer prepare?</li>
 <li><strong><code>discord</code></strong> — a discord.py bot (Gateway intents declared explicitly, a /ping app command,
     DISCORD_BOT_TOKEN from the environment with a startup check that refuses to start without it).</li>
+<li><strong><code>slack</code></strong> — a slack-bolt bot on Socket Mode (an outbound WebSocket, so there is no public
+    endpoint to open or sign; an /app_mention listener that answers pong, and SLACK_BOT_TOKEN +
+    SLACK_APP_TOKEN from the environment with a startup check that refuses to start without either).</li>
 </ul>
 <h3 id="use_recommended_data_science"><code>use_recommended_data_science</code><a class="headerlink" href="#use_recommended_data_science" title="Permanent link">&para;</a></h3>
 <p>Use the recommended data_science options? Recommended: GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer).</p>
