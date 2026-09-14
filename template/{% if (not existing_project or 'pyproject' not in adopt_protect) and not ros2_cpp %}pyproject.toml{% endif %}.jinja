@@ -24,7 +24,7 @@ classifiers = [
 {% elif online_judge %}version = "0.1.0"
 {% else %}dynamic = [ "version" ]
 {% endif %}
-dependencies = [{% if micropython_pkg or oj_code %}{% elif kaggle or log_library == 'structlog' %}"structlog", {% elif log_library == 'loguru' %}"loguru", {% elif log_library == 'picologging' %}"picologging", {% endif %}{% if sphinx %}"requests", {% endif %}{% if web_api %}"alembic>=1.13,<2", "asgi-correlation-id>=4.3,<6", "asyncpg>=0.29,<1", "fastapi>=0.115,<1", "pydantic-settings>=2.2.1", "sqlalchemy[asyncio]>=2.0,<3", "uvicorn[standard]>=0.30,<1", {% endif %}{% if prometheus_effective %}"prometheus-client>=0.20,<1", {% endif %}{% if rate_limit_effective %}"slowapi>=0.1.9,<1", {% endif %}{% if kaggle %}"hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=4.0", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=13.0", "torch>=2.12", "torchvision>=0.27", "typer", "xgboost", {% endif %}{% if scraping_httpx_effective and not web_api %}"httpx>=0.27,<1", {% endif %}{% if scraping_scrapy_effective %}"scrapy>=2.11,<3", {% endif %}{% if scraping_memorious_effective %}"memorious4>=4.0,<5", {% endif %}{% if scraping_playwright_effective %}"playwright>=1.49,<2", {% endif %}{% if cloud_provider == 'aws' %}"boto3>=1.34", "botocore>=1.34", {% endif %}{% if cloud_provider == 'gcp' %}"google-cloud-storage>=2.14", {% endif %}{% if cloud_provider == 'azure' %}"azure-identity>=1.15", {% endif %}{% if include_sentry %}"sentry-sdk", {% endif %}{% if mcp_effective %}"mcp[cli]>=2.0,<3", {% endif %}{% if bot_discord_effective %}"discord.py>=2,<3", {% endif %}{% if bot_slack_effective %}"slack-bolt>=1.21,<2", {% endif %}{% if bot_line_effective %}"line-bot-sdk>=3,<4", {% if not web_api %}"fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", {% endif %}{% endif %}{% if not use_recommended_agent and project_type in ['library', 'cli'] %}"pydantic-ai", "pydantic-settings>=2.2.1", {% endif %}{% if data_science or kaggle %}"duckdb", "pyarrow", "polars>=0.20.15", {% endif %}]  # Add project dependencies here, e.g. ["click", "numpy"]
+{# The runtime `dependencies` one-liner is shared (see _shared/pyproject-deps.toml.jinja). #}{% include "_shared/pyproject-deps.toml.jinja" %}
 urls.GitHub = "{{ repo_url }}"
 {% if not web_api and not online_judge and not ros2_pkg and not micropython_pkg %}scripts.{{ repo_name }} = "{{ package_name }}.__main__:main"
 {% endif %}{% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ import_pkg }}.mcp_server:main"
@@ -36,14 +36,21 @@ urls.GitHub = "{{ repo_url }}"
    deployed to the device with mpremote. The [project] table above exists so
    the CPython dev toolchain (ruff/pytest/basedpyright) has a home, but there
    is no setuptools_scm git-tag version and nothing is built or installed. #}
-[dependency-groups]{# dev deps: base(none/basic) + the `rec` guard appends the recommended/full additions on top #}{% set rec = strictness in ['recommended', 'full'] %}
+[dependency-groups]{# dev deps: base body shared by every strictness tier + the `rec` guard
+   appending the recommended/full-only additions. The docs/sphinx entries are
+   captured once and spliced per tier: recommended/full render them before
+   pytest (basedpyright leads the group), none/basic after ruff. #}{% set rec = strictness in ['recommended', 'full'] %}{% set zensical_deps %}"zensical",
+    "mkdocstrings[python]",
+    {% endset %}{% set mpremote_deps %}"mpremote",
+    {% endset %}{% set sphinx_theme_deps %}"pydata-sphinx-theme>=0.12",
+    {% endset %}{% set sphinx_docs_deps %}"myst-parser",
+    "sphinx-autobuild",
+    "sphinx-copybutton",
+    "sphinx-design",
+    {% endset %}
 dev = [
     {% if rec %}"basedpyright",
-    {% if zensical %}"zensical",
-    "mkdocstrings[python]",
-    {% endif %}{% if micropython_pkg %}"mpremote",
-    {% endif %}{% if sphinx %}"pydata-sphinx-theme>=0.12",
-    {% endif %}{% if type_checker=="pyrefly" %}"pyrefly",
+    {% if zensical %}{{ zensical_deps }}{% endif %}{% if micropython_pkg %}{{ mpremote_deps }}{% endif %}{% if sphinx %}{{ sphinx_theme_deps }}{% endif %}{% if type_checker=="pyrefly" %}"pyrefly",
     {% endif %}{% if type_checker=="ty" %}"ty",
     {% endif %}    {% endif %}"pytest",
     {% if rec %}"pytest-cov",
@@ -52,19 +59,7 @@ dev = [
     "aiosqlite>=0.20,<1",
     "httpx>=0.27,<1",{% endif %}{% if bot_line_effective and not web_api %}
     "httpx>=0.27,<1",{% endif %}
-    {% if rec %}{% if sphinx %}"myst-parser",
-    "sphinx-autobuild",
-    "sphinx-copybutton",
-    "sphinx-design",
-    {% endif %}    {% endif %}{% if not rec %}{% if micropython_pkg %}"mpremote",
-    {% endif %}{% if zensical %}"zensical",
-    "mkdocstrings[python]",
-    {% endif %}{% if sphinx %}"pydata-sphinx-theme>=0.12",
-    "myst-parser",
-    "sphinx-autobuild",
-    "sphinx-copybutton",
-    "sphinx-design",
-    {% endif %}{% endif %}{% if great_docs %}"great-docs",
+    {% if rec %}{% if sphinx %}{{ sphinx_docs_deps }}{% endif %}    {% endif %}{% if not rec %}{% if micropython_pkg %}{{ mpremote_deps }}{% endif %}{% if zensical %}{{ zensical_deps }}{% endif %}{% if sphinx %}{{ sphinx_theme_deps }}{{ sphinx_docs_deps }}{% endif %}{% endif %}{% if great_docs %}"great-docs",
     {% endif %}{% if rec %}    {% endif %}{% if data_science or kaggle %}"ipykernel",
     "nbclient",
     "nbstripout",

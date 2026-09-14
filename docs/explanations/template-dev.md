@@ -70,10 +70,13 @@ ros2 / cli+ctf):
 `pyproject-basedpyright.toml.jinja`, `pyproject-ty-checkers.toml.jinja`
 (pyrefly/ty), `pyproject-test-coverage.toml.jinja` (pytest/coverage/typos/
 vulture/deptry), `pyproject-ruff-lint.toml.jinja` (select/extend-ignore/
-task-tags), `pyproject-ctf-extra.toml.jinja`, `pyproject-ctf-lint.toml.jinja`.
-Out of scope: inline single-line conditionals (README badges, dependency
-one-liners, deptry `|token` fragments) — extracting those would scatter
-one-line logic across files with no hunk-boundary benefit.
+task-tags), `pyproject-ctf-extra.toml.jinja`, `pyproject-ctf-lint.toml.jinja`,
+`pyproject-deps.toml.jinja` (the runtime `dependencies` one-liner),
+`pyproject-deptry.toml.jinja` (the `[tool.deptry]` table with the
+`per_rule_ignores` assembly, included from the test-coverage partial).
+Out of scope: inline single-line conditionals with no edit-hotspot of their
+own (README badges and the like) — extracting those would scatter one-line
+logic across files with no hunk-boundary benefit.
 
 Enforced by `_template_files()` walking `_shared/` in
 `tests/test_copier_structure.py` (variables inside shared partials must be
