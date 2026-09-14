@@ -1,10 +1,10 @@
 {
-  "_note": "Cost ledger for the pytest tiers. Per tier: the marker expression it selects on, the node ids it collected when this record was written, and the wall time a human measured for it. `tiers` are the Taskfile tasks (their expressions are read back from Taskfile.yml); `witness` are the jobs of .github/workflows/witness.yml (their expression, test path and timeout are read back from the workflow). tests/test_marker_drift.py re-collects every tier (collection only -- no test run) and fails when a tier no longer collects what is recorded here, when a recorded expression stops being the one the task or job runs, and when a `measured` date is older than 30 days; the counts stated in docs/how-to/test-loop.md's tier table are checked against this file -- and rewritten from it by the same run. Re-record after a deliberate tier change with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py` (it rewrites the collected sets and the doc's counts together); the only hand step left is filling wall_seconds/measured from a `time` run of the row's own `command` (each row's note records the conditions it was measured under).",
+  "_note": "Cost ledger for the pytest tiers. Per tier: the marker expression it selects on, the node ids it collected when this record was written, and the wall time a human measured for it. `tiers` are the Taskfile tasks (their expressions are read back from Taskfile.yml); `witness` are the jobs of .github/workflows/witness.yml (their expression, test path and timeout are read back from the workflow). tests/test_marker_drift.py re-collects every tier (collection only -- no test run) and fails when a tier no longer collects what is recorded here, when a recorded expression stops being the one the task or job runs, and when a `measured` date is older than 30 days; the counts stated in docs/how-to/test-loop.md are checked against this file. Re-record the collected sets after a deliberate tier change with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, then fill wall_seconds/measured by hand from a `time` run of the row's own `command` (each row's note records the conditions it was measured under).",
   "tiers": {
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 848,
+      "collected": 851,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -43,12 +43,13 @@
         "tests/test_render_invariants.py": 31,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 9,
+        "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 1,
         "tests/test_when_model.py": 3,
         "tests/test_witness_matrix.py": 231,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "9363fb7b735d0d97c1f411c2611b54379f70702dd6d78c530cde76ac51ef7278",
+      "ids_sha256": "9c6f7dd7c0a6fb7178979a989c2332a3adb41c1e982308d8d41cdc5329241870",
       "wall_seconds": 43.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
@@ -95,11 +96,11 @@
     "test-meta": {
       "task": "test-meta",
       "expression": "meta",
-      "collected": 9,
+      "collected": 8,
       "files": {
-        "tests/test_marker_drift.py": 9
+        "tests/test_marker_drift.py": 8
       },
-      "ids_sha256": "b82f37c3c47fa0810f0cf322869de5ca9ceb730af4e55079fb65bc1bdca0a419",
+      "ids_sha256": "6db2b8a7bb694f6395188ccd612ee6954ea6fdc1c61d7c1ebc8bf3ba843ce8b7",
       "wall_seconds": 18.3,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m meta",
@@ -108,7 +109,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 909,
+      "collected": 911,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -136,7 +137,7 @@
         "tests/test_gitleaks_config.py": 9,
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
-        "tests/test_marker_drift.py": 9,
+        "tests/test_marker_drift.py": 8,
         "tests/test_mcp_server.py": 29,
         "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
@@ -149,12 +150,13 @@
         "tests/test_render_invariants.py": 31,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 15,
+        "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 5,
         "tests/test_when_model.py": 3,
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "4023e26331dd0cc69c3397e78d064ab77f11a713099201b3608a4365ce917126",
+      "ids_sha256": "c4aee9ae723d4d44e0eaf39851c6516124c90617775f997ba69007467b2b4c85",
       "wall_seconds": 88.2,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -163,7 +165,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta",
-      "collected": 848,
+      "collected": 851,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -202,12 +204,13 @@
         "tests/test_render_invariants.py": 31,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 9,
+        "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 1,
         "tests/test_when_model.py": 3,
         "tests/test_witness_matrix.py": 231,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "9363fb7b735d0d97c1f411c2611b54379f70702dd6d78c530cde76ac51ef7278",
+      "ids_sha256": "9c6f7dd7c0a6fb7178979a989c2332a3adb41c1e982308d8d41cdc5329241870",
       "wall_seconds": 44.3,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta\"",

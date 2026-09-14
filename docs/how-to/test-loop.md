@@ -6,11 +6,11 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 848 | ~43s |
+| Edit loop | `task test-fast` | 851 | ~43s |
 | Slow | `task test-slow` | 5 | ~35s |
 | Pre-push / nightly | `task test-heavy` | 47 | ~43s |
-| Nightly, shuffled | `task test-randomly` | 848 | ~44s |
-| Everything | `task test` | 909 | ~88s |
+| Nightly, shuffled | `task test-randomly` | 851 | ~44s |
+| Everything | `task test` | 912 | ~88s |
 | Cost ledger guard | `task test-meta` | 9 | ~18s |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
@@ -53,7 +53,7 @@ does. [Verification](../explanations/verification.md) states the three layers
   startups); `ci.yml` runs them as its own job. They are also part of
   `task test`, so the pre-release gate still runs them.
 - `task test-randomly` runs the edit-loop selection again with pytest-randomly
-  active (`-p randomly`): the same 809 tests in a freshly shuffled order, so
+  active (`-p randomly`): the same 851 tests in a freshly shuffled order, so
   order dependence and shared state surface in the nightly run instead of in
   someone's local loop. The plugin is a dev dependency but stays disabled
   everywhere else — `addopts` carries `-p no:randomly`, and this task is the
