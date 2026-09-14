@@ -96,11 +96,11 @@
     "test-meta": {
       "task": "test-meta",
       "expression": "meta",
-      "collected": 8,
+      "collected": 9,
       "files": {
-        "tests/test_marker_drift.py": 8
+        "tests/test_marker_drift.py": 9
       },
-      "ids_sha256": "6db2b8a7bb694f6395188ccd612ee6954ea6fdc1c61d7c1ebc8bf3ba843ce8b7",
+      "ids_sha256": "b82f37c3c47fa0810f0cf322869de5ca9ceb730af4e55079fb65bc1bdca0a419",
       "wall_seconds": 18.3,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m meta",
@@ -109,7 +109,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 911,
+      "collected": 912,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -137,7 +137,7 @@
         "tests/test_gitleaks_config.py": 9,
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
-        "tests/test_marker_drift.py": 8,
+        "tests/test_marker_drift.py": 9,
         "tests/test_mcp_server.py": 29,
         "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
@@ -156,7 +156,7 @@
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "c4aee9ae723d4d44e0eaf39851c6516124c90617775f997ba69007467b2b4c85",
+      "ids_sha256": "f2d5b11ee80b6b872ef78f5c6ec592df2f8984ffd737064f24a03eed57ff0fbe",
       "wall_seconds": 88.2,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
