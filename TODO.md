@@ -1628,8 +1628,12 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
 - [x] **このリポジトリ自身の `.mcp.json` を追加する**（dogfooding）
       → **完了（2026-09-14、36b7fc7d）**: ルート `.mcp.json` + `docs/how-to/mcp-tools.md`
         （tool 一覧ページ）。`task mcp` と同一の stdio 起動
-- [ ] **開発ループの実 tool を足す**（12 tool まで拡充済み。残りは `run_tests(tier)` のみ）
-      → **残り（2026-09-14 監査）**: `run_tests(tier)`（fast / heavy の構造化 verdict）のみ。render_diff / lint_render / list_witnesses / run_witness / template_fingerprint は実装済み（tools/mcp_server.py）
+- [x] **開発ループの実 tool を足す**（12 tool まで拡充済み。残りは `run_tests(tier)` のみ）
+      → **完了（2026-09-14、b6458297）**: `run_tests(tier, only=..., timeout=...)` を追加。
+        tier は `fast` / `heavy` / `slow` / `meta` / `all` で、marker 式は
+        `tests/matrix/tiers.json` の該当行から読む（Taskfile と突き合わせ済みの台帳を
+        第4の写しにしない）。返す verdict は `run_witness` と同じ per-test 形式
+        （id / ok / seconds / checks）。テストは `-k` で 1 件に絞って配線だけを固定
       - `run_tests(tier)` — `fast` / `heavy` / `witness` を回して**構造化 verdict** を返す。
         本命: エージェントが pytest のテキストを解釈せずに済む（`batch.py` の verdict 形式を流用）
       - [x] `render_diff(answers_a, answers_b)` — 2 レンダのファイル単位 byte 比較
@@ -1646,8 +1650,12 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
         allowlist 有りで悪意 Host は /mcp 421・/health は 200」を固定
       - [x] `tests/test_mcp_server.py` の tool docstring 検査は「cost と戻り値の形を
         docstring に書く」規約の強制として動作中（docstring が両方書かないと fail）
-- [ ] **resource を増やす**（`template://questionnaire` のみ）
-      → **残り（2026-09-14 監査）**: `template://witnesses` は追加済み（tools/mcp_server.py:758）。`template://support`（support.yml）が未露出
+- [x] **resource を増やす**（`template://questionnaire` のみ）
+      → **完了（2026-09-14、da4ef143）**: `template://support` を追加（`support.yml` を
+        `tools/gen_docs.py` の `load_support` 経由で返す＝docs ブロックと
+        `tests/test_support_matrix.py` と同じ 1 つのローダ）。テストは宣言された
+        `supported` を `list_witnesses` の在庫と突き合わせ、「CI が実際に実行したもの」を
+        答える resource であることを固定
       - `template://witnesses`（205 葉の一覧と tier）、W4 後は `template://support`（`support.yml`）。
         エージェントが「何が検証済みか」を 1 resource で読める
 - [x] **生成 scaffold と repo server の関係を 1 つに決める**（drift の芽）
