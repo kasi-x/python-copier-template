@@ -90,16 +90,18 @@ when a row's `measured` date is more than 30 days old: a wall time is the one
 column nothing recomputes, so the failure names the row's own `command` to
 re-measure with rather than letting a stale number be quoted.
 
-After a deliberate tier change, re-record the collected sets and then the
-counts on this page:
+After a deliberate tier change, re-record the ledger and the counts in the
+table above in one step:
 
 ```shell
 UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py
 ```
 
-The command rewrites the sets but leaves `wall_seconds` / `measured` / `command`
-alone, because a wall time is a measurement, not a projection: fill those in
-from a `time` run of the row's own `command`, e.g.
+The command rewrites the collected sets and the table's Tests column together —
+the hand-edited counts that used to be forgotten, and that merges kept
+conflicting on. It leaves `wall_seconds` / `measured` / `command` alone,
+because a wall time is a measurement, not a projection: fill those in from a
+`time` run of the row's own `command`, e.g.
 
 ```shell
 time uv run --no-sync pytest -q -m "not heavy and not slow and not meta"

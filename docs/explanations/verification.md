@@ -115,7 +115,9 @@ for the witness fast job — the CI timeout the time has to fit inside.
 `tests/test_marker_drift.py` re-collects every tier and fails on drift, fails
 when a row's `measured` date is more than 30 days old, and
 `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`
-re-records the collected sets after a deliberate tier change.
+re-records the collected sets — and the Tests column of the tier table in
+[test-loop.md](../how-to/test-loop.md), the hand-edited counts this used to
+leave behind — after a deliberate tier change.
 
 The edit-loop budget is **30 s**; anything that pushes `task test-fast` past it
 is either marked `slow` / `heavy` / `meta` or is a regression — for venv and
