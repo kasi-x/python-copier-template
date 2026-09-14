@@ -1562,11 +1562,16 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
       - `tools/questionnaire.py` の JSON モデル（109 問）を既定値の源にし、各 fixture は
         「既定 + 上書き差分」だけを持つ形にする。drift は無音なので、fixture が要求する質問名が
         質問票に存在することをテストで検証する
-- [ ] **`test_example.py` を分割し fixture 化する**（2,212 行 / 131 定義 / fixture 0）
+- [x] **`test_example.py` を分割し fixture 化する**（2,212 行 / 131 定義 / fixture 0）
       - venv を作る 18 テストが `make_venv(tmp_path)` を個別に呼ぶ。session 共有にできるのは
         「同一 answers の venv 1 回」まで（依存差で偽陽性が出る組合せは PLAN §W9-3 の計測後）。
         まずファイル分割（library / cli / web_api / daemon / oj）で見通しを戻す
       - PLAN §W9 の所有権メモ（ユーザー編集中は触らない）が解けるまで着手しない
+      → **完了（2026-09-14、29344b39）**: 分割は質問票の軸で10モジュール
+        （example_{library_cli,web_api,data_science,oj,layers,docs_ci,adopt,ros2,micropython,toolchain}）。
+        移動のみ（`--collect-only` の関数名 858 件が親コミットと一致、assert・answers の
+        変更ゼロ）。共有ヘルパは `tests/support.py` へ。**fixture 化は未着手**（venv session 共有は
+        PLAN §W9-3 の計測が前提。§27.7-4）
 - [x] **文言固定 assert の整理は W3 の Acceptance に統合する**（節22.2 W3 の
       「4,303 行のうち文言固定だけの assert を洗い出す」が正。ここでは二重管理しない）
       → **完了（2026-09-14 監査）**: §22.2 W3（「文言固定 assert の監査」）に統合済み。ここでは二重管理しない
@@ -2141,9 +2146,23 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
      `.gitignore` の `models/*` に否定パターンを追加、zizmor の `adhoc-packages` 監査は
      文書付き ignore で例外化。マージ後に `.gitignore` の union 検査が赤化したため
      テンプレ側へもミラー（7d7b6e84）
-4. **§23.1 の残り**: answers の単一情報源、`test_example.py` の分割（所有権メモが解けたら）。
+4. [x] **§23.1 の残り**: answers の単一情報源、`test_example.py` の分割（所有権メモが解けたら）。
    `tests/support.py` 共有モジュールの第一スライスは完了（a30747e8: `run_pipe` / `make_venv`
    を test_example から移設、importer 改線、marker スキャンの edge 追従を meta tier で実証）
+   → **完了（2026-09-14）**:
+   - **answers の単一情報源（75e3254e）**: `tools/answers.py` の `BASE` を7箇所
+     （test_recommended_path / test_mcp_server / test_batch / copy_project_recommended /
+     z3_witnesses / example-answers.yml / batches/base.yml）の共有源にした。`repo_name` /
+     `distribution_name` は copier の導出に任せて BASE から外し、葉の answers を持つ
+     `witnesses.jsonl` / `witnesses.json` を再生成（描画は同一）。drift ガードは
+     `tests/test_answer_fixtures.py`（未知の質問名・choice 外の値・gate-off の維持・
+     `batches/base.yml` と BASE の一致）。派生名を fixture から読んでいた
+     `test_render_invariants.py` は描画自身の `.copier-answers.yml` を読む形に変更（e62d0e89）
+   - **分割（29344b39）**: 2,177 行 / 135 ノード → 質問票の軸で10モジュール
+     （example_{library_cli,web_api,data_science,oj,layers,docs_ci,adopt,ros2,micropython,toolchain}）。
+     本体は移動のみ（差分ゼロを `--collect-only` の関数名 858 件一致で実証）。共有ヘルパは
+     `tests/support.py` へ（TOP / copy_project / copy_project_recommended / ci_requested_tasks）
+   - **未着手**: venv の session 共有（`@pytest.fixture` 0 のまま）。PLAN §W9-3 の計測が前提
 5. [x] **§23.2 の残り**: CI の `paths:` フィルタ
    → **完了（2026-09-14、f4838b75）**: required check になる ci.yml の test / test-meta は
      job 単位ゲート（`changes` job の `docs-only` 出力。skip は branch protection で
