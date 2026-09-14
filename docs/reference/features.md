@@ -55,10 +55,10 @@ flowchart TD
     G_toolchain_yes --> D2
     G_toolchain_no --> D2
     D2{"online_judge?"}
-    D2 -->|Yes| Q6["ask: oj_category (data_science / competitive_coding / ctf), oj_kind<br/>(kaggle / atcoder / leetcode / yukicoder / aoj / ctf),<br/>oj_allow_ai (atcoder / leetcode)"]
-    Q6 --> INC
+    D2 -->|Yes| Q7["ask: oj_category (data_science / competitive_coding / ctf), oj_kind<br/>(kaggle / atcoder / leetcode / yukicoder / aoj / ctf),<br/>oj_allow_ai (atcoder / leetcode)"]
+    Q7 --> INC
     D2 -->|No| INC
-    INC["ask: include_data_science, include_web_api, include_ctf,<br/>include_scraping<br/>(each only for the bases it combines with)"]
+    INC["ask: include_data_science, include_web_api, include_ctf,<br/>include_scraping, include_bot<br/>(each only for the bases it combines with)"]
     INC --> L3{"include_scraping?"}
     L3 -->|Yes| G_scraping{"use_recommended_scraping?<br/>(a cli base answers Yes to include_scraping)"}
     L3 -->|No| L4
@@ -66,9 +66,16 @@ flowchart TD
     G_scraping -->|No| G_scraping_no["ask: scraping_engine"]
     G_scraping_yes --> L4
     G_scraping_no --> L4
-    L4{"data science layer?"}
-    L4 -->|Yes| G_data_science{"use_recommended_data_science?<br/>(the data_science layer is present)"}
-    L4 -->|No| G_polish
+    L4{"include_bot?"}
+    L4 -->|Yes| G_bot{"use_recommended_bot?<br/>(a cli / web_api base answers Yes to include_bot)"}
+    L4 -->|No| L5
+    G_bot -->|Yes| G_bot_yes["discord = discord.py — the de-facto Discord library"]
+    G_bot -->|No| G_bot_no["ask: bot_platform"]
+    G_bot_yes --> L5
+    G_bot_no --> L5
+    L5{"data science layer?"}
+    L5 -->|Yes| G_data_science{"use_recommended_data_science?<br/>(the data_science layer is present)"}
+    L5 -->|No| G_polish
     G_data_science -->|Yes| G_data_science_yes["GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer)."]
     G_data_science -->|No| G_data_science_no["ask: use_gpu"]
     G_data_science_yes --> G_polish
@@ -96,11 +103,11 @@ flowchart TD
     G_integrations{"use_recommended_integrations?"}
     G_integrations -->|Yes| G_integrations_yes["no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP…"]
     G_integrations -->|No| G_integrations_no["ask: docker, pypi, cloud_provider, aws_services, include_sentry,<br/>include_mcp, ci_provider, log_library"]
-    G_integrations_yes --> L5
-    G_integrations_no --> L5
-    L5{"web api layer?"}
-    L5 -->|Yes| G_web_api{"use_recommended_web_api?<br/>(the web_api layer is present)"}
-    L5 -->|No| G_security
+    G_integrations_yes --> L6
+    G_integrations_no --> L6
+    L6{"web api layer?"}
+    L6 -->|Yes| G_web_api{"use_recommended_web_api?<br/>(the web_api layer is present)"}
+    L6 -->|No| G_security
     G_web_api -->|Yes| G_web_api_yes["a FastAPI app in a top-level app/ package"]
     G_web_api -->|No| G_web_api_no["ask: prometheus, rate_limit, cors"]
     G_web_api_yes --> G_security
@@ -364,7 +371,7 @@ element to a combinable base:
 | `type_checker = ty` | `best_effort` |
 | `project_type=ros2` | `best_effort` |
 | `project_type=online_judge/.../oj=* except atcoder` | `best_effort` |
-| `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api)` | `best_effort` |
+| `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api \| include_bot)` | `best_effort` |
 | `any detailed-question branch (gate=off:use_recommended_*)` | `best_effort` |
 
 Full matrix and the evidence behind each tier: [support.md](support.md).

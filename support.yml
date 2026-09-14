@@ -66,7 +66,7 @@ best_effort:
   - combination: "project_type=online_judge/.../oj=* except atcoder"
     tier: best_effort
     why: "the non-AtCoder judges (leetcode / yukicoder / aoj / ctf / kaggle) render and ruff-check in the fast tier but never get a venv; only atcoder is in the full sample"
-  - combination: "any leaf under an opt-in layer (include_ctf | include_data_science | include_scraping | include_web_api)"
+  - combination: "any leaf under an opt-in layer (include_ctf | include_data_science | include_scraping | include_web_api | include_bot)"
     tier: best_effort
     why: "the layer leaves render and ruff-check in the fast tier; only the eight sampled leaves get the execution tier"
   - combination: "any detailed-question branch (gate=off:use_recommended_*)"
@@ -88,7 +88,7 @@ tier_policy:
     why: "rendered and ruff-checked; the 3 m/leaf execution cost limits the full tier to the sample above"
   - leaf_class: "project_type=*/.../include=include_*"
     tier: fast
-    why: "the opt-in layers (ctf / data_science / scraping / web_api) are coverable by rendering: their artifacts are file-set invariants"
+    why: "the opt-in layers (ctf / data_science / scraping / web_api / bot) are coverable by rendering: their artifacts are file-set invariants; the bot layer's real execution is tests/test_bot_layer.py's heavy case"
   - leaf_class: "project_type=online_judge/.../oj=*"
     tier: fast
     why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj / ctf / kaggle are render-only"

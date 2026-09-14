@@ -30,7 +30,7 @@ Each area of the questionnaire first asks "use the recommended settings?"
   deptry, pip-audit, pytest + coverage + hypothesis, hardened CI with pinned
   actions, SECURITY.md and OpenSSF Scorecard.
 - **Opt-in layers** — the data-science layout, a FastAPI service, MCP servers,
-  polite web scraping, CTF tooling, cloud providers and Sentry.
+  a Discord bot, polite web scraping, CTF tooling, cloud providers and Sentry.
 
 The [feature catalogue](docs/reference/features.md) walks through all of it,
 [the questionnaire reference](docs/reference/questionnaire.md) lists every

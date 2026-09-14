@@ -60,11 +60,41 @@ script, and starts the server with stdio (the default, driven by an MCP host
 or the console script) or `--transport streamable-http` for the HTTP
 transport. See the [MCP how-to](../how-to/mcp.md) for the concrete workflow.
 
-Future platforms — Discord / Slack bots and similar — are expected to follow
-the same recipe rather than grow the questionnaire:
+## The second implementation: the Discord bot
 
-1. an **opt-in question** under the integrations gate (like `include_mcp`),
-   which adds the platform SDK and the module;
+`include_bot` (on the same `cli` / `web_api` bases) is the layer's second
+implementation, and the first with its own platform axis: a
+`use_recommended_bot` gate (design principle 5 — one recommendation,
+No for custom) reveals `bot_platform`, whose only choice today is
+**discord** (`discord.py`; Slack / LINE / Gmail are planned choices, not new
+questions). The generated `bot_discord.py` follows the same recipe as the
+MCP server, point by point:
+
+1. an **opt-in layer question** (`include_bot`) adds the platform SDK
+   (`discord.py`) and the module;
+2. the bot module keeps its **own `main()`** and is started directly through
+   its own `[project.scripts]` entry (`bot-discord-<name>` /
+   `python -m <pkg>.bot_discord`), so the CLI / Docker `ENTRYPOINT` contract
+   is untouched;
+3. the token is read from the **environment** (`DISCORD_BOT_TOKEN`;
+   `.env.example` documents it, never committed) and a startup check
+   refuses to start without it — the same refusal `mcp_server.py` makes for
+   a public bind without `MCP_ALLOWED_HOSTS`;
+4. logging goes through the generated `logging_setup.py`, so `structlog` /
+   `loguru` / ... and `LOG_FORMAT=json` work unchanged inside the event loop;
+5. a **`build_bot()` / `main()` split** extends the recipe with a
+   testability seam the MCP layer gets for free from its in-process client:
+   the generated tests call the `/ping` callback with a fake interaction —
+   the real bot object, no Gateway connection, no token.
+
+Docker (`bot-serve`, the `mcp-serve` twin) and the token variable in
+`.env.example` complete the mirror. See the
+[bot how-to](../how-to/bot.md) for the concrete workflow.
+
+Future platforms — Slack / LINE / Gmail bots — are expected to follow the
+same recipe rather than grow the questionnaire:
+
+1. an **opt-in layer question**, which adds the platform SDK and the module;
 2. the bot module keeps its **own `main()`** and is started directly (and,
    for a publishable server, gets its own `[project.scripts]` entry), so the
    CLI / Docker `ENTRYPOINT` contract is untouched;
