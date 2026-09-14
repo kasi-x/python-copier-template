@@ -79,6 +79,26 @@ scraping_playwright_effective:
     type: bool
     default: "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['playwright', 'all'] }}"
     when: false
+# Long-running bot layer effective settings. include_bot is only asked for the
+# cli / web_api bases (the long-running layer rides an executable host, the
+# same reason include_mcp skips library — see the TODO's layer model); the
+# base guard here keeps the bot module, its dependency and its console script
+# out of project types that render no package module when render tests force
+# the answer on them (mcp_effective / scraping_effective precedent).
+# (web_api is the effective boolean: the web_api base or the include_web_api
+# combo opt-in.)
+bot_effective:
+    type: bool
+    default: "{{ include_bot and (project_type == 'cli' or web_api) }}"
+    when: false
+# Bot platform selection. use_recommended_bot keeps its default (true) when
+# unasked (include_bot off); bot_platform keeps its default (discord). Discord
+# is the only generated platform today: adding slack / LINE / Gmail later is a
+# new choice here plus new _shared bodies, not a new project type.
+bot_discord_effective:
+    type: bool
+    default: "{{ bot_effective and (use_recommended_bot or bot_platform == 'discord') }}"
+    when: false
 # oj_category == 'ctf'). The base guard keeps the CTF deps and workspace out
 # of other project types when render tests force the answer on them
 # (mcp_effective precedent).
