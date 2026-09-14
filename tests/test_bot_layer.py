@@ -94,6 +94,23 @@ def test_bot_scaffold_on_cli(tmp_path: Path):
     assert scripts_of(tmp_path)["bot-example"] == "bot_example.__main__:main"
 
 
+def test_env_example_gate_and_readme_section_agree(tmp_path: Path):
+    """The README's "Environment variables" section and `.env.example` are two
+    renderings of one gate: a render that ships the env file must document it,
+    and a render with no env consumers must ship neither. The two conditions
+    drifted once -- a bot-only render shipped `.env.example` with the bot
+    tokens but no README section documenting them, because the README
+    condition lagged the file-name condition by `bot_effective`."""
+    copy_project(tmp_path, project_type="cli", include_bot=True)
+    assert (tmp_path / ".env.example").is_file()
+    assert "### Environment variables" in (tmp_path / "README.md").read_text()
+    # A plain library has no env-var consumers: neither side of the gate fires.
+    plain = tmp_path / "plain_library"
+    copy_project(plain, project_type="library")
+    assert not (plain / ".env.example").exists()
+    assert "### Environment variables" not in (plain / "README.md").read_text()
+
+
 def test_bot_slack_scaffold_on_cli(tmp_path: Path):
     """No + bot_platform=slack on a cli base: the slack module rides the
     src-layout package with its own console script, its in-process test, the

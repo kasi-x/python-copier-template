@@ -1,6 +1,14 @@
 # Combo follow-ups: opt-in layers on top of the single-choice base
 # project_type (base + layer booleans, same idea as include_mcp).
 #
+# Raw/effective rule (see docs/explanations/template-dev.md): a question
+# `when:` is written in RAW answers — a question is offered based on what
+# was actually answered — while everything render-side (template bodies,
+# file-name conditions, _tasks.jinja, the copier.yml tasks) reads the
+# EFFECTIVE internals: the has_* booleans below and the *_effective family
+# in questions/_internal.yml. The include_*.when gates here are the raw
+# half of that rule; the internals at the bottom are its effective half.
+#
 # Ask order matters (enforced by
 # tests/test_copier_structure.py::test_question_references_are_forward_only):
 # this fragment sits after questions/online_judge.yml (it references kaggle)
@@ -136,6 +144,18 @@ combinable:
     type: bool
     default: "{{ project_type in ['library', 'cli', 'web_api', 'data_science'] or kaggle }}"
     when: false
+# The include question's `when` / `combinable` / `has_*` trio is THREE
+# deliberate layers, not one — do not collapse it:
+# 1. each include_*.when (above) keeps the layer question from being ASKED
+#    off a combinable base;
+# 2. `combinable` rejects a FORCED answer (`--data-file` with
+#    include_web_api=true) on a non-combinable base — real, because copier
+#    applies a data-file answer even to a question whose `when` is false
+#    (exactly why tests/test_answer_fixtures.py::
+#    test_example_answers_keeps_every_gate_off must pin every gate
+#    explicitly false instead of trusting the `when`);
+# 3. `has_*` re-checks both (base or opt-in AND combinable) so a forced
+#    include cannot leak into the render.
 
 has_web_api:
     type: bool

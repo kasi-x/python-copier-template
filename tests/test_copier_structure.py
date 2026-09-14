@@ -19,7 +19,11 @@ This module guards the questionnaire's shape:
   regressed exactly this way);
 - every asked question's `when` condition is satisfiable for at least one
   combination of earlier answers (a question that can never be asked is dead)
-  and no internal variable's derivation is contradictory (Z3-backed checks).
+  and no internal variable's derivation is contradictory (Z3-backed checks);
+- the three layout exclusion lists (`layout.when`, `use_src_layout`'s
+  internal default, `log_library.when`) stay three deliberately different
+  sets — the TODO §18 "collapse them into one internal" refactor was
+  rejected, so each set is pinned exactly, rationale in the assertion.
 """
 
 import re
@@ -321,6 +325,61 @@ def test_fragments_are_complete_and_duplicate_free():
         f"only-in-fragments={sorted(set(fragments) - set(resolved))} "
         f"only-in-resolved={sorted(set(resolved) - set(fragments))}"
     )
+
+
+def _project_type_exclusions(expression: str) -> set[str]:
+    """The literals of an expression's `project_type not in [...]` list."""
+    match = re.search(r"project_type not in \[([^\]]*)\]", expression)
+    assert match, f"no `project_type not in [...]` list found in {expression!r}"
+    return {token.strip().strip("'\"") for token in match.group(1).split(",") if token.strip()}
+
+
+def test_layout_exclusion_lists_stay_deliberately_different():
+    """The three "who gets a layout" exclusion lists are three lists, not one.
+
+    TODO §18 floated collecting them into one `needs_layout_choice` internal;
+    that was rejected because the lists only look alike — each excludes a
+    different thing for a different reason, and one merged list would change
+    who is offered what. Pin each set exactly (rationale in the assertion
+    messages) so a future edit here is a decision, not a slip.
+    """
+    questions, _ = when_model.load_questions()
+
+    layout_excluded = _project_type_exclusions(questions["layout"]["when"])
+    assert layout_excluded == {"data_science", "online_judge", "ros2", "micropython", "web_api"}, (
+        "layout.when excludes the types that take no layout choice at all: data_science "
+        "(its fixed analysis tree) and web_api (always top-level app/) never ask, and "
+        "online_judge / ros2 / micropython have no package layout to choose"
+    )
+
+    src_default = questions["use_src_layout"]["default"]
+    src_excluded = _project_type_exclusions(src_default)
+    assert src_excluded == {"script", "online_judge", "ros2", "micropython"}, (
+        "use_src_layout's internal default is NOT layout.when's list: script is additionally "
+        "excluded (the question is asked there, but a src/ tree is meaningless without a "
+        "package) and oj_ctf is re-admitted below"
+    )
+    assert "oj_ctf or" in src_default, (
+        "oj_ctf must be re-admitted: a CTF workspace is a real src-layout package even "
+        "though its project_type is online_judge (which layout.when excludes wholesale)"
+    )
+    assert "not web_api" in src_default, (
+        "web_api must be excluded by use_src_layout's own clause: layout.when never asks "
+        "it, so the questionnaire default `layout == 'src'` would otherwise slip through"
+    )
+
+    log_excluded = _project_type_exclusions(questions["log_library"]["when"])
+    assert log_excluded == {"ros2", "micropython", "online_judge"}, (
+        "log_library.when excludes exactly the three no-Python-package types (ros2, "
+        "micropython, online_judge) — a logging choice follows the package, not the "
+        "layout, so neither of the other two lists fits"
+    )
+
+    # And the differences the messages above claim are the actual set
+    # differences — collapse the lists and these stop holding.
+    assert layout_excluded - src_excluded == {"data_science", "web_api"}
+    assert src_excluded - layout_excluded == {"script"}
+    assert log_excluded not in (layout_excluded, src_excluded)
 
 
 def test_question_references_are_forward_only():

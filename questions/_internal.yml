@@ -147,6 +147,12 @@ data_science_layout:
 
 use_src_layout:
     type: bool
+    # Own exclusion list — NOT layout.when's: script is additionally excluded
+    # (the question is asked there, but a src/ tree is meaningless without a
+    # package), oj_ctf is re-admitted, and web_api is excluded by the `not
+    # web_api` clause (layout.when never asks it, but the default `layout ==
+    # 'src'` would otherwise apply). Pinned by tests/test_copier_structure.py::
+    # test_layout_exclusion_lists_stay_deliberately_different.
     default: "{{ layout == 'src' and (oj_ctf or project_type not in ['script', 'online_judge', 'ros2', 'micropython']) and not web_api }}"
     when: false
 

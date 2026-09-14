@@ -655,7 +655,7 @@ Before committing, run the `fix` task to auto-fix formatting and lint
 (`ruff check --fix` + `ruff format`); repo hygiene (secret scanning, workflow
 linting, conventional commit messages) is enforced in CI.
 
-{% if web_api or mcp_effective or scraping_effective or include_sentry or (not use_recommended_agent and project_type in ['library', 'cli']) %}
+{% if web_api or mcp_effective or scraping_effective or include_sentry or bot_effective or (not use_recommended_agent and project_type in ['library', 'cli']) %}
 ### Environment variables
 
 Copy the example file and adjust the values:
