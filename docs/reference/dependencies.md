@@ -29,7 +29,7 @@ new type):
 | Option | Adds |
 |---|---|
 | `include_ctf` (`library` / `cli` base) | `ctf` extra: `pwntools`, `z3-solver` |
-| `include_bot` (`cli` / `web_api` base) | `discord.py>=2,<3` (recommended platform) + `anyio` (dev, the in-process bot test); entry point `bot-discord-<name>` |
+| `include_bot` (`cli` / `web_api` base) | `discord.py>=2,<3` (the recommended platform, `bot_platform=discord`) or `slack-bolt>=1.21,<2` (`bot_platform=slack`) + `anyio` (dev, the in-process discord test); entry point `bot-discord-<name>` / `bot-slack-<name>` |
 | `include_scraping` (`cli` base) | `httpx` (recommended engine), `scrapy` / `memorious4` (AGPL-3.0!) / `playwright` per `scraping_engine`, or all four with `all` |
 | `license_check` (on by default) | dev: `pip-licenses` (runs `task license-check` in `type-check`) |
 | `include_sentry` | `sentry-sdk` (initialised from `SENTRY_DSN`) |
@@ -40,11 +40,15 @@ new type):
 
 ## Dev / experiment groups
 
-- `web_api` / `include_mcp` dev add `anyio` (in-process client test); the bot
-  layer adds it the same way (the fake-interaction test).
-- `include_bot` (`cli` / `web_api` base) adds the `discord.py>=2,<3` runtime
-  floor and the `bot-discord-<name>` entry point — checked against PyPI by
-  `tools/check_upstream.py` ("PyPI floor [bot] discord.py").
+- `web_api` / `include_mcp` dev add `anyio` (in-process client test); the
+  discord bot layer adds it the same way (the fake-interaction test — the
+  slack listener is driven synchronously, so it needs none).
+- `include_bot` (`cli` / `web_api` base) adds one platform runtime floor —
+  `discord.py>=2,<3` by default, `slack-bolt>=1.21,<2` with
+  `use_recommended_bot=No` + `bot_platform=slack` — and the matching
+  `bot-discord-<name>` / `bot-slack-<name>` entry point. Both floors are
+  checked against PyPI by `tools/check_upstream.py` ("PyPI floor [bot]
+  discord.py", "PyPI floor [bot] slack-bolt").
 - `data_science` / `kaggle` dev add `ipykernel`, `nbclient`, `nbstripout`,
   `pandas`, `tomli`, `quartodoc`.
 - `include_ctf` adds a `ctf` extra (`pwntools`, `z3-solver`) — installed with

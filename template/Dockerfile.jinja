@@ -108,4 +108,10 @@ EXPOSE 8000{% endif %}{% if bot_discord_effective %}
 #   docker run --rm -e DISCORD_BOT_TOKEN \
 #     --entrypoint bot-discord-{{ repo_name }} {{ repo_name }}
 # Development: append --sync-guild <guild id> to sync the slash commands
-# instantly inside that guild instead of globally (up to an hour of caching).{% endif %}{% endif %}{% endif %}
+# instantly inside that guild instead of globally (up to an hour of caching).{% endif %}{% if bot_slack_effective %}
+# The image also ships the Slack bot console script. Socket Mode is an
+# outbound WebSocket, so this container listens on no port (nothing to
+# EXPOSE) and runs with both tokens from the environment; bot_slack.py
+# refuses to start without either:
+#   docker run --rm -e SLACK_BOT_TOKEN -e SLACK_APP_TOKEN \
+#     --entrypoint bot-slack-{{ repo_name }} {{ repo_name }}{% endif %}{% endif %}{% endif %}

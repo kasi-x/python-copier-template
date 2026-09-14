@@ -222,11 +222,14 @@ Answer **No** to pick scrapy / memorious / playwright instead (or all).
 
 Use the recommended bot platform? Recommended: discord = discord.py — the de-facto Discord library (async, typed, slash commands via app_commands, actively maintained, unlike the py-cord / nextcord forks).
 
-Answer **No** to pick a platform instead (discord is the only choice today; slack / LINE / Gmail are planned).
+Answer **No** to pick a platform instead (discord and slack are the choices today; LINE and Gmail are planned).
 
 - **`bot_platform`** (str; default `discord`) — Which chat platform should the bot layer prepare?
   - **`discord`** — a discord.py bot (Gateway intents declared explicitly, a /ping app command,
     DISCORD_BOT_TOKEN from the environment with a startup check that refuses to start without it).
+  - **`slack`** — a slack-bolt bot on Socket Mode (an outbound WebSocket, so there is no public
+    endpoint to open or sign; an /app_mention listener that answers pong, and SLACK_BOT_TOKEN +
+    SLACK_APP_TOKEN from the environment with a startup check that refuses to start without either).
 
 ### `use_recommended_data_science`
 

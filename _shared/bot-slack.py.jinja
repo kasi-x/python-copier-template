@@ -1,0 +1,118 @@
+"""Slack bot for {{ package_name }} — the long-running layer's platform module.
+
+Run it against Slack over Socket Mode (both tokens come from the environment):
+
+    uv run bot-slack-{{ repo_name }}
+
+Socket Mode is an outbound WebSocket: this process opens the connection to
+Slack, so unlike the Events API / slash-command HTTP mode there is no public
+endpoint to publish and no request signature to verify — it runs on a laptop
+or behind NAT, the same "runs locally, no inbound port" property the MCP
+stdio transport has.
+
+Two tokens are REQUIRED and the scaffold refuses to start without either:
+
+- `SLACK_BOT_TOKEN` (xoxb-, the Bot User OAuth Token) authorizes the Web API
+  calls the listeners make (`say()` posts a message);
+- `SLACK_APP_TOKEN` (xapp-, an app-level token with the `connections:write`
+  scope) opens the Socket Mode connection itself.
+
+Copy `.env.example` to `.env` (git ignored, loaded by direnv) and put both
+tokens there — never commit them. `LOG_FORMAT=json` works here too: this
+module's own logging goes through the generated `logging_setup`, so the event
+loop logs in the same format as the CLI. Bolt is left with its internal
+stdlib loggers (no `logger=` is handed to `App`), the way bot-discord.py
+passes discord.py `log_handler=None`.
+
+The `/app_mention` listener answers `pong`. `register_listeners()` is split
+out of `build_app()` on purpose: it is the seam the tests use
+(tests/test_bot_slack.py feeds it a recording stand-in for `App` and drives
+`handle_app_mention()` with a fake `say`), so the scaffold is proven without
+a token, a WebClient or a socket.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+from collections.abc import Sequence
+
+from slack_bolt import App
+from slack_bolt import Say
+from slack_bolt.adapter.socket_mode import SocketModeHandler
+
+from {{ import_pkg }}.logging_setup import logger
+
+__all__ = ["build_app", "handle_app_mention", "main", "register_listeners"]
+
+
+def handle_app_mention(say: Say) -> None:
+    """Reply `pong` — the minimal liveness listener, called by the tests.
+
+    Bolt injects a listener's arguments by name; `say` posts to the channel
+    the mention came from. The other injections (`client`, `body`, ...) are
+    unused here on purpose: the whole behaviour is the one reply.
+    """
+    say("pong")
+    logger.info("pong", command="/app_mention")
+
+
+def register_listeners(app: App) -> None:
+    """Wire the events this scaffold answers onto `app`.
+
+    Split from build_app() so the wiring is checkable without a token or a
+    WebClient: tests/test_bot_slack.py passes a recording stand-in and asserts
+    that an `app_mention` event reaches handle_app_mention().
+    """
+    # slack_bolt annotates App.event()'s matcher parameters with bare
+    # `Unknown`, so basedpyright reports the registration as a partially
+    # unknown member type (and exits 1 on the warning) although the listener
+    # being wired is fully typed.
+    app.event("app_mention")(handle_app_mention)  # pyright: ignore[reportUnknownMemberType]
+
+
+def build_app(*, token: str) -> App:
+    """Build the app with its listeners registered — no socket, no connection.
+
+    Split from main() the way bot-discord.py splits build_bot(): a deployment
+    hands its own token to main() and reuses everything registered here. The
+    token is explicit because `App` requires one (it raises `BoltError`
+    otherwise), and `token_verification_enabled=False` keeps building the app
+    offline: `App` would otherwise call `auth.test` from here. The app token
+    is verified for real when the socket opens.
+    """
+    app = App(token=token, token_verification_enabled=False)
+    register_listeners(app)
+    return app
+
+
+def main(args: Sequence[str] | None = None) -> None:
+    """Run the bot over a Socket Mode connection."""
+    # No options yet: the parser is here for `--help` and because
+    # parser.error() is what gives the refusal below its exit code 2, the
+    # same shape bot-discord.py builds its token check on.
+    parser = argparse.ArgumentParser(description="Slack bot for {{ repo_name }}")
+    parser.parse_args(args)
+    bot_token = os.environ.get("SLACK_BOT_TOKEN")
+    app_token = os.environ.get("SLACK_APP_TOKEN")
+    if not bot_token or not app_token:
+        names = (("SLACK_BOT_TOKEN", bot_token), ("SLACK_APP_TOKEN", app_token))
+        missing = [name for name, value in names if not value]
+        # parser.error() is the refusal: exit code 2 on stderr, naming the
+        # variable that is not set (never a half-started bot). `/app_mention`
+        # listeners need both — the xapp- token is the one a deployment
+        # typically forgets, because it is not on the app's OAuth page.
+        parser.error(
+            "Socket Mode needs both tokens in the environment; "
+            + ", ".join(missing)
+            + " not set. Create the app at api.slack.com/apps, enable Socket Mode, "
+            "and copy the Bot User OAuth Token (xoxb-) and an app-level token with "
+            "the connections:write scope (xapp-) into .env — `.env.example` "
+            "documents the two variables and `.env` is git-ignored"
+        )
+    app = build_app(token=bot_token)
+    SocketModeHandler(app, app_token).start()
+
+
+if __name__ == "__main__":
+    main()

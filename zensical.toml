@@ -34,7 +34,7 @@ nav = [
       { "Pixi" = "how-to/pixi.md" },
       { "Web API" = "how-to/web-api.md" },
       { "MCP Server" = "how-to/mcp.md" },
-      { "Discord Bot" = "how-to/bot.md" },
+      { "Chat Bots" = "how-to/bot.md" },
       { "Web Fetching" = "how-to/scraping.md" },
   ]},
   { "Explanations" = [
