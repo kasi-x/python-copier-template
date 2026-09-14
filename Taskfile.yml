@@ -80,6 +80,13 @@ tasks:
     desc: 'Run a JSONL batch of copier requests and verdict each line (FILE=... CLI_ARGS=...)'
     cmd: uv run --locked python tools/batch.py {{ .FILE | default "batches/smoke.jsonl" }} {{ .CLI_ARGS }}
 
+  verify-delta:
+    desc: >-
+      Prove which witness leaves the working tree can affect (Layer A semantic diff
+      narrows, Layer B re-renders only candidates; CLI_ARGS pass through, e.g.
+      --audit 5)
+    cmd: uv run --locked python tools/render_delta.py {{ .CLI_ARGS }}
+
   witness:
     desc: 'Regenerate the 225 witness leaves and judge them all (JOBS=N, CLI_ARGS=...)'
     vars:

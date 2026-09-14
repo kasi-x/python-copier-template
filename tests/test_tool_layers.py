@@ -72,7 +72,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
     ),
     "drivers": (
         "act on real trees with copier/subprocess; consume the machinery",
-        frozenset({"adopt", "batch", "detect", "predicates", "question_graph"}),
+        frozenset({"adopt", "batch", "detect", "predicates", "question_graph", "render_delta"}),
     ),
     "frontends": (
         "the entry points a human or an agent calls; consume the drivers",

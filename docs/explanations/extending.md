@@ -38,13 +38,14 @@ layers (input space, render invariants, execution) the checks live in.
 | 4 | Dependencies, entry points, `.env.example` gate, `_tasks` model rows | `test_pyproject_fmt` / `test_generated_lint` / the agent command table (derived from the same `_tasks` model) |
 | 5 | `tests/matrix/invariants.yml` rows claiming the new dimension | load-time refusal of unclaimed dimensions (`tools/invariants.py`) |
 | 6 | `task witness` — regenerate `witnesses.jsonl` / `witnesses.json` | the freshness check fails with the exact command |
-| 7 | `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py` — re-records the ledger AND the doc-table counts | the tier-membership guard (wall times stay a human step) |
-| 8 | `uv run --locked python tools/gen_docs.py --write` if the gate needs a `CONDITION_PROSE` entry | `test_generated_docs_sync.py` / `gen_docs --check` |
-| 9 | Markers: anything building a venv gets `heavy` (+ `network`) | the structural marker scan (`tests/test_marker_drift.py`) |
-| 10 | A test module for the layer: render presence/leak + one `heavy` real-execution case | the fast tier (leak checks) and the pre-push tier (execution) |
-| 11 | Docs: how-to page + `zensical.toml` nav + the features/support catalogue + `tools/check_upstream.py` floor pins | `gen_docs --check`, the support-matrix test, the upstream-check rule |
-| 12 | `task predicates` — read the new sites' equivalence classes and shortcut suggestions | `tests/test_predicate_classifier.py` refuses unconditional duplicates of named internals |
-| 13 | Full gates: `task lint`, `task type-check`, `task test-fast`, `task test-meta` | everything above, wired |
+| 7 | `task verify-delta` — proves which leaves the change can reach: the semantic diff narrows the candidate set, only candidates re-render, and the verdict is either "PROVEN render-identical" or the exact leaves and files that changed | the manifest diff (byte-exact per candidate) and the `--audit` sampling of unaffected leaves |
+| 9 | `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py` — re-records the ledger AND the doc-table counts automatically; wall times stay a human step | the tier-membership guard (a mis-stated count fails) |
+| 9 | `uv run --locked python tools/gen_docs.py --write` if the gate needs a `CONDITION_PROSE` entry | `test_generated_docs_sync.py` / `gen_docs --check` |
+| 10 | Markers: anything building a venv gets `heavy` (+ `network`) | the structural marker scan (`tests/test_marker_drift.py`) |
+| 11 | A test module for the layer: render presence/leak + one `heavy` real-execution case | the fast tier (leak checks) and the pre-push tier (execution) |
+| 12 | Docs: how-to page + `zensical.toml` nav + the features/support catalogue + `tools/check_upstream.py` floor pins | `gen_docs --check`, the support-matrix test, the upstream-check rule |
+| 13 | `task predicates` — read the new sites' equivalence classes and shortcut suggestions | `tests/test_predicate_classifier.py` refuses unconditional duplicates of named internals |
+| 14 | Full gates: `task lint`, `task type-check`, `task test-fast`, `task test-meta` | everything above, wired |
 
 ## The tools this runbook leans on
 

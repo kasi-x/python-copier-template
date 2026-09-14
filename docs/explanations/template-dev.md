@@ -389,3 +389,19 @@ Rules:
 Enforced structurally (an AST scan of the import statements, no runtime
 import) by `tests/test_tool_layers.py`; the same table lives in that test's
 docstring, and the two are meant to be edited together.
+
+## Prove what a change can affect: the render twin
+
+`task verify-delta` (`tools/render_delta.py`) answers "which leaves did this
+change touch?" mechanically. Layer A tabulates each leaf's render context and
+every watched template byte, and diffs the two states: a leaf is a candidate
+only when its context moved or changed bytes are reachable from its rendered
+file set (include closure included). Layer B re-renders candidates from a
+baseline checkout and the working tree and compares per-file manifests
+(`.copier-answers.yml`'s per-render stamps normalize away). The verdict is
+either "PROVEN render-identical" for the whole space or the exact leaves and
+files that changed -- which is what the refactor commits in this history
+replaced hand-picked combination diffs with. `--audit N` re-renders N
+unaffected leaves as a continuous soundness probe of Layer A; a mismatch
+means the semantic diff missed a flow, and that is a bug in this tool, not
+in your change.
