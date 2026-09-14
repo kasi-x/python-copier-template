@@ -57,6 +57,7 @@ CI_JINJA = TEMPLATE_DIR / (
     "/{% if ci_provider == 'github_actions' %}workflows{% endif %}/ci.yml.jinja"
 )
 ROS2_QUESTIONS = QUESTIONS_DIR / "ros2.yml"
+MACROS_JINJA = TEMPLATE_DIR.parent / "_shared" / "macros.jinja"
 
 
 @dataclass
@@ -194,10 +195,13 @@ def extract_pins() -> list[Pin]:
     distros = re.findall(r": (humble|jazzy|kilted|rolling)\n", ros_src)
     pins.append(Pin(name="ROS 2 distros offered", current=",".join(sorted(set(distros))) or "?", checkable=True))
 
-    # Python floor: requires-python's default branch (non-ros2). The jinja
-    # conditional picks 3.10/3.12 for ros2 distros; the floor we track is
-    # the second `else` value.
-    floor_m = re.search(r"else '>=(3\.\d+)'\)", pyproject_src)
+    # Python floor: the default branch of `_shared/macros.jinja`'s
+    # python_version() macro -- the single source that requires-python, the
+    # classifiers, the type checkers and .python-version all render from. The
+    # macro picks 3.10/3.12 for ros2 distros; the floor we track is its `else`
+    # value.
+    macros_src = MACROS_JINJA.read_text()
+    floor_m = re.search(r"else '(\d+\.\d+)'\)\s*\}\}", macros_src)
     floor = floor_m.group(1) if floor_m else "?"
     pins.append(Pin(name="Python floor (requires-python)", current=floor, checkable=True))
 
@@ -535,7 +539,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    for required in (PYPROJECT_JINJA, GPU_DOCKERFILE, ROS2_QUESTIONS):
+    for required in (PYPROJECT_JINJA, MACROS_JINJA, GPU_DOCKERFILE, ROS2_QUESTIONS):
         if not required.exists():
             msg = f"Template file not found: {required}; run from the repo root."
             sys.exit(msg)
