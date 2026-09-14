@@ -29,6 +29,7 @@ new type):
 | Option | Adds |
 |---|---|
 | `include_ctf` (`library` / `cli` base) | `ctf` extra: `pwntools`, `z3-solver` |
+| `include_bot` (`cli` / `web_api` base) | `discord.py>=2,<3` (recommended platform) + `anyio` (dev, the in-process bot test); entry point `bot-discord-<name>` |
 | `include_scraping` (`cli` base) | `httpx` (recommended engine), `scrapy` / `memorious4` (AGPL-3.0!) / `playwright` per `scraping_engine`, or all four with `all` |
 | `license_check` (on by default) | dev: `pip-licenses` (runs `task license-check` in `type-check`) |
 | `include_sentry` | `sentry-sdk` (initialised from `SENTRY_DSN`) |
@@ -39,8 +40,11 @@ new type):
 
 ## Dev / experiment groups
 
-- `web_api` dev adds `anyio` (MCP in-process test), `aiosqlite` + `httpx`
-  (SQLite-fallback HTTP tests).
+- `web_api` / `include_mcp` dev add `anyio` (in-process client test); the bot
+  layer adds it the same way (the fake-interaction test).
+- `include_bot` (`cli` / `web_api` base) adds the `discord.py>=2,<3` runtime
+  floor and the `bot-discord-<name>` entry point — checked against PyPI by
+  `tools/check_upstream.py` ("PyPI floor [bot] discord.py").
 - `data_science` / `kaggle` dev add `ipykernel`, `nbclient`, `nbstripout`,
   `pandas`, `tomli`, `quartodoc`.
 - `include_ctf` adds a `ctf` extra (`pwntools`, `z3-solver`) — installed with

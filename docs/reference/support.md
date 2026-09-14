@@ -23,7 +23,7 @@ Measured at ~3 minutes per leaf, so only these 8 run it.
 
 Declared so the questionnaire's existing answers keep rendering, but
 never executed by CI. The witness fast tier renders and ruff-checks
-these leaves (205 renders at ~1.3 s each, 10-20 s in parallel); a
+these leaves (225 renders at ~1.3 s each, 10-20 s in parallel); a
 regression that only breaks install or run is not caught there.
 
 | combination | tier | why |
@@ -34,7 +34,7 @@ regression that only breaks install or run is not caught there.
 | `type_checker = ty` | `best_effort` | pyrefly is the checker with deps installed (test_generated_typecheck.py runs `pyrefly check`); ty is render-only (test_example.py::test_template_ty asserts the rendered pyproject) |
 | `project_type=ros2` | `best_effort` | the full tier omits it: the generated test/build recipes need a ROS distribution (/opt/ros/$ROS_DISTRO), not a bare runner; the fast tier still renders all 8 ros2 leaves |
 | `project_type=online_judge/.../oj=* except atcoder` | `best_effort` | the non-AtCoder judges (leetcode / yukicoder / aoj / ctf / kaggle) render and ruff-check in the fast tier but never get a venv; only atcoder is in the full sample |
-| `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api)` | `best_effort` | the layer leaves render and ruff-check in the fast tier; only the eight sampled leaves get the execution tier |
+| `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api \| include_bot)` | `best_effort` | the layer leaves render and ruff-check in the fast tier; only the eight sampled leaves get the execution tier |
 | `any detailed-question branch (gate=off:use_recommended_*)` | `best_effort` | only cli/gate=off:use_recommended_agent is in the sample; the remaining gate-off branches are fast-tier renders, not executions |
 
 ## Tier policy
@@ -50,7 +50,7 @@ today because every declared leaf has a recorded fast-tier run.
 | `project_type=cli/gate=off:use_recommended_agent` | `full` | the branch-only prompts/ artifact set is only produced with the agent gate off, so its leaf is in the sample |
 | `project_type=ros2/gate=recommended` | `fast` | render + ruff only: executing a ros2 leaf needs /opt/ros/$ROS_DISTRO on the runner |
 | `project_type=*/gate=off:use_recommended_* (detailed branches)` | `fast` | rendered and ruff-checked; the 3 m/leaf execution cost limits the full tier to the sample above |
-| `project_type=*/.../include=include_*` | `fast` | the opt-in layers (ctf / data_science / scraping / web_api) are coverable by rendering: their artifacts are file-set invariants |
+| `project_type=*/.../include=include_*` | `fast` | the opt-in layers (ctf / data_science / scraping / web_api / bot) are coverable by rendering: their artifacts are file-set invariants; the bot layer's real execution is tests/test_bot_layer.py's heavy case |
 | `project_type=online_judge/.../oj=*` | `fast` | AtCoder carries the execution sample; leetcode / yukicoder / aoj / ctf / kaggle are render-only |
 | `(reserved) no class today` | `none` | every declared witness leaf has a recorded fast-tier run; tests/matrix/witnesses.json keeps the tier:none + reason hook as the future exclusion mechanism |
 <!-- END GENERATED: support-matrix -->

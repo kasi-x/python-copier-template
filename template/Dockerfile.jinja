@@ -101,4 +101,11 @@ CMD ["--version"]{% if mcp_effective %}
 #     --entrypoint mcp-server-{{ repo_name }} {{ repo_name }} \
 #     --transport streamable-http --host 0.0.0.0
 # Health check (unauthenticated): GET http://localhost:8000/health
-EXPOSE 8000{% endif %}{% endif %}{% endif %}
+EXPOSE 8000{% endif %}{% if bot_discord_effective %}
+# The image also ships the Discord bot console script. It connects to the
+# Discord Gateway (no listening port), so it runs with the token from the
+# environment; bot_discord.py refuses to start without it:
+#   docker run --rm -e DISCORD_BOT_TOKEN \
+#     --entrypoint bot-discord-{{ repo_name }} {{ repo_name }}
+# Development: append --sync-guild <guild id> to sync the slash commands
+# instantly inside that guild instead of globally (up to an hour of caching).{% endif %}{% endif %}{% endif %}

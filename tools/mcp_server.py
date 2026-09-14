@@ -593,7 +593,7 @@ def _witness_inventory() -> dict[str, Any]:
 def list_witnesses() -> dict[str, Any]:
     """List the questionnaire's Z3 witness leaves and what has executed them.
 
-    The 205 leaves are `tests/matrix/witnesses.jsonl` -- the request list
+    The 225 leaves are `tests/matrix/witnesses.jsonl` -- the request list
     `tools/z3_witnesses.py` enumerates, one answer combination each -- and
     `tier` / `result` are the deepest verdict `tests/matrix/witnesses.json`
     records for that leaf, so this is the "what is already verified" answer.
@@ -657,7 +657,7 @@ def run_witness(
     `tests/test_witness_matrix.py` executes the leaves; this runs it in a
     subprocess so a caller gets its verdict instead of pytest's text. `tier` is
     the marker expression: `fast` renders and lints every leaf (no venv; a few
-    seconds under the suite's `-n auto`), `slow` runs the serial 205-leaf batch
+    seconds under the suite's `-n auto`), `slow` runs the serial 225-leaf batch
     runner (~2 min), `full` adds the sampled leaves' venv builds and their
     network. `only` narrows the selection with pytest's `-k` expression -- a
     leaf keyword, for one case -- and `timeout` overrides the tier's budget

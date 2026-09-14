@@ -148,12 +148,17 @@ An opt-in layer adds its area to a combinable base:
   (challenges/<category>/<problem>/ with a solve.py exploit starter, plus pwntools and z3-solver)?
 - **`include_scraping`** (asked when cli; default no) — Add a polite web-fetching layer (robots.txt
   + rate limit + cache)?
+- **`include_bot`** (asked when cli / web_api; default no) — Add a long-running chat bot on top of
+  this project (the long-running layer's second platform after the MCP server)?
 
 An opt-in layer asks its own gate on top:
 
 - **`use_recommended_scraping`** (asked when a `cli` base answers Yes to `include_scraping`): httpx
   — a polite stdlib-robots fetcher (contactable User-Agent, robots.txt check, per-host rate
   limiting, on-disk cache) with offline tests.
+- **`use_recommended_bot`** (asked when a `cli` / `web_api` base answers Yes to `include_bot`):
+  discord = discord.py — the de-facto Discord library (async, typed, slash commands via
+  app_commands, actively maintained, unlike the py-cord / nextcord forks).
 <!-- END GENERATED: areas -->
 
 ## The detailed questions
@@ -212,6 +217,16 @@ Answer **No** to pick scrapy / memorious / playwright instead (or all).
   - **`playwright`** — a Playwright browser-fetch module (Chromium via `playwright install`; robots
     precheck + rate limit reused from the fetcher; no browser launch in tests).
   - **`all`** — prepare every engine above (all runtime dependencies).
+
+### `use_recommended_bot`
+
+Use the recommended bot platform? Recommended: discord = discord.py — the de-facto Discord library (async, typed, slash commands via app_commands, actively maintained, unlike the py-cord / nextcord forks).
+
+Answer **No** to pick a platform instead (discord is the only choice today; slack / LINE / Gmail are planned).
+
+- **`bot_platform`** (str; default `discord`) — Which chat platform should the bot layer prepare?
+  - **`discord`** — a discord.py bot (Gateway intents declared explicitly, a /ping app command,
+    DISCORD_BOT_TOKEN from the environment with a startup check that refuses to start without it).
 
 ### `use_recommended_data_science`
 

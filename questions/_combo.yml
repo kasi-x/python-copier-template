@@ -81,6 +81,41 @@ scraping_engine:
         - all
     default: httpx
 
+include_bot:
+    type: bool
+    when: "{{ project_type in ['cli', 'web_api'] }}"
+    default: false
+    help: |
+        Add a long-running chat bot on top of this project (the long-running
+        layer's second platform after the MCP server)?
+        If yes, a bot module with its own entry point is generated and the
+        detail questions follow when answered Yes. Discord is the first
+        platform; slack / LINE / Gmail are future platforms, not offered yet.
+use_recommended_bot:
+    type: bool
+    when: "{{ include_bot }}"
+    default: true
+    help: |
+        Use the recommended bot platform?
+        Recommended: discord = discord.py — the de-facto Discord library
+        (async, typed, slash commands via app_commands, actively maintained,
+        unlike the py-cord / nextcord forks).
+        Answer No to pick a platform instead (discord is the only choice
+        today; slack / LINE / Gmail are planned).
+bot_platform:
+    type: str
+    when: "{{ include_bot and not use_recommended_bot }}"
+    help: |
+        Which chat platform should the bot layer prepare?
+        - discord: a discord.py bot (Gateway intents declared explicitly, a
+          /ping app command, DISCORD_BOT_TOKEN from the environment with a
+          startup check that refuses to start without it).
+        slack / LINE / Gmail are planned platforms, not generated yet —
+        they will be added here as new choices, not as new project types.
+    choices:
+        - discord
+    default: discord
+
 combinable:
     type: bool
     default: "{{ project_type in ['library', 'cli', 'web_api', 'data_science'] or kaggle }}"

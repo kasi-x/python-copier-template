@@ -148,6 +148,15 @@
                               ~ '-e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 '
                               ~ '--entrypoint mcp-server-' ~ repo_name ~ ' ' ~ repo_name
                               ~ ' --transport streamable-http --host 0.0.0.0']}] %}
+{# Same one-off shape as `mcp-serve`: the bot needs the Gateway (and your
+   DISCORD_BOT_TOKEN, passed through from the host environment), so it is a
+   `docker run` recipe, not part of `check`. #}
+{% set bot_tasks = [{'name': 'bot-serve',
+                      'desc': 'Build and run the Discord bot in Docker (Gateway; needs DISCORD_BOT_TOKEN)',
+                      'shell': true,
+                      'run': ['docker build -t ' ~ repo_name ~ ' . && docker run --rm '
+                              ~ '-e DISCORD_BOT_TOKEN '
+                              ~ '--entrypoint bot-discord-' ~ repo_name ~ ' ' ~ repo_name]}] %}
 {# The single declarative assembly: conditions that used to gate eight
    separate `set tasks = tasks + [...]` blocks are the inline guards here. #}
 {% set tasks = [
@@ -162,7 +171,7 @@
      'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] and not oj_code else ''),
      'run': [run ~ 'pytest'
              ~ (' --cov=' ~ ('firmware' if micropython_pkg else pkg_dir) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] and not oj_code else '')]},
-] + (docs_tasks if docs else []) + (kaggle_tasks if kaggle else []) + (data_science_tasks if data_science else []) + (micropython_tasks if micropython_pkg else []) + (mcp_tasks if mcp_effective and docker else []) + [
+] + (docs_tasks if docs else []) + (kaggle_tasks if kaggle else []) + (data_science_tasks if data_science else []) + (micropython_tasks if micropython_pkg else []) + (mcp_tasks if mcp_effective and docker else []) + (bot_tasks if bot_effective and docker else []) + [
     {'name': 'check', 'desc': 'Run all quality checks',
      'deps': ['lint'] + (['type-check'] if strictness in ['recommended', 'full'] else []) + ['test']},
 ] %}

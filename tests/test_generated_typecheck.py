@@ -12,7 +12,8 @@ gate false), so the *recommended* answer combinations -- the ones real users
 take -- were never type-checked with deps installed. TYPECHECK_PATHS picks
 fast paths whose generated stacks differ meaningfully (library = minimal,
 web_api = FastAPI/SQLAlchemy/Alembic, script = flat stdlib-ish, cli+mcp =
-the MCP SDK, cli+ctf = the ctf extra, oj_atcoder = bare stdlib) while
+the MCP SDK, cli+bot = discord.py, cli+ctf = the ctf extra,
+oj_atcoder = bare stdlib) while
 skipping the multi-minute torch syncs (data_science / kaggle), whose fast
 path differs from test_example.py's coverage only in answer gates.
 """
@@ -38,6 +39,7 @@ TYPECHECK_PATHS: list[dict[str, object]] = [
     {"project_type": "web_api"},
     {"project_type": "script"},
     {"project_type": "cli", "include_mcp": True},
+    {"project_type": "cli", "include_bot": True},
     {"project_type": "cli", "include_ctf": True},
     {"project_type": "online_judge", "oj_category": "competitive_coding", "oj_kind": "atcoder"},
 ]

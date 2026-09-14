@@ -363,6 +363,24 @@ mcp-server-{{ repo_name }}`.
 `tests/test_mcp_server.py` calls the tools, resources and prompt through the
 SDK's in-process client — read it to see how to call this server (or any MCP
 server) from your own code.
+{% endif %}{% if bot_discord_effective %}
+The project also ships a **Discord bot** (`{{ import_pkg }}/bot_discord.py`,
+discord.py) with a `/ping` slash command:
+
+```sh
+# put your token in .env first (cp .env.example .env)
+uv run bot-discord-{{ repo_name }}
+```
+
+The token comes from `DISCORD_BOT_TOKEN` and is required — the bot refuses to
+start without it (see `.env.example`; `.env` is git-ignored). Slash commands
+are synced on login: globally by default (Discord caches them for up to an
+hour), or instantly inside one guild with
+`uv run bot-discord-{{ repo_name }} --sync-guild <guild id>`.
+
+`build_bot()` is split from `main()`: `tests/test_bot_discord.py` drives the
+command callback with a fake interaction, so the bot is tested in-process
+with no Gateway connection and no token.
 {% endif %}{% else %}```python
 from {{package_name}} import __version__
 
@@ -406,6 +424,28 @@ options. See `.env.example` for the variables.
 `tests/test_mcp_server.py` calls the tools, resources and prompt through the
 SDK's in-process client — read it to see how to call this server (or any MCP
 server) from your own code.
+{% endif %}{% if bot_discord_effective %}
+
+The project also ships a **Discord bot** (`{{ pkg_dir }}/bot_discord.py`,
+discord.py) with a `/ping` slash command:
+
+```sh
+# put your token in .env first (cp .env.example .env)
+uv run bot-discord-{{ repo_name }}
+
+# or without installing:
+uv run python -m {{ package_name }}.bot_discord
+```
+
+The token comes from `DISCORD_BOT_TOKEN` and is required — the bot refuses to
+start without it (see `.env.example`; `.env` is git-ignored). Slash commands
+are synced on login: globally by default (Discord caches them for up to an
+hour), or instantly inside one guild with
+`uv run bot-discord-{{ repo_name }} --sync-guild <guild id>`.
+
+`build_bot()` is split from `main()`: `tests/test_bot_discord.py` drives the
+command callback with a fake interaction, so the bot is tested in-process
+with no Gateway connection and no token.
 {% endif %}{% if scraping_effective %}
 
 The project also ships a **polite web-fetching layer** under the

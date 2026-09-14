@@ -1,0 +1,124 @@
+"""Discord bot for {{ package_name }} — the long-running layer's platform module.
+
+Run it against the Discord Gateway (the token comes from the environment):
+
+    uv run bot-discord-{{ repo_name }}
+
+The bot token is read from DISCORD_BOT_TOKEN and REQUIRED: the scaffold
+refuses to start without it, the same refusal mcp_server.py makes for a
+public bind without MCP_ALLOWED_HOSTS. Copy `.env.example` to `.env` (git
+ignored, loaded by direnv) and put the token there — never commit it.
+`LOG_FORMAT=json` works here too: logging goes through the generated
+`logging_setup`, so the Gateway process logs in the same format as the CLI.
+
+Commands are slash commands (`/ping`), registered on login by `setup_hook`:
+globally by default (Discord caches global commands for up to an hour), or
+instantly inside one guild with `--sync-guild <guild id>` for development.
+
+`build_bot()` is split from `main()` on purpose: it returns the configured
+bot without connecting, so tests (tests/test_bot_discord.py) can call the
+command callbacks in-process with a fake interaction and no token.
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+from collections.abc import Sequence
+from typing import cast
+
+import discord
+from discord.ext import commands
+
+from {{ import_pkg }}.logging_setup import logger
+
+__all__ = ["Bot", "build_bot", "main"]
+
+
+def _intents() -> discord.Intents:
+    """The Gateway intents the bot subscribes to.
+
+    Slash commands need no privileged intent: `Intents.default()` leaves
+    `members` and `message_content` off, so a default bot token from the
+    developer portal works with no extra toggles (and no privileged-intent
+    approval for large servers). Turn the privileged ones on here only when
+    you actually read member lists or message bodies.
+    """
+    return discord.Intents.default()
+
+
+class Bot(commands.Bot):
+    """The {{ repo_name }} bot: default intents, slash commands only.
+
+    `command_prefix` is inert — the scaffold speaks app commands (`/ping`),
+    not prefix commands. `setup_hook` runs once after login and before the
+    Gateway events flow, which is where discord.py expects the command tree
+    to be synced.
+    """
+
+    sync_guild_id: int | None
+
+    def __init__(self, *, sync_guild_id: int | None = None) -> None:
+        super().__init__(command_prefix="!", intents=_intents(), help_command=None)
+        self.sync_guild_id = sync_guild_id
+
+    async def setup_hook(self) -> None:  # pyright: ignore[reportImplicitOverride]
+        """Sync the command tree: one guild instantly, or globally (cached)."""
+        if self.sync_guild_id is not None:
+            guild = discord.Object(id=self.sync_guild_id)
+            self.tree.copy_global_to(guild=guild)
+            await self.tree.sync(guild=guild)
+            logger.info("commands synced to guild", guild_id=self.sync_guild_id)
+        else:
+            await self.tree.sync()
+            logger.info("commands synced globally")
+
+
+def build_bot(*, sync_guild_id: int | None = None) -> Bot:
+    """Build the bot with its commands registered — no connection, no token.
+
+    Split from main() so tests can drive the command callbacks in-process
+    (the Gateway never starts), and so a deployment can hand its own token
+    to main() while reusing everything registered here.
+    """
+    bot = Bot(sync_guild_id=sync_guild_id)
+
+    @bot.tree.command(name="ping", description="Check the bot is alive.")
+    async def ping(interaction: discord.Interaction) -> None:
+        """Reply `pong` — the minimal liveness command, called by the tests."""
+        await interaction.response.send_message("pong", ephemeral=True)
+        logger.info("pong", command="/ping", user=str(interaction.user))
+
+    @bot.event
+    async def on_ready() -> None:
+        """Log the Gateway handshake so the process is observable in the logs."""
+        logger.info("gateway ready", user=str(bot.user))
+
+    return bot
+
+
+def main(args: Sequence[str] | None = None) -> None:
+    """Run the bot against the Discord Gateway."""
+    parser = argparse.ArgumentParser(description="Discord bot for {{ repo_name }}")
+    parser.add_argument(
+        "--sync-guild",
+        type=int,
+        default=None,
+        metavar="GUILD_ID",
+        help="register the slash commands in this guild instantly (development)",
+    )
+    parsed = parser.parse_args(args)
+    token = os.environ.get("DISCORD_BOT_TOKEN")
+    if not token:
+        parser.error(
+            "the Discord Gateway needs a bot token in the DISCORD_BOT_TOKEN "
+            "environment variable (discord.com/developers/applications -> your "
+            "application -> Bot -> Reset Token; .env.example documents the "
+            "variable and .env is git-ignored)"
+        )
+    bot = build_bot(sync_guild_id=cast("int | None", parsed.sync_guild_id))
+    bot.run(token, log_handler=None)
+
+
+if __name__ == "__main__":
+    main()
