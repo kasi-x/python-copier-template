@@ -10,6 +10,7 @@ that keeps the two apart.
 
 import sys
 from collections.abc import Mapping
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ from tools import answers  # noqa: E402
 from tools import questionnaire  # noqa: E402
 
 import test_batch  # noqa: E402
+import test_bot_layer  # noqa: E402
 import test_generated_lint  # noqa: E402
 import test_mcp_server  # noqa: E402
 import test_recommended_path  # noqa: E402
@@ -37,8 +39,13 @@ BATCH_BASE = yaml.safe_load((TOP / "batches" / "base.yml").read_text(encoding="u
 GATE_PREFIX = "use_recommended_"
 
 
-def _fixtures() -> dict[str, list[Mapping[str, Any]]]:
-    """Every answer set this repo renders with, labelled for the failure message."""
+def _fixtures() -> Mapping[str, Sequence[Mapping[str, Any]]]:
+    """Every answer set this repo renders with, labelled for the failure message.
+
+    The fixtures are declared by their own modules (`list[dict[str, object]]`,
+    `dict[str, Any]`, ...), so the registry takes the covariant view of them:
+    it only reads.
+    """
     return {
         "tools/answers.py BASE": [answers.BASE],
         "example-answers.yml": [EXAMPLE_ANSWERS],
@@ -50,6 +57,7 @@ def _fixtures() -> dict[str, list[Mapping[str, Any]]]:
         "test_generated_lint.JAPANESE_VARIANTS": test_generated_lint.JAPANESE_VARIANTS,
         "test_mcp_server.BASE_ANSWERS": [test_mcp_server.BASE_ANSWERS],
         "test_batch.BASE_ANSWERS": [test_batch.BASE_ANSWERS],
+        "test_bot_layer.SLACK_ANSWERS": [test_bot_layer.SLACK_ANSWERS],
     }
 
 
