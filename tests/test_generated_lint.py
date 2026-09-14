@@ -101,6 +101,12 @@ RENDERED_PATHS = FAST_PATHS + EXTRA_PATHS + MANAGER_PATHS + LAYER_PATHS
 JAPANESE_VARIANTS: list[dict[str, object]] = [
     {"project_type": "cli", "allow_japanese": True},
     {"project_type": "cli", "allow_japanese": False},
+    # A short package name is its own width: at line-length 120 it lets ruff
+    # collapse constructs the template ships expanded, and the shipped file is
+    # then unformatted (found with `qa`: tests/test_qa.py's `sorted(...)`
+    # generator fits on one line for every short name). The template pins the
+    # expansion with a magic trailing comma; this case keeps it pinned.
+    {"project_type": "cli", "package_name": "qa", "allow_japanese": True},
 ]
 
 
