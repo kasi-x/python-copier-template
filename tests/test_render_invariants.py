@@ -353,7 +353,7 @@ def _resolved_answers(root: Path, answers: dict[str, object]) -> dict[str, objec
     recorded = yaml.safe_load((root / ".copier-answers.yml").read_text(encoding="utf-8"))
     if not isinstance(recorded, dict):
         msg = f"{root}/.copier-answers.yml is not a mapping"
-        raise RuntimeError(msg)
+        raise TypeError(msg)
     return {**answers, **recorded}
 
 
