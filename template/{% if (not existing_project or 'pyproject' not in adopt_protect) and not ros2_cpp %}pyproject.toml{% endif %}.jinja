@@ -42,14 +42,21 @@ urls.GitHub = "{{ repo_url }}"
    deployed to the device with mpremote. The [project] table above exists so
    the CPython dev toolchain (ruff/pytest/basedpyright) has a home, but there
    is no setuptools_scm git-tag version and nothing is built or installed. #}
-[dependency-groups]{# dev deps: base(none/basic) + the `rec` guard appends the recommended/full additions on top #}{% set rec = strictness in ['recommended', 'full'] %}
+[dependency-groups]{# dev deps: base body shared by every strictness tier + the `rec` guard
+   appending the recommended/full-only additions. The docs/sphinx entries are
+   captured once and spliced per tier: recommended/full render them before
+   pytest (basedpyright leads the group), none/basic after ruff. #}{% set rec = strictness in ['recommended', 'full'] %}{% set zensical_deps %}"zensical",
+    "mkdocstrings[python]",
+    {% endset %}{% set mpremote_deps %}"mpremote",
+    {% endset %}{% set sphinx_theme_deps %}"pydata-sphinx-theme>=0.12",
+    {% endset %}{% set sphinx_docs_deps %}"myst-parser",
+    "sphinx-autobuild",
+    "sphinx-copybutton",
+    "sphinx-design",
+    {% endset %}
 dev = [
     {% if rec %}"basedpyright",
-    {% if zensical %}"zensical",
-    "mkdocstrings[python]",
-    {% endif %}{% if micropython_pkg %}"mpremote",
-    {% endif %}{% if sphinx %}"pydata-sphinx-theme>=0.12",
-    {% endif %}{% if type_checker=="pyrefly" %}"pyrefly",
+    {% if zensical %}{{ zensical_deps }}{% endif %}{% if micropython_pkg %}{{ mpremote_deps }}{% endif %}{% if sphinx %}{{ sphinx_theme_deps }}{% endif %}{% if type_checker=="pyrefly" %}"pyrefly",
     {% endif %}{% if type_checker=="ty" %}"ty",
     {% endif %}    {% endif %}"pytest",
     {% if rec %}"pytest-cov",
@@ -58,19 +65,7 @@ dev = [
     "aiosqlite>=0.20,<1",
     "httpx>=0.27,<1",{% endif %}{% if bot_line_effective and not web_api %}
     "httpx>=0.27,<1",{% endif %}
-    {% if rec %}{% if sphinx %}"myst-parser",
-    "sphinx-autobuild",
-    "sphinx-copybutton",
-    "sphinx-design",
-    {% endif %}    {% endif %}{% if not rec %}{% if micropython_pkg %}"mpremote",
-    {% endif %}{% if zensical %}"zensical",
-    "mkdocstrings[python]",
-    {% endif %}{% if sphinx %}"pydata-sphinx-theme>=0.12",
-    "myst-parser",
-    "sphinx-autobuild",
-    "sphinx-copybutton",
-    "sphinx-design",
-    {% endif %}{% endif %}{% if great_docs %}"great-docs",
+    {% if rec %}{% if sphinx %}{{ sphinx_docs_deps }}{% endif %}    {% endif %}{% if not rec %}{% if micropython_pkg %}{{ mpremote_deps }}{% endif %}{% if zensical %}{{ zensical_deps }}{% endif %}{% if sphinx %}{{ sphinx_theme_deps }}{{ sphinx_docs_deps }}{% endif %}{% endif %}{% if great_docs %}"great-docs",
     {% endif %}{% if rec %}    {% endif %}{% if data_science or kaggle %}"ipykernel",
     "nbclient",
     "nbstripout",
