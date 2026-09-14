@@ -1168,8 +1168,12 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 - [x] **`timeout-minutes` を全 workflow に付ける**（例: test 60 / docs 20 / hygiene 10）、
       matrix 復活時は `fail-fast`、タグ時の `_docs.yml: sleep 60` を `concurrency` で解消する
       → **完了（2026-09-14 監査）**: timeout-minutes を全 workflow に付与（.github/workflows/_docs.yml:19 = 20、_hygiene.yml:10、_test.yml、ci.yml）。`_docs.yml` の sleep 60 は concurrency で解消
-- [ ] **network 系テストの扱いを見直す**
-      → **残り（2026-09-14 監査）**: ローカル diff 化（tests/test_update_path.py）と hypothesis の実使用（tests/test_adopt_stateful.py）は済み。z3 の `importorskip` 黙り skip が残る（tests/test_copier_structure.py:398 ほか / tests/test_when_model.py:66 / tests/test_witness_matrix.py:430）
+- [x] **network 系テストの扱いを見直す**
+      → **完了（2026-09-14 監査 + 実装）**: ローカル diff 化（tests/test_update_path.py）と
+        hypothesis の実使用（tests/test_adopt_stateful.py）は済み。最後に残っていた z3 の
+        `importorskip` 黙り skip を全廃（tests/test_when_model.py / tests/test_copier_structure.py /
+        tests/test_witness_matrix.py の計 7 箇所）。z3-solver は pyproject の dev 依存なので、
+        欠落は「非対応環境」ではなく壊れた環境 → 素の `import z3` で落とす
       - `test_example_repo_updates`（example リポジトリの clone + `copier update` + diff）は
         ローカル `--vcs-ref=HEAD` diff に置き換えるか `scheduled-check` 専用に移す
       - `z3` の `importorskip` 黙り skip をやめ、必須化または skip 件数を assert する

@@ -59,11 +59,15 @@ from typing import Any
 
 import pytest
 
+# z3-solver is a declared dev dependency (pyproject.toml): a missing z3 is a
+# broken environment, not an unsupported platform, so this imports it loudly
+# instead of skipping. The silent `pytest.importorskip("z3")` this replaces was
+# the open half of TODO §19's "network 系テストの扱いを見直す".
+import z3
+
 TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
     sys.path.insert(0, str(TOP))
-
-z3 = pytest.importorskip("z3")
 
 from copier._main import Worker  # noqa: E402
 from copier._user_data import Question  # noqa: E402

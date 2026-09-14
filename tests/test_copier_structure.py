@@ -29,6 +29,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+import z3
 
 TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
@@ -395,7 +396,6 @@ def test_every_question_when_is_z3_satisfiable():
     are the same as real Jinja evaluation at a known answer set is
     tests/test_when_model.py's business, not this structural check's.
     """
-    z3 = pytest.importorskip("z3")
     questions, _ = when_model.load_questions()
     str_domains = when_model.str_domains(questions)
 
@@ -418,14 +418,12 @@ def test_z3_sweep_detects_typo_project_type():
     Guards the guard — proves when_model.when_expr_satisfiable rejects the
     'librry' class of typos instead of vacuously passing.
     """
-    z3 = pytest.importorskip("z3")
     questions, _ = when_model.load_questions()
     assert not when_model.when_expr_satisfiable("{{ project_type == 'librry' }}", when_model.str_domains(questions), z3)
 
 
 def test_z3_sweep_detects_self_contradictory_gate():
     """Error sweep: `X and not X` is unsatisfiable."""
-    z3 = pytest.importorskip("z3")
     questions, _ = when_model.load_questions()
     assert not when_model.when_expr_satisfiable(
         "{{ use_recommended_docs and not use_recommended_docs }}",
@@ -436,7 +434,6 @@ def test_z3_sweep_detects_self_contradictory_gate():
 
 def test_z3_sweep_detects_impossible_genre_combo():
     """Error sweep: two distinct project_type literals conjoined."""
-    z3 = pytest.importorskip("z3")
     questions, _ = when_model.load_questions()
     assert not when_model.when_expr_satisfiable(
         "{{ project_type == 'cli' and project_type == 'ros2' }}",
@@ -456,7 +453,6 @@ def test_z3_sweep_wrong_variable_name_is_out_of_scope():
     always-falsy Undefined. Detection belongs to the loader-level
     reference test, not Z3 — this pins the division of labour.
     """
-    z3 = pytest.importorskip("z3")
     questions, _ = when_model.load_questions()
     assert not when_model.when_expr_satisfiable(
         "{{ project_type == 'cli' and use_recommended_doccs }}",

@@ -69,6 +69,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import z3
 
 TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
@@ -450,7 +451,6 @@ def test_witness_leaves_are_reachable() -> None:
     ``gate=off:use_recommended_agent`` leaf uncovered, and the failures below
     name them.
     """
-    z3 = pytest.importorskip("z3")
     questions, _order = when_model.load_questions()
     domains = when_model.str_domains(questions)
     project_types = when_model.static_str_choices(questions["project_type"])
