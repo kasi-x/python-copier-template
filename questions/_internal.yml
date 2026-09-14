@@ -161,14 +161,34 @@ use_gpu_effective:
     default: "{{ (use_gpu and data_science) or kaggle }}"
     when: false
 
+# Platform-conditional repository URLs. The Jinja conditional expression is
+# lazily evaluated, so the untaken branch's (unasked) variable — gitlab_group
+# on GitHub renders, github_org on GitLab renders — is never resolved; the
+# github.com branch renders the same bytes as the pre-GitLab hardcoded value.
+# Consumers that FOLLOW the platform (they want the project's real home):
+# pyproject.toml [project.urls], zensical.toml site_url/repo_url,
+# CITATION.cff repository-code, REUSE.toml SPDX-PackageDownloadLocation,
+# README clone/source links, ros2 package.xml, great-docs, LICENSE notice,
+# docs/tutorials/installation.md. Consumers that stay GITHUB-specific even
+# when built on these URLs (GitHub routes the repo_url is appended to):
+# the README CI badge ({{repo_url}}/actions/...), codecov/scorecard badges
+# ({{github_org}}-based), {{repo_url}}/issues and /releases links, and the
+# .github/ templates (filename-gated to github.com anyway). The full list
+# lives in docs/explanations/template-dev.md ("GitLab scope").
 repo_url:
     type: str
-    default: "https://github.com/{{github_org}}/{{repo_name}}"
+    default: "{{ 'https://gitlab.com/' ~ gitlab_group ~ '/' ~ repo_name if git_platform == 'gitlab.com' else 'https://github.com/' ~ github_org ~ '/' ~ repo_name }}"
     when: false
 
+# GitLab Pages convention: https://<group>.gitlab.io/<repo> (project websites
+# are namespaced under the group's user page; the group path is lowercased).
+# docs_url consumers that follow the platform: zensical.toml site_url, the
+# README documentation badge/link, docs how-to links. The docs *deployment*
+# itself stays GitHub-specific (gh-pages via GitHub Actions; no GitLab Pages
+# job is generated) — see the GitLab scope note in template-dev.md.
 docs_url:
     type: str
-    default: "https://{{github_org | lower}}.github.io/{{repo_name}}"
+    default: "{{ 'https://' ~ (gitlab_group | lower) ~ '.gitlab.io/' ~ repo_name if git_platform == 'gitlab.com' else 'https://' ~ (github_org | lower) ~ '.github.io/' ~ repo_name }}"
     when: false
 
 sphinx:
