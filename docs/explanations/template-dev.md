@@ -335,3 +335,39 @@ Enforced by `test_template_gitlab_urls` in `tests/test_example_library_cli.py`
 (a gitlab.com render's URLs carry the group, and those fields contain no
 github.com) and `test_template_github_urls_unchanged` in the same file (the
 github.com render still produces today's exact URL bytes).
+
+## Keep the `tools/` dependency layers declared
+
+`tools/` is nineteen modules, and their dependency direction was implicit:
+every cross-module import reads `from tools import x`, but nothing said which
+modules sit where, so "may `adopt.py` use `invariants`?" was answerable only
+by reading all of them. The layering is now a declared contract — the repo's
+registry idiom again (cf. `DEFAULT_REPEATS_ALLOWED`,
+`invariants.yml`'s `excluded`): declared, not discovered. The layers, bottom
+up:
+
+| Layer | Modules | What it is |
+| --- | --- | --- |
+| `standalone` | `check_upstream`, `check_upstream_fork`, `check_questionnaire_diff`, `generate_license_template` | maintenance/CI scripts that import nothing from `tools/` (a pristine checkout or a released tarball is their world) |
+| `foundations` | `answers`, `questionnaire`, `when_model`, `render_inputs` | the questionnaire model and shared primitives: data and meaning, no behavior on real trees |
+| `machinery` | `file_merge`, `pyproject_merge`, `invariants`, `z3_witnesses` | pure transformations and verifiers over template/adoption artifacts |
+| `drivers` | `detect`, `batch`, `adopt`, `predicates` | act on real trees with copier/subprocess; consume the machinery |
+| `frontends` | `cli`, `gen_docs`, `mcp_server` | the entry points a human or an agent calls; consume the drivers |
+
+Rules:
+
+- A module may import modules of its own layer or any layer BELOW it. An
+  import that points up fails the test, unless the pair is declared in the
+  test's `ALLOWED_UPWARD_IMPORTS` with a one-line reason — a genuine tangle
+  that is not worth refactoring away is stated, not hidden. The registry is
+  stale-proofed in both directions: an undeclared upward import fails, and so
+  does a declared exception whose edge has vanished or stopped pointing up.
+  (There are no exceptions today: no import points up.)
+- New module under `tools/`? Pick a layer and add it to `LAYERS` in the test —
+  the test tells you if you guessed wrong: an unplaced module fails the
+  membership check (so no module can sneak in undeclared), and a wrong guess
+  fails the direction check.
+
+Enforced structurally (an AST scan of the import statements, no runtime
+import) by `tests/test_tool_layers.py`; the same table lives in that test's
+docstring, and the two are meant to be edited together.
