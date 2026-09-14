@@ -1864,7 +1864,7 @@ new type):</p>
 </tr>
 <tr>
 <td><code>include_bot</code> (<code>cli</code> / <code>web_api</code> base)</td>
-<td><code>discord.py&gt;=2,&lt;3</code> (the recommended platform, <code>bot_platform=discord</code>) or <code>slack-bolt&gt;=1.21,&lt;2</code> (<code>bot_platform=slack</code>) + <code>anyio</code> (dev, the in-process discord test); entry point <code>bot-discord-&lt;name&gt;</code> / <code>bot-slack-&lt;name&gt;</code></td>
+<td><code>discord.py&gt;=2,&lt;3</code> (the recommended platform, <code>bot_platform=discord</code>), <code>slack-bolt&gt;=1.21,&lt;2</code> (<code>bot_platform=slack</code>) or <code>line-bot-sdk&gt;=3,&lt;4</code> + <code>fastapi</code> + <code>uvicorn[standard]</code> (<code>bot_platform=line</code>, which serves LINE's webhook itself instead of dialling out) + <code>anyio</code> and, for line, <code>httpx</code> (dev, the in-process tests); entry point <code>bot-discord-&lt;name&gt;</code> / <code>bot-slack-&lt;name&gt;</code> / <code>bot-line-&lt;name&gt;</code></td>
 </tr>
 <tr>
 <td><code>include_scraping</code> (<code>cli</code> base)</td>
@@ -1900,13 +1900,21 @@ new type):</p>
 <ul>
 <li><code>web_api</code> / <code>include_mcp</code> dev add <code>anyio</code> (in-process client test); the
   discord bot layer adds it the same way (the fake-interaction test — the
-  slack listener is driven synchronously, so it needs none).</li>
+  slack listener is driven synchronously, so it needs none), and so does the
+  line bot, which additionally adds <code>httpx</code> for the transport its generated
+  test drives <code>POST /callback</code> over (<code>httpx.ASGITransport</code>, the same reason
+  the web_api tests use it: starlette's TestClient is not warning-free under
+  the generated <code>filterwarnings = error</code>).</li>
 <li><code>include_bot</code> (<code>cli</code> / <code>web_api</code> base) adds one platform runtime floor —
   <code>discord.py&gt;=2,&lt;3</code> by default, <code>slack-bolt&gt;=1.21,&lt;2</code> with
-  <code>use_recommended_bot=No</code> + <code>bot_platform=slack</code> — and the matching
-  <code>bot-discord-&lt;name&gt;</code> / <code>bot-slack-&lt;name&gt;</code> entry point. Both floors are
-  checked against PyPI by <code>tools/check_upstream.py</code> ("PyPI floor [bot]
-  discord.py", "PyPI floor [bot] slack-bolt").</li>
+  <code>use_recommended_bot=No</code> + <code>bot_platform=slack</code>, <code>line-bot-sdk&gt;=3,&lt;4</code> (plus
+  the <code>fastapi</code> / <code>uvicorn[standard]</code> its webhook server runs on, which a
+  <code>web_api</code> base already declares) with <code>bot_platform=line</code> — and the matching
+  <code>bot-discord-&lt;name&gt;</code> / <code>bot-slack-&lt;name&gt;</code> / <code>bot-line-&lt;name&gt;</code> entry point.
+  Every floor is checked against PyPI by <code>tools/check_upstream.py</code> ("PyPI
+  floor [bot] discord.py", "PyPI floor [bot] slack-bolt", "PyPI floor [bot]
+  line-bot-sdk"); <code>fastapi</code> / <code>uvicorn</code> are pinned by its "PyPI floor
+  [web_api]" rows, which read the same declarations.</li>
 <li><code>data_science</code> / <code>kaggle</code> dev add <code>ipykernel</code>, <code>nbclient</code>, <code>nbstripout</code>,
   <code>pandas</code>, <code>tomli</code>, <code>quartodoc</code>.</li>
 <li><code>include_ctf</code> adds a <code>ctf</code> extra (<code>pwntools</code>, <code>z3-solver</code>) — installed with

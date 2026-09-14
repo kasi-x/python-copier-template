@@ -1741,38 +1741,38 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td>820</td>
-<td>~32s</td>
+<td>835</td>
+<td>~43s</td>
 </tr>
 <tr>
 <td>Slow</td>
 <td><code>task test-slow</code></td>
 <td>5</td>
-<td>~23s</td>
+<td>~35s</td>
 </tr>
 <tr>
 <td>Pre-push / nightly</td>
 <td><code>task test-heavy</code></td>
-<td>46</td>
-<td>~30s</td>
+<td>47</td>
+<td>~43s</td>
 </tr>
 <tr>
 <td>Nightly, shuffled</td>
 <td><code>task test-randomly</code></td>
-<td>820</td>
-<td>~22s</td>
+<td>835</td>
+<td>~44s</td>
 </tr>
 <tr>
 <td>Everything</td>
 <td><code>task test</code></td>
-<td>879</td>
-<td>~78s</td>
+<td>895</td>
+<td>~88s</td>
 </tr>
 <tr>
 <td>Cost ledger guard</td>
 <td><code>task test-meta</code></td>
 <td>8</td>
-<td>~13s</td>
+<td>~18s</td>
 </tr>
 </tbody>
 </table>
@@ -1780,10 +1780,13 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 it is the cost ledger's own guard (<code>tests/test_marker_drift.py</code>) split out of
 the edit loop, and CI runs it as its own job on every push and PR.</p>
 <p>Those times were measured on 2026-09-14 with <code>time uv run --locked pytest</code>
-plus the task's own selection, on this box with nothing else running, against a
-warm <code>.cache/renders</code>: the same day, the same tree under another agent's venv
-builds took 47s instead of 32s, and a cold render cache turned <code>task test</code> into
-337s. That spread is why the edit loop's 30s budget is the contract and a time
+plus the task's own selection, against a warm <code>.cache/renders</code>. The run behind
+the table above shared the box with another session's work (load average ~59 on
+32 logical CPUs); the same rows measured 32s / 23s / 30s / 21s / 78s / 12s the
+same day while it was quiet, before the LINE platform and the two MCP tools
+landed. A cold render cache is the other extreme: it once turned <code>task test</code>
+into 337s.
+That spread is why the edit loop's 30s budget is the contract and a time
 is only an observation — <code>tests/matrix/tiers.json</code> holds each measurement with
 the conditions it was taken under.</p>
 <p>The tiers are a contract, not a habit: each one is a marker expression the

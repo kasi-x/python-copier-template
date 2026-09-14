@@ -1817,6 +1817,11 @@ witness tiers run into minutes.</p>
 <td>a witness tier's verdict, one entry per executed test</td>
 <td><code>fast</code> a few seconds (225 renders, no venv), <code>slow</code> ~2 min, <code>full</code> adds venvs and network (tens of minutes)</td>
 </tr>
+<tr>
+<td><code>run_tests</code></td>
+<td>the same verdict shape for the suite's own tiers: <code>fast</code> / <code>heavy</code> / <code>slow</code> / <code>meta</code> / <code>all</code></td>
+<td>the tier you name; the marker expression comes from the cost ledger</td>
+</tr>
 </tbody>
 </table>
 <p>Two calls cover most of the loop:</p>
@@ -1852,6 +1857,10 @@ nothing about the answers. Every other byte is compared as it is.</p>
 <tr>
 <td><code>template://witnesses</code></td>
 <td>each witness leaf with its recorded tier and result, plus the ledger's coverage counters -- sorted and declaration-ordered, so it diffs between runs</td>
+</tr>
+<tr>
+<td><code>template://support</code></td>
+<td>the declared support contract (<code>support.yml</code>): what CI promises to execute per combination and per leaf class, each entry with the measured <code>why</code></td>
 </tr>
 </tbody>
 </table>

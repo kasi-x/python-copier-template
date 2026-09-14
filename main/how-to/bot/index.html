@@ -27,7 +27,7 @@
     
     
       
-        <title>Chat bot layer (Discord / Slack) - python-copier-template</title>
+        <title>Chat bot layer (Discord / Slack / LINE) - python-copier-template</title>
       
     
     
@@ -83,7 +83,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#chat-bot-layer-discord-slack" class="md-skip">
+        <a href="#chat-bot-layer-discord-slack-line" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Chat bot layer (Discord / Slack)
+              Chat bot layer (Discord / Slack / LINE)
             
           </span>
         </div>
@@ -1128,6 +1128,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#line" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        LINE
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LINE">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-the-two-line-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Getting the two LINE credentials
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-it_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-the-signature-check-is-what-makes-a-public-url-safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why the signature check is what makes a public URL safe
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#non-goals" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1883,6 +1933,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#line" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        LINE
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LINE">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#getting-the-two-line-credentials" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Getting the two LINE credentials
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-it_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-the-signature-check-is-what-makes-a-public-url-safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why the signature check is what makes a public URL safe
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#non-goals" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1911,7 +2011,7 @@
   
 
 
-<h1 id="chat-bot-layer-discord-slack">Chat bot layer (Discord / Slack)<a class="headerlink" href="#chat-bot-layer-discord-slack" title="Permanent link">&para;</a></h1>
+<h1 id="chat-bot-layer-discord-slack-line">Chat bot layer (Discord / Slack / LINE)<a class="headerlink" href="#chat-bot-layer-discord-slack-line" title="Permanent link">&para;</a></h1>
 <p>The template can layer a <strong>long-running chat bot</strong> onto a <code>cli</code> or <code>web_api</code>
 project. It is the second implementation of the
 <a href="../../explanations/long-running/">long-running-executables layer model</a>
@@ -1920,15 +2020,15 @@ bot module with its own entry point onto an otherwise ordinary project —
 never a new project type.</p>
 <p>Answering <strong>Yes</strong> to <code>include_bot</code> (asked for the <code>cli</code> / <code>web_api</code> bases)
 generates the <strong>discord</strong> scaffold, the recommended platform. Answer <strong>No</strong>
-to <code>use_recommended_bot</code> to pick from <code>bot_platform</code>, whose second choice is
-<strong>slack</strong>:</p>
+to <code>use_recommended_bot</code> to pick from <code>bot_platform</code>, whose other choices are
+<strong>slack</strong> and <strong>line</strong>:</p>
 <table>
 <thead>
 <tr>
 <th><code>bot_platform</code></th>
 <th>Module</th>
 <th>Runtime dependency</th>
-<th>Tokens</th>
+<th>Credentials</th>
 </tr>
 </thead>
 <tbody>
@@ -1943,6 +2043,12 @@ to <code>use_recommended_bot</code> to pick from <code>bot_platform</code>, whos
 <td><code>bot_slack.py</code></td>
 <td><code>slack-bolt&gt;=1.21,&lt;2</code></td>
 <td><code>SLACK_BOT_TOKEN</code> + <code>SLACK_APP_TOKEN</code></td>
+</tr>
+<tr>
+<td><code>line</code></td>
+<td><code>bot_line.py</code></td>
+<td><code>line-bot-sdk&gt;=3,&lt;4</code> + <code>fastapi</code> / <code>uvicorn[standard]</code></td>
+<td><code>LINE_CHANNEL_SECRET</code> + <code>LINE_CHANNEL_ACCESS_TOKEN</code></td>
 </tr>
 </tbody>
 </table>
@@ -1964,10 +2070,11 @@ to <code>use_recommended_bot</code> to pick from <code>bot_platform</code>, whos
   passed through from the host environment. The task follows the selected
   platform: one entry point, one token set.</li>
 </ul>
-<p>Both generated platforms reach their service over an <strong>outbound</strong> connection,
-so neither needs a public endpoint: Discord over the Gateway, Slack over
-Socket Mode. That is the property the MCP stdio transport has too, and the
-reason the layer works on a laptop and behind NAT.</p>
+<p>Two of the three generated platforms reach their service over an <strong>outbound</strong>
+connection, so neither needs a public endpoint: Discord over the Gateway,
+Slack over Socket Mode. That is the property the MCP stdio transport has too,
+and the reason those two work on a laptop and behind NAT. LINE is the
+exception — the Messaging API can only push, so its bot serves a webhook.</p>
 <h2 id="discord">Discord<a class="headerlink" href="#discord" title="Permanent link">&para;</a></h2>
 <h3 id="getting-a-discord-token">Getting a Discord token<a class="headerlink" href="#getting-a-discord-token" title="Permanent link">&para;</a></h3>
 <ol>
@@ -2041,17 +2148,77 @@ both <code>SLACK_BOT_TOKEN</code> and <code>SLACK_APP_TOKEN</code> in the enviro
 no <code>WebClient</code>, no socket. <code>build_app(token=...)</code> passes
 <code>token_verification_enabled=False</code>, because <code>App</code> would otherwise call
 <code>auth.test</code> while the app is being built.</p>
+<h2 id="line">LINE<a class="headerlink" href="#line" title="Permanent link">&para;</a></h2>
+<h3 id="getting-the-two-line-credentials">Getting the two LINE credentials<a class="headerlink" href="#getting-the-two-line-credentials" title="Permanent link">&para;</a></h3>
+<p>LINE splits the credential the same way Slack does, but along a different
+axis: a <strong>channel secret</strong> verifies the webhook, and a <strong>channel access
+token</strong> authorizes the Messaging API calls the bot makes when it replies. The
+scaffold refuses to start without either and names the missing one.</p>
+<ol>
+<li>Create a provider and a <strong>Messaging API</strong> channel at
+   <a href="https://developers.line.biz/console/">https://developers.line.biz/console/</a>.</li>
+<li><strong>Messaging API</strong> tab → <strong>Channel access token (long-lived)</strong> → issue one.
+   That value is <code>LINE_CHANNEL_ACCESS_TOKEN</code>.</li>
+<li><strong>Basic settings</strong> tab → <strong>Channel secret</strong>. That value is
+   <code>LINE_CHANNEL_SECRET</code>; it is what LINE signs every webhook body with.</li>
+<li>Copy <code>.env.example</code> to <code>.env</code> and set both variables. <code>.env</code> is
+   git-ignored and loaded by direnv — never commit either value. A leaked
+   access token sends messages as your channel; a leaked channel secret lets
+   anyone forge a webhook.</li>
+<li>Add the bot as a friend (the channel's QR code is on the <strong>Messaging API</strong>
+   tab). A LINE user can only message a bot they added.</li>
+</ol>
+<h3 id="run-it_2">Run it<a class="headerlink" href="#run-it_2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>bot-line-&lt;name&gt;
+</code></pre></div>
+<p>Unlike the other two platforms this one listens: the bot serves
+<code>POST /callback</code> on <code>BOT_PORT</code> (default 8000, all interfaces), so it needs an
+HTTPS URL LINE can reach. Deploy it behind a reverse proxy, or tunnel to it
+while developing:</p>
+<div class="highlight"><pre><span></span><code>cloudflared<span class="w"> </span>tunnel<span class="w"> </span>--url<span class="w"> </span>http://localhost:8000<span class="w">   </span><span class="c1"># or: ngrok http 8000</span>
+</code></pre></div>
+<p>Then, on the <strong>Messaging API</strong> tab:</p>
+<ol>
+<li><strong>Webhook settings</strong> → <strong>Webhook URL</strong>:
+   <code>https://&lt;that host&gt;/callback</code> → <strong>Verify</strong> (LINE sends a signed test
+   request; the scaffold answers it, so the check passes).</li>
+<li><strong>Use webhook</strong> → on, and turn <strong>Auto-reply messages</strong> off so the
+   channel's canned replies do not answer first.</li>
+<li>Send the bot <code>ping</code> in the chat — it replies <code>pong</code>.</li>
+</ol>
+<p>Logging goes through the generated <code>logging_setup</code>, so <code>LOG_FORMAT=json</code>
+gives the webhook process the same structured logs as the CLI. With Docker:
+<code>task bot-serve</code> / <code>just bot-serve</code> (needs both credentials in the
+environment; this is the one bot container that publishes a port — <code>8000</code>).</p>
+<h3 id="why-the-signature-check-is-what-makes-a-public-url-safe">Why the signature check is what makes a public URL safe<a class="headerlink" href="#why-the-signature-check-is-what-makes-a-public-url-safe" title="Permanent link">&para;</a></h3>
+<p>The webhook URL is public by design: LINE has to reach it, so anyone who
+learns it can POST to <code>/callback</code>. What separates LINE from a forger is the
+channel secret, which never travels over the wire. LINE sends the base64
+HMAC-SHA256 of the raw request body in the <code>X-Line-Signature</code> header, and the
+scaffold's <code>WebhookParser</code> recomputes it over the exact bytes received and
+rejects the request — <code>400</code>, no reply, no event parsed — when it does not
+match. An unsigned body and a body signed with the wrong secret are both that
+same 400.</p>
+<p><code>tests/test_bot_line.py</code> asserts exactly that, plus the happy path: a
+correctly signed <code>ping</code> gets the <code>pong</code> reply, the two forged bodies get
+rejected without a single reply call, and the startup refusal names the
+missing credential. <code>build_app()</code> is split from <code>main()</code> and takes the reply
+call as a parameter, so the whole route — signature check included — runs
+in-process over httpx's <code>ASGITransport</code> with a recording reply: no token, no
+client, no network. (The transport is httpx's rather than starlette's
+<code>TestClient</code> for the reason <code>tests/test_app.py</code> documents: the generated
+project sets <code>filterwarnings = error</code>, and starlette 1.x deprecates httpx
+inside <code>TestClient</code>.)</p>
 <h2 id="non-goals">Non-goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
 <p>The generated bots are working starting points, not frameworks: no moderation
 tooling, no databases/persistence, no scheduled tasks, no voice, no i18n, no
 command catalogue. Platform-specific operational concerns (rate-limit handling
-and reconnection backoff are discord.py's / Bolt's own, on by default) are not
-re-implemented. Add the web_api layer (or any other) on top by answering the
-same gates.</p>
-<p>LINE (<code>line-bot-sdk</code>, Webhook signature verification) and Gmail
-(<code>google-api-python-client</code> + OAuth) are <strong>planned platforms, not offered
-yet</strong>: they will join <code>bot_platform</code> as new choices with their own shared
-bodies — no new project type, no new question axis.</p>
+and reconnection backoff are discord.py's / Bolt's / line-bot-sdk's own, on by
+default) are not re-implemented. Add the web_api layer (or any other) on top
+by answering the same gates.</p>
+<p>Gmail (<code>google-api-python-client</code> + OAuth) is a <strong>planned platform, not
+offered yet</strong>: it will join <code>bot_platform</code> as a new choice with its own shared
+body — no new project type, no new question axis.</p>
 
 
 
