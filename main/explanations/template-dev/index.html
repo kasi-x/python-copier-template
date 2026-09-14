@@ -1333,6 +1333,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#question-whens-read-raw-answers-render-reads-effective-internals" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Question <code>when:</code>s read raw answers; render reads effective internals
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keep-the-predicate-inventory-mechanical-task-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Keep the predicate inventory mechanical: <code>task predicates</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adding-a-question-or-project-type-keep-the-z3-reachability-green" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1381,6 +1403,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Documented generation commands must run without <code>--vcs-ref</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gitlab-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GitLab scope
       </span>
     </span>
   </a>
@@ -1815,6 +1848,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#question-whens-read-raw-answers-render-reads-effective-internals" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Question <code>when:</code>s read raw answers; render reads effective internals
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keep-the-predicate-inventory-mechanical-task-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Keep the predicate inventory mechanical: <code>task predicates</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#adding-a-question-or-project-type-keep-the-z3-reachability-green" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1863,6 +1918,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Documented generation commands must run without <code>--vcs-ref</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gitlab-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        GitLab scope
       </span>
     </span>
   </a>
@@ -1951,10 +2017,13 @@ ros2 / cli+ctf):
 <code>pyproject-basedpyright.toml.jinja</code>, <code>pyproject-ty-checkers.toml.jinja</code>
 (pyrefly/ty), <code>pyproject-test-coverage.toml.jinja</code> (pytest/coverage/typos/
 vulture/deptry), <code>pyproject-ruff-lint.toml.jinja</code> (select/extend-ignore/
-task-tags), <code>pyproject-ctf-extra.toml.jinja</code>, <code>pyproject-ctf-lint.toml.jinja</code>.
-Out of scope: inline single-line conditionals (README badges, dependency
-one-liners, deptry <code>|token</code> fragments) — extracting those would scatter
-one-line logic across files with no hunk-boundary benefit.</li>
+task-tags), <code>pyproject-ctf-extra.toml.jinja</code>, <code>pyproject-ctf-lint.toml.jinja</code>,
+<code>pyproject-deps.toml.jinja</code> (the runtime <code>dependencies</code> one-liner),
+<code>pyproject-deptry.toml.jinja</code> (the <code>[tool.deptry]</code> table with the
+<code>per_rule_ignores</code> assembly, included from the test-coverage partial).
+Out of scope: inline single-line conditionals with no edit-hotspot of their
+own (README badges and the like) — extracting those would scatter one-line
+logic across files with no hunk-boundary benefit.</li>
 </ul>
 <p>Enforced by <code>_template_files()</code> walking <code>_shared/</code> in
 <code>tests/test_copier_structure.py</code> (variables inside shared partials must be
@@ -1988,6 +2057,78 @@ settings. Rules:</p>
 <p>Enforced by <code>test_question_references_are_forward_only</code> and
 <code>test_fragments_are_complete_and_duplicate_free</code> in
 <code>tests/test_copier_structure.py</code>.</p>
+<h2 id="question-whens-read-raw-answers-render-reads-effective-internals">Question <code>when:</code>s read raw answers; render reads effective internals<a class="headerlink" href="#question-whens-read-raw-answers-render-reads-effective-internals" title="Permanent link">&para;</a></h2>
+<p>The questionnaire keeps two vocabularies apart, and every condition below
+lives on one side of the line:</p>
+<ul>
+<li><strong>Question <code>when:</code> conditions use raw answers.</strong> A question is offered
+  based on what was actually answered — the base <code>project_type</code>, the raw
+  <code>include_*</code> opt-ins — never on a derived internal.</li>
+<li><strong>Everything render-side uses the effective internal.</strong> Template bodies,
+  file-name conditions (<code>{% if ... %}</code> in <code>template/</code> paths), <code>_tasks.jinja</code>
+  and copier.yml's <code>_tasks</code> blocks read the <code>*_effective</code> family (plus the
+  effective <code>web_api</code> / <code>data_science</code>, <code>pkg_dir</code>, <code>import_pkg</code>, ...) from
+  <code>questions/_internal.yml</code>, so "the base <em>or</em> the combo opt-in" is resolved
+  in exactly one place and render conditions cannot drift from the layer
+  rules they encode.</li>
+</ul>
+<p>The <code>include_*.when</code> gates and the <code>mcp_effective</code> / <code>bot_effective</code> base
+guards are therefore the same predicate written in the two vocabularies;
+when you change one, mirror the other. Two pinned consequences:</p>
+<ul>
+<li><code>include_mcp.when</code> spells out
+  <code>(project_type == 'cli' or project_type == 'web_api' or include_web_api)</code>
+  instead of the <code>web_api</code> alias. The alias lives in
+  <code>questions/_internal.yml</code>, which the include chain puts <em>after</em>
+  <code>questions/_common_b.yml</code>, so referencing it from the question would be a
+  forward reference (Undefined — the question would silently never ask).
+  <code>has_web_api</code> would resolve, but it is an effective, and a <code>when</code> reads
+  raw answers. This is a known, deliberate exception to "one predicate, one
+  definition": keep it in sync with <code>mcp_effective</code> by hand (the comment on
+  the question says so).</li>
+<li>Gate answers with no effective of their own (<code>include_sentry</code>,
+  <code>use_recommended_agent</code>, <code>include_mcp</code>) are leaves: nothing derives them,
+  so render conditions use them raw and that is correct. Do not "fix"
+  <code>include_sentry</code> in the <code>.env.example</code> / README conditions into an
+  internal — there is no base guard it needs that its own <code>when</code> does not
+  already settle.</li>
+</ul>
+<p>The render-side agreement between a file-name gate and the README section
+documenting the same file is enforced by
+<code>tests/test_bot_layer.py::test_env_example_gate_and_readme_section_agree</code>
+(the bot layer regressed exactly this way: <code>.env.example</code> shipped the bot
+tokens while the README's "Environment variables" section stayed hidden);
+the forward-reference half is <code>test_question_references_are_forward_only</code>
+in <code>tests/test_copier_structure.py</code>.</p>
+<h2 id="keep-the-predicate-inventory-mechanical-task-predicates">Keep the predicate inventory mechanical: <code>task predicates</code><a class="headerlink" href="#keep-the-predicate-inventory-mechanical-task-predicates" title="Permanent link">&para;</a></h2>
+<p>The condition surface is large — question <code>when:</code>s, the <code>when: false</code>
+internals, <code>{% if %}</code> gates in template file names and bodies, <code>_tasks</code>
+guards — and §18's unification (the <code>oj_bare</code> / <code>no_pkg</code> inventory) was done
+by hand against a snapshot that could rot. <code>tools/predicates.py</code> keeps the
+inventory alive: it collects every boolean condition site, evaluates each
+against all 225 witness leaves with copier's own machinery, and reports the
+classification tree (every <code>invariants.yml</code> row with its leaf count),
+per-internal reference and fire counts, the equivalence classes over the
+leaf space, mechanically-detected unification candidates (a site whose leaf
+vector equals a named internal it does not reference), and shortcut
+suggestions. <code>--json</code> is the machine-readable form; run it after adding a
+gate, a layer, or any new <code>{% if %}</code> — and read its findings as candidates,
+not verdicts (mechanical equality is not intent).</p>
+<p>The naming rule it suggests with numbers:</p>
+<ul>
+<li><strong>3 or more sites sharing one leaf-vector class that has no name</strong> — name
+  the shortcut (a new <code>when: false</code> internal) and reference it everywhere;
+  that is the threshold where look-alike conditions start drifting apart.</li>
+<li><strong>A named internal that never splits the 225-leaf space</strong> (fires on all
+  or none) — a shortcut that cannot distinguish leaves is dead weight;
+  consider flattening it or saying why the leaf space never exercises it.</li>
+</ul>
+<p>The fast-tier guard <code>tests/test_predicate_classifier.py</code> holds the
+space-wide version of the same rule: no template condition may duplicate a
+named internal unconditionally (proven in Z3 over the whole questionnaire
+space, not just the 225 leaves) without referencing it — unless the pair is
+declared in its <code>DECLARED_EQUIVALENCES</code> registry with a reason, as the
+<code>has_*</code> / <code>web_api</code> / <code>data_science</code> alias family from §18 is.</p>
 <h2 id="adding-a-question-or-project-type-keep-the-z3-reachability-green">Adding a question or project type: keep the Z3 reachability green<a class="headerlink" href="#adding-a-question-or-project-type-keep-the-z3-reachability-green" title="Permanent link">&para;</a></h2>
 <p>Every asked question's <code>when</code> must be satisfiable for some combination of
 earlier answers. A typo in a <code>project_type</code> comparison or a guard no genre
@@ -2074,6 +2215,50 @@ differently between two invocations that look identical, print
 template source (working tree vs tag clone) and which settings keys copier
 actually resolved, and turned a day of "flaky copier" theories into a
 one-line root cause.</p>
+<h2 id="gitlab-scope">GitLab scope<a class="headerlink" href="#gitlab-scope" title="Permanent link">&para;</a></h2>
+<p><code>git_platform</code> offers <code>github.com</code> (default) and <code>gitlab.com</code>. The platform
+distinction is enforced in two places: filename gates
+(<code>{% if git_platform=="github.com" %}...{% endif %}</code>) decide whole files, and
+the <code>repo_url</code> / <code>docs_url</code> internals in <code>questions/_internal.yml</code> decide URL
+bytes. What that means for a <code>gitlab.com</code> render:</p>
+<p>Shipped, following the platform:</p>
+<ul>
+<li>GitLab URLs from the <code>repo_url</code> / <code>docs_url</code> internals in every consumer:
+  <code>https://gitlab.com/&lt;gitlab_group&gt;/&lt;repo&gt;</code> and the GitLab Pages convention
+  <code>https://&lt;gitlab_group | lower&gt;.gitlab.io/&lt;repo&gt;</code>. That reaches
+  <code>pyproject.toml</code>'s <code>[project.urls]</code> (labelled <code>urls.Homepage</code> on GitLab,
+  <code>urls.GitHub</code> on GitHub), <code>zensical.toml</code> <code>site_url</code> / <code>repo_url</code>,
+  <code>CITATION.cff</code> <code>repository-code</code>, <code>REUSE.toml</code>,
+  <code>docs/tutorials/installation.md</code>, the README clone/source links, the ros2
+  <code>package.xml</code>, and the LICENSE notice text.</li>
+<li>the hardened <code>.gitlab-ci.yml</code> instead of the GitHub Actions workflow set
+  (<code>.github/</code> is filename-gated to github.com), and — because
+  <code>security_policy_effective</code> / <code>scorecard_effective</code> gate on the platform —
+  no <code>SECURITY.md</code> / Scorecard workflow (see
+  <code>docs/explanations/security.md</code>).</li>
+</ul>
+<p>Remaining GitHub-specific on a gitlab.com render (factual state, not a
+roadmap — full parity would be a project of its own):</p>
+<ul>
+<li>no GitHub Actions workflows are rendered, so the README's CI badge
+  (<code>{{repo_url}}/actions/...</code>) and codecov badge point at routes a GitLab
+  repository does not serve;</li>
+<li>the docs <em>deployment</em> story: <code>conf.py</code>'s github switcher and pages URL,
+  <code>make_switcher.py</code>, the gh-pages publish job — no GitLab Pages CI job is
+  generated, even though <code>docs_url</code> itself follows the GitLab Pages
+  convention;</li>
+<li><code>ghcr.io</code> container paths (the devcontainer base image and the
+  container-publish workflows);</li>
+<li>the OpenSSF Scorecard badge (already gated off via <code>scorecard_effective</code>);</li>
+<li>README links that append GitHub routes to <code>repo_url</code> — <code>/issues</code> and
+  <code>/releases</code> (GitLab's routes are <code>/-/issues</code>, <code>/-/releases</code>) — and the
+  contributing section's link to <code>.github/CONTRIBUTING.md</code>, which a GitLab
+  render does not ship.</li>
+</ul>
+<p>Enforced by <code>test_template_gitlab_urls</code> in <code>tests/test_example_library_cli.py</code>
+(a gitlab.com render's URLs carry the group, and those fields contain no
+github.com) and <code>test_template_github_urls_unchanged</code> in the same file (the
+github.com render still produces today's exact URL bytes).</p>
 
 
 
