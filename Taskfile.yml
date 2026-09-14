@@ -102,6 +102,13 @@ tasks:
       unification candidates and shortcut suggestions (--json for the machine report)
     cmd: uv run --locked python tools/predicates.py {{ .CLI_ARGS }}
 
+  answers-for:
+    desc: >-
+      The inverse template: name the features, get the answers that produce them, e.g.
+      --require use_gpu_effective=true --require kaggle=true (--render proves the top
+      match by rendering it; --json for the machine report)
+    cmd: uv run --locked python tools/answers_for.py {{ .CLI_ARGS }}
+
   question-graph:
     desc: >-
       Show the questionnaire's dependency graph: the definition order grouped by fragment,

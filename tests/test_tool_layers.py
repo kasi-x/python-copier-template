@@ -26,8 +26,10 @@ next to the other structural rules):
                  (z3_witnesses)
     drivers      the tools that act on real trees with copier/subprocess:
                  detect, batch, adopt, the condition classifier built on
-                 the machinery (predicates), and the questionnaire
-                 dependency graph built on the foundations (question_graph)
+                 the machinery (predicates), the inverse selector that
+                 turns wanted features into witness answers (answers_for),
+                 and the questionnaire dependency graph built on the
+                 foundations (question_graph)
     frontends    the entry points an agent or a human calls: cli, gen_docs,
                  mcp_server
 
@@ -72,7 +74,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
     ),
     "drivers": (
         "act on real trees with copier/subprocess; consume the machinery",
-        frozenset({"adopt", "batch", "detect", "predicates", "question_graph", "render_delta"}),
+        frozenset({"adopt", "answers_for", "batch", "detect", "predicates", "question_graph", "render_delta"}),
     ),
     "frontends": (
         "the entry points a human or an agent calls; consume the drivers",

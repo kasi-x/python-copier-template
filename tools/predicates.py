@@ -277,14 +277,17 @@ def collect_sites() -> list[Site]:
     return sites
 
 
-def _leaf_contexts(leaves: list[Any]) -> Any:
+def leaf_contexts(leaves: list[Any]) -> Any:
     """Yield (leaf, rendered context, jinja env) once per leaf, copier running the pass.
 
-    `Worker._ask` is copier's own questionnaire pass (it resolves the internal
-    `when: false` variables in definition order) and `_render_context` is the
-    context every render sees; both are private because copier exposes no
-    other way to run that pass -- the tests/test_when_model.py oracle pattern,
-    `vcs_ref="HEAD"` so the checkout's own questionnaire is what renders.
+    The oracle every consumer of "what does this answer set actually resolve
+    to" shares (tools/answers_for.py runs it over the whole leaf space the
+    same way ``evaluate`` does). `Worker._ask` is copier's own questionnaire
+    pass (it resolves the internal `when: false` variables in definition
+    order) and `_render_context` is the context every render sees; both are
+    private because copier exposes no other way to run that pass -- the
+    tests/test_when_model.py oracle pattern, `vcs_ref="HEAD"` so the
+    checkout's own questionnaire is what renders.
     """
     with tempfile.TemporaryDirectory() as dst:
         worker = Worker(src_path=str(TOP), dst_path=Path(dst), defaults=True, quiet=True, vcs_ref="HEAD")
@@ -354,7 +357,7 @@ def evaluate(sites: list[Site], leaves: list[Any]) -> None:
     """
     distinct = _distinct_evaluations(sites)
     compiled: dict[str, Any] = {}  # compiled sources are pure per env (tests/test_when_model.py memoizes the same way)
-    for _leaf, context, env in _leaf_contexts(leaves):
+    for _leaf, context, env in leaf_contexts(leaves):
         for expr, (refs, values, _error) in distinct.items():
             value, reason = _evaluate_expression(expr, refs, context, env, compiled)
             values.append(value)

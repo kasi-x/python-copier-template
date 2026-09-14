@@ -6,11 +6,11 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 858 | ~43s |
+| Edit loop | `task test-fast` | 880 | ~43s |
 | Slow | `task test-slow` | 6 | ~35s |
 | Pre-push / nightly | `task test-heavy` | 47 | ~43s |
-| Nightly, shuffled | `task test-randomly` | 858 | ~44s |
-| Everything | `task test` | 920 | ~88s |
+| Nightly, shuffled | `task test-randomly` | 880 | ~44s |
+| Everything | `task test` | 942 | ~88s |
 | Cost ledger guard | `task test-meta` | 9 | ~18s |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
