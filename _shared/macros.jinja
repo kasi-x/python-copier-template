@@ -1,0 +1,38 @@
+{# Single-source facts that several render paths would otherwise duplicate.
+   Import where needed (the same pattern as _tasks.jinja):
+
+       {% import "_shared/macros.jinja" as m with context %}
+
+   and call `m.run_prefix()` / `m.python_version()` / `m.classifiers()`.
+   Never paste the literal values back into a consumer: each fact is written
+   exactly once, here.
+
+   Where the python-version values' authority lives (template-dev.md,
+   "Hardcoded pins need an upstream check"): tools/check_upstream.py guards
+   them, so a bump here must agree with its checks:
+     - the `else` floor (3.11) is what check_upstream.py's "Python floor
+       (requires-python)" pin tracks (_resolve_python_floor: the oldest
+       supported version must not be past EOL per endoflife.date);
+     - the humble/jazzy branches exist only because questions/ros2.yml offers
+       those distros, and check_upstream.py's "ROS 2 distros offered" pin
+       (_resolve_ros) fails when an offered distro is past EOL per REP-2000.
+   Coupling note for the next bump: the floor pin locates the value by
+   grepping the requires-python expression in template/pyproject.toml.jinja
+   (`else '>=3.11')`), while the value itself now lives in python_version()
+   below — when tools/check_upstream.py is next touched (adding that pin was
+   deferred from TODO §18 item 6, which this extraction implements), point
+   its floor regex at this file. #}
+{% macro run_prefix() -%}{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}{%- endmacro %}
+{% macro python_version() -%}{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' if ros2_pkg and ros_distro == 'jazzy' else '3.11') }}{%- endmacro %}
+{% macro classifiers() -%}
+{%- set lines = ['"Programming Language :: Python :: 3.10",']
+    if ros2_pkg and ros_distro == 'humble' else (
+    ['"Programming Language :: Python :: 3.12",']
+    if ros2_pkg and ros_distro == 'jazzy' else [
+    '"Programming Language :: Python :: 3 :: Only",',
+    '"Programming Language :: Python :: 3.11",',
+    '"Programming Language :: Python :: 3.12",',
+    '"Programming Language :: Python :: 3.13",',
+    '"Programming Language :: Python :: 3.14",']) -%}
+{{ lines | join('\n    ') ~ '\n    ' }}
+{%- endmacro %}
