@@ -631,8 +631,16 @@ def test_witness_full_tier(leaf_id: str, tmp_path: Path, witness_results: Result
                 f"{leaf.id} ships docs sources without a docs task"
             )
         else:
-            _run(docs, dest, dest / ".venv")
-            assert any(dest.glob("site/**/*.html")), f"{leaf.id}: the docs build produced no site/ output"
+            output = _run(docs, dest, dest / ".venv")
+            # The docs command exiting 0 while writing nothing is the shape of
+            # the intermittent -n auto failure recorded in TODO §27.7-8, so the
+            # failure carries what the command said and what it left behind.
+            site = sorted(path.name for path in (dest / "site").glob("*")) if (dest / "site").is_dir() else []
+            assert any(dest.glob("site/**/*.html")), (
+                f"{leaf.id}: the docs build produced no site/ output.\n"
+                f"  {docs} exited 0 and said:\n{output}"
+                f"  site/ holds: {site[:10]}"
+            )
 
 
 # --------------------------------------------------------------------------- #
