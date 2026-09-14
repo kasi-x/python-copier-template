@@ -1,4 +1,4 @@
-{#
+{% import "_shared/macros.jinja" as m with context %}{#
   Canonical task list, included (not copied — this file lives outside
   `template/`) by each of the task-runner outputs so
   the task set is defined once and only formatted differently per tool:
@@ -52,7 +52,7 @@
 #}
 {% if ros2_pkg %}{% if ros2_package_manager == 'pixi' %}{% set run = '' %}
 {% set ros_source = '' %}
-{% else %}{% set run = 'uv run --locked ' if package_manager == 'uv' else ('poetry run ' if package_manager == 'poetry' else '') %}
+{% else %}{% set run = m.run_prefix() %}
 {% set ros_source = '. /opt/ros/$ROS_DISTRO/setup.bash && ' %}
 {% endif %}
 {% set tasks = [
@@ -65,9 +65,7 @@
              ~ ' && ' ~ ros_source ~ 'colcon test-result --verbose']},
     {'name': 'check', 'desc': 'Run all quality checks', 'deps': ['lint', 'build', 'test']},
 ] %}
-{% else %}{% set run = '' if task_runner_effective == 'pixi' else (
-    'uv run --locked ' if package_manager == 'uv' else (
-    'pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ')) %}
+{% else %}{% set run = '' if task_runner_effective == 'pixi' else m.run_prefix() %}
 {% set run_x = '' if task_runner_effective == 'pixi' else (
     'uv run --extra experiment --locked ' if package_manager == 'uv' else (
     'pixi run -e experiment ' if package_manager == 'pixi' else 'poetry run ')) %}

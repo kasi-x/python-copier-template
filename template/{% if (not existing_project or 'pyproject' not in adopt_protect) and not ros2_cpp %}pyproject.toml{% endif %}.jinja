@@ -1,3 +1,4 @@
+{% import "_shared/macros.jinja" as m with context -%}
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [ "setuptools>=77"{% if not ros2_pkg and not micropython_pkg and not oj_code %}, "setuptools-scm[toml]>=8"{% endif %} ]
@@ -14,17 +15,10 @@ authors = [
   # Further authors may be added by duplicating this section
   { name = "{{ author_name }}", email = "{{ author_email }}" }
 ]
-{% if package_manager == 'poetry' %}requires-python = ">=3.11,<4.0"{% else %}requires-python = "{{ '>=3.10' if ros2_pkg and ros_distro == 'humble' else ('>=3.12' if ros2_pkg and ros_distro == 'jazzy' else '>=3.11') }}"{% endif %}
+{% if package_manager == 'poetry' %}requires-python = ">=3.11,<4.0"{% else %}requires-python = ">={{ m.python_version() }}"{% endif %}
 classifiers = [
     "Development Status :: 3 - Alpha",
-    {% if ros2_pkg and ros_distro == 'humble' %}"Programming Language :: Python :: 3.10",
-    {% elif ros2_pkg and ros_distro == 'jazzy' %}"Programming Language :: Python :: 3.12",
-    {% else %}"Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    {% endif %}]
+    {{ m.classifiers() }}]
 {% if ros2_pkg or package_manager == 'poetry' %}{# poetry は setuptools-scm 由来の dynamic version を解釈しないため静的にする #}version = "0.1.0"
 {% elif micropython_pkg %}version = "0.1.0"
 {% elif online_judge %}version = "0.1.0"
