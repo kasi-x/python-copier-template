@@ -52,6 +52,7 @@ TOOL_NAMES = {
     "render_diff",
     "render_project",
     "run_batch",
+    "run_tests",
     "run_witness",
     "template_fingerprint",
     "template_status",
@@ -392,6 +393,36 @@ async def test_run_witness_returns_a_verdict_per_test(client: Client):
     assert verdict["lines"][0]["checks"] == [{"name": "pytest", "ok": True, "detail": ""}]
     assert verdict["output"] == ""
     assert verdict["command"][:3] == [sys.executable, "-m", "pytest"], "the verdict reports how to rerun it"
+
+
+@pytest.mark.anyio
+async def test_run_tests_returns_a_verdict_per_test(client: Client):
+    """One selected test, so this pins the plumbing (~2s), not the tier.
+
+    `-k` keeps the call inside the edit loop's budget; what it verifies is the
+    wiring this tool exists for: the tier's marker expression comes from the
+    ledger, pytest runs in a subprocess, and the verdict is per test rather
+    than pytest's text.
+    """
+    verdict = await call(
+        client, "run_tests", {"tier": "fast", "only": "test_batch_sample_base_is_the_shared_answer_set"}
+    )
+    assert verdict["ok"] is True, verdict["output"]
+    assert verdict["counts"] == {"passed": 1, "failed": 0, "skipped": 0}
+    assert verdict["command"][:3] == [sys.executable, "-m", "pytest"], "the verdict reports how to rerun it"
+    assert "not heavy and not slow and not meta" in verdict["command"], "the expression is the ledger's fast row"
+    assert [line["ok"] for line in verdict["lines"]] == [True]
+    assert verdict["lines"][0]["checks"], "a verdict carries at least one check"
+
+
+@pytest.mark.anyio
+async def test_run_tests_rejects_an_unknown_tier(client: Client):
+    """The schema rejects it for a client; the plain function must too."""
+    result = await client.call_tool("run_tests", {"tier": "turbo"})
+    assert result.is_error is True
+    assert "turbo" in str(result.content)
+    with pytest.raises(ToolError):
+        mcp_server.run_tests(cast("Any", "turbo"))
 
 
 @pytest.mark.anyio

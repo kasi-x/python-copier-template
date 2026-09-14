@@ -55,6 +55,7 @@ witness tiers run into minutes.
 | `lint_render` | render, then `ruff format --check` + `ruff check` under the generated config | one render + two ruff runs, no venv |
 | `run_batch` | a batch file's verdict (`tools/batch.py` semantics, structured) | one render per line; `prepare=True` adds installs |
 | `run_witness` | a witness tier's verdict, one entry per executed test | `fast` a few seconds (225 renders, no venv), `slow` ~2 min, `full` adds venvs and network (tens of minutes) |
+| `run_tests` | the same verdict shape for the suite's own tiers: `fast` / `heavy` / `slow` / `meta` / `all` | the tier you name; the marker expression comes from the cost ledger |
 
 Two calls cover most of the loop:
 

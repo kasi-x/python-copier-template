@@ -713,6 +713,91 @@ def run_witness(
     }
 
 
+# The suite tiers a caller can ask for, and the ledger row each one is. The
+# marker expressions themselves are NOT repeated here: tests/matrix/tiers.json
+# records them per task (and tests/test_marker_drift.py already holds that file
+# against Taskfile.yml), so this reads the row instead of keeping a copy that
+# could drift from the task it claims to run.
+TIER_TASKS = {"fast": "test-fast", "heavy": "test-heavy", "slow": "test-slow", "meta": "test-meta", "all": "test"}
+TIER_LEDGER = TOP / "tests" / "matrix" / "tiers.json"
+TIER_TIMEOUTS = {"fast": 1800, "heavy": 3600, "slow": 1800, "meta": 900, "all": 7200}
+"""Per-tier wall-clock budget in seconds, generous enough for a cold cache."""
+
+
+@server.tool()
+def run_tests(
+    tier: Literal["fast", "heavy", "slow", "meta", "all"], *, only: str | None = None, timeout: int | None = None
+) -> dict[str, Any]:
+    """Run one tier of this repository's own suite and return a verdict per test.
+
+    `run_witness` covers the witness tiers; this is the rest of the suite, so a
+    caller gets a structured verdict instead of pytest's text. `tier` names a
+    Taskfile task: `fast` is the edit loop (no venv, no network), `heavy`
+    builds virtualenvs and installs dependencies, `slow` is the serial
+    225-leaf batch runner (~2 min), `meta` runs the cost ledger's own guards,
+    `all` runs everything (~80 s warm, minutes cold). The marker expression is
+    read from `tests/matrix/tiers.json`, the record the suite's own drift
+    guard holds against `Taskfile.yml`. `only` narrows the selection with
+    pytest's `-k` expression, and `timeout` overrides the tier's budget
+    (seconds).
+
+    Returns `ok` (pytest's exit status), `tier`, `only`, the exact `command`
+    so it can be rerun by hand, `seconds`, `counts` (passed / failed /
+    skipped), `output` (the tail, only when the run failed) and `lines`: one
+    entry per executed test in `run_batch`'s verdict shape -- `id`, `ok`,
+    `seconds`, `checks` ({name, ok, detail}) -- with a skip reported as
+    `name: "skipped"` rather than a failure.
+    """
+    task = TIER_TASKS.get(tier)
+    if task is None:
+        msg = f"unknown tier {tier!r}; expected one of {', '.join(sorted(TIER_TASKS))}"
+        raise ToolError(msg)
+    try:
+        rows = json.loads(TIER_LEDGER.read_text(encoding="utf-8"))["tiers"]
+    except (OSError, KeyError, json.JSONDecodeError) as exc:
+        msg = f"cannot read the tier ledger {TIER_LEDGER}: {exc}"
+        raise ToolError(msg) from exc
+    expression = str(rows.get(task, {}).get("expression", ""))
+    limit = timeout or TIER_TIMEOUTS[tier]
+    report = Path(tempfile.mkdtemp(prefix="mcp-tests-")) / "report.xml"
+    command = [sys.executable, "-m", "pytest", "-q", "--junit-xml", str(report)]
+    if expression:
+        command += ["-m", expression]
+    if only:
+        command += ["-k", only]
+    started = time.monotonic()
+    try:
+        proc = subprocess.run(  # noqa: S603  WHYNOT: fixed argv; `only` is passed to pytest, not a shell.
+            command, cwd=TOP, capture_output=True, text=True, check=False, timeout=limit
+        )
+    except subprocess.TimeoutExpired:
+        msg = f"the {tier} tier did not finish within {limit}s"
+        raise ToolError(msg) from None
+    seconds = round(time.monotonic() - started, 3)
+    if not report.is_file():
+        return {
+            "ok": False,
+            "tier": tier,
+            "only": only,
+            "command": command,
+            "seconds": seconds,
+            "counts": {"passed": 0, "failed": 0, "skipped": 0},
+            "output": _output_tail(proc.stdout, proc.stderr),
+            "lines": [],
+        }
+    lines, counts = _junit_verdicts(report)
+    return {
+        "ok": proc.returncode == 0,
+        "tier": tier,
+        "only": only,
+        "command": command,
+        "seconds": seconds,
+        "counts": counts,
+        "output": "" if proc.returncode == 0 else _output_tail(proc.stdout, proc.stderr),
+        "lines": [line.as_dict() for line in lines],
+    }
+
+
 # --------------------------------------------------------------------------- #
 # the render fingerprint
 # --------------------------------------------------------------------------- #
