@@ -139,12 +139,22 @@ class Leaf:
     expect: dict[str, Any]
 
     def as_request(self) -> dict[str, Any]:
-        """The §C6 batch request line for this leaf."""
+        """The §C6 batch request line for this leaf.
+
+        The dest is a directory name, so `/` and `:` cannot survive (they are a
+        path separator and Windows-hostile); `=` goes too, but for the secret
+        scanner: this file is text gitleaks reads, and a leaf that joins the
+        project_type ``web_api`` to its gate and include axes with underscores
+        reads to its generic-api-key rule as the keyword ``api``, a separator
+        and a high-entropy value -- which is how the hygiene job first went
+        red. The id keeps its `=` because the rule's span stops at the `/` of
+        the slash-separated form.
+        """
         return {
             "id": self.id,
             "note": self.note,
             "ref": "HEAD",
-            "dest": self.id.replace("/", "_").replace(":", "-"),
+            "dest": self.id.replace("/", "_").replace(":", "-").replace("=", "-"),
             "answers": self.answers,
             "expect": self.expect,
         }

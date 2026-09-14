@@ -335,6 +335,29 @@ def test_witness_leaves_match_the_generator() -> None:
 
 @pytest.mark.fast
 @pytest.mark.full
+def test_leaf_dest_cannot_be_read_as_a_credential() -> None:
+    """The §C6 request lines are text a secret scanner reads; dests stay plain.
+
+    The hygiene job's gitleaks run went red on this file the first time the
+    include-layer leaves were pushed: generic-api-key read a dest that joins
+    the project_type ``web_api`` to its gate and include axes with underscores
+    as the keyword ``api``, a ``=`` separator and a value of entropy 3.63 (the
+    rule's floor is 3.5). The id keeps its ``=`` (the rule's ``[\\w.-]`` span
+    stops at the ``/`` of the slash-separated form, so only the dest matched);
+    the dest drops ``=`` and ``:`` by construction, which leaves the rule
+    nothing to separate a keyword from.
+    """
+    offenders = sorted(
+        request.dest for request in batch.load_requests([WITNESSES]) if "=" in request.dest or ":" in request.dest
+    )
+    assert not offenders, (
+        f"{WITNESSES.name}: a dest is scanned as text and must not carry '=' or ':'; "
+        f"gitleaks reads that as a keyword and its value (the hygiene job fails on it): {offenders[:10]}"
+    )
+
+
+@pytest.mark.fast
+@pytest.mark.full
 def test_excluded_names_hold_against_the_questionnaire() -> None:
     """Every exclusion the leaf space declares must still describe reality.
 
