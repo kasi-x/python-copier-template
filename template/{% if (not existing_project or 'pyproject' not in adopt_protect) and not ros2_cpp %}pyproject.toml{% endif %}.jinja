@@ -25,7 +25,7 @@ classifiers = [
 {% else %}dynamic = [ "version" ]
 {% endif %}
 {# The runtime `dependencies` one-liner is shared (see _shared/pyproject-deps.toml.jinja). #}{% include "_shared/pyproject-deps.toml.jinja" %}
-urls.GitHub = "{{ repo_url }}"
+{% if git_platform == 'gitlab.com' %}urls.Homepage{% else %}urls.GitHub{% endif %} = "{{ repo_url }}"
 {% if not web_api and not online_judge and not ros2_pkg and not micropython_pkg %}scripts.{{ repo_name }} = "{{ package_name }}.__main__:main"
 {% endif %}{% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ import_pkg }}.mcp_server:main"
 {% endif %}{% if bot_discord_effective %}scripts.bot-discord-{{ repo_name }} = "{{ import_pkg }}.bot_discord:main"

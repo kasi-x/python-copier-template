@@ -6,6 +6,7 @@ import tomllib
 from pathlib import Path
 
 import pytest
+import yaml
 
 from support import TOP
 from support import copy_project
@@ -73,6 +74,53 @@ def test_template_github_org_reflected(tmp_path: Path):
     readme = (tmp_path / "README.md").read_text()
     assert "myorg" in readme
     assert "DiamondLightSource" not in readme
+
+
+def test_template_gitlab_urls(tmp_path: Path):
+    # TODO §18: a gitlab.com render used to emit the hardcoded github.com
+    # repo_url / docs_url even though github_org is never asked on GitLab
+    # (gitlab_group is asked instead). Both internals are
+    # platform-conditional now; assert the exact field bytes for one
+    # repo_url consumer per file kind plus one docs_url consumer — an
+    # exact match on the full field also proves no github.com/github.io
+    # remains in those specific fields (the files' other github links,
+    # e.g. the ruff badge, are out of scope: see template-dev.md's
+    # "GitLab scope").
+    copy_project(tmp_path, project_type="library", git_platform="gitlab.com", gitlab_group="example-group")
+    repo_url = "https://gitlab.com/example-group/python-copier-template-example"
+    docs_url = "https://example-group.gitlab.io/python-copier-template-example"
+    answers = yaml.safe_load((tmp_path / ".copier-answers.yml").read_text())
+    assert answers["gitlab_group"] == "example-group"
+    assert "github_org" not in answers, "github_org must not be asked (or recorded) on gitlab.com"
+    pyproject = (tmp_path / "pyproject.toml").read_text()
+    assert f'urls.Homepage = "{repo_url}"' in pyproject
+    assert "urls.GitHub" not in pyproject
+    zensical = (tmp_path / "zensical.toml").read_text()
+    assert f'site_url = "{docs_url}"' in zensical
+    assert f'repo_url = "{repo_url}"' in zensical
+    citation = (tmp_path / "CITATION.cff").read_text()
+    assert f'repository-code: "{repo_url}"' in citation
+    readme = (tmp_path / "README.md").read_text()
+    assert f"git clone {repo_url}.git" in readme
+
+
+def test_template_github_urls_unchanged(tmp_path: Path):
+    # The github.com half of test_template_gitlab_urls: the default
+    # platform must still render today's exact URL bytes (verified
+    # byte-identically against a pre-change baseline over six render
+    # combos; this pins the same bytes on the example fixture).
+    copy_project(tmp_path, project_type="library")
+    repo_url = "https://github.com/kasi-x/python-copier-template-example"
+    docs_url = "https://kasi-x.github.io/python-copier-template-example"
+    pyproject = (tmp_path / "pyproject.toml").read_text()
+    assert f'urls.GitHub = "{repo_url}"' in pyproject
+    zensical = (tmp_path / "zensical.toml").read_text()
+    assert f'site_url = "{docs_url}"' in zensical
+    assert f'repo_url = "{repo_url}"' in zensical
+    citation = (tmp_path / "CITATION.cff").read_text()
+    assert f'repository-code: "{repo_url}"' in citation
+    readme = (tmp_path / "README.md").read_text()
+    assert f"git clone {repo_url}.git" in readme
 
 
 def test_bad_repo_name(tmp_path: Path):

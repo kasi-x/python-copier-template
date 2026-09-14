@@ -211,3 +211,50 @@ differently between two invocations that look identical, print
 template source (working tree vs tag clone) and which settings keys copier
 actually resolved, and turned a day of "flaky copier" theories into a
 one-line root cause.
+
+## GitLab scope
+
+`git_platform` offers `github.com` (default) and `gitlab.com`. The platform
+distinction is enforced in two places: filename gates
+(`{% if git_platform=="github.com" %}...{% endif %}`) decide whole files, and
+the `repo_url` / `docs_url` internals in `questions/_internal.yml` decide URL
+bytes. What that means for a `gitlab.com` render:
+
+Shipped, following the platform:
+
+- GitLab URLs from the `repo_url` / `docs_url` internals in every consumer:
+  `https://gitlab.com/<gitlab_group>/<repo>` and the GitLab Pages convention
+  `https://<gitlab_group | lower>.gitlab.io/<repo>`. That reaches
+  `pyproject.toml`'s `[project.urls]` (labelled `urls.Homepage` on GitLab,
+  `urls.GitHub` on GitHub), `zensical.toml` `site_url` / `repo_url`,
+  `CITATION.cff` `repository-code`, `REUSE.toml`,
+  `docs/tutorials/installation.md`, the README clone/source links, the ros2
+  `package.xml`, and the LICENSE notice text.
+- the hardened `.gitlab-ci.yml` instead of the GitHub Actions workflow set
+  (`.github/` is filename-gated to github.com), and — because
+  `security_policy_effective` / `scorecard_effective` gate on the platform —
+  no `SECURITY.md` / Scorecard workflow (see
+  `docs/explanations/security.md`).
+
+Remaining GitHub-specific on a gitlab.com render (factual state, not a
+roadmap — full parity would be a project of its own):
+
+- no GitHub Actions workflows are rendered, so the README's CI badge
+  (`{{repo_url}}/actions/...`) and codecov badge point at routes a GitLab
+  repository does not serve;
+- the docs *deployment* story: `conf.py`'s github switcher and pages URL,
+  `make_switcher.py`, the gh-pages publish job — no GitLab Pages CI job is
+  generated, even though `docs_url` itself follows the GitLab Pages
+  convention;
+- `ghcr.io` container paths (the devcontainer base image and the
+  container-publish workflows);
+- the OpenSSF Scorecard badge (already gated off via `scorecard_effective`);
+- README links that append GitHub routes to `repo_url` — `/issues` and
+  `/releases` (GitLab's routes are `/-/issues`, `/-/releases`) — and the
+  contributing section's link to `.github/CONTRIBUTING.md`, which a GitLab
+  render does not ship.
+
+Enforced by `test_template_gitlab_urls` in `tests/test_example_library_cli.py`
+(a gitlab.com render's URLs carry the group, and those fields contain no
+github.com) and `test_template_github_urls_unchanged` in the same file (the
+github.com render still produces today's exact URL bytes).
