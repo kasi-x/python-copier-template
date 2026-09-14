@@ -1154,8 +1154,13 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 > 2026-09-13 再監査: テストを**書く側**の簡素化・witness 実行・MCP 整備は**節23** に分離した
 > （本節は CI コストの話に限定。marker の負債と `test-loop.md` の乖離も節23 が持つ）。
 
-- [ ] **uv / graphviz / uvx ツールのキャッシュを入れる**
-      → **残り（2026-09-14 監査）**: setup-uv の enable-cache / .venv の actions/cache / uvx 冷起動は対応済み。docs の graphviz だけ未対応（.github/workflows/_docs.yml の apt-get install graphviz に actions/cache が無い）
+- [x] **uv / graphviz / uvx ツールのキャッシュを入れる**
+      → **完了（2026-09-14 監査 + 実装）**: setup-uv の enable-cache / `.venv` の
+        actions/cache / uvx 冷起動（uv wheel cache）は対応済み。graphviz の deb キャッシュは
+        **入れて壊して外した**（162e44d0: apt が root 所有の `.apt-cache/partial` を作り、
+        非特権の cache save が EACCES で失敗 → 毒されたエントリが以後毎回復元。graphviz は
+        数秒で入る）。今日その残骸（使われていない `APT_CACHE_WEEK` ステップ）を削除し、
+        再導入しない理由を `_docs.yml` のコメントに残した
       - `astral-sh/setup-uv` の cache 有効化 + `.venv` の `actions/cache`、
         docs run の `apt-get install graphviz` 常駐化、hygiene run の
         `uvx conventional-pre-commit / nbstripout / cffconvert` 冷起動のキャッシュ

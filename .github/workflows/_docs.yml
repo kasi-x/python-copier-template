@@ -47,12 +47,12 @@ jobs:
           # Need this to get version number from last tag
           fetch-depth: 0
 
-      - name: Rotate the apt cache key weekly
-        # Cache entries are immutable; the weekly key is what lets a new
-        # graphviz release enter the cache.
-        run: echo "APT_CACHE_WEEK=$(date +%G-W%V)" >> "$GITHUB_ENV"
-
       - name: Install system packages
+        # graphviz installs in seconds, and the deb cache that used to sit here
+        # (keyed on a weekly rotation) was removed in 162e44d0 after it poisoned
+        # itself: apt creates .apt-cache/partial as root, the unprivileged cache
+        # save then fails with EACCES, and the poisoned entry is restored on
+        # every later run. Do not add it back without solving that.
         run: sudo apt-get install graphviz
 
       - name: Install uv
