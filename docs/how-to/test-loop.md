@@ -10,8 +10,8 @@ but the cost ledger's own guard, and it stays outside the loop.
 | Slow | `task test-slow` | 5 | ~35s |
 | Pre-push / nightly | `task test-heavy` | 47 | ~43s |
 | Nightly, shuffled | `task test-randomly` | 848 | ~44s |
-| Everything | `task test` | 908 | ~88s |
-| Cost ledger guard | `task test-meta` | 8 | ~18s |
+| Everything | `task test` | 909 | ~88s |
+| Cost ledger guard | `task test-meta` | 9 | ~18s |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
 it is the cost ledger's own guard (`tests/test_marker_drift.py`) split out of
@@ -44,8 +44,11 @@ does. [Verification](../explanations/verification.md) states the three layers
   is excluded in practice, because all 7 of its tests are `heavy`.
 - `task test-meta` runs `-m meta`: the guards in `tests/test_marker_drift.py`,
   which check that expensive work carries its markers, that every tier still
-  collects what `tests/matrix/tiers.json` records, and that no recorded wall
-  time is older than 30 days. They are not part of the edit loop because the
+  collects what `tests/matrix/tiers.json` records, that the witness leaf space
+  stays inside its declared budget (`LEAF_BUDGET`; the growth law behind it is
+  [Verification](../explanations/verification.md)'s Growth rules), and that no
+  recorded wall time is older than 30 days. They are not part of the edit loop
+  because the
   membership check re-collects every tier in its own pytest session (six
   startups); `ci.yml` runs them as its own job. They are also part of
   `task test`, so the pre-release gate still runs them.

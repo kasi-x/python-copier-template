@@ -95,7 +95,7 @@ check moves between tiers, the budget moves with it.
 | Tier | Command | Selector | What runs |
 |---|---|---|---|
 | Edit loop | `task test-fast` | `-m "not heavy and not slow and not meta"` | L1 + L2 + everything that neither builds a venv nor touches the network |
-| Cost ledger guard | `task test-meta` | `-m meta` | the guards in `tests/test_marker_drift.py`: the venv/network marker scan, the tier-membership check and the cost-staleness check |
+| Cost ledger guard | `task test-meta` | `-m meta` | the guards in `tests/test_marker_drift.py`: the venv/network marker scan, the tier-membership check, the cost-staleness check and the leaf-space budget |
 | Slow | `task test-slow` | `-m slow` | the serial 225-leaf batch runner (`tools/batch.py` over `tests/matrix/witnesses.jsonl`) |
 | Pre-push / nightly | `task test-heavy` | `-m heavy` | L3: `uv sync` + the generated project's pytest / type check / docs build (`network` follows where the case downloads) |
 | Witness render | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | `fast` | L2 over all 225 leaves |
@@ -154,6 +154,17 @@ Adding a capability is not free, and the cost is predictable:
     that touches layer composition must declare, up front, whether it keeps
     exclusivity (choose-one) or accepts the product, and the growth table above
     stops applying if it accepts the product.
+
+The growth table is not the whole contract: the leaf space also has a declared
+ceiling. `LEAF_BUDGET` in `tests/test_marker_drift.py` — currently **450**,
+twice the current 225-leaf space — fails the meta guard when
+`tools/z3_witnesses.py` enumerates more leaves than that. The additive
+increments in the table fit several times over; what the budget turns away is
+the multiplicative case above (a lifted exclusivity, or a new axis that
+composes with everything already declared), which would otherwise surface only
+as the witness fast job creeping toward its 30-minute CI timeout. Raising it
+is a decision, not an accident: edit the constant and re-measure the witness
+job's wall time into `tests/matrix/tiers.json`.
 
 The conclusion that drives the rules below: growth pushed into L2 stays bounded
 (+22 leaves ≈ +1 s parallel, 0 s cached), while growth pushed into L3 is linear
@@ -267,5 +278,6 @@ from it, and `--check` fails CI when those drift.
 | Witness fast job: 208 tests (205 renders + three leaf-list checks), 39.4 s with `.cache/renders` emptied and 6.4 s warm, against the job's 30-minute timeout | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | 2026-09-14, this tree — the ledger's `witness` row; a PR runner is always cold |
 | Per-tier counts, marker expressions, re-measure commands and wall times (task tiers and the witness fast job) | `tests/matrix/tiers.json`; re-collect with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, fill `wall_seconds`/`measured` by hand from a `time` run of the row's own `command` | 2026-09-14, this tree |
 | Growth table's +76 / +22 leaf increments and their second costs | derived in the 2026-09-13 audit from the ledger's leaf counts and the 0.58 s/leaf unit | TODO §24.1 |
+| Leaf-space ceiling: `LEAF_BUDGET` = 450, twice the 225 enumerated leaves | `LEAF_BUDGET` in `tests/test_marker_drift.py`, checked against `tools/z3_witnesses.py`'s enumeration on every meta run | declared, citing §24.1 — the enforcement is the record |
 | Edit-loop budget of 30 s (a contract, not a measurement) | declared for the tiers in the 2026-09-13 audit | TODO §24.2 |
 | "all 225 leaves executed would be ~11 hours" | the `FULL_SAMPLE` rationale comment: 225 × (venv build + docs) at ~3 min | `tests/test_witness_matrix.py` |

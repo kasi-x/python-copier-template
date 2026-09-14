@@ -68,6 +68,11 @@ import pytest
 import yaml
 
 TOP = Path(__file__).absolute().parent.parent
+if str(TOP) not in sys.path:  # tests/test_witness_matrix.py does the same to reach tools/
+    sys.path.insert(0, str(TOP))
+
+from tools import z3_witnesses  # noqa: E402
+
 TESTS = TOP / "tests"
 LEDGER = TESTS / "matrix" / "tiers.json"
 TASKFILE = TOP / "Taskfile.yml"
@@ -98,6 +103,19 @@ MARKER_NETWORK = "network"
 # changes, so an entry measured longer ago than this is re-measured rather than
 # cited. The date is the one in the ledger's own `measured` column.
 STALENESS_DAYS = 30
+
+# The witness leaf space (tools/z3_witnesses.build(), rendered end to end by the
+# fast job of .github/workflows/witness.yml) has a declared ceiling, not just a
+# growth rate. TODO.md §24.1's law makes ordinary growth additive -- +76 leaves
+# per include layer, +22 per gate-off dimension -- but lifting include
+# exclusivity turns the layer multiplier into a combinatorial product:
+# exponential growth that would otherwise surface only as that job creeping
+# toward its 30-minute timeout. 450 is twice the current 225-leaf space, so the
+# additive increments fit several times over and only a multiplicative change
+# trips it. Crossing the budget is a decision -- raise this constant and
+# re-measure the witness job's wall time into tests/matrix/tiers.json -- not an
+# accident a slow CI run discovers.
+LEAF_BUDGET = 450
 
 # Commands that build a project virtualenv, and commands that need the wire.
 # The two are not the same set: `uv run` uses a project environment without
@@ -981,3 +999,34 @@ def test_test_loop_doc_states_the_recorded_tier_sizes() -> None:
                 f"{DOC.name}:{number}: `task {name}` says {stated} tests, the ledger records {ledger[name]['collected']}"
             )
     assert not problems, f"{DOC.relative_to(TOP)} contradicts {LEDGER.relative_to(TOP)}:\n  " + "\n  ".join(problems)
+
+
+# --------------------------------------------------------------------------- #
+# the leaf-space budget: §24.1's growth law, enforced at the enumerator.
+# --------------------------------------------------------------------------- #
+
+
+def test_the_witness_leaf_space_stays_within_its_declared_budget() -> None:
+    """tools/z3_witnesses.py's leaf space must fit inside LEAF_BUDGET.
+
+    Everything else in this module watches costs that already happened; this
+    one watches the one growth that compounds. TODO.md §24.1's law makes
+    ordinary growth additive -- one more include layer ≈ +76 leaves, one more
+    gate-off dimension ≈ +22 -- but exponential if include exclusivity is
+    lifted, and the witness fast job renders the whole space inside its
+    30-minute CI timeout (.github/workflows/witness.yml), so unbounded growth
+    would surface only as that job creeping toward its timeout. Exceeding the
+    budget fails here instead, and raising it is the decision.
+    """
+    _leaf_space, leaves = z3_witnesses.build()
+    # An int, not the comparison over `leaves` itself: pytest's assertion
+    # rewriting would otherwise echo the whole leaf list into the failure.
+    count = len(leaves)
+    assert count <= LEAF_BUDGET, (
+        f"the witness leaf space grew to {len(leaves)} leaves, over the declared budget of "
+        f"{LEAF_BUDGET} (TODO.md §24.1: +1 include layer ≈ +76 leaves, +1 gate-off dimension ≈ +22, "
+        "and include exclusivity lifted makes the growth exponential; the witness fast job must "
+        "render every leaf inside its 30-minute timeout). If the growth is deliberate, raise "
+        "LEAF_BUDGET in tests/test_marker_drift.py and re-measure the witness job's wall time into "
+        "tests/matrix/tiers.json."
+    )
