@@ -1086,7 +1086,13 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 条件分岐の3流儀混在への対処。いずれも render byte-identical 検証つきで進める
 （項目13 の copier.yml 分割時と同型）。
 
-- [ ] **flat / src パッケージツリーの二重化を `{{ pkg_dir }}` 1本化する**
+- [x] **flat / src パッケージツリーの二重化を `{{ pkg_dir }}` 1本化する**
+      → **完了（2026-09-14、bd937861）**: 14モジュール（fetcher/crawler/browser_fetch/
+        spider/mcp_server/bot×3/logging_setup/__main__/__init__/agent/tools）を
+        `template/{...}{{ pkg_dir }}{% endif %}/` 1本に統一、重複28ファイル削除（−176行）。
+        29コンボでレンダ byte-identical を実証。wrapper が残るのは真正に置き場が違うもの
+        （web_api の app/ は adopt_protect 節が無いため統一すると adopt モードの出力が変わる、
+        micropython の firmware/、kaggle の src/utils）だけ
       - 現状: `<pkg>` 配下の全モジュール（fetcher / crawler / browser_fetch / spider /
         mcp_server / logging_setup / `__init__` / `__main__` / agent / tools）が
         src 版と flat 版でファイルごと重複し、100文字超の path ガードが鏡像で存在する
@@ -1111,7 +1117,11 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       - `include_web_api.when` + `combinable` + `has_web_api` + 各ファイルの `{% if web_api %}`
         の重なりは「`--data-file` 強制時の leak 防止に三重が必要」という現状理由を
         `questions/_combo.yml` に文書化するか、`combinable` を `has_*` に畳むか決める
-- [ ] **`dev` 依存ブロックの triplication を base + append 化する**
+- [x] **`dev` 依存ブロックの triplication を base + append 化する**
+      → **完了（2026-09-14、b414588c）**: 共有依存は `{% set %}` で1回捕获し両位置に
+        スプライス（recommended/full は pytest の前、none/basic は ruff の後に置かれる
+        という出力順の事実を保存）、rec-only 項目が条件付き append。37コンボ +
+        30,384 jinja コンテキストの差分検証で 0 不一致
       - `template/pyproject.toml.jinja` の `strictness == 'none'` / `'basic'` 分岐は
         約30行ほぼ逐語重複。`dev_base` + `{% if strictness in ['recommended','full'] %}`
         append に書き換える
@@ -1138,7 +1148,10 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       （現状: Project Details で後聞きのため `security_policy` / `scorecard` の `when` で
       絞れず `*_effective` の render 時ガードに迂回し、GitLab でも `repo_url` / `docs_url`
       が github.com 固定になる）
-- [ ] **`pyproject.toml.jinja` をさらに分割する**（項目13 の確立パターンで）
+- [x] **`pyproject.toml.jinja` をさらに分割する**（項目13 の確立パターンで）
+      → **完了（2026-09-14、beecc952）**: 1,978文字の `dependencies=` 1行ゲートを
+        `_shared/pyproject-deps.toml.jinja` へ、deptry `per_rule_ignores` を
+        `_shared/pyproject-deptry.toml.jinja` へ抽出。本体 330 → 325 行
       - `dependencies=` の1行20連ゲートと deptry `per_rule_ignores` 文字列組立を
         `_shared/pyproject-deps.toml.jinja` + `_shared/pyproject-deptry.toml.jinja` に抽出し、
         本体は構造のみ残す。dep 追加時の編集箇所を1箇所にする
