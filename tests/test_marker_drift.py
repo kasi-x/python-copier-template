@@ -35,10 +35,12 @@ re-record::
 
     UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py
 
-That rewrites the collected sets and says what changed; ``wall_seconds`` and
-``measured`` stay for whoever ran the tier to fill in. The counts documented in
-docs/how-to/test-loop.md are checked against the ledger, and the failure names
-the rows to fix there.
+That rewrites the collected sets *and* the Tests column of the tier table in
+docs/how-to/test-loop.md, so the documented counts are no longer the hand-edited
+half of a re-record (the step that was forgotten, and that merges kept
+conflicting on). ``wall_seconds`` and ``measured`` stay for whoever ran the tier
+to fill in, and the doc check below stays as the verifier of that rewrite: a
+count the ledger does not hold still fails, naming the row.
 """
 
 from __future__ import annotations
@@ -66,6 +68,11 @@ import pytest
 import yaml
 
 TOP = Path(__file__).absolute().parent.parent
+if str(TOP) not in sys.path:  # tests/test_witness_matrix.py does the same to reach tools/
+    sys.path.insert(0, str(TOP))
+
+from tools import z3_witnesses  # noqa: E402
+
 TESTS = TOP / "tests"
 LEDGER = TESTS / "matrix" / "tiers.json"
 TASKFILE = TOP / "Taskfile.yml"
@@ -96,6 +103,19 @@ MARKER_NETWORK = "network"
 # changes, so an entry measured longer ago than this is re-measured rather than
 # cited. The date is the one in the ledger's own `measured` column.
 STALENESS_DAYS = 30
+
+# The witness leaf space (tools/z3_witnesses.build(), rendered end to end by the
+# fast job of .github/workflows/witness.yml) has a declared ceiling, not just a
+# growth rate. TODO.md §24.1's law makes ordinary growth additive -- +76 leaves
+# per include layer, +22 per gate-off dimension -- but lifting include
+# exclusivity turns the layer multiplier into a combinatorial product:
+# exponential growth that would otherwise surface only as that job creeping
+# toward its 30-minute timeout. 450 is twice the current 225-leaf space, so the
+# additive increments fit several times over and only a multiplicative change
+# trips it. Crossing the budget is a decision -- raise this constant and
+# re-measure the witness job's wall time into tests/matrix/tiers.json -- not an
+# accident a slow CI run discovers.
+LEAF_BUDGET = 450
 
 # Commands that build a project virtualenv, and commands that need the wire.
 # The two are not the same set: `uv run` uses a project environment without
@@ -710,12 +730,16 @@ def _changes(recorded: dict[str, object], live: dict[str, object]) -> list[str]:
     return lines
 
 
-def _update_ledger(live: dict[str, tuple[list[str], dict[str, object]]]) -> None:
-    """Rewrite the collected sets, keeping the human-measured cost columns.
+def _update_ledger(live: dict[str, tuple[list[str], dict[str, object]]]) -> list[str]:
+    """Rewrite the collected sets and the doc's tier counts, keeping the human columns.
 
     ``wall_seconds``, ``measured``, the timeout, the command and the note are
     the human half of the record: a tier that has never been run keeps its null
-    time and empty note rather than looking measured.
+    time and empty note rather than looking measured. The count columns the
+    re-record used to leave for a hand edit -- the Tests cells of
+    docs/how-to/test-loop.md's tier table -- are rewritten here too, so the
+    hand step cannot be the forgotten half. Returns one line per doc row whose
+    stated count moved, for the skip message.
     """
     ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
     selections = _selections()
@@ -738,6 +762,56 @@ def _update_ledger(live: dict[str, tuple[list[str], dict[str, object]]]) -> None
         }
         ledger["witness" if witness else "tiers"][name] = identity | collected | measured
     LEDGER.write_text(json.dumps(ledger, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    return _update_doc_counts(live)
+
+
+def _doc_cells(line: str) -> list[str]:
+    """The cells of a markdown table row in docs/how-to/test-loop.md (empty for a non-row)."""
+    stripped = line.strip()
+    if not stripped.startswith("|"):
+        return []
+    return [cell.strip() for cell in stripped.strip("|").split("|")]
+
+
+def _doc_tier_row(cells: list[str]) -> str | None:
+    """The tier a docs/how-to/test-loop.md table row documents, else None.
+
+    The tier table is ``| Tier | Command | Tests | Wall time |``: a row belongs
+    to a tier when its Command cell is `` `task <name>` ``. The page's other
+    tables mention tasks too, but never in that column. The doc check and the
+    UPDATE_TIERS rewrite share this predicate, so the two cannot drift apart
+    about which rows carry the counts.
+    """
+    if len(cells) < 3:
+        return None
+    for name in TIER_TASKS:
+        if cells[1].strip("`") == f"task {name}":
+            return name
+    return None
+
+
+def _update_doc_counts(live: dict[str, tuple[list[str], dict[str, object]]]) -> list[str]:
+    """Rewrite the Tests column of the doc's tier table from the live collection.
+
+    Only that column: a wall time is a measurement a human records, not a
+    projection, so the Wall time cells are left exactly as written. Rows whose
+    count already agrees are left byte-identical. Returns one line per row
+    whose stated count moved, for the skip message.
+    """
+    counts = {name: str(live[name][1]["collected"]) for name in TIER_TASKS}
+    changed = []
+    lines = DOC.read_text(encoding="utf-8").splitlines()
+    for index, line in enumerate(lines):
+        cells = _doc_cells(line)
+        name = _doc_tier_row(cells)
+        if name is None or cells[2] == counts[name]:
+            continue
+        changed.append(f"{DOC.name}:{index + 1}: `task {name}` {cells[2]} -> {counts[name]}")
+        cells[2] = counts[name]
+        lines[index] = "| " + " | ".join(cells) + " |"
+    if changed:
+        DOC.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return changed
 
 
 def _cost_problems(name: str, entry: dict[str, object]) -> list[str]:
@@ -836,8 +910,12 @@ def test_each_tier_collects_what_the_ledger_records() -> None:
     """
     live = _live_tiers()
     if os.environ.get("UPDATE_TIERS"):
-        _update_ledger(live)
-        pytest.skip(f"rewrote {LEDGER.relative_to(TOP)} from the live collection (fill wall_seconds/measured by hand)")
+        rewritten = _update_ledger(live)
+        pytest.skip(
+            f"rewrote {LEDGER.relative_to(TOP)} and the Tests column of {DOC.relative_to(TOP)} "
+            "(fill wall_seconds/measured by hand)"
+            + (":\n  " + "\n  ".join(rewritten) if rewritten else "; the doc's counts already matched")
+        )
     ledger = _cost_entries()
     problems = []
     for name, (_ids, summary) in live.items():
@@ -847,8 +925,9 @@ def test_each_tier_collects_what_the_ledger_records() -> None:
     assert not problems, (
         "the tiers no longer collect what tests/matrix/tiers.json records:\n\n"
         + "\n\n".join(problems)
-        + "\n\nif the change is deliberate, re-record the collected sets (and then the counts in "
-        + "docs/how-to/test-loop.md):\n  UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py"
+        + "\n\nif the change is deliberate, re-record the ledger and the doc counts in one step "
+        + "(only wall_seconds/measured are filled in by hand):\n  "
+        + "UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py"
     )
 
 
@@ -891,21 +970,24 @@ def test_test_loop_doc_states_the_recorded_tier_sizes() -> None:
 
     The doc's wall times are measurements a human records; its test counts are
     the ledger's, and they are what this checks: a doc that promises a size the
-    tier does not have is the §23.2 drift that started this ledger.
+    tier does not have is the §23.2 drift that started this ledger. UPDATE_TIERS
+    writes these counts itself (``_update_doc_counts``, on the same row
+    predicate this check reads); the check stays as the verifier of that
+    rewrite, which is why it is skipped while the rewrite runs.
     """
     if os.environ.get("UPDATE_TIERS"):
-        pytest.skip("UPDATE_TIERS set: re-run without it to check docs/how-to/test-loop.md against the new ledger")
+        pytest.skip(
+            "UPDATE_TIERS set: the doc's counts are being rewritten from the fresh ledger; re-run without it to check them"
+        )
     ledger = _load_ledger()
     documented: dict[str, tuple[int, str]] = {}
     for number, line in enumerate(DOC.read_text(encoding="utf-8").splitlines(), start=1):
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        if not line.strip().startswith("|") or len(cells) < 3:
-            continue
-        # The tier table is `| Tier | Command | Tests | Wall time |`: match the
-        # command column, and read the count from the column after it.
-        for name in TIER_TASKS:
-            if cells[1].strip("`") == f"task {name}":
-                documented[name] = (number, cells[2])
+        cells = _doc_cells(line)
+        # The tier table is `| Tier | Command | Tests | Wall time |`; read the
+        # count from the column after the command.
+        name = _doc_tier_row(cells)
+        if name is not None:
+            documented[name] = (number, cells[2])
     problems = []
     for name in TIER_TASKS:
         if name not in documented:
@@ -917,3 +999,34 @@ def test_test_loop_doc_states_the_recorded_tier_sizes() -> None:
                 f"{DOC.name}:{number}: `task {name}` says {stated} tests, the ledger records {ledger[name]['collected']}"
             )
     assert not problems, f"{DOC.relative_to(TOP)} contradicts {LEDGER.relative_to(TOP)}:\n  " + "\n  ".join(problems)
+
+
+# --------------------------------------------------------------------------- #
+# the leaf-space budget: §24.1's growth law, enforced at the enumerator.
+# --------------------------------------------------------------------------- #
+
+
+def test_the_witness_leaf_space_stays_within_its_declared_budget() -> None:
+    """tools/z3_witnesses.py's leaf space must fit inside LEAF_BUDGET.
+
+    Everything else in this module watches costs that already happened; this
+    one watches the one growth that compounds. TODO.md §24.1's law makes
+    ordinary growth additive -- one more include layer ≈ +76 leaves, one more
+    gate-off dimension ≈ +22 -- but exponential if include exclusivity is
+    lifted, and the witness fast job renders the whole space inside its
+    30-minute CI timeout (.github/workflows/witness.yml), so unbounded growth
+    would surface only as that job creeping toward its timeout. Exceeding the
+    budget fails here instead, and raising it is the decision.
+    """
+    _leaf_space, leaves = z3_witnesses.build()
+    # An int, not the comparison over `leaves` itself: pytest's assertion
+    # rewriting would otherwise echo the whole leaf list into the failure.
+    count = len(leaves)
+    assert count <= LEAF_BUDGET, (
+        f"the witness leaf space grew to {len(leaves)} leaves, over the declared budget of "
+        f"{LEAF_BUDGET} (TODO.md §24.1: +1 include layer ≈ +76 leaves, +1 gate-off dimension ≈ +22, "
+        "and include exclusivity lifted makes the growth exponential; the witness fast job must "
+        "render every leaf inside its 30-minute timeout). If the growth is deliberate, raise "
+        "LEAF_BUDGET in tests/test_marker_drift.py and re-measure the witness job's wall time into "
+        "tests/matrix/tiers.json."
+    )

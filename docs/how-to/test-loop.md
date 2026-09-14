@@ -10,8 +10,8 @@ but the cost ledger's own guard, and it stays outside the loop.
 | Slow | `task test-slow` | 5 | ~35s |
 | Pre-push / nightly | `task test-heavy` | 47 | ~43s |
 | Nightly, shuffled | `task test-randomly` | 848 | ~44s |
-| Everything | `task test` | 908 | ~88s |
-| Cost ledger guard | `task test-meta` | 8 | ~18s |
+| Everything | `task test` | 909 | ~88s |
+| Cost ledger guard | `task test-meta` | 9 | ~18s |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
 it is the cost ledger's own guard (`tests/test_marker_drift.py`) split out of
@@ -44,8 +44,11 @@ does. [Verification](../explanations/verification.md) states the three layers
   is excluded in practice, because all 7 of its tests are `heavy`.
 - `task test-meta` runs `-m meta`: the guards in `tests/test_marker_drift.py`,
   which check that expensive work carries its markers, that every tier still
-  collects what `tests/matrix/tiers.json` records, and that no recorded wall
-  time is older than 30 days. They are not part of the edit loop because the
+  collects what `tests/matrix/tiers.json` records, that the witness leaf space
+  stays inside its declared budget (`LEAF_BUDGET`; the growth law behind it is
+  [Verification](../explanations/verification.md)'s Growth rules), and that no
+  recorded wall time is older than 30 days. They are not part of the edit loop
+  because the
   membership check re-collects every tier in its own pytest session (six
   startups); `ci.yml` runs them as its own job. They are also part of
   `task test`, so the pre-release gate still runs them.
@@ -90,16 +93,18 @@ when a row's `measured` date is more than 30 days old: a wall time is the one
 column nothing recomputes, so the failure names the row's own `command` to
 re-measure with rather than letting a stale number be quoted.
 
-After a deliberate tier change, re-record the collected sets and then the
-counts on this page:
+After a deliberate tier change, re-record the ledger and the counts in the
+table above in one step:
 
 ```shell
 UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py
 ```
 
-The command rewrites the sets but leaves `wall_seconds` / `measured` / `command`
-alone, because a wall time is a measurement, not a projection: fill those in
-from a `time` run of the row's own `command`, e.g.
+The command rewrites the collected sets and the table's Tests column together —
+the hand-edited counts that used to be forgotten, and that merges kept
+conflicting on. It leaves `wall_seconds` / `measured` / `command` alone,
+because a wall time is a measurement, not a projection: fill those in from a
+`time` run of the row's own `command`, e.g.
 
 ```shell
 time uv run --no-sync pytest -q -m "not heavy and not slow and not meta"
