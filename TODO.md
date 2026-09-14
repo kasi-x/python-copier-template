@@ -1122,7 +1122,11 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
         `.python-version.jinja` が humble=3.10 / jazzy=3.12 / else=3.11 の三項を重複保持
       - `run_prefix()` / `python_version()` / `classifiers()` を macro 化し各所から import。
         `tools/check_upstream.py` の pin 対象に追加（template-dev.md の規約どおり bump 連動）
-- [ ] **黙り上書き（sphinx→zensical、license→AGPL-3.0）を可視化する**
+- [x] **黙り上書き（sphinx→zensical、license→AGPL-3.0）を可視化する**
+      → **完了（2026-09-14、f3c92935）**: copier には pre-copy タスク段階が無く
+        validator は警告できないため、生成タスクの先頭で stderr に WARNING を出す。
+        2つのオーバーライドテストが「警告が出る」ことと「回答どおりのレンダ内容で
+        ないとおかしい」両方を固定
       - micropython + sphinx の zensical フォールバックと memorious 選択時の AGPL-3.0 強制は
         現状 silent。ask 順で validator が書ける側は validator 化、書けない側は
         `_tasks` / CI の警告または `test_example.py` の assert（render 結果と回答の一致）で可視化する
