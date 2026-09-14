@@ -89,8 +89,9 @@ include_bot:
         Add a long-running chat bot on top of this project (the long-running
         layer's second platform after the MCP server)?
         If yes, a bot module with its own entry point is generated and the
-        detail questions follow when answered Yes. Discord is the first
-        platform; slack / LINE / Gmail are future platforms, not offered yet.
+        detail questions follow when answered Yes. Discord and Slack are the
+        generated platforms; LINE and Gmail are planned choices on the same
+        question, never new project types.
 use_recommended_bot:
     type: bool
     when: "{{ include_bot }}"
@@ -100,8 +101,8 @@ use_recommended_bot:
         Recommended: discord = discord.py — the de-facto Discord library
         (async, typed, slash commands via app_commands, actively maintained,
         unlike the py-cord / nextcord forks).
-        Answer No to pick a platform instead (discord is the only choice
-        today; slack / LINE / Gmail are planned).
+        Answer No to pick a platform instead (discord and slack are the
+        choices today; LINE and Gmail are planned).
 bot_platform:
     type: str
     when: "{{ include_bot and not use_recommended_bot }}"
@@ -110,10 +111,16 @@ bot_platform:
         - discord: a discord.py bot (Gateway intents declared explicitly, a
           /ping app command, DISCORD_BOT_TOKEN from the environment with a
           startup check that refuses to start without it).
-        slack / LINE / Gmail are planned platforms, not generated yet —
-        they will be added here as new choices, not as new project types.
+        - slack: a slack-bolt bot on Socket Mode (an outbound WebSocket, so
+          there is no public endpoint to open or sign; an /app_mention
+          listener that answers pong, and SLACK_BOT_TOKEN + SLACK_APP_TOKEN
+          from the environment with a startup check that refuses to start
+          without either).
+        LINE and Gmail are planned platforms, not generated yet — they will
+        be added here as new choices, not as new project types.
     choices:
         - discord
+        - slack
     default: discord
 
 combinable:

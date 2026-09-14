@@ -1,0 +1,95 @@
+"""In-process tests for the Slack bot scaffold.
+
+`register_listeners()` is fed a recording stand-in for `slack_bolt.App` and
+`handle_app_mention()` is driven with a fake `say` — no Socket Mode
+connection, no token, no WebClient, no network. This is also the worked
+example for testing your own listeners: the argument names Bolt injects
+(`say`, `client`, `logger`, `body`, ...) are the seams to fake.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import cast
+
+import pytest
+from slack_bolt import App, Say
+
+from {{ import_pkg }} import bot_slack
+
+
+class FakeSay:
+    """The slice of `slack_bolt.Say` the listener uses."""
+
+    def __init__(self) -> None:
+        self.messages: list[str] = []
+
+    def __call__(self, text: str = "", **_kwargs: object) -> None:
+        self.messages.append(text)
+
+
+class FakeApp:
+    """The slice of `slack_bolt.App` `register_listeners()` uses."""
+
+    def __init__(self) -> None:
+        self.listeners: dict[str, object] = {}
+
+    def event(self, name: str) -> Callable[[object], None]:
+        def register(listener: object) -> None:
+            self.listeners[name] = listener
+
+        return register
+
+
+def test_app_mention_listener_is_registered() -> None:
+    """One event, wired to the pong listener — and nothing else."""
+    app = FakeApp()
+    # The fake implements only the `App` surface register_listeners() touches
+    # (object first, so the cast is honest); at runtime the real App holds a
+    # listener list this stand-in records instead.
+    bot_slack.register_listeners(cast("App", cast("object", app)))
+    assert app.listeners == {"app_mention": bot_slack.handle_app_mention}
+
+
+def test_app_mention_replies_pong() -> None:
+    """The listener answers the fake `say`, exactly as over the socket."""
+    say = FakeSay()
+    # `slack_bolt.Say` is a callable class, so the fake is typed as the
+    # surface it implements (object first, so the cast is honest): Bolt
+    # injects a real Say, whose `__call__` is what the listener uses.
+    bot_slack.handle_app_mention(cast("Say", cast("object", say)))
+    assert say.messages == ["pong"]
+
+
+def test_main_refuses_to_start_without_the_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The startup env check: no Socket Mode without both tokens (exit code 2)."""
+    monkeypatch.delenv("SLACK_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("SLACK_APP_TOKEN", raising=False)
+    with pytest.raises(SystemExit) as excinfo:
+        bot_slack.main([])
+    assert excinfo.value.code == 2
+    refusal = capsys.readouterr().err
+    assert "SLACK_BOT_TOKEN" in refusal
+    assert "SLACK_APP_TOKEN" in refusal
+
+
+def test_refusal_names_the_missing_token(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """With the bot token set, the refusal names only the app token.
+
+    That is the token a Socket Mode deployment forgets, because it is not on
+    the app's OAuth page.
+    """
+    monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
+    monkeypatch.delenv("SLACK_APP_TOKEN", raising=False)
+    with pytest.raises(SystemExit) as excinfo:
+        bot_slack.main([])
+    assert excinfo.value.code == 2
+    refusal = capsys.readouterr().err
+    assert "SLACK_APP_TOKEN" in refusal
+    assert "SLACK_BOT_TOKEN" not in refusal

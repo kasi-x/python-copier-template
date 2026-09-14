@@ -381,6 +381,27 @@ hour), or instantly inside one guild with
 `build_bot()` is split from `main()`: `tests/test_bot_discord.py` drives the
 command callback with a fake interaction, so the bot is tested in-process
 with no Gateway connection and no token.
+{% endif %}{% if bot_slack_effective %}
+The project also ships a **Slack bot** (`{{ import_pkg }}/bot_slack.py`,
+slack-bolt) on [Socket Mode](https://api.slack.com/apis/socket-mode) — an
+outbound WebSocket, so there is no public endpoint to expose — with an
+`/app_mention` listener that answers `pong`:
+
+```sh
+# put both tokens in .env first (cp .env.example .env)
+uv run bot-slack-{{ repo_name }}
+```
+
+The tokens come from `SLACK_BOT_TOKEN` (xoxb-, the Bot User OAuth Token) and
+`SLACK_APP_TOKEN` (xapp-, an app-level token with `connections:write`); both
+are required, and the bot refuses to start without them, naming whichever is
+missing (see `.env.example`; `.env` is git-ignored). Mention the bot in any
+channel it is in (`@your-bot ping`) and it replies `pong`.
+
+`register_listeners()` is split from `build_app()`/`main()`:
+`tests/test_bot_slack.py` registers the listeners on a recording stand-in and
+drives the mention listener with a fake `say`, so the bot is tested
+in-process with no socket, no token and no WebClient.
 {% endif %}{% else %}```python
 from {{package_name}} import __version__
 
@@ -446,6 +467,31 @@ hour), or instantly inside one guild with
 `build_bot()` is split from `main()`: `tests/test_bot_discord.py` drives the
 command callback with a fake interaction, so the bot is tested in-process
 with no Gateway connection and no token.
+{% endif %}{% if bot_slack_effective %}
+
+The project also ships a **Slack bot** (`{{ pkg_dir }}/bot_slack.py`,
+slack-bolt) on [Socket Mode](https://api.slack.com/apis/socket-mode) — an
+outbound WebSocket, so there is no public endpoint to expose — with an
+`/app_mention` listener that answers `pong`:
+
+```sh
+# put both tokens in .env first (cp .env.example .env)
+uv run bot-slack-{{ repo_name }}
+
+# or without installing:
+uv run python -m {{ package_name }}.bot_slack
+```
+
+The tokens come from `SLACK_BOT_TOKEN` (xoxb-, the Bot User OAuth Token) and
+`SLACK_APP_TOKEN` (xapp-, an app-level token with `connections:write`); both
+are required — the bot refuses to start without either and names the one that
+is missing (see `.env.example`; `.env` is git-ignored). Mention the bot in any
+channel it is in (`@your-bot ping`) and it replies `pong`.
+
+`register_listeners()` is split from `build_app()`/`main()`:
+`tests/test_bot_slack.py` registers the listeners on a recording stand-in and
+drives the mention listener with a fake `say`, so the bot is tested
+in-process with no socket, no token and no WebClient.
 {% endif %}{% if scraping_effective %}
 
 The project also ships a **polite web-fetching layer** under the
