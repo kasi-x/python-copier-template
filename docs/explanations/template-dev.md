@@ -335,3 +335,12 @@ Enforced by `test_template_gitlab_urls` in `tests/test_example_library_cli.py`
 (a gitlab.com render's URLs carry the group, and those fields contain no
 github.com) and `test_template_github_urls_unchanged` in the same file (the
 github.com render still produces today's exact URL bytes).
+
+## Adding a platform, layer, or gate: the runbook
+
+Everything above is one checklist in context: the five design questions,
+the touchpoint table (question, internals, scaffold, invariants row,
+witness regeneration, ledger re-record, docs sync, markers), the tools it
+leans on (`task predicates`, `task question-graph`, `task witness`), and
+the rule the machinery cannot check for you (mechanical equality is not
+intent). See [Extending the Questionnaire](extending.md).

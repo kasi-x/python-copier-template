@@ -44,6 +44,7 @@ nav = [
       { "Structure" = "explanations/structure.md" },
       { "Why Use Template" = "explanations/why-use-template.md" },
       { "Authoring Template Sources" = "explanations/template-dev.md" },
+      { "Extending the Questionnaire" = "explanations/extending.md" },
       { "Long-Running Executables" = "explanations/long-running.md" },
       { "Security & Compliance" = "explanations/security.md" },
       { "Verification Architecture" = "explanations/verification.md" },
