@@ -6,10 +6,10 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 741 | ~47s † |
+| Edit loop | `task test-fast` | 779 | ~47s † |
 | Slow | `task test-slow` | 5 | ~72s |
-| Pre-push / nightly | `task test-heavy` | 43 | ~29s |
-| Everything | `task test` | 796 | ~139s |
+| Pre-push / nightly | `task test-heavy` | 45 | ~29s |
+| Everything | `task test` | 836 | ~139s |
 | Cost ledger guard | `task test-meta` | 7 | ~11s † |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
@@ -40,7 +40,7 @@ does. [Verification](../explanations/verification.md) states the three layers
   see `task test-meta` below). That is the whole edit loop and what CI runs on
   every push and PR. It does **not** exclude `tests/test_example.py` — 112 of
   that file's 135 tests run; the 23 that build a venv are marked `heavy`.
-  `tests/test_generated_typecheck.py` is excluded in practice, because all 6 of
+  `tests/test_generated_typecheck.py` is excluded in practice, because all 7 of
   its tests are `heavy`.
 - `task test-meta` runs `-m meta`: the guards in `tests/test_marker_drift.py`,
   which check that expensive work carries its markers, that every tier still
@@ -49,7 +49,7 @@ does. [Verification](../explanations/verification.md) states the three layers
   membership check re-collects every tier in its own pytest session (six
   startups); `ci.yml` runs them as its own job. They are also part of
   `task test`, so the pre-release gate still runs them.
-- `task test-slow` runs `-m slow`: the serial 205-leaf witness batch runner
+- `task test-slow` runs `-m slow`: the serial 225-leaf witness batch runner
   (`tests/test_witness_matrix.py::test_witness_batch_runner_executes_every_leaf`,
   the one test the edit loop cannot afford) and the four `copier update` cases.
   Neither builds a venv; both are far too slow for the edit loop.
@@ -110,7 +110,7 @@ disagree); the times are the measurements recorded with them.
 | `ci.yml` (`_test.yml`) | push / PR | `task test-fast` — the edit loop |
 | `ci.yml` (`_test.yml`) | push / PR | `task test-meta` — the ledger's own guard, its own job so the edit loop does not pay for six extra pytest startups |
 | `ci.yml` (nightly) | schedule | `task test-heavy` |
-| `witness.yml` (fast) | PR (except docs-only) | `pytest -q tests/test_witness_matrix.py -m fast` — renders every leaf, no venv: 210 tests (205 renders plus five leaf-list checks), 39 s locally with the render cache emptied, against the job's 30-minute timeout |
+| `witness.yml` (fast) | PR (except docs-only) | `pytest -q tests/test_witness_matrix.py -m fast` — renders every leaf, no venv: 230 tests (225 renders plus five leaf-list checks), 19 s locally with the render cache emptied, against the job's 30-minute timeout |
 | `witness.yml` (full) | schedule / manual | `pytest -q tests/test_witness_matrix.py -m full` — the 8-leaf venv sample plus the batch runner |
 
 Docs-only pull requests do not start the render matrix. `ci.yml` runs a

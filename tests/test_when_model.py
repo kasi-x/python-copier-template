@@ -13,11 +13,11 @@ leave the structural checks green while they prove nothing.
 What this covers
 - every templated `when` in the questionnaire (discovered from the
   questionnaire itself, so a newly added one is compared too), against every
-  declared leaf: 9840 (question, leaf) verdicts.
+  declared leaf and probe: 11781 (question, answer set) verdicts.
 - the probes in `_PROBES`: six answer sets outside the leaf space, each one
   there to vary a value the leaves hold at its copier default (git_platform,
   cloud_provider, fair, package_manager, existing_project, and ros2 + pixi).
-  Without them seven of the 48 expressions are only ever seen in one
+  Without them some expressions would only ever be seen in one
   polarity, which cannot distinguish "the model agrees" from "the model
   always says False".
 - every identifier of each expression, pinned to the answer copier produced:
@@ -193,7 +193,11 @@ def test_model_agrees_with_copier_on_every_leaf_and_probe():
     verdicts_by_pin: dict[tuple[str, tuple[tuple[str, str | bool], ...]], bool] = {}
 
     with tempfile.TemporaryDirectory() as dst:
-        worker = Worker(src_path=str(TOP), dst_path=Path(dst), defaults=True, quiet=True)
+        # vcs_ref=HEAD: the oracle is the checkout's own questionnaire (the
+        # same source tools/z3_witnesses.py enumerates), not the newest tag's
+        # -- a question added after the tag would otherwise never be seen by
+        # copier here and the sweep would call it one-sided.
+        worker = Worker(src_path=str(TOP), dst_path=Path(dst), defaults=True, quiet=True, vcs_ref="HEAD")
         _memoize_compilation(worker.jinja_env)
         for label, answers in _answer_sets(leaves):
             verdicts, context = _copier_answers(worker, answers)

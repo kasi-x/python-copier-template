@@ -362,6 +362,34 @@ leaf_classes:
       - [pyproject.toml, mcp]
     why: "the MCP server integration; a detail question behind use_recommended_integrations, not a leaf-space layer, so no witness leaf turns it on and it declares no tier"
 
+  - id: include=include_bot
+    select: {include: [include_bot], project_type: [cli], web_api: false}
+    ships:
+      - src/smoke_example/bot_discord.py
+      - tests/test_bot_discord.py
+    absent: []
+    predicates: []
+    content:
+      - [pyproject.toml, discord.py]
+    tier:
+      name: fast
+      why: "the layer renders and ruff-checks in the fast tier; its real execution (build_bot()'s /ping callback in-process, no Gateway) is tests/test_bot_layer.py's heavy case"
+    why: "the Discord bot layer on a cli base: the module rides the src-layout package with its own bot-discord console script"
+
+  - id: include=include_bot_web_api
+    select: {include: [include_bot], web_api: true}
+    ships:
+      - app/bot_discord.py
+      - tests/test_bot_discord.py
+    absent: []
+    predicates: []
+    content:
+      - [pyproject.toml, discord.py]
+    tier:
+      name: fast
+      why: "the layer renders and ruff-checks in the fast tier; the cli-base row above carries the execution story for the shared scaffold"
+    why: "the Discord bot layer on a web_api base: the module lives in the top-level app/ package beside the MCP server"
+
   # -- gates turned off --------------------------------------------------- #
   - id: gate_off=use_recommended_agent
     select: {gate_off: [use_recommended_agent]}
@@ -387,10 +415,11 @@ leaf_classes:
         - use_recommended_data_science
         - use_recommended_web_api
         - use_recommended_scraping
+        - use_recommended_bot
     ships: []
     absent: []
     predicates: []
     tier:
       name: fast
       why: "project_type=*/gate=off:use_recommended_* (detailed branches) are rendered and ruff-checked; the 3 m/leaf execution cost limits the full tier to the sample"
-    why: "every other gate-off branch leaves its detail questions at their copier defaults, so it changes no declared artifact"
+    why: "every other gate-off branch leaves its detail questions at their copier defaults, so it changes no declared artifact (bot_platform keeps its discord default)"

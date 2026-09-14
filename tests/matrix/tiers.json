@@ -4,11 +4,12 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 741,
+      "collected": 779,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_batch.py": 19,
+        "tests/test_bot_layer.py": 16,
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example.py": 112,
@@ -26,15 +27,15 @@
         "tests/test_qa.py": 3,
         "tests/test_questionnaire.py": 9,
         "tests/test_recommended_path.py": 11,
-        "tests/test_render_invariants.py": 29,
+        "tests/test_render_invariants.py": 31,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 9,
         "tests/test_update_path.py": 1,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 210,
+        "tests/test_witness_matrix.py": 230,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "e7b2c6428a6deac39fcc1b76561716165ae660e173b04197bbeb93c661ea12eb",
+      "ids_sha256": "cca6ed0c71ddc24b770185dcf3a02d956c0a96a63f9b88dd8ffa7f39a8f5805c",
       "wall_seconds": 47.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
@@ -57,14 +58,15 @@
     "test-heavy": {
       "task": "test-heavy",
       "expression": "heavy",
-      "collected": 43,
+      "collected": 45,
       "files": {
+        "tests/test_bot_layer.py": 1,
         "tests/test_example.py": 23,
-        "tests/test_generated_typecheck.py": 6,
+        "tests/test_generated_typecheck.py": 7,
         "tests/test_task_runners.py": 6,
         "tests/test_witness_matrix.py": 8
       },
-      "ids_sha256": "af8c768e31cd50688fa854e3d6a99b2eecf2a31849339b5f930b1bd2effe2f1e",
+      "ids_sha256": "0bee8807cf83bc857253d7efa871036b78b074727ea90d170bacf2147ce8c8a3",
       "wall_seconds": 28.7,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m heavy",
@@ -86,18 +88,19 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 796,
+      "collected": 836,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_batch.py": 19,
+        "tests/test_bot_layer.py": 17,
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example.py": 135,
         "tests/test_file_merge.py": 22,
         "tests/test_generated_docs_sync.py": 9,
         "tests/test_generated_lint.py": 106,
-        "tests/test_generated_typecheck.py": 6,
+        "tests/test_generated_typecheck.py": 7,
         "tests/test_generation_docs.py": 1,
         "tests/test_gitleaks_config.py": 9,
         "tests/test_invariants.py": 19,
@@ -110,15 +113,15 @@
         "tests/test_qa.py": 3,
         "tests/test_questionnaire.py": 9,
         "tests/test_recommended_path.py": 11,
-        "tests/test_render_invariants.py": 29,
+        "tests/test_render_invariants.py": 31,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 15,
         "tests/test_update_path.py": 5,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 219,
+        "tests/test_witness_matrix.py": 239,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "d413526ba29668d1c1e67b39e42d4a3a45193656e8dae31441df85922e83555e",
+      "ids_sha256": "51d6ff8bb3c6582f050208fa73572443f752ec59e7262b7b3d3f9c829d370b9b",
       "wall_seconds": 138.9,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -130,16 +133,16 @@
       "workflow": ".github/workflows/witness.yml",
       "job": "fast",
       "expression": "fast",
-      "collected": 210,
+      "collected": 230,
       "files": {
-        "tests/test_witness_matrix.py": 210
+        "tests/test_witness_matrix.py": 230
       },
-      "ids_sha256": "5a0597ac7081c26c74a9ef9d3cc405d8512a93021286a47791bf52c5980607f4",
+      "ids_sha256": "4c0ea7c90be403cfb6577b890f24387aa705da403b61be9a75bc2d3255e660e9",
       "wall_seconds": 39.4,
       "measured": "2026-09-14",
       "timeout_seconds": 1800,
       "command": "uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast",
-      "note": "time uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast (208 tests: 205 leaf renders plus the three leaf-list checks, and the render cache emptied first -- the PR job is always cold because a fresh runner has no .cache/renders; 6.4s warm, 39.4s cold, both on a machine carrying unrelated work at load average ~80-106 of 16 cores). The job's timeout in .github/workflows/witness.yml is 30 minutes, so the cold local wall is ~2% of it."
+      "note": "time uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast (at the 205-leaf tree of the measurement: 208 tests = 205 leaf renders plus the three leaf-list checks; the render cache emptied first -- the PR job is always cold because a fresh runner has no .cache/renders; 6.4s warm, 39.4s cold, both on a machine carrying unrelated work at load average ~80-106 of 16 cores). The job's timeout in .github/workflows/witness.yml is 30 minutes, so the cold local wall is ~2% of it."
     }
   }
 }

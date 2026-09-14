@@ -48,7 +48,7 @@ error, and every exclusion must still describe the live questionnaire. The
 one-line accounting is printed on every run, so "enumerated" and "excluded"
 are both numbers a reader can trust:
 
-    leaves: 205 enumerated, 3 excluded (project_type=web_django, ...)
+    leaves: 225 enumerated, 3 excluded (project_type=web_django, ...)
 
 Usage:
 
@@ -102,7 +102,7 @@ BASE: dict[str, Any] = {
     "distribution_name": "smoke-example",
 }
 
-# The opt-in layers (questions/_combo.yml:10-48) that make up the include
+# The opt-in layers (questions/_combo.yml) that make up the include
 # dimension of the leaf space. include_mcp / include_sentry are detail
 # questions behind use_recommended_integrations, not layers.
 INCLUDE_LAYERS: tuple[str, ...] = (
@@ -110,6 +110,7 @@ INCLUDE_LAYERS: tuple[str, ...] = (
     "include_web_api",
     "include_ctf",
     "include_scraping",
+    "include_bot",
 )
 
 GATE_PREFIX = "use_recommended_"
@@ -131,6 +132,7 @@ PROJECTED_GATES: tuple[str, ...] = (
     "use_recommended_data_science",
     "use_recommended_web_api",
     "use_recommended_scraping",
+    "use_recommended_bot",
 )
 
 
@@ -246,6 +248,7 @@ def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories
     asked["use_recommended_data_science"] = _bool(has_data_science)  # questions/data_science.yml
     asked["use_recommended_web_api"] = _bool(has_web_api)  # questions/web_api.yml
     asked["use_recommended_scraping"] = includes["include_scraping"]  # questions/_combo.yml
+    asked["use_recommended_bot"] = includes["include_bot"]  # questions/_combo.yml
     asked["include_data_science"] = _bool(  # questions/_combo.yml
         z3.Or(pt == index["library"], pt == index["cli"], pt == index["web_api"])
     )
@@ -254,6 +257,11 @@ def _build_space(questions: dict[str, dict], pt_domain: list[str], oj_categories
     )
     asked["include_ctf"] = _bool(z3.Or(pt == index["library"], pt == index["cli"]))  # questions/_combo.yml
     asked["include_scraping"] = _bool(pt == index["cli"])  # questions/_combo.yml
+    asked["include_bot"] = (
+        _bool(  # questions/_combo.yml: cli / web_api bases (the long-running layer rides an executable host)
+            z3.Or(pt == index["cli"], pt == index["web_api"])
+        )
+    )
     # use_recommended_toolchain's when is only false for ros2 + a pixi package
     # manager, and ros2_package_manager stays at its 'apt' default here, so it
     # is always asked (questions/_common_a.yml:16-25).

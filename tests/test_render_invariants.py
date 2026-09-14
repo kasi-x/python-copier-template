@@ -92,6 +92,10 @@ LEDGER_LEAVES: tuple[str, ...] = (
     "project_type=library/gate=off:use_recommended_web_api/include=include_web_api",
     "project_type=web_api/gate=off:use_recommended_data_science/include=include_data_science",
     "project_type=web_api/gate=recommended/include=include_data_science",
+    # the bot layer on both of its bases: the discord import must be a
+    # declared dependency and the app/ variant must not orphan it
+    "project_type=cli/gate=recommended/include=include_bot",
+    "project_type=web_api/gate=recommended/include=include_bot",
     # the two families whose runtime is not a pip-installed distribution
     "project_type=ros2/gate=recommended",
     "project_type=micropython/gate=recommended",
@@ -105,22 +109,23 @@ LEDGER_LEAVES: tuple[str, ...] = (
 # toolchain, not a runtime, so their package.xml/setup.py own the runtime deps.
 PLATFORM_MODULES = frozenset({"ament_copyright", "ament_flake8", "ament_pep257", "machine", "rclpy", "std_msgs"})
 
-# Declared distribution -> the import name it provides, when the two differ.
-# These are exactly the template's declared distributions that are not imported
-# under their own name (`pyyaml`, `hydra-core`, `pwntools`, `z3-solver`). A
-# distribution imported through a namespace package (google-cloud-storage,
-# azure-identity) would need an entry here too; no sampled leaf declares one.
+# Imports satisfied by a declared distribution's own dependencies (deptry's
+# DEP003 class): web_api and the MCP server import the ASGI stack through
+# fastapi / mcp instead of declaring it themselves.
+TRANSITIVE_PROVIDES = {"fastapi": ("starlette", "pydantic"), "mcp": ("starlette",)}
+
+# Declared distribution -> the import name it provides, when the two differ:
+# discord.py is imported as `discord` (the dot in the distribution name is not
+# part of the import). These are exactly the template's declared distributions
+# that are not imported under their own name (`discord.py`, `hydra-core`,
+# `pwntools`, `pyyaml`, `z3-solver`).
 DISTRIBUTION_IMPORTS = {
+    "discord.py": ("discord",),
     "hydra_core": ("hydra",),
     "pwntools": ("pwn",),
     "pyyaml": ("yaml",),
     "z3_solver": ("z3",),
 }
-
-# Imports satisfied by a declared distribution's own dependencies (deptry's
-# DEP003 class): web_api and the MCP server import the ASGI stack through
-# fastapi / mcp instead of declaring it themselves.
-TRANSITIVE_PROVIDES = {"fastapi": ("starlette", "pydantic"), "mcp": ("starlette",)}
 
 
 @dataclass(frozen=True)
