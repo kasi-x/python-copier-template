@@ -4,13 +4,13 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 820,
+      "collected": 835,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_answer_fixtures.py": 4,
         "tests/test_batch.py": 19,
-        "tests/test_bot_layer.py": 21,
+        "tests/test_bot_layer.py": 33,
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example_adopt.py": 1,
@@ -30,7 +30,7 @@
         "tests/test_gitleaks_config.py": 9,
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
-        "tests/test_mcp_server.py": 26,
+        "tests/test_mcp_server.py": 29,
         "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
@@ -46,11 +46,11 @@
         "tests/test_witness_matrix.py": 231,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "c2e5772edb95cfeabf2958244582a41bd53e38467b06a1ce1af6976d15a77824",
-      "wall_seconds": 32.0,
+      "ids_sha256": "d17f922a96e546954867041bf313ff0cb947b00adfcea5ea7e53a7a626f58e77",
+      "wall_seconds": 43.0,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
-      "note": "time uv run --locked pytest -q -m \"not heavy and not slow and not meta\" (819 tests, warm .cache/renders, 2026-09-14 on a quiet box: the same tree measured 47s earlier that day while another agent's venv builds were running. The edit-loop budget is 30s; the number is an observation, the budget is the contract)"
+      "note": "time uv run --locked pytest -q <the task's own selection> (835 tests; measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 31.5s the same day while the box was quiet, before the line platform and the two MCP tools landed). The edit loop's 30s budget is the contract; this number is an observation of the contention"
     },
     "test-slow": {
       "task": "test-slow",
@@ -61,17 +61,17 @@
         "tests/test_witness_matrix.py": 1
       },
       "ids_sha256": "0d31f7abe0b9ca16314877e7c6b73afc4603b3c3ee5a28ed307240cede6d1028",
-      "wall_seconds": 23.0,
+      "wall_seconds": 35.4,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m slow",
-      "note": "time uv run --locked pytest -q -m slow (5 tests, warm .cache/renders; 72s with the previous record's cache state, 200s on the run that populated it -- the serial 225-leaf batch runner)"
+      "note": "time uv run --locked pytest -q <the task's own selection> (5 tests; measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 22.7s the same day while the box was quiet, before the line platform and the two MCP tools landed). The edit loop's 30s budget is the contract; this number is an observation of the contention"
     },
     "test-heavy": {
       "task": "test-heavy",
       "expression": "heavy",
-      "collected": 46,
+      "collected": 47,
       "files": {
-        "tests/test_bot_layer.py": 2,
+        "tests/test_bot_layer.py": 3,
         "tests/test_example_adopt.py": 2,
         "tests/test_example_docs_ci.py": 5,
         "tests/test_example_layers.py": 4,
@@ -84,11 +84,11 @@
         "tests/test_task_runners.py": 6,
         "tests/test_witness_matrix.py": 8
       },
-      "ids_sha256": "8a2c3c3832488bb57be9c164fe331012853458e137d8c9b5add5b879ccfa5cdb",
-      "wall_seconds": 30.0,
+      "ids_sha256": "1829b131ccd83a9b554843edc75c0c915641e6839a35f31d5d790aa7712d844a",
+      "wall_seconds": 42.9,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m heavy",
-      "note": "time uv run --locked pytest -q -m heavy (46 tests: the split test_example_* modules' venv builds plus the slack platform's; includes the two new bot platforms' in-process runs)"
+      "note": "time uv run --locked pytest -q <the task's own selection> (47 tests; measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 29.6s the same day while the box was quiet, before the line platform and the two MCP tools landed). The edit loop's 30s budget is the contract; this number is an observation of the contention"
     },
     "test-meta": {
       "task": "test-meta",
@@ -98,21 +98,21 @@
         "tests/test_marker_drift.py": 8
       },
       "ids_sha256": "6db2b8a7bb694f6395188ccd612ee6954ea6fdc1c61d7c1ebc8bf3ba843ce8b7",
-      "wall_seconds": 13.0,
+      "wall_seconds": 18.3,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -m meta",
-      "note": "time uv run --locked pytest -q -m meta (8 tests; re-collects every tier in its own session)"
+      "note": "time uv run --locked pytest -q <the task's own selection> (8 tests; measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 12.3s the same day while the box was quiet, before the line platform and the two MCP tools landed). The edit loop's 30s budget is the contract; this number is an observation of the contention"
     },
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 879,
+      "collected": 895,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_answer_fixtures.py": 4,
         "tests/test_batch.py": 19,
-        "tests/test_bot_layer.py": 23,
+        "tests/test_bot_layer.py": 36,
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example_adopt.py": 3,
@@ -134,7 +134,7 @@
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
         "tests/test_marker_drift.py": 8,
-        "tests/test_mcp_server.py": 26,
+        "tests/test_mcp_server.py": 29,
         "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
@@ -150,22 +150,22 @@
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "63a19d49a045ae096c2cbc697c182d8270fe1f01742d96951ae9e7da44d8a264",
-      "wall_seconds": 78.0,
+      "ids_sha256": "016bd47fbb101642933a2ec8f9bc238fd8c9c089a603848090d6a72c288f791f",
+      "wall_seconds": 88.2,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
-      "note": "time uv run --locked pytest --cov --cov-report term --cov-report xml:.cache/cov.xml (878 tests; 337s on a cold .cache/renders, which is what a template change costs)"
+      "note": "time uv run --locked pytest -q <the task's own selection> (895 tests; measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 77.6s the same day while the box was quiet, before the line platform and the two MCP tools landed). The edit loop's 30s budget is the contract; this number is an observation of the contention plus a cold .cache/renders would add minutes (337s once, pre-split)"
     },
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta",
-      "collected": 820,
+      "collected": 835,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
         "tests/test_answer_fixtures.py": 4,
         "tests/test_batch.py": 19,
-        "tests/test_bot_layer.py": 21,
+        "tests/test_bot_layer.py": 33,
         "tests/test_copier_structure.py": 14,
         "tests/test_detect.py": 22,
         "tests/test_example_adopt.py": 1,
@@ -185,7 +185,7 @@
         "tests/test_gitleaks_config.py": 9,
         "tests/test_invariants.py": 19,
         "tests/test_machine_gate.py": 13,
-        "tests/test_mcp_server.py": 26,
+        "tests/test_mcp_server.py": 29,
         "tests/test_merge_contracts.py": 30,
         "tests/test_micropython_maintenance.py": 3,
         "tests/test_pyproject_fmt.py": 26,
@@ -201,11 +201,11 @@
         "tests/test_witness_matrix.py": 231,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "c2e5772edb95cfeabf2958244582a41bd53e38467b06a1ce1af6976d15a77824",
-      "wall_seconds": 22.0,
+      "ids_sha256": "d17f922a96e546954867041bf313ff0cb947b00adfcea5ea7e53a7a626f58e77",
+      "wall_seconds": 44.3,
       "measured": "2026-09-14",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta\"",
-      "note": "time uv run --locked pytest -q -p randomly -m \"not heavy and not slow and not meta\" (819 tests, one random seed per run, printed in the pytest header; two consecutive seeds were green)"
+      "note": "time uv run --locked pytest -q -p randomly -m \"not heavy and not slow and not meta\" (835 tests, one random seed per run, printed in the header; two consecutive seeds green). measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 21.2s quiet"
     }
   },
   "witness": {

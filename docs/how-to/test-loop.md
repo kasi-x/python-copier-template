@@ -6,22 +6,25 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 820 | ~32s |
-| Slow | `task test-slow` | 5 | ~23s |
-| Pre-push / nightly | `task test-heavy` | 46 | ~30s |
-| Nightly, shuffled | `task test-randomly` | 820 | ~22s |
-| Everything | `task test` | 879 | ~78s |
-| Cost ledger guard | `task test-meta` | 8 | ~13s |
+| Edit loop | `task test-fast` | 835 | ~43s |
+| Slow | `task test-slow` | 5 | ~35s |
+| Pre-push / nightly | `task test-heavy` | 47 | ~43s |
+| Nightly, shuffled | `task test-randomly` | 835 | ~44s |
+| Everything | `task test` | 895 | ~88s |
+| Cost ledger guard | `task test-meta` | 8 | ~18s |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
 it is the cost ledger's own guard (`tests/test_marker_drift.py`) split out of
 the edit loop, and CI runs it as its own job on every push and PR.
 
 Those times were measured on 2026-09-14 with `time uv run --locked pytest`
-plus the task's own selection, on this box with nothing else running, against a
-warm `.cache/renders`: the same day, the same tree under another agent's venv
-builds took 47s instead of 32s, and a cold render cache turned `task test` into
-337s. That spread is why the edit loop's 30s budget is the contract and a time
+plus the task's own selection, against a warm `.cache/renders`. The run behind
+the table above shared the box with another session's work (load average ~59 on
+32 logical CPUs); the same rows measured 32s / 23s / 30s / 21s / 78s / 12s the
+same day while it was quiet, before the LINE platform and the two MCP tools
+landed. A cold render cache is the other extreme: it once turned `task test`
+into 337s.
+That spread is why the edit loop's 30s budget is the contract and a time
 is only an observation — `tests/matrix/tiers.json` holds each measurement with
 the conditions it was taken under.
 
