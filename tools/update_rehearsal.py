@@ -278,15 +278,17 @@ def rehearse_leaf(  # noqa: PLR0913 C901  WHYNOT: the arguments are the replay's
     if check.returncode != 0 or check.stdout:
         failed.append(f"`git diff --check` flagged the update: {check.stdout}{check.stderr}")
 
-    # (c) the answers record the revision the update rendered.
+    # (c) the answers record the revision the update rendered -- as git
+    # describes it (copier records `6.0.0-127-g<sha>`, not a raw sha).
     updated = _answers(project).get("_commit", "")
+    describe = _git_out(TOP, "describe", "--tags", "--always").strip()
     if not updated:
         failed.append("copier must record the template revision it rendered")
     elif target_rev != base_rev:
         if updated == recorded:
             failed.append("the update did not move off the released revision")
-        if not target_dirty and updated != target_rev:
-            failed.append(f"a clean template tree must record exactly {target_rev!r}, got {updated!r}")
+        if not target_dirty and updated != describe:
+            failed.append(f"a clean template tree must record exactly {describe!r}, got {updated!r}")
     elif not target_dirty and updated != recorded:
         failed.append("target equals the base revision: the update should have been a no-op")
 
