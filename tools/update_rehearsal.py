@@ -380,7 +380,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
-    code, payload = run(base_ref, args.target, args.only, args.jobs, args.fresh)
+    code, payload = run(base_ref, args.target, args.only, args.jobs, audit_fresh=args.fresh)
     if args.json:
         print(json.dumps(payload, indent=1, sort_keys=True))
     else:
