@@ -39,20 +39,20 @@ if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools
 from tools.answers import BASE  # noqa: E402
 
 
-def run_pipe(cmd: str, cwd: str | Path | None = None, venv: str | Path = "") -> str:
+def run_pipe(cmd: str, cwd: str | Path | None = None, venv: str | Path = "", env: dict[str, str] | None = None) -> str:
     sp = subprocess.run(
         shlex.split(cmd),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=cwd,
-        env=dict(os.environ, UV_PROJECT_ENVIRONMENT="", VIRTUAL_ENV=str(venv)),
+        env=dict(os.environ, UV_PROJECT_ENVIRONMENT="", VIRTUAL_ENV=str(venv), **(env or {})),
     )
     output = sp.stdout.decode()
     assert sp.returncode == 0, output
     return output
 
 
-def make_venv(project_path: Path) -> Callable[[str], str]:
+def make_venv(project_path: Path) -> Callable[..., str]:
     venv_path = project_path / ".venv"
     run = functools.partial(run_pipe, cwd=str(project_path), venv=venv_path)
     run("uv sync")  # Create a lockfile and install packages
@@ -129,3 +129,47 @@ def ci_requested_tasks(ci_path: Path) -> list[str]:
     ci = yaml.safe_load(ci_path.read_text())
     requested = ci["jobs"]["lint"]["with"]["task"]
     return [name.strip() for name in str(requested).split(",") if name.strip()]
+
+
+# Zensical drives its one-shot `build` from a file watcher, and a watcher it
+# cannot start is silent: the monitor thread panics, the build's input channel
+# disconnects, and the command prints "Build finished" and exits 0 with the
+# empty `site/` directory it created -- the build never ran (TODO §27.7-8). The
+# trigger reproduced here is the machine's per-user inotify instance budget
+# (`fs.inotify.max_user_instances`, 128, shared with every other process on the
+# box) being exhausted, which a dev box running this suite next to anything
+# else reaches. `ZENSICAL_POLL_WATCHER` is zensical's own documented fallback
+# for such an environment and needs no inotify instance at all, so one retry
+# with it tells "the machine refused the watcher" (try again, it is the box)
+# apart from "the render's docs sources or configuration do not build" (both
+# attempts write nothing).
+ZENSICAL_WATCHER_FALLBACK = {"ZENSICAL_POLL_WATCHER": "1"}
+
+
+def docs_pages(project: Path) -> list[Path]:
+    """The pages a rendered project's docs task wrote, wherever its builder puts them."""
+    return sorted(project.glob("site/**/*.html")) or sorted(project.glob("build/html/**/*.html"))
+
+
+def build_docs(project: Path, run: Callable[..., str], cmd: str, label: str) -> list[str]:
+    """Run a rendered project's docs task; return every attempt's output (1 or 2).
+
+    `run` is `run_pipe`/`make_venv`'s callable, invoked with an optional `env`
+    override. The second attempt is ZENSICAL_WATCHER_FALLBACK's; a docs task
+    that writes no page under either is the render's failure, and the
+    assertion carries what both attempts said.
+    """
+    outputs = [run(cmd)]
+    if docs_pages(project):
+        return outputs
+    outputs.append(run(cmd, env=ZENSICAL_WATCHER_FALLBACK))
+    site = sorted(path.name for path in (project / "site").glob("*")) if (project / "site").is_dir() else []
+    assert docs_pages(project), (
+        f"{label}: the docs build produced no pages.\n"
+        f"  {cmd} exited 0, twice, in {project}\n"
+        f"  attempt 1, the generated project's own recipe:\n{outputs[0]}"
+        f"  attempt 2, without a file watcher ({', '.join(f'{k}={v}' for k, v in ZENSICAL_WATCHER_FALLBACK.items())}):\n"
+        f"{outputs[1]}"
+        f"  site/ holds: {site[:10]}"
+    )
+    return outputs
