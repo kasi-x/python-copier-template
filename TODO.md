@@ -1913,7 +1913,7 @@ P6 は方針の裏付けでもある: **L3 サンプルは 8 葉で 3 件の実�
 | `pytest-randomly` | 順序依存・共有状態の flake 検出 | **スパイク** | `tests/conftest.py` に「xdist の hook-env 分離を試して 46s→7m44s で撤回」の履歴あり。入れるなら tier 予算への影響を測ってから |
 | `hypothesis` | L2 の内容述語の反例生成・縮小 | **採用 or 削除の二択** | dev 依存にあるが使用 0（deptry の `DEP002` ignore が隠している）。answers 空間は Z3 が持つので、価値は「レンダ結果の述語の反例探索」のみ。使わないなら削除して ignore も消す |
 | `syrupy` / `pytest-regressions` | レンダ結果の byte 比較（W2 の手作業ハッシュ検証） | **スパイク** | pytest 9 対応が未確認。不変条件の単一源で `sha256` を宣言すれば同じ保証が得られるなら dep を増やさない |
-| `nektos/act` | witness / update-path workflow のローカル再現 | **採用（開発機のみ）** | CI 専用 tier が増えた（`witness.yml`、`update-path.yml`）。「ローカルで同じ判定」を安く得る。CI 側の dep にはならない |
+| `nektos/act` | witness / update-path workflow のローカル再現 | **導入済み（2026-09-16）** | `task act WORKFLOW=ci.yml JOB=lint`（`.actrc` は catthehacker runner イメージにマップ、docs/how-to/local-ci.md）。lintジョブのローカル実行を検証済み — コンテナは working tree を見るため、ローカルの赤 = 本物の赤。CI 側の dep にはならない |
 | Task の `sources:` / `generates:` / `status:` | ローカルのタスク再実行抑制 | **採用** | 既に task runner。`.cache/` にスタンプを置けば dep ゼロで「変わっていなければ skip」 |
 | `pixi`（既存の対応 runner） | venv 共有・タスクキャッシュ（L3 の再利用） | **スパイク** | PLAN §W9-3 の実装候補。`UV_PROJECT_ENVIRONMENT` 共有 + `--inexact` も同じ枠で計測 |
 | `docker buildx --cache-to/--cache-from` | コンテナ経路の L3 | **不採用（今は）** | コンテナ経路の検証サンプルがまだ薄い。W4 で `best_effort` が決まってから |

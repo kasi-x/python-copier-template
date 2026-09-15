@@ -1,0 +1,16 @@
+# Local GitHub Actions runner (nektos/act) — used by `task act`.
+#
+# The platform map is the one decision that matters: act's default image
+# (node:16-buster-slim) cannot run this repository's jobs, which need apt,
+# git with full history, and a glibc Python. catthehacker's image is the
+# community-standard Ubuntu-like runner image for act and preinstalls most
+# of what jobs assume; the rest (uv, task, toolchains) the jobs install
+# themselves, exactly as they do on GitHub's runners.
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+# Reuse pulled images instead of re-pulling on every run; a fresh pull of the
+# runner image costs more than most jobs here.
+--pull=false
+
+# Keep job logs readable when a job fails mid-step.
+--verbose

@@ -22,6 +22,7 @@ nav = [
       { "Dev Install" = "how-to/dev-install.md" },
       { "Build Docs" = "how-to/build-docs.md" },
       { "Run Tests" = "how-to/run-tests.md" },
+      { "Run CI Locally" = "how-to/local-ci.md" },
       { "Linting" = "how-to/lint.md" },
       { "Static Analysis" = "how-to/static-analysis.md" },
       { "Strict Mode" = "how-to/strict-mode.md" },
