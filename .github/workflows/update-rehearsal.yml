@@ -1,0 +1,41 @@
+name: Update rehearsal
+
+# The update rehearsal (tools/update_rehearsal.py) replays `copier update`
+# for every witness leaf: render at the newest release tag, commit the result
+# as a user's project, update to HEAD, and assert the merge is clean. A red
+# run here means a template edit broke the update path for some configuration
+# -- exactly the failure that otherwise only surfaces in a user's project
+# after a release.
+#
+# Weekly (the render-at-tag cache makes later runs cheap; the first run of a
+# new tag re-renders all leaves). Staggered from the other scheduled
+# workflows (ci.yml SUN 03:00, witness.yml 04:00, check-upstream MON 06:00,
+# check-upstream-fork TUE 06:00, scheduled-check TUE 07:00, periodic WED
+# 08:00, dependency-audit THU 07:00, scorecard SAT 01:30).
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    - cron: "0 5 * * 0"
+  workflow_dispatch:
+
+jobs:
+  rehearsal:
+    name: Update rehearsal (every witness leaf)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Rehearse copier update for every witness leaf
+        run: uv run --locked python tools/update_rehearsal.py --jobs 4

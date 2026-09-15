@@ -97,6 +97,12 @@ tasks:
       --audit 5)
     cmd: uv run --locked python tools/render_delta.py {{ .CLI_ARGS }}
 
+  update-rehearsal:
+    desc: >-
+      Replay copier update for every witness leaf, release tag -> HEAD (CLI_ARGS
+      pass through, e.g. --only ctf --jobs 8 --fresh; nightly rehearsal)
+    cmd: uv run --locked python tools/update_rehearsal.py {{ .CLI_ARGS }}
+
   witness:
     desc: 'Regenerate the 225 witness leaves and judge them all (JOBS=N, CLI_ARGS=...)'
     vars:
