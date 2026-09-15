@@ -1199,7 +1199,26 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 
 
-### 18.7. レンダツイン: 変更の影響を証明する（2026-09-15）
+
+
+### 18.8. 更新リハーサル: 全構成・毎晩の `copier update` 検証（2026-09-16）
+
+テンプレート運用の最大の恐怖「updateで壊れる」を、出荷する全構成で夜間検証する:
+
+- **`task update-rehearsal`**（`tools/update_rehearsal.py`、667c5521）: 225葉それぞれに
+  ユーザーのライフサイクルを再生する——リリースタグでレンダ、ユーザー状態として
+  コミット、`copier update` でHEADへ、そして test_update_path.py の契約
+  （conflict残留なし / `git diff --check` クリーン / `_commit` がtargetに進行）を検証。
+  workerはプロセス（copierのupdateはplumbumでプロセス全体のcwdをジャグルするため、
+  スレッドだと他チェックアウトのgit操作を破壊するのを実測）。
+- **baseline renderのキャッシュ**（.cache、base commit×葉×回答×copier版でキー）により
+  2回目以降はmerge部分のみ。全葉＋収束比較付きで約2分20秒（jobs=8）。
+- **収束マップ（reportのみ）**: update結果と新規レンダの差分を情報として出す。初回の
+  全葉runで20葉が非収束と判明（bot層の葉——6.0.0にはbot質問が無いためupdateの
+  マージ経路が新規レンダと異なる）。failではなく「updateが何を違うやり方でやるかの
+  地図」として保持、継続調査の対象。
+- **夜間workflow** `.github/workflows/update-rehearsal.yml`（SUN 05:00 UTC、weekly）。
+  赤 = update経路が何かの構成で壊れた = リリース前に直すべきシグナル。### 18.7. レンダツイン: 変更の影響を証明する（2026-09-15）
 
 「複雑さへの対処」と「調査の遅さ」は同根——どちらもレンダという巨大な出力を作り直して
 確かめるから、コストが 複雑さ×葉数 で増える。根治は **証明**:
