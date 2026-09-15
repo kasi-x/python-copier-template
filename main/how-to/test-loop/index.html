@@ -470,6 +470,8 @@
       
         
       
+        
+      
     
     
     
@@ -631,6 +633,33 @@
     
   
   Run Tests
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../local-ci/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run CI Locally
 
     
   </span>
@@ -1055,6 +1084,8 @@
       
         
       
+        
+      
     
     
     
@@ -1243,6 +1274,33 @@
     
   
   Authoring Template Sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Extending the Questionnaire
 
     
   </span>
@@ -1741,13 +1799,13 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td>848</td>
+<td>883</td>
 <td>~43s</td>
 </tr>
 <tr>
 <td>Slow</td>
 <td><code>task test-slow</code></td>
-<td>5</td>
+<td>7</td>
 <td>~35s</td>
 </tr>
 <tr>
@@ -1759,19 +1817,19 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Nightly, shuffled</td>
 <td><code>task test-randomly</code></td>
-<td>848</td>
+<td>883</td>
 <td>~44s</td>
 </tr>
 <tr>
 <td>Everything</td>
 <td><code>task test</code></td>
-<td>908</td>
+<td>946</td>
 <td>~88s</td>
 </tr>
 <tr>
 <td>Cost ledger guard</td>
 <td><code>task test-meta</code></td>
-<td>8</td>
+<td>9</td>
 <td>~18s</td>
 </tr>
 </tbody>
@@ -1805,13 +1863,16 @@ does. <a href="../../explanations/verification/">Verification</a> states the thr
   is excluded in practice, because all 7 of its tests are <code>heavy</code>.</li>
 <li><code>task test-meta</code> runs <code>-m meta</code>: the guards in <code>tests/test_marker_drift.py</code>,
   which check that expensive work carries its markers, that every tier still
-  collects what <code>tests/matrix/tiers.json</code> records, and that no recorded wall
-  time is older than 30 days. They are not part of the edit loop because the
+  collects what <code>tests/matrix/tiers.json</code> records, that the witness leaf space
+  stays inside its declared budget (<code>LEAF_BUDGET</code>; the growth law behind it is
+  <a href="../../explanations/verification/">Verification</a>'s Growth rules), and that no
+  recorded wall time is older than 30 days. They are not part of the edit loop
+  because the
   membership check re-collects every tier in its own pytest session (six
   startups); <code>ci.yml</code> runs them as its own job. They are also part of
   <code>task test</code>, so the pre-release gate still runs them.</li>
 <li><code>task test-randomly</code> runs the edit-loop selection again with pytest-randomly
-  active (<code>-p randomly</code>): the same 809 tests in a freshly shuffled order, so
+  active (<code>-p randomly</code>): the same 851 tests in a freshly shuffled order, so
   order dependence and shared state surface in the nightly run instead of in
   someone's local loop. The plugin is a dev dependency but stays disabled
   everywhere else — <code>addopts</code> carries <code>-p no:randomly</code>, and this task is the
@@ -1848,13 +1909,15 @@ otherwise leak a 20-second case into the edit loop unnoticed. It also fails
 when a row's <code>measured</code> date is more than 30 days old: a wall time is the one
 column nothing recomputes, so the failure names the row's own <code>command</code> to
 re-measure with rather than letting a stale number be quoted.</p>
-<p>After a deliberate tier change, re-record the collected sets and then the
-counts on this page:</p>
+<p>After a deliberate tier change, re-record the ledger and the counts in the
+table above in one step:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">UPDATE_TIERS</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--no-sync<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>tests/test_marker_drift.py
 </code></pre></div>
-<p>The command rewrites the sets but leaves <code>wall_seconds</code> / <code>measured</code> / <code>command</code>
-alone, because a wall time is a measurement, not a projection: fill those in
-from a <code>time</code> run of the row's own <code>command</code>, e.g.</p>
+<p>The command rewrites the collected sets and the table's Tests column together —
+the hand-edited counts that used to be forgotten, and that merges kept
+conflicting on. It leaves <code>wall_seconds</code> / <code>measured</code> / <code>command</code> alone,
+because a wall time is a measurement, not a projection: fill those in from a
+<code>time</code> run of the row's own <code>command</code>, e.g.</p>
 <div class="highlight"><pre><span></span><code><span class="nb">time</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--no-sync<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not heavy and not slow and not meta"</span>
 </code></pre></div>
 <p>on an otherwise idle machine. Adding a whole tier is a matter of adding its

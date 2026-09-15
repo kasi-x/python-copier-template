@@ -474,6 +474,8 @@
       
         
       
+        
+      
     
     
     
@@ -635,6 +637,33 @@
     
   
   Run Tests
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/local-ci/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run CI Locally
 
     
   </span>
@@ -1059,6 +1088,8 @@
       
         
       
+        
+      
     
     
     
@@ -1247,6 +1278,33 @@
     
   
   Authoring Template Sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Extending the Questionnaire
 
     
   </span>
@@ -1557,6 +1615,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#tell-the-template-what-you-want" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tell the template what you want
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1705,6 +1774,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#tell-the-template-what-you-want" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tell the template what you want
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1767,6 +1847,35 @@ uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </
 <li><code>--answers-file</code> must be a path <strong>relative to the destination directory</strong>
   (copier requirement), e.g. <code>.copier-answers.yml</code>.</li>
 </ul>
+<h2 id="tell-the-template-what-you-want">Tell the template what you want<a class="headerlink" href="#tell-the-template-what-you-want" title="Permanent link">&para;</a></h2>
+<p>The inverse question comes up just as often: for the features you want, which
+answers produce them? The 225 witness leaves in <code>tests/matrix/witnesses.jsonl</code>
+each carry a full answer set whose render context copier has already computed,
+so "features -&gt; answers" is an exact filter over verified configurations, not
+a guess — <code>tools/answers_for.py</code> is that filter:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Name the features as constraints over any question or derived internal</span>
+uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>python<span class="w"> </span>tools/answers_for.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--require<span class="w"> </span><span class="nv">use_gpu_effective</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>--require<span class="w"> </span><span class="nv">kaggle</span><span class="o">=</span><span class="nb">true</span>
+
+<span class="c1"># ...and prove the top match by rendering it: every constraint is checked</span>
+<span class="c1"># against the rendered tree (context pass over the render's recorded answers,</span>
+<span class="c1"># plus the artifacts the internals gate, e.g. Dockerfile.gpu)</span>
+uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>python<span class="w"> </span>tools/answers_for.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--require<span class="w"> </span><span class="nv">zensical</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>--require<span class="w"> </span><span class="nv">web_api</span><span class="o">=</span><span class="nb">true</span><span class="w"> </span>--render<span class="w"> </span>--keep
+</code></pre></div>
+<p>Each constraint is <code>name</code>, <code>name=value</code>, <code>-name</code> or <code>name!=value</code>. A name may
+be an asked question (<code>docker</code>, <code>docs_type</code>, <code>license</code>, ...) or a derived
+internal (<code>mcp_effective</code>, <code>use_gpu_effective</code>, <code>sphinx</code>,
+<code>license_effective</code>, ...); an unknown name is rejected with the closest real
+names. Every match is reported with its full answers as a <code>--data-file</code>-ready
+YAML block and the artifacts its class ships; when nothing matches, the tool
+names the constraint that eliminated the most leaves and the nearest leaf
+with what it misses — the match is exact over the declared leaf space, so a
+combination no leaf carries (<code>docker=true</code>, say: every leaf keeps that
+question's default) is reported as such, not guessed. <code>--json</code> puts the same
+payload on stdout, <code>task answers-for</code> is the task wrapper, and the MCP server
+exposes it as <code>recommend_answers</code>
+(see <a href="../../how-to/mcp-tools/">Drive the template's tools over MCP</a>).</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Exit status 4, nothing generated → you omitted <code>--trust</code></li>

@@ -16,7 +16,7 @@
         <link rel="prev" href="../why-use-template/">
       
       
-        <link rel="next" href="../long-running/">
+        <link rel="next" href="../extending/">
       
       
         
@@ -474,6 +474,8 @@
       
         
       
+        
+      
     
     
     
@@ -635,6 +637,33 @@
     
   
   Run Tests
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/local-ci/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run CI Locally
 
     
   </span>
@@ -1061,6 +1090,8 @@
       
         
       
+        
+      
     
     
     
@@ -1420,10 +1451,70 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#adding-a-platform-layer-or-gate-the-runbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Adding a platform, layer, or gate: the runbook
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keep-the-tools-dependency-layers-declared" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Keep the <code>tools/</code> dependency layers declared
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prove-what-a-change-can-affect-the-render-twin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Prove what a change can affect: the render twin
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Extending the Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -1935,6 +2026,39 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#adding-a-platform-layer-or-gate-the-runbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Adding a platform, layer, or gate: the runbook
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#keep-the-tools-dependency-layers-declared" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Keep the <code>tools/</code> dependency layers declared
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prove-what-a-change-can-affect-the-render-twin" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Prove what a change can affect: the render twin
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2057,6 +2181,14 @@ settings. Rules:</p>
 <p>Enforced by <code>test_question_references_are_forward_only</code> and
 <code>test_fragments_are_complete_and_duplicate_free</code> in
 <code>tests/test_copier_structure.py</code>.</p>
+<p>To see and plan the order instead of only checking it after the fact, run
+<code>task question-graph</code> (<code>tools/question_graph.py</code>): it prints the whole
+dependency graph in definition order, grouped by fragment, with what each
+question/internal reads and feeds, recomputes the forward-reference rule
+(violations name both positions), and — with
+<code>--where NAME --refs A,B,C</code> — answers "where may this new internal live":
+the legal position window after the last definition it reads, what
+currently occupies that spot, and which fragment the insertion lands in.</p>
 <h2 id="question-whens-read-raw-answers-render-reads-effective-internals">Question <code>when:</code>s read raw answers; render reads effective internals<a class="headerlink" href="#question-whens-read-raw-answers-render-reads-effective-internals" title="Permanent link">&para;</a></h2>
 <p>The questionnaire keeps two vocabularies apart, and every condition below
 lives on one side of the line:</p>
@@ -2259,6 +2391,88 @@ roadmap — full parity would be a project of its own):</p>
 (a gitlab.com render's URLs carry the group, and those fields contain no
 github.com) and <code>test_template_github_urls_unchanged</code> in the same file (the
 github.com render still produces today's exact URL bytes).</p>
+<h2 id="adding-a-platform-layer-or-gate-the-runbook">Adding a platform, layer, or gate: the runbook<a class="headerlink" href="#adding-a-platform-layer-or-gate-the-runbook" title="Permanent link">&para;</a></h2>
+<p>Everything above is one checklist in context: the five design questions,
+the touchpoint table (question, internals, scaffold, invariants row,
+witness regeneration, ledger re-record, docs sync, markers), the tools it
+leans on (<code>task predicates</code>, <code>task question-graph</code>, <code>task witness</code>), and
+the rule the machinery cannot check for you (mechanical equality is not
+intent). See <a href="../extending/">Extending the Questionnaire</a>.</p>
+<h2 id="keep-the-tools-dependency-layers-declared">Keep the <code>tools/</code> dependency layers declared<a class="headerlink" href="#keep-the-tools-dependency-layers-declared" title="Permanent link">&para;</a></h2>
+<p><code>tools/</code> is nineteen modules, and their dependency direction was implicit:
+every cross-module import reads <code>from tools import x</code>, but nothing said which
+modules sit where, so "may <code>adopt.py</code> use <code>invariants</code>?" was answerable only
+by reading all of them. The layering is now a declared contract — the repo's
+registry idiom again (cf. <code>DEFAULT_REPEATS_ALLOWED</code>,
+<code>invariants.yml</code>'s <code>excluded</code>): declared, not discovered. The layers, bottom
+up:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Modules</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>standalone</code></td>
+<td><code>check_upstream</code>, <code>check_upstream_fork</code>, <code>check_questionnaire_diff</code>, <code>generate_license_template</code></td>
+<td>maintenance/CI scripts that import nothing from <code>tools/</code> (a pristine checkout or a released tarball is their world)</td>
+</tr>
+<tr>
+<td><code>foundations</code></td>
+<td><code>answers</code>, <code>questionnaire</code>, <code>when_model</code>, <code>render_inputs</code></td>
+<td>the questionnaire model and shared primitives: data and meaning, no behavior on real trees</td>
+</tr>
+<tr>
+<td><code>machinery</code></td>
+<td><code>file_merge</code>, <code>pyproject_merge</code>, <code>invariants</code>, <code>z3_witnesses</code></td>
+<td>pure transformations and verifiers over template/adoption artifacts</td>
+</tr>
+<tr>
+<td><code>drivers</code></td>
+<td><code>detect</code>, <code>batch</code>, <code>adopt</code>, <code>predicates</code>, <code>question_graph</code>, <code>render_delta</code>, <code>answers_for</code></td>
+<td>act on real trees with copier/subprocess; consume the machinery</td>
+</tr>
+<tr>
+<td><code>frontends</code></td>
+<td><code>cli</code>, <code>gen_docs</code>, <code>mcp_server</code></td>
+<td>the entry points a human or an agent calls; consume the drivers</td>
+</tr>
+</tbody>
+</table>
+<p>Rules:</p>
+<ul>
+<li>A module may import modules of its own layer or any layer BELOW it. An
+  import that points up fails the test, unless the pair is declared in the
+  test's <code>ALLOWED_UPWARD_IMPORTS</code> with a one-line reason — a genuine tangle
+  that is not worth refactoring away is stated, not hidden. The registry is
+  stale-proofed in both directions: an undeclared upward import fails, and so
+  does a declared exception whose edge has vanished or stopped pointing up.
+  (There are no exceptions today: no import points up.)</li>
+<li>New module under <code>tools/</code>? Pick a layer and add it to <code>LAYERS</code> in the test —
+  the test tells you if you guessed wrong: an unplaced module fails the
+  membership check (so no module can sneak in undeclared), and a wrong guess
+  fails the direction check.</li>
+</ul>
+<p>Enforced structurally (an AST scan of the import statements, no runtime
+import) by <code>tests/test_tool_layers.py</code>; the same table lives in that test's
+docstring, and the two are meant to be edited together.</p>
+<h2 id="prove-what-a-change-can-affect-the-render-twin">Prove what a change can affect: the render twin<a class="headerlink" href="#prove-what-a-change-can-affect-the-render-twin" title="Permanent link">&para;</a></h2>
+<p><code>task verify-delta</code> (<code>tools/render_delta.py</code>) answers "which leaves did this
+change touch?" mechanically. Layer A tabulates each leaf's render context and
+every watched template byte, and diffs the two states: a leaf is a candidate
+only when its context moved or changed bytes are reachable from its rendered
+file set (include closure included). Layer B re-renders candidates from a
+baseline checkout and the working tree and compares per-file manifests
+(<code>.copier-answers.yml</code>'s per-render stamps normalize away). The verdict is
+either "PROVEN render-identical" for the whole space or the exact leaves and
+files that changed -- which is what the refactor commits in this history
+replaced hand-picked combination diffs with. <code>--audit N</code> re-renders N
+unaffected leaves as a continuous soundness probe of Layer A; a mismatch
+means the semantic diff missed a flow, and that is a bug in this tool, not
+in your change.</p>
 
 
 
@@ -2315,13 +2529,13 @@ github.com render still produces today's exact URL bytes).</p>
         
         
           
-          <a href="../long-running/" class="md-footer__link md-footer__link--next" aria-label="Next: Long-Running Executables">
+          <a href="../extending/" class="md-footer__link md-footer__link--next" aria-label="Next: Extending the Questionnaire">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Long-Running Executables
+                Extending the Questionnaire
               </div>
             </div>
             <div class="md-footer__button md-icon">

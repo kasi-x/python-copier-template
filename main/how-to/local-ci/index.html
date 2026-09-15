@@ -13,6 +13,10 @@
       
       
       
+        <link rel="prev" href="../run-tests/">
+      
+      
+        <link rel="next" href="../lint/">
       
       
         
@@ -23,7 +27,7 @@
     
     
       
-        <title>Use the template's own MCP server - python-copier-template</title>
+        <title>Run GitHub Actions locally with act - python-copier-template</title>
       
     
     
@@ -79,7 +83,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#use-the-templates-own-mcp-server" class="md-skip">
+        <a href="#run-github-actions-locally-with-act" class="md-skip">
           Skip to content
         </a>
       
@@ -115,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Use the template's own MCP server
+              Run GitHub Actions locally with act
             
           </span>
         </div>
@@ -427,8 +431,10 @@
       
   
   
+    
   
   
+  
     
     
       
@@ -476,11 +482,11 @@
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -500,7 +506,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -649,10 +655,36 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../local-ci/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run CI Locally
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
         
   
   
@@ -667,6 +699,60 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#setup-once-per-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Setup (once per machine)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-a-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Running a workflow
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-transfers-and-what-does-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What transfers and what does not
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1699,10 +1785,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#run-it" class="md-nav__link">
+  <a href="#setup-once-per-machine" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Run it
+        Setup (once per machine)
       </span>
     </span>
   </a>
@@ -1710,10 +1796,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tools" class="md-nav__link">
+  <a href="#running-a-workflow" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Tools
+        Running a workflow
       </span>
     </span>
   </a>
@@ -1721,43 +1807,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#resources" class="md-nav__link">
+  <a href="#what-transfers-and-what-does-not" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Resources
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-http-transport-and-its-allowlist" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The HTTP transport and its allowlist
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#relationship-to-the-generated-scaffolds-server" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Relationship to the generated scaffold's server
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#related" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Related
+        What transfers and what does not
       </span>
     </span>
   </a>
@@ -1782,219 +1835,45 @@
   
 
 
-<h1 id="use-the-templates-own-mcp-server">Use the template's own MCP server<a class="headerlink" href="#use-the-templates-own-mcp-server" title="Permanent link">&para;</a></h1>
-<p><code>tools/mcp_server.py</code> exposes <strong>this repository's</strong> tooling over MCP, so an
-agent editing the template calls <code>template_status</code>, <code>render_project</code>,
-<code>render_diff</code>, <code>run_witness</code> and friends instead of shelling out and parsing
-text. It is the maintenance-loop counterpart of
-<a href="../mcp/">the MCP server a generated project gets</a>: that one is scaffolding for
-your project, this one is how you drive the template itself.</p>
-<p>Nothing to configure: the repository ships a project-scope <code>.mcp.json</code>, and an
-MCP host that reads one (Claude Code, VS Code, Cursor, ...) picks the server
-up as soon as you open the checkout.</p>
-<h2 id="run-it">Run it<a class="headerlink" href="#run-it" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>task<span class="w"> </span>mcp<span class="w">                                     </span><span class="c1"># stdio -- what an MCP host launches</span>
-uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>python<span class="w"> </span>tools/mcp_server.py<span class="w">   </span><span class="c1"># the same command, unpacked</span>
-task<span class="w"> </span>mcp<span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--transport streamable-http"</span><span class="w">   </span><span class="c1"># serve it on 127.0.0.1:8000</span>
-uv<span class="w"> </span>run<span class="w"> </span>mcp<span class="w"> </span>dev<span class="w"> </span>tools/mcp_server.py<span class="w">           </span><span class="c1"># MCP Inspector (needs npx)</span>
-</code></pre></div>
-<p><code>.mcp.json</code> registers exactly that stdio command, which is also what <code>task mcp</code>
-runs:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">"mcpServers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">"python-copier-template"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"uv"</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"run"</span><span class="p">,</span><span class="w"> </span><span class="s2">"--locked"</span><span class="p">,</span><span class="w"> </span><span class="s2">"python"</span><span class="p">,</span><span class="w"> </span><span class="s2">"tools/mcp_server.py"</span><span class="p">],</span>
-<span class="w">      </span><span class="nt">"env"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">}</span>
-</code></pre></div>
-<h2 id="tools">Tools<a class="headerlink" href="#tools" title="Permanent link">&para;</a></h2>
-<p>Every tool states its cost and its return shape -- the docstring <em>is</em> the
-description the model reads, and <code>tests/test_mcp_server.py</code> fails if a tool
-stops saying what it costs and what comes back. Ask the cheap questions
-first: <code>template_status</code> is ~50 ms, a render ~1.5 s, and the <code>slow</code> / <code>full</code>
-witness tiers run into minutes.</p>
-<table>
-<thead>
-<tr>
-<th>Tool</th>
-<th>What it answers</th>
-<th>Cost</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>template_status</code></td>
-<td>this checkout: question count, latest tag, commits behind it, dirty or not</td>
-<td>git + questionnaire (~50 ms)</td>
-</tr>
-<tr>
-<td><code>list_questions</code></td>
-<td>the questionnaire in ask order, with defaults, help and choices</td>
-<td>filesystem</td>
-</tr>
-<tr>
-<td><code>list_witnesses</code></td>
-<td>the 225 Z3 witness leaves with the tier and result the ledger records</td>
-<td>filesystem</td>
-</tr>
-<tr>
-<td><code>template_fingerprint</code></td>
-<td>sha256 of the render inputs: what a render is a function of</td>
-<td>hashes ~0.8 MB (~5 ms)</td>
-</tr>
-<tr>
-<td><code>inspect_project</code></td>
-<td>what a target already has, which mode fits it, which files would be overwritten</td>
-<td>filesystem</td>
-</tr>
-<tr>
-<td><code>render_project</code></td>
-<td>render a set of answers, and report the files it produced</td>
-<td>one render; <code>prepare=True</code> adds an install (network on a cold cache)</td>
-</tr>
-<tr>
-<td><code>render_diff</code></td>
-<td>two answer sets rendered and compared file by file</td>
-<td>two renders, no install</td>
-</tr>
-<tr>
-<td><code>lint_render</code></td>
-<td>render, then <code>ruff format --check</code> + <code>ruff check</code> under the generated config</td>
-<td>one render + two ruff runs, no venv</td>
-</tr>
-<tr>
-<td><code>run_batch</code></td>
-<td>a batch file's verdict (<code>tools/batch.py</code> semantics, structured)</td>
-<td>one render per line; <code>prepare=True</code> adds installs</td>
-</tr>
-<tr>
-<td><code>run_witness</code></td>
-<td>a witness tier's verdict, one entry per executed test</td>
-<td><code>fast</code> a few seconds (225 renders, no venv), <code>slow</code> ~2 min, <code>full</code> adds venvs and network (tens of minutes)</td>
-</tr>
-<tr>
-<td><code>run_tests</code></td>
-<td>the same verdict shape for the suite's own tiers: <code>fast</code> / <code>heavy</code> / <code>slow</code> / <code>meta</code> / <code>all</code></td>
-<td>the tier you name; the marker expression comes from the cost ledger</td>
-</tr>
-</tbody>
-</table>
-<p>Two calls cover most of the loop:</p>
+<h1 id="run-github-actions-locally-with-act">Run GitHub Actions locally with act<a class="headerlink" href="#run-github-actions-locally-with-act" title="Permanent link">&para;</a></h1>
+<p><a href="https://github.com/nektos/act">nektos/act</a> runs this repository's workflows
+on your machine, inside Docker containers, before you push. The push-&gt;CI loop
+is minutes long and shared with everyone; the local loop is seconds-to-minutes
+and free.</p>
+<h2 id="setup-once-per-machine">Setup (once per machine)<a class="headerlink" href="#setup-once-per-machine" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>render_diff(answers_a, answers_b)</code> replaces "render both, diff two trees by
-  hand" -- <code>identical</code>, <code>file_count</code>, <code>identical_count</code>, <code>only_in_a</code> /
-  <code>only_in_b</code>, and one entry per changed file with its sizes, its two sha256
-  digests and a unified diff.</li>
-<li><code>run_witness("fast", only="ros2 and use_recommended_license")</code> returns
-  <code>run_batch</code>-shaped verdicts (<code>id</code>, <code>ok</code>, <code>checks</code>), so a failing leaf is read
-  without interpreting pytest output. <code>only</code> is pytest's <code>-k</code> expression, which
-  cannot contain <code>=</code>; select leaves by the words in their id (<code>ros2</code>,
-  <code>use_recommended_license</code>).</li>
+<li>Docker running (<code>docker info</code>).</li>
+<li>The <code>act</code> binary (&gt;= 0.2.80): install from
+  <a href="https://github.com/nektos/act/releases">nektos/act releases</a> into
+  <code>~/.local/bin</code>, or <code>brew install act</code>.</li>
+<li>The repository's <code>.actrc</code> maps <code>ubuntu-latest</code> to
+  <code>catthehacker/ubuntu:act-latest</code> — an Ubuntu-like runner image. act's own
+  default (<code>node:16-buster-slim</code>) cannot run this repository's jobs, which
+  need apt, git and a glibc Python; the catthehacker image covers that, and
+  the jobs install everything else themselves (uv, task, toolchains), exactly
+  as they do on GitHub's runners. First use pulls the image (~1.5 GB).</li>
 </ul>
-<p><code>render_diff</code> compares <code>.copier-answers.yml</code> with copier's <code>_commit</code> stamp
-normalized and reports the two stamps in <code>answers_commit</code>: for a <em>dirty</em>
-template copier stamps a synthetic commit it creates per render, so the raw
-file differs between two renders of identical answers, and that difference says
-nothing about the answers. Every other byte is compared as it is.</p>
-<h2 id="resources">Resources<a class="headerlink" href="#resources" title="Permanent link">&para;</a></h2>
-<table>
-<thead>
-<tr>
-<th>Resource</th>
-<th>Payload</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>template://questionnaire</code></td>
-<td>the full questionnaire as JSON, internal variables included</td>
-</tr>
-<tr>
-<td><code>template://witnesses</code></td>
-<td>each witness leaf with its recorded tier and result, plus the ledger's coverage counters -- sorted and declaration-ordered, so it diffs between runs</td>
-</tr>
-<tr>
-<td><code>template://support</code></td>
-<td>the declared support contract (<code>support.yml</code>): what CI promises to execute per combination and per leaf class, each entry with the measured <code>why</code></td>
-</tr>
-</tbody>
-</table>
-<h2 id="the-http-transport-and-its-allowlist">The HTTP transport and its allowlist<a class="headerlink" href="#the-http-transport-and-its-allowlist" title="Permanent link">&para;</a></h2>
-<p>Binding to localhost is safe by default: the SDK arms its DNS-rebinding
-protection for a local bind, and <code>main()</code> adds <code>MCP_ALLOWED_HOSTS</code> on top when
-you set it. Binding anywhere else (<code>--host 0.0.0.0</code>, e.g. inside a container)
-<strong>requires</strong> <code>MCP_ALLOWED_HOSTS</code>, because the SDK's protection is only
-automatic for localhost; the server refuses to start rather than accept every
-<code>Host</code> header.</p>
+<h2 id="running-a-workflow">Running a workflow<a class="headerlink" href="#running-a-workflow" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>task<span class="w"> </span>act<span class="w">                                   </span><span class="c1"># ci.yml, all jobs (push event)</span>
+task<span class="w"> </span>act<span class="w"> </span><span class="nv">JOB</span><span class="o">=</span>lint<span class="w">                          </span><span class="c1"># one job</span>
+task<span class="w"> </span>act<span class="w"> </span><span class="nv">WORKFLOW</span><span class="o">=</span>witness.yml<span class="w"> </span><span class="nv">EVENT</span><span class="o">=</span>pull_request
+task<span class="w"> </span>act<span class="w"> </span><span class="nv">JOB</span><span class="o">=</span><span class="nb">test</span><span class="w"> </span><span class="nv">CLI_ARGS</span><span class="o">=</span><span class="s2">"--dryrun"</span><span class="w">      </span><span class="c1"># plan without executing</span>
+</code></pre></div>
+<p><code>-W</code> targets any workflow file under <code>.github/workflows/</code>, including the
+reusable ones (pass <code>EVENT=workflow_call</code> for <code>_*.yml</code> files).</p>
+<h2 id="what-transfers-and-what-does-not">What transfers and what does not<a class="headerlink" href="#what-transfers-and-what-does-not" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>MCP_ALLOWED_HOSTS</code> -- comma-separated; a <code>host:*</code> entry matches any port.</li>
-<li><code>MCP_ALLOWED_ORIGINS</code> -- optional, comma-separated, checked after the Host.</li>
-<li><code>GET /health</code> -- an unauthenticated liveness probe for an orchestrator. Like
-  every SDK custom route it is a plain Starlette route, so it <strong>bypasses</strong> the
-  allowlist and returns <code>{"status": "ok"}</code> to anyone; it exposes no data.</li>
-</ul>
-<p>That scope is not a claim, it is tested: <code>tests/test_mcp_server.py</code> starts the
-real server on <code>127.0.0.1</code> (no venv, no network) and pins a foreign <code>Host</code> at
-421 on <code>/mcp</code> with <code>/health</code> still 200, a foreign <code>Origin</code> at 403, and an
-allowed <code>Host</code> completing an <code>initialize</code> handshake at 200.</p>
-<h2 id="relationship-to-the-generated-scaffolds-server">Relationship to the generated scaffold's server<a class="headerlink" href="#relationship-to-the-generated-scaffolds-server" title="Permanent link">&para;</a></h2>
-<p>Two MCP servers exist in this repository, and they stay separate on purpose:</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th><code>tools/mcp_server.py</code> (this one)</th>
-<th><code>_shared/mcp_server.py.jinja</code></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Serves</td>
-<td>the template's maintenance loop</td>
-<td>the generated project, after <code>include_mcp</code></td>
-</tr>
-<tr>
-<td>Audience</td>
-<td>an agent editing the template</td>
-<td>the project's own users and their hosts</td>
-</tr>
-<tr>
-<td>Tools</td>
-<td>render, inspect, adopt, batch, witnesses</td>
-<td>a worked example: typed tools, a <code>ToolError</code>, resources, a prompt</td>
-</tr>
-<tr>
-<td>Shipped as</td>
-<td>a repo script (<code>task mcp</code>)</td>
-<td><code>&lt;pkg&gt;/mcp_server.py</code> + a console script, <code>uvx</code>-runnable once published</td>
-</tr>
-</tbody>
-</table>
-<p>They share no code and import nothing from each other: a generated project is
-copied out, released and installed on its own, so it must never depend on this
-repository -- and this repository must not grow a dependency on one project
-type's shape. The only idea that appears in both is the <code>MCP_ALLOWED_HOSTS</code>
-rule plus <code>/health</code>, about thirty lines of SDK glue re-derived from the SDK API
-in each; keeping the second copy is what lets either side change its transport
-settings without a release coupling. Their dependency handling differs too,
-deliberately: the generated scaffold's deptry config ignores the starlette
-import its <code>custom_route</code> needs (<code>DEP001=starlette</code>, plus <code>DEP003</code>), while this
-repository declares <code>starlette</code> in its dev group and imports it directly.</p>
-<p>Fix a generated project's server in <code>_shared/mcp_server.py.jinja</code> (and
-<a href="../mcp/">the MCP how-to</a> describes what it ships); add a maintenance tool to
-<code>tools/mcp_server.py</code> and the table above.</p>
-<h2 id="related">Related<a class="headerlink" href="#related" title="Permanent link">&para;</a></h2>
-<ul>
-<li><a href="../mcp/">Serve an MCP Server from a Generated Project</a> -- the scaffold, its
-  security notes for developers and for users/operators.</li>
-<li><a href="../test-loop/">Check a Change Without the Full Test Suite</a> -- the same
-  capabilities from the shell (<code>task batch</code>, <code>pytest -m</code>), and the tier model
-  <code>run_witness</code> follows.</li>
-<li><a href="../../explanations/verification/">Verification Architecture</a> -- what the
-  <code>fast</code>, <code>full</code> and <code>slow</code> tiers observe, and what the 225 leaves are.</li>
+<li>Job logic, steps, conditions, matrix, <code>timeout-minutes</code> and the actions
+  themselves run for real: a local failure is a real failure.</li>
+<li>GitHub-hosted specifics do not: the Actions cache (act serves a local
+  cache server, so cache steps run but do not persist), deploy keys and
+  environment secrets (put fakes in a git-ignored <code>.secrets</code> file), branch
+  protection, and Pages deployment. Jobs that exist only to publish
+  (<code>_release.yml</code>, <code>_docs.yml</code>) are better left to real CI.</li>
+<li>The rendered tree your local run sees is your <strong>working tree</strong> — including
+  uncommitted edits — which is exactly the point: break the lint job, run
+  <code>task act JOB=lint</code>, fix, repeat, and push only when the remote loop would
+  have been green anyway.</li>
 </ul>
 
 
@@ -2030,6 +1909,44 @@ repository declares <code>starlette</code> in its dev group and imports it direc
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../run-tests/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Run Tests">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Run Tests
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../lint/" class="md-footer__link md-footer__link--next" aria-label="Next: Linting">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Linting
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">

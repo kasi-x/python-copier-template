@@ -474,6 +474,8 @@
       
         
       
+        
+      
     
     
     
@@ -635,6 +637,33 @@
     
   
   Run Tests
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/local-ci/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run CI Locally
 
     
   </span>
@@ -1061,6 +1090,8 @@
       
         
       
+        
+      
     
     
     
@@ -1249,6 +1280,33 @@
     
   
   Authoring Template Sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Extending the Questionnaire
 
     
   </span>
@@ -2102,7 +2160,7 @@ check moves between tiers, the budget moves with it.</p>
 <td>Cost ledger guard</td>
 <td><code>task test-meta</code></td>
 <td><code>-m meta</code></td>
-<td>the guards in <code>tests/test_marker_drift.py</code>: the venv/network marker scan, the tier-membership check and the cost-staleness check</td>
+<td>the guards in <code>tests/test_marker_drift.py</code>: the venv/network marker scan, the tier-membership check, the cost-staleness check and the leaf-space budget</td>
 </tr>
 <tr>
 <td>Slow</td>
@@ -2148,7 +2206,9 @@ for the witness fast job — the CI timeout the time has to fit inside.
 <code>tests/test_marker_drift.py</code> re-collects every tier and fails on drift, fails
 when a row's <code>measured</code> date is more than 30 days old, and
 <code>UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py</code>
-re-records the collected sets after a deliberate tier change.</p>
+re-records the collected sets — and the Tests column of the tier table in
+<a href="../../how-to/test-loop/">test-loop.md</a>, the hand-edited counts this used to
+leave behind — after a deliberate tier change.</p>
 <p>The edit-loop budget is <strong>30 s</strong>; anything that pushes <code>task test-fast</code> past it
 is either marked <code>slow</code> / <code>heavy</code> / <code>meta</code> or is a regression — for venv and
 network work the marker-drift guard enforces that structurally, and the ledger's
@@ -2203,6 +2263,16 @@ that touches layer composition must declare, up front, whether it keeps
 exclusivity (choose-one) or accepts the product, and the growth table above
 stops applying if it accepts the product.</p>
 </div>
+<p>The growth table is not the whole contract: the leaf space also has a declared
+ceiling. <code>LEAF_BUDGET</code> in <code>tests/test_marker_drift.py</code> — currently <strong>450</strong>,
+twice the current 225-leaf space — fails the meta guard when
+<code>tools/z3_witnesses.py</code> enumerates more leaves than that. The additive
+increments in the table fit several times over; what the budget turns away is
+the multiplicative case above (a lifted exclusivity, or a new axis that
+composes with everything already declared), which would otherwise surface only
+as the witness fast job creeping toward its 30-minute CI timeout. Raising it
+is a decision, not an accident: edit the constant and re-measure the witness
+job's wall time into <code>tests/matrix/tiers.json</code>.</p>
 <p>The conclusion that drives the rules below: growth pushed into L2 stays bounded
 (+22 leaves ≈ +1 s parallel, 0 s cached), while growth pushed into L3 is linear
 in samples and each sample is 13–24 s. So a new check goes into L2 <strong>unless
@@ -2352,6 +2422,11 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 <td>Growth table's +76 / +22 leaf increments and their second costs</td>
 <td>derived in the 2026-09-13 audit from the ledger's leaf counts and the 0.58 s/leaf unit</td>
 <td>TODO §24.1</td>
+</tr>
+<tr>
+<td>Leaf-space ceiling: <code>LEAF_BUDGET</code> = 450, twice the 225 enumerated leaves</td>
+<td><code>LEAF_BUDGET</code> in <code>tests/test_marker_drift.py</code>, checked against <code>tools/z3_witnesses.py</code>'s enumeration on every meta run</td>
+<td>declared, citing §24.1 — the enforcement is the record</td>
 </tr>
 <tr>
 <td>Edit-loop budget of 30 s (a contract, not a measurement)</td>
