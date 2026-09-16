@@ -1941,9 +1941,11 @@ terminal. From inside the checkout the same two forms are
 </table>
 <p>Each preset is a file under <code>presets/</code>: it names only the answers that define
 the family, so adding a preset of your own is a two-line YAML file. For a
-fixture that sets every option instead, copy <code>example-answers.yml</code> from the
-template root — it is what the template's own CI renders, and it works as a
-<code>copier copy --data-file</code> answers file.</p>
+fixture that sets every option instead, copy
+<a href="https://github.com/kasi-x/python-copier-template/blob/main/example-answers.yml"><code>example-answers.yml</code></a>
+from the template root — it turns every area gate off (so every detailed
+question is answered) on a <code>data_science</code> base, it is what the template's own
+CI renders, and it works as a <code>copier copy --data-file</code> answers file.</p>
 <p>Other options:</p>
 <ul>
 <li><code>--ref &lt;ref&gt;</code> expands another revision (<code>--ref HEAD</code> is the working tree of
@@ -1973,7 +1975,8 @@ uvx copier copy --trust \
 release tag</strong>, and since the 6.0.0 fork detach that tag is the fork's own
 release. Pass <code>--vcs-ref=6.0.0</code> (or another release tag) only to pin an exact
 release and make the generation reproducible. Add <code>--defaults</code> to accept every
-default, and <code>--data-file example-answers.yml</code> for a fully specified run.</p>
+default, and <code>--data-file example-answers.yml</code> (the
+<a href="#the-one-command-way">fixture in the preset section</a>) for a fully specified run.</p>
 <p>This will:</p>
 <ul>
 <li>Ask some questions about the project to be created (each area first asks
@@ -1983,12 +1986,43 @@ default, and <code>--data-file example-answers.yml</code> for a fully specified 
 <li>Create a git repository if the directory is not already one</li>
 </ul>
 <h2 id="committing-the-results">Committing the results<a class="headerlink" href="#committing-the-results" title="Permanent link">&para;</a></h2>
-<p>You can now check what the template has created, tweak the results if desired, <a href="../../how-to/lock-requirements/">lock the requirements</a>, and commit the results:
+<p>You can now check what the template has created, tweak the results if desired, install the environment, and commit the results. The install command is the one your answers selected — the generated README's installation section has the full story (device deploy for MicroPython, ROS sourcing and <code>colcon</code> for ros2):</p>
+<table>
+<thead>
+<tr>
+<th>Your answers</th>
+<th>Install the environment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>package_manager = uv</code> (the default)</td>
+<td><code>uv sync</code></td>
+</tr>
+<tr>
+<td><code>package_manager = poetry</code></td>
+<td><code>poetry install</code></td>
+</tr>
+<tr>
+<td><code>package_manager = pixi</code></td>
+<td><code>pixi install</code></td>
+</tr>
+<tr>
+<td><code>project_type = ros2</code>, <code>ros2_package_manager = apt</code></td>
+<td>source <code>/opt/ros/$ROS_DISTRO/setup.bash</code>, then <code>rosdep install --from-paths . --ignore-src -r -y</code></td>
+</tr>
+<tr>
+<td><code>project_type = micropython</code></td>
+<td>the toolchain above, then <code>uv run pip install -r requirements-dev.txt --target typings</code> for the device stubs</td>
+</tr>
+</tbody>
+</table>
+<p>Then <a href="../../how-to/lock-requirements/">lock the requirements</a> and commit:</p>
 <div class="highlight"><pre><span></span><code>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/path/to/my-project
-$<span class="w"> </span>uv<span class="w"> </span>sync
+$<span class="w"> </span>uv<span class="w"> </span>sync<span class="w">          </span><span class="c1"># or your toolchain's install command, from the table above</span>
 $<span class="w"> </span>git<span class="w"> </span>add<span class="w"> </span>.
 $<span class="w"> </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"Expand from python-copier-template x.x.x"</span>
-</code></pre></div></p>
+</code></pre></div>
 <h2 id="uploading-to-github">Uploading to GitHub<a class="headerlink" href="#uploading-to-github" title="Permanent link">&para;</a></h2>
 <p>You can now <a href="https://github.com/new">create a new blank project on GitHub</a>. Choose the same GitHub owner, repo name and description that you answered in the questions earlier. GitHub will now give you the commands needed to upload your repo from GitHub.</p>
 <h2 id="getting-started-with-your-new-repo">Getting started with your new repo<a class="headerlink" href="#getting-started-with-your-new-repo" title="Permanent link">&para;</a></h2>

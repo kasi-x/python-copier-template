@@ -2185,6 +2185,12 @@ question first (default: yes), with the recommendation spelled out in its help
 text. Answer <strong>yes</strong> and that area is configured from its recommended defaults
 without asking anything else; answer <strong>no</strong> and the detailed question(s) for
 that area are asked.</p>
+<p>Every answer can also come from a file instead of the prompt —
+<a href="../non-interactive/">Non-interactive Generation</a> covers the flags — and
+<a href="https://github.com/kasi-x/python-copier-template/blob/main/example-answers.yml"><code>example-answers.yml</code></a>
+at the template root is a ready-made starting point: it turns every area gate
+off, so it spells out each detailed question that the recommended path would
+otherwise leave at its default.</p>
 <h2 id="project-type-project_type">Project type (<code>project_type</code>)<a class="headerlink" href="#project-type-project_type" title="Permanent link">&para;</a></h2>
 <p>Asked first, ahead of every area, because the toolchain and several later
 questions depend on it.</p>

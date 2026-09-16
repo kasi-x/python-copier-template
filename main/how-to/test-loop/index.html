@@ -1799,8 +1799,8 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td>883</td>
-<td>~43s</td>
+<td>889</td>
+<td>~31s</td>
 </tr>
 <tr>
 <td>Slow</td>
@@ -1811,20 +1811,20 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Pre-push / nightly</td>
 <td><code>task test-heavy</code></td>
-<td>47</td>
-<td>~43s</td>
+<td>49</td>
+<td>~20s</td>
 </tr>
 <tr>
 <td>Nightly, shuffled</td>
 <td><code>task test-randomly</code></td>
-<td>883</td>
-<td>~44s</td>
+<td>889</td>
+<td>~27s</td>
 </tr>
 <tr>
 <td>Everything</td>
 <td><code>task test</code></td>
-<td>946</td>
-<td>~88s</td>
+<td>954</td>
+<td>~171s</td>
 </tr>
 <tr>
 <td>Cost ledger guard</td>
@@ -1872,14 +1872,14 @@ does. <a href="../../explanations/verification/">Verification</a> states the thr
   startups); <code>ci.yml</code> runs them as its own job. They are also part of
   <code>task test</code>, so the pre-release gate still runs them.</li>
 <li><code>task test-randomly</code> runs the edit-loop selection again with pytest-randomly
-  active (<code>-p randomly</code>): the same 851 tests in a freshly shuffled order, so
+  active (<code>-p randomly</code>): the same 889 tests in a freshly shuffled order, so
   order dependence and shared state surface in the nightly run instead of in
   someone's local loop. The plugin is a dev dependency but stays disabled
   everywhere else — <code>addopts</code> carries <code>-p no:randomly</code>, and this task is the
   only command line that re-enables it — so no other tier pays for the
   reshuffle (TODO §24.3 / §27.4: conditional adopt, nightly seed job only).
   Each run's seed is random and printed in the pytest header for reproduction.</li>
-<li><code>task test-slow</code> runs <code>-m slow</code>: the serial 225-leaf witness batch runner
+<li><code>task test-slow</code> runs <code>-m slow</code>: the serial 228-leaf witness batch runner
   (<code>tests/test_witness_matrix.py::test_witness_batch_runner_executes_every_leaf</code>,
   the one test the edit loop cannot afford) and the four <code>copier update</code> cases.
   Neither builds a venv; both are far too slow for the edit loop.</li>
@@ -1958,7 +1958,7 @@ disagree); the times are the measurements recorded with them.</p>
 <tr>
 <td><code>witness.yml</code> (fast)</td>
 <td>PR (except docs-only)</td>
-<td><code>pytest -q tests/test_witness_matrix.py -m fast</code> — renders every leaf, no venv: 230 tests (225 renders plus five leaf-list checks), 19 s locally with the render cache emptied, against the job's 30-minute timeout</td>
+<td><code>pytest -q tests/test_witness_matrix.py -m fast</code> — renders every leaf, no venv: 234 tests (228 renders plus six leaf-list checks), 11 s locally cold and 3 s warm, against the job's 30-minute timeout</td>
 </tr>
 <tr>
 <td><code>witness.yml</code> (full)</td>
