@@ -189,17 +189,32 @@ def _context_hashes(root: Path, leaves: dict[str, dict[str, Any]]) -> dict[str, 
     return hashes
 
 
+def _resolve_include_target(target: str, watched: set[str]) -> str | None:
+    """An include tag's target, resolved against the watched files.
+
+    Include tags are repo-root-relative ("_shared/x.jinja" from a file in
+    template/), so the raw target matches a watched file only when the file
+    lives at that level; the suffix fallback covers tags written relative to
+    the including file. None = the target names nothing we watch.
+    """
+    if target in watched:
+        return target
+    matches = [path for path in watched if path.endswith("/" + target)]
+    return matches[0] if len(matches) == 1 else None
+
+
 def _include_graph(root: Path) -> dict[str, set[str]]:
     """template-side file -> the files it pulls in via literal include/import tags."""
     graph: dict[str, set[str]] = {}
+    watched = set(_template_hashes(root))
     for rel in _template_hashes(root):
         if not rel.endswith((".jinja", ".yml")):
             continue
-        path = root / rel
-        if not path.is_file():
-            continue
-        for match in INCLUDE_TAG.finditer(path.read_text(encoding="utf-8")):
-            graph.setdefault(rel, set()).add(match.group(1))
+        text = (root / rel).read_text(encoding="utf-8")
+        for match in INCLUDE_TAG.finditer(text):
+            resolved = _resolve_include_target(match.group(1), watched)
+            if resolved is not None:
+                graph.setdefault(rel, set()).add(resolved)
     return graph
 
 
@@ -243,11 +258,14 @@ def state_hash(state: State) -> str:
 def _output_name(template_rel: str) -> str:
     """The destination name a template path renders to, tags and `.jinja` stripped.
 
-    `{{ pkg_dir }}`-style interpolations strip out too, so the comparison to
-    manifest keys is by suffix: over-inclusive on name collisions, which is
-    the safe direction for a candidacy rule.
+    The leading `template/` directory (copier's `_subdirectory`) strips out
+    too, so the name is what appears in the rendered tree. `{{ pkg_dir }}`
+    interpolations strip out as well, so the comparison to manifest keys is
+    by suffix: over-inclusive on collisions, the safe direction for a
+    candidacy rule.
     """
     stripped = re.sub(r"{%.*?%}|{{.*?}}|{#.*?#}", "", template_rel)
+    stripped = stripped.removeprefix("template/")
     return stripped.removesuffix(".jinja") if stripped.endswith(".jinja") else stripped
 
 
@@ -311,7 +329,12 @@ def compute_candidates(old: State, new: State) -> tuple[frozenset[str], dict[str
             if changed_files:
                 why.append("no render manifest: every changed byte could reach this leaf")
             continue
-        touched = sorted(set(rendered) & reach_outputs)
+        # suffix matching: a stripped template name ("fetcher.py" from a
+        # {{ pkg_dir }}-interpolated source) reaches any rendered file ending
+        # in it -- over-inclusive, which is the safe direction for candidacy.
+        touched = sorted(
+            key for key in rendered if any(key == name or key.endswith("/" + name) for name in reach_outputs)
+        )
         if touched:
             why.append(f"changed template bytes reach its rendered files: {', '.join(touched[:4])}")
 
