@@ -110,9 +110,10 @@ STALENESS_DAYS = 30
 # per include layer, +22 per gate-off dimension -- but lifting include
 # exclusivity turns the layer multiplier into a combinatorial product:
 # exponential growth that would otherwise surface only as that job creeping
-# toward its 30-minute timeout. 450 is twice the current 225-leaf space, so the
-# additive increments fit several times over and only a multiplicative change
-# trips it. Crossing the budget is a decision -- raise this constant and
+# toward its 30-minute timeout. 450 was twice the 225-leaf space the budget
+# landed with (228 leaves as of 2026-09-16), so the additive increments fit
+# several times over and only a multiplicative change trips it. Crossing the
+# budget is a decision -- raise this constant and
 # re-measure the witness job's wall time into tests/matrix/tiers.json -- not an
 # accident a slow CI run discovers.
 LEAF_BUDGET = 450

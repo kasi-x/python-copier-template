@@ -65,8 +65,8 @@ renders interleaved in one process chdir into each other's clone (measured:
 `fatal: not a git repository: '.git'`). Jinja rendering is GIL-bound on top of
 that: the same 24 leaves of this repo's witness file took 13.0s in one thread
 and 11.6s spread over 8 (1.1x, one line lost to the race above), where
-`--jobs 16` renders the whole 205-leaf file in 10.2s against 113.8s serial
-(11x). Processes also keep `--prepare` installs and request commands from
+`--jobs 16` renders the whole witness file in 10.2s against 113.8s serial
+(11x; measured at the 205-leaf tree). Processes also keep `--prepare` installs and request commands from
 sharing a cwd.
 
 What `--jobs` does *not* make independent: the template tree itself. Every
@@ -720,7 +720,7 @@ def run_requests(  # noqa: PLR0913  WHYNOT: the four options are main's own CLI 
 
     `jobs` is the number of requests in flight: 1 keeps the original serial
     behaviour (and its exact `--fail-fast` stop point); higher values spread
-    them over worker processes, which is what makes a 205-leaf batch usable --
+    them over worker processes, which is what makes a whole-file batch usable --
     see the `--jobs` notes in the module docstring, including why the worker
     is a process rather than a thread.
     """

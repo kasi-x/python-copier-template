@@ -3426,6 +3426,24 @@
       "source": "fast"
     },
     {
+      "id": "project_type=web_api/gate=off:use_recommended_integrations/details=chosen",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "web_api",
+        "use_recommended_integrations": false,
+        "docker": true,
+        "include_mcp": true
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=web_api/gate=off:use_recommended_integrations/include=include_bot",
       "tier": "fast",
       "result": "pass",
@@ -3443,6 +3461,25 @@
       "source": "fast"
     },
     {
+      "id": "project_type=web_api/gate=off:use_recommended_integrations/include=include_bot/details=chosen",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "web_api",
+        "include_bot": true,
+        "use_recommended_integrations": false,
+        "docker": true,
+        "include_mcp": true
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=web_api/gate=off:use_recommended_integrations/include=include_data_science",
       "tier": "fast",
       "result": "pass",
@@ -3456,6 +3493,25 @@
         "project_type": "web_api",
         "include_data_science": true,
         "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_integrations/include=include_data_science/details=chosen",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "web_api",
+        "include_data_science": true,
+        "use_recommended_integrations": false,
+        "docker": true,
+        "include_mcp": true
       },
       "source": "fast"
     },
@@ -3808,8 +3864,8 @@
     }
   ],
   "coverage": {
-    "total": 225,
-    "executed_fast": 225,
+    "total": 228,
+    "executed_fast": 228,
     "executed_full": 8,
     "none": 0,
     "unexecuted": []

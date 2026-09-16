@@ -19,7 +19,10 @@ changed. A candidate is an upper bound, never a claim.
 rendered from both the baseline checkout and the working tree, and the two
 trees are compared by manifest: the file list plus one sha256 per file, with
 `.copier-answers.yml` normalized first (its `_commit`/`_src_path` vary with
-dirty-template renders — a known artifact, not content).
+dirty-template renders — a known artifact, not content). A candidate only one
+side declares — the witness list is itself a template input, so a leaf-space
+change moves it — has no counterpart to compare: it is reported as added or
+removed, never as a diff.
 
 A non-candidate leaf is proven unaffected by the semantic diff; a candidate
 that comes back byte-identical is proven unchanged by direct observation.
@@ -64,6 +67,11 @@ from tools import batch  # noqa: E402
 CACHE = TOP / ".cache" / "render-delta"
 ANSWERS_FILE = ".copier-answers.yml"
 DEFAULT_JOBS = 8
+
+# The render-context hash definition (which entries are hashed). Bumped when
+# that changes, so a cache directory written under the old definition is not
+# served under the new one.
+CONTEXT_HASH_SCHEME = "answers-only-v1"
 
 # Rendered content comes from these roots; copier.yml holds the settings and
 # the generation tasks, so any byte there conservatively affects every leaf.
@@ -126,10 +134,17 @@ def _read_leaves(root: Path) -> dict[str, dict[str, Any]]:
 
 
 def _context_key(root: Path) -> str:
-    """The context hash cache key: contexts change only when these change."""
+    """The context hash cache key: contexts change only when these change.
+
+    ``CONTEXT_HASH_SCHEME`` is part of the key so a change to *which* entries
+    are hashed invalidates every cached pass instead of mixing two hash
+    definitions in one cache directory.
+    """
     parts = [root / "copier.yml", root / "tests" / "matrix" / "witnesses.jsonl"]
     parts += sorted((root / "questions").glob("*.yml"))
     digest = hashlib.sha256()
+    digest.update(CONTEXT_HASH_SCHEME.encode())
+    digest.update(b"\0")
     for path in parts:
         digest.update(path.name.encode())
         digest.update(b"\0")
@@ -139,12 +154,20 @@ def _context_key(root: Path) -> str:
 
 
 def _context_hashes(root: Path, leaves: dict[str, dict[str, Any]]) -> dict[str, str]:
-    """Hash of copier's full render context, one pass per leaf, cached by question state.
+    """Hash of copier's answer-derived render context, one pass per leaf, cached by question state.
 
-    Template body edits never change the context -- the pass is driven by
-    copier.yml, questions/ and the leaf answers -- so the typical refactor
-    pays nothing here and the pass runs only when the questionnaire itself
-    moved.
+    Only the context's public entries are hashed -- the answers and the
+    internals copier derived from them. Its underscore-prefixed entries
+    (``_src_path``, ``_commit``, ``_copier_conf``, ``_copier_answers``,
+    ``_folder_name``) name the run's own paths, revision and objects, so they
+    differ between the baseline worktree and the working tree for reasons that
+    are not the template's content: hashing them makes every leaf a candidate
+    whenever the two sides do not share one cache entry (measured 2026-09-16:
+    a leaf-space change -- the witness list is itself an input -- made all 228
+    leaves candidates and the semantic diff stopped narrowing). What is left
+    is exactly what the cache key already promises: template body edits never
+    change the context, and the pass runs only when the questionnaire, the
+    witness list or the leaf answers moved.
     """
     cache_dir = CACHE / "contexts"
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -159,7 +182,8 @@ def _context_hashes(root: Path, leaves: dict[str, dict[str, Any]]) -> dict[str, 
             worker.data = dict(leaves[leaf_id])
             worker._ask()  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: copier's own questionnaire pass is the oracle (tests/test_when_model.py precedent).
             context = worker._render_context()  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: same.
-            serialized = json.dumps(context, sort_keys=True, default=repr)
+            answers_only = {key: value for key, value in context.items() if not key.startswith("_")}
+            serialized = json.dumps(answers_only, sort_keys=True, default=repr)
             hashes[leaf_id] = _sha(serialized.encode())
     cache_path.write_text(json.dumps(hashes, indent=1, sort_keys=True), encoding="utf-8")
     return hashes
@@ -336,11 +360,18 @@ def _baseline_checkout(base_ref: str) -> Path:
 def _render_side(
     repo: Path, leaf_ids: list[str], leaves: dict[str, dict[str, Any]], work: Path, jobs: int
 ) -> dict[str, dict[str, str]]:
-    """Render the given leaves from `repo`, returning a manifest per leaf."""
+    """Render the leaves `repo` declares, returning a manifest per leaf.
+
+    Ids `repo` does not declare are skipped: a baseline checkout cannot render
+    a leaf the working tree added, nor the working tree one the baseline never
+    had (the witness list is itself a template input, tools/z3_witnesses.py).
+    `verify` names those ids as added / removed instead of diffing them.
+    """
+    renderable = [leaf_id for leaf_id in leaf_ids if leaf_id in leaves]
     # flat dests: leaf ids contain "/", and batch refuses nested work dirs
     lines = [
         json.dumps({"id": leaf_id, "dest": leaf_id.replace("/", "__"), "answers": leaves[leaf_id], "src": str(repo)})
-        for leaf_id in leaf_ids
+        for leaf_id in renderable
     ]
     if not lines:
         return {}
@@ -351,6 +382,40 @@ def _render_side(
     with batch.report_stream_only():
         results = batch.run_requests(requests, work / "renders", repo, jobs=jobs)
     return {result.id: _manifest(Path(result.dest)) for result in results}
+
+
+def _classify(
+    render_list: list[str],
+    old_leaves: dict[str, dict[str, Any]],
+    new_leaves: dict[str, dict[str, Any]],
+    old_manifests: dict[str, dict[str, str]],
+    new_manifests: dict[str, dict[str, str]],
+) -> tuple[dict[str, list[str]], list[str], list[str]]:
+    """Split the re-rendered leaves into diff failures, additions and removals.
+
+    The verdict is about renders that *changed*, so a leaf only one side
+    declares is never a failure: an added leaf has no baseline render to
+    differ from, and a removed leaf has no working-tree render left to compare.
+    Both are reported by name; only the leaves both sides declare are compared
+    by manifest.
+    """
+    added = [leaf_id for leaf_id in render_list if leaf_id in new_leaves and leaf_id not in old_leaves]
+    removed = [leaf_id for leaf_id in render_list if leaf_id in old_leaves and leaf_id not in new_leaves]
+    uncomparable = {*added, *removed}
+    failures: dict[str, list[str]] = {}
+    for leaf_id in render_list:
+        if leaf_id in uncomparable:
+            continue
+        before = old_manifests.get(leaf_id, {})
+        after = new_manifests.get(leaf_id, {})
+        diff = sorted(
+            {f for f in before if f not in after}
+            | {f for f in after if f not in before}
+            | {f for f in set(before) & set(after) if before[f] != after[f]}
+        )
+        if diff:
+            failures[leaf_id] = diff
+    return failures, added, removed
 
 
 def verify(base_ref: str = "HEAD", jobs: int = DEFAULT_JOBS, audit: int = 0) -> tuple[int, dict[str, Any]]:
@@ -370,17 +435,7 @@ def verify(base_ref: str = "HEAD", jobs: int = DEFAULT_JOBS, audit: int = 0) -> 
         old_manifests = _render_side(base_checkout, render_list, base_leaves, work / "old", jobs)
         new_manifests = _render_side(TOP, render_list, new_leaves, work / "new", jobs)
 
-        failures: dict[str, list[str]] = {}
-        for leaf_id in render_list:
-            before = old_manifests.get(leaf_id, {})
-            after = new_manifests.get(leaf_id, {})
-            diff = sorted(
-                {f: "only in baseline" for f in before if f not in after}
-                | {f: "only in working tree" for f in after if f not in before}
-                | {f: "content differs" for f in set(before) & set(after) if before[f] != after[f]}
-            )
-            if diff:
-                failures[leaf_id] = diff
+        failures, added, removed = _classify(render_list, base_leaves, new_leaves, old_manifests, new_manifests)
 
         # a non-candidate is proven identical, so it inherits its old manifest:
         # the next diff against this state has the full per-leaf picture again.
@@ -406,6 +461,8 @@ def verify(base_ref: str = "HEAD", jobs: int = DEFAULT_JOBS, audit: int = 0) -> 
             "candidates": len(candidates),
             "proven": len(new_state.leaves) - len(failures),
             "failures": failures,
+            "added": added,
+            "removed": removed,
             "audit": {"requested": audit, "rendered": audited, "failures": audit_failures},
             "semantic_diff": {k: v for k, v in report.items() if k != "reasons"},
         }
@@ -440,12 +497,20 @@ def main(argv: list[str] | None = None) -> int:
         )
         for leaf_id, files in payload["failures"].items():
             print(f"[DIFF]   {leaf_id}: {', '.join(files)}", file=sys.stderr)
+        for leaf_id in payload["added"]:
+            print(f"[ADDED]  {leaf_id}: {payload['base']} declares no such leaf", file=sys.stderr)
+        for leaf_id in payload["removed"]:
+            print(f"[GONE]   {leaf_id}: the working tree dropped it", file=sys.stderr)
         for leaf_id, files in payload["audit"]["failures"].items():
             print(f"[AUDIT]  {leaf_id}: {', '.join(files)}", file=sys.stderr)
         if code == 0:
+            compared = payload["candidates"] - len(payload["added"]) - len(payload["removed"])
+            moved = ""
+            if payload["added"] or payload["removed"]:
+                moved = f" ({len(payload['added'])} added, {len(payload['removed'])} removed, no baseline to compare)"
             print(
-                f"PROVEN render-identical: {payload['candidates']} candidate(s) re-rendered byte-identical, "
-                f"{payload['leaves'] - payload['candidates']} unaffected by the semantic diff.",
+                f"PROVEN render-identical: {compared} candidate(s) re-rendered byte-identical, "
+                f"{payload['leaves'] - payload['candidates']} unaffected by the semantic diff{moved}.",
                 file=sys.stderr,
             )
     return code

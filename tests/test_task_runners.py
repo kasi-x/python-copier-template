@@ -13,22 +13,34 @@ happened for real are guarded here:
 The contract is pinned structurally — each runner's parsed task table
 (names AND dependency structure) must equal the model, read out of the
 pixi `[tool.pixi.feature.dev.tasks]` table, which is a direct
-serialization of `_tasks.jinja` — and at runtime, where `lint` executes
-on the runners whose CLIs install from PyPI, `test` executes via make and
-`check` (lint + type-check + test) via poe. task and just execute in the
-`tests/test_example_toolchain.py` runtime tests; pixi is excluded from the
-runtime tests because a conda solve is too heavy for the suite.
+serialization of `_tasks.jinja` — and in the workflows' own dispatch: every
+`case "$TASK_RUNNER"` switch in the shipped `_*.yml` files must handle every
+runner the questionnaire offers, because a missing branch is the runtime
+`Unknown task runner` failure that reached users through `_test.yml` and
+`_docs.yml` (TODO §19). At runtime `lint` executes on the runners whose CLIs
+install from PyPI, `test` on make / invoke / duty — the task `_test.yml`
+drives — and `check` (lint + type-check + test) via poe. task and just
+execute in the `tests/test_example_toolchain.py` runtime tests; pixi is
+excluded from the runtime tests because a conda solve is too heavy for the
+suite.
 """
 
 import re
+import sys
 import tomllib
 from pathlib import Path
 
 import pytest
 import yaml
 
-from support import copy_project
-from support import make_venv
+TOP = Path(__file__).resolve().parent.parent
+if str(TOP) not in sys.path:  # the tools/* modules are imported the same way in every test module
+    sys.path.insert(0, str(TOP))
+
+from tools import questionnaire  # noqa: E402
+
+from support import copy_project  # noqa: E402
+from support import make_venv  # noqa: E402
 
 RENDER_ARGS: dict[str, dict[str, object]] = {
     "task": {"use_recommended_toolchain": False, "task_runner": "task"},
@@ -196,3 +208,63 @@ def test_check_task_executes_on_poe(tmp_path: Path):
     project = _render("poe", tmp_path)
     run = make_venv(project)
     run("uv run --locked poe check")
+
+
+# The shipped workflows that dispatch on the task runner. They reach generated
+# projects through the symlinks in
+# `template/{% if git_platform=="github.com" %}.github{% endif %}/.../workflows/`,
+# so a branch missing in one of them is a broken generated CI -- a runtime
+# `Unknown task runner` exit 1 that no render-only check sees. That is how
+# `_test.yml` and `_docs.yml` came to lack invoke/duty while `_tasks.yml` had
+# them (TODO §19).
+RUNNER_SWITCH_WORKFLOWS = ("_tasks.yml", "_test.yml", "_docs.yml")
+
+
+def test_every_runner_switch_handles_every_task_runner_choice():
+    """Every workflow that dispatches on the runner covers every answer.
+
+    The questionnaire's task_runner choices (`_common_a.yml`) plus `pixi` --
+    the toolchain answer that replaces the question -- must each have a branch
+    in each switch, and the switch must keep failing loudly on anything else.
+    """
+    questions, _settings = questionnaire.load_questions()
+    runner = next((question for question in questions if question.name == "task_runner"), None)
+    assert runner is not None, "the questionnaire no longer asks task_runner; this guard is moot"
+    choices = {str(value) for value in runner.choices}
+    assert choices, "task_runner lost its choices; they are what this guard compares against"
+    wanted = choices | {"pixi"}
+    problems: list[str] = []
+    for name in RUNNER_SWITCH_WORKFLOWS:
+        text = (TOP / ".github" / "workflows" / name).read_text(encoding="utf-8")
+        switch = re.search(r'case "\$TASK_RUNNER" in\n(.*?)\n\s*esac', text, re.DOTALL)
+        if switch is None:
+            problems.append(f'{name}: no `case "$TASK_RUNNER"` switch to check')
+            continue
+        body = switch.group(1)
+        handled = set(re.findall(r"^\s+([a-z]+)\)", body, re.MULTILINE))
+        missing = sorted(wanted - handled)
+        if missing:
+            problems.append(f"{name}: no branch for {missing}")
+        if "Unknown task runner" not in body:
+            problems.append(f"{name}: an unknown runner must fail loudly, not be skipped")
+    assert not problems, "the workflows' task-runner switches have holes:\n  " + "\n  ".join(problems)
+
+
+@pytest.mark.heavy
+@pytest.mark.network
+@pytest.mark.parametrize(
+    ("runner", "test_cmd"),
+    [
+        ("invoke", "uv run --locked invoke test"),
+        ("duty", "uv run --locked duty test"),
+    ],
+)
+def test_test_task_executes_on_invoke_and_duty(runner: str, test_cmd: str, tmp_path: Path):
+    """`test` is the task `_test.yml` runs on every push.
+
+    These two runners are the ones that workflow used to reject with `Unknown
+    task runner`, so their recipe must execute for real -- the lint case above
+    cannot see a `test` recipe that only breaks under coverage flags."""
+    project = _render(runner, tmp_path)
+    run = make_venv(project)
+    run(test_cmd)

@@ -11,7 +11,7 @@ on:
         required: true
       task_runner:
         type: string
-        description: Which task runner drives the test task (task, just, poe, make, pixi)
+        description: Which task runner drives the test task (task, just, poe, make, invoke, duty, pixi)
         required: true
       task:
         type: string
@@ -132,6 +132,20 @@ jobs:
                 poetry run poe "$TEST_TASK"
               else
                 uv run --locked poe "$TEST_TASK"
+              fi
+              ;;
+            invoke)
+              if [ -f poetry.lock ]; then
+                poetry run invoke "$TEST_TASK"
+              else
+                uv run --locked invoke "$TEST_TASK"
+              fi
+              ;;
+            duty)
+              if [ -f poetry.lock ]; then
+                poetry run duty "$TEST_TASK"
+              else
+                uv run --locked duty "$TEST_TASK"
               fi
               ;;
             pixi) pixi run -e dev --locked "$TEST_TASK" ;;

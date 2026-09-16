@@ -30,9 +30,11 @@ terminal. From inside the checkout the same two forms are
 
 Each preset is a file under `presets/`: it names only the answers that define
 the family, so adding a preset of your own is a two-line YAML file. For a
-fixture that sets every option instead, copy `example-answers.yml` from the
-template root — it is what the template's own CI renders, and it works as a
-`copier copy --data-file` answers file.
+fixture that sets every option instead, copy
+[`example-answers.yml`](https://github.com/kasi-x/python-copier-template/blob/main/example-answers.yml)
+from the template root — it turns every area gate off (so every detailed
+question is answered) on a `data_science` base, it is what the template's own
+CI renders, and it works as a `copier copy --data-file` answers file.
 
 Other options:
 
@@ -68,7 +70,8 @@ No `--vcs-ref` is needed here either: copier then expands this fork's **newest
 release tag**, and since the 6.0.0 fork detach that tag is the fork's own
 release. Pass `--vcs-ref=6.0.0` (or another release tag) only to pin an exact
 release and make the generation reproducible. Add `--defaults` to accept every
-default, and `--data-file example-answers.yml` for a fully specified run.
+default, and `--data-file example-answers.yml` (the
+[fixture in the preset section](#the-one-command-way)) for a fully specified run.
 
 This will:
 
@@ -80,10 +83,21 @@ This will:
 
 ## Committing the results
 
-You can now check what the template has created, tweak the results if desired, [lock the requirements](../how-to/lock-requirements.md), and commit the results:
+You can now check what the template has created, tweak the results if desired, install the environment, and commit the results. The install command is the one your answers selected — the generated README's installation section has the full story (device deploy for MicroPython, ROS sourcing and `colcon` for ros2):
+
+| Your answers | Install the environment |
+| --- | --- |
+| `package_manager = uv` (the default) | `uv sync` |
+| `package_manager = poetry` | `poetry install` |
+| `package_manager = pixi` | `pixi install` |
+| `project_type = ros2`, `ros2_package_manager = apt` | source `/opt/ros/$ROS_DISTRO/setup.bash`, then `rosdep install --from-paths . --ignore-src -r -y` |
+| `project_type = micropython` | the toolchain above, then `uv run pip install -r requirements-dev.txt --target typings` for the device stubs |
+
+Then [lock the requirements](../how-to/lock-requirements.md) and commit:
+
 ```shell
 $ cd /path/to/my-project
-$ uv sync
+$ uv sync          # or your toolchain's install command, from the table above
 $ git add .
 $ git commit -m "Expand from python-copier-template x.x.x"
 ```

@@ -6,7 +6,7 @@ classified every condition site, equivalent forms were named as internal
 variables (`oj_bare`, `no_pkg`), and rot-guards were written by hand. This
 module mechanizes that inventory as a permanent facility, built on machinery
 that already exists: the questionnaire loaders (tools/questionnaire.py,
-tools/when_model.py), the 225-leaf witness space (tools/z3_witnesses.py), the
+tools/when_model.py), the 228-leaf witness space (tools/z3_witnesses.py), the
 leaf-class rows (tools/invariants.py) and the Z3 `when` encoder. Four
 capabilities:
 
@@ -385,7 +385,7 @@ class FreeSpace:
     is `when_model.str_domains` (domain-backed str questions become Ints over
     their choices, every bool is free). This is the machinery
     tests/test_predicate_classifier.py sweeps: a site and a named internal
-    that *cannot* disagree are unconditionally equivalent, whatever the 225
+    that *cannot* disagree are unconditionally equivalent, whatever the 228
     witnesses happen to sample.
     """
 

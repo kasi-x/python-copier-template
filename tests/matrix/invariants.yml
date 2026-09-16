@@ -106,8 +106,6 @@ merges:
 excluded:
   - project_type: web_django
     why: "generation aborts by design: the _tasks.jinja web_django task exits 1"
-  - question: include_mcp
-    why: "an integration detail question behind use_recommended_integrations, not a leaf-space layer; every leaf keeps it at its default false"
   - question: include_sentry
     why: "an integration detail question behind use_recommended_integrations, not a leaf-space layer; every leaf keeps it at its default false"
 
@@ -371,7 +369,9 @@ leaf_classes:
     why: "the polite-fetching layer as a module plus its offline test and data-collection charter"
 
   - id: include=include_mcp
-    select: {include: [include_mcp]}
+    # src/flat placements only: a web_api base carries the scaffold at the
+    # fixed app/ path, claimed by gate_off=...integrations/details-chosen.
+    select: {include: [include_mcp], web_api: false}
     ships:
       - src/smoke_example/mcp_server.py
       - tests/test_mcp_server.py
@@ -379,7 +379,7 @@ leaf_classes:
     predicates: []
     content:
       - [pyproject.toml, mcp]
-    why: "the MCP server integration; a detail question behind use_recommended_integrations, not a leaf-space layer, so no witness leaf turns it on and it declares no tier"
+    why: "the MCP server integration at the src/flat placement; a detail question behind use_recommended_integrations, so the web_api placement is claimed by gate_off=use_recommended_integrations/details-chosen and this row declares no tier"
 
   - id: include=include_bot
     select: {include: [include_bot], project_type: [cli], web_api: false}
@@ -410,6 +410,15 @@ leaf_classes:
     why: "the Discord bot layer on a web_api base: the module lives in the top-level app/ package beside the MCP server"
 
   # -- gates turned off --------------------------------------------------- #
+  - id: gate_off=use_recommended_integrations/details-chosen
+    select: {project_type: [web_api], include: [include_mcp], gate_off: [use_recommended_integrations]}
+    ships:
+      - .mcp.json
+      - app/mcp_server.py
+    absent: []
+    predicates: []
+    why: "the integrations gate off with its details chosen (docker, the MCP scaffold): the configuration the inverse template's flagship query matches, on the base where mcp_effective can hold"
+
   - id: gate_off=use_recommended_agent
     select: {gate_off: [use_recommended_agent]}
     ships:

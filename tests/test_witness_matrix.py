@@ -2,7 +2,7 @@
 
 tools/z3_witnesses.py enumerates the leaf space of the questionnaire's
 ``use_recommended_*`` gates, include layers and project types, and writes it
-out as §C6 batch requests (tests/matrix/witnesses.jsonl, 225 leaves). This
+out as §C6 batch requests (tests/matrix/witnesses.jsonl, 228 leaves). This
 module *executes* that declaration in three tiers:
 
 ``fast``
@@ -108,7 +108,7 @@ EXCLUDED = "excluded"
 
 # Full-tier sample: one leaf per project family whose checks run on a bare
 # runner, plus the one gate-off leaf that switches the agent prompts on (the
-# only branch-only artifact set). 225 leaves x a venv build + docs (~3 min
+# only branch-only artifact set). 228 leaves x a venv build + docs (~3 min
 # each) is ~10 hours, so the deep checks are sampled; the render and batch
 # tiers still execute every leaf, and test_witness_coverage requires each leaf
 # to have run in at least one of them. ros2 is omitted on purpose: its
@@ -126,7 +126,7 @@ FULL_SAMPLE: tuple[str, ...] = (
 )
 
 # Per-leaf timeouts: the full tier is bounded by PLAN-improvements §W3's 550s,
-# and the batch runner renders 225 projects (no venv, ~0.6-1.5s each) so it
+# and the batch runner renders 228 projects (no venv, ~0.6-1.5s each) so it
 # needs the wider budget.
 FULL_TIMEOUT = 550
 BATCH_TIMEOUT = 1800
@@ -139,7 +139,7 @@ REGENERATE = (
 )
 
 # tools/batch.py --jobs for the whole-JSONL run: the requests are independent
-# (each renders into its own directory), so the 225-leaf verdict is bounded by
+# (each renders into its own directory), so the 228-leaf verdict is bounded by
 # the slowest worker instead of the sum. Capped because this test is itself one
 # of pytest-xdist's `-n auto` workers: 8 keeps the runner at ~8x while leaving
 # the machine to its siblings, and `--jobs 1` stays the serial fallback.
@@ -149,7 +149,7 @@ BATCH_JOBS = min(8, os.cpu_count() or 1)
 # leaves that neither this session nor the committed ledger has a verdict for.
 # With a committed ledger (the normal case, including a fresh clone) nothing is
 # ever pending, so this only fires when the witness list itself was
-# regenerated; 225 renders at ~1.3s over `-n auto` finish far inside it.
+# regenerated; 228 renders at ~1.3s over `-n auto` finish far inside it.
 COVERAGE_GRACE = 600
 
 
@@ -219,7 +219,7 @@ class ResultStore:
     """Per-leaf verdicts of this session, shared by every xdist worker.
 
     One file per leaf keeps concurrent workers from clobbering each other (the
-    batch runner writes 225 verdicts in one process, a render case writes one).
+    batch runner writes 228 verdicts in one process, a render case writes one).
     """
 
     def __init__(self, root: Path) -> None:
@@ -390,11 +390,24 @@ def test_excluded_names_hold_against_the_questionnaire() -> None:
             rotten.append(f"{name}: is excluded but the questionnaire no longer declares it")
         if kind == "question" and key in z3_witnesses.INCLUDE_LAYERS:
             rotten.append(f"{name}: is excluded but also a leaf-space layer")
+    # A question behind a gate can still be varied: the integrations-details
+    # derivation (tools/z3_witnesses.py's DETAIL_VARIANTS) answers include_mcp
+    # for the web_api leaves whose integrations gate is off. The contract is
+    # varied-or-excluded, so the declaration is held against the enumerated
+    # leaves rather than trusted -- a variant that stops varying its question
+    # fails here.
+    varied_details = set(z3_witnesses.DETAIL_VARIANTS)
+    unseen = sorted(name for name in varied_details if not any(leaf.answers.get(name) is True for leaf in LEAVES))
+    rotten += [
+        f"{name}: declared varied by tools/z3_witnesses.py's DETAIL_VARIANTS but no enumerated leaf sets it"
+        for name in unseen
+    ]
     unaccounted = sorted(
         name
         for name in questions
         if name.startswith("include_")
         and name not in z3_witnesses.INCLUDE_LAYERS
+        and name not in varied_details
         and f"question={name}" not in excluded
     )
     rotten += [f"{name}: the leaf space neither varies it nor declares it excluded" for name in unaccounted]
@@ -428,7 +441,6 @@ def test_the_coverage_output_accounts_for_both_numbers(capsys: pytest.CaptureFix
     )
     assert sorted(excluded) == [
         "project_type=web_django",
-        "question=include_mcp",
         "question=include_sentry",
     ], f"the declared exclusions changed; re-pin them here deliberately: {sorted(excluded)}"
 
@@ -651,7 +663,7 @@ def test_witness_full_tier(leaf_id: str, tmp_path: Path, witness_results: Result
 def test_witness_batch_runner_executes_every_leaf(witness_results: ResultStore):
     """tools/batch.py runs the JSONL and judges every leaf's expectations.
 
-    The runner is the §C6 judge, so this is the end-to-end proof that all 225
+    The runner is the §C6 judge, so this is the end-to-end proof that all 228
     requests render and that every `expect` (files/absent) holds. Its verdicts
     go into the result store and refresh the §C4 ledger, so a nightly
     ``-m full`` run records what the real engine saw.

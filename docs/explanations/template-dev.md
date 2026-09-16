@@ -174,7 +174,7 @@ internals, `{% if %}` gates in template file names and bodies, `_tasks`
 guards — and §18's unification (the `oj_bare` / `no_pkg` inventory) was done
 by hand against a snapshot that could rot. `tools/predicates.py` keeps the
 inventory alive: it collects every boolean condition site, evaluates each
-against all 225 witness leaves with copier's own machinery, and reports the
+against all 228 witness leaves with copier's own machinery, and reports the
 classification tree (every `invariants.yml` row with its leaf count),
 per-internal reference and fire counts, the equivalence classes over the
 leaf space, mechanically-detected unification candidates (a site whose leaf
@@ -188,14 +188,14 @@ The naming rule it suggests with numbers:
 - **3 or more sites sharing one leaf-vector class that has no name** — name
   the shortcut (a new `when: false` internal) and reference it everywhere;
   that is the threshold where look-alike conditions start drifting apart.
-- **A named internal that never splits the 225-leaf space** (fires on all
+- **A named internal that never splits the 228-leaf space** (fires on all
   or none) — a shortcut that cannot distinguish leaves is dead weight;
   consider flattening it or saying why the leaf space never exercises it.
 
 The fast-tier guard `tests/test_predicate_classifier.py` holds the
 space-wide version of the same rule: no template condition may duplicate a
 named internal unconditionally (proven in Z3 over the whole questionnaire
-space, not just the 225 leaves) without referencing it — unless the pair is
+space, not just the 228 leaves) without referencing it — unless the pair is
 declared in its `DECLARED_EQUIVALENCES` registry with a reason, as the
 `has_*` / `web_api` / `data_science` alias family from §18 is.
 
@@ -393,7 +393,8 @@ docstring, and the two are meant to be edited together.
 ## Prove what a change can affect: the render twin
 
 `task verify-delta` (`tools/render_delta.py`) answers "which leaves did this
-change touch?" mechanically. Layer A tabulates each leaf's render context and
+change touch?" mechanically. Layer A tabulates each leaf's render context (its
+answers and the internals derived from them) and
 every watched template byte, and diffs the two states: a leaf is a candidate
 only when its context moved or changed bytes are reachable from its rendered
 file set (include closure included). Layer B re-renders candidates from a
@@ -401,7 +402,10 @@ baseline checkout and the working tree and compares per-file manifests
 (`.copier-answers.yml`'s per-render stamps normalize away). The verdict is
 either "PROVEN render-identical" for the whole space or the exact leaves and
 files that changed -- which is what the refactor commits in this history
-replaced hand-picked combination diffs with. `--audit N` re-renders N
+replaced hand-picked combination diffs with. A leaf only one side declares
+(the witness list is itself an input, so a leaf-space change moves it) is
+named as added or removed rather than diffed: there is no counterpart render
+to compare. `--audit N` re-renders N
 unaffected leaves as a continuous soundness probe of Layer A; a mismatch
 means the semantic diff missed a flow, and that is a bug in this tool, not
 in your change.

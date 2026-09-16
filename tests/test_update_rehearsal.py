@@ -11,6 +11,7 @@ update-rehearsal`.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -84,4 +85,12 @@ def test_the_full_rehearsal_passes_on_every_leaf():
     assert code == 0 and not payload["failures"], (
         f"the rehearsal failed for {sorted(payload['failures'])} -- the update path broke for those configurations"
     )
-    assert payload["rehearsed"] >= 225, "the leaf space shrank without the budget noticing"
+    # No --only: the rehearsal must cover every declared leaf, and the floor is
+    # the committed ledger's own count rather than a literal -- a leaf space
+    # that shrank (or a ledger that stopped matching it) fails here, while a
+    # deliberate regeneration moves both numbers together.
+    ledger = json.loads((TOP / "tests" / "matrix" / "witnesses.json").read_text(encoding="utf-8"))
+    assert payload["rehearsed"] >= ledger["coverage"]["total"] >= 225, (
+        f"the rehearsal covered {payload['rehearsed']} leaves; the ledger records {ledger['coverage']['total']}, "
+        "and the floor this guard landed with is 225"
+    )

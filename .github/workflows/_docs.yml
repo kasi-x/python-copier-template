@@ -3,7 +3,7 @@ on:
     inputs:
       task_runner:
         type: string
-        description: Which task runner drives the docs task (task, just, poe, make, pixi)
+        description: Which task runner drives the docs task (task, just, poe, make, invoke, duty, pixi)
         required: true
       publish:
         type: boolean
@@ -99,6 +99,20 @@ jobs:
                 poetry run poe docs
               else
                 uv run --locked poe docs
+              fi
+              ;;
+            invoke)
+              if [ -f poetry.lock ]; then
+                poetry run invoke docs
+              else
+                uv run --locked invoke docs
+              fi
+              ;;
+            duty)
+              if [ -f poetry.lock ]; then
+                poetry run duty docs
+              else
+                uv run --locked duty docs
               fi
               ;;
             pixi) pixi run -e dev --locked docs ;;

@@ -341,8 +341,9 @@ def _declared_witness_ids() -> list[str]:
 @pytest.mark.anyio
 async def test_list_witnesses_reports_the_leaves_and_their_verdicts(client: Client):
     listed = await call(client, "list_witnesses")
-    assert listed["total"] == 225 == len(listed["leaves"])
-    assert [leaf["id"] for leaf in listed["leaves"]] == _declared_witness_ids()
+    declared = _declared_witness_ids()
+    assert listed["total"] == len(declared) == len(listed["leaves"])
+    assert [leaf["id"] for leaf in listed["leaves"]] == declared
     assert sum(listed["tiers"].values()) == listed["total"]
     assert sum(listed["results"].values()) == listed["total"]
     assert listed["coverage"]["total"] == listed["total"], "the coverage block is the committed ledger's"

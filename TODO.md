@@ -1325,14 +1325,26 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       - `z3` の `importorskip` 黙り skip をやめ、必須化または skip 件数を assert する
       - `hypothesis` は現状 `tests/` でゼロ使用（deptry 除外で延命）。property test を
         `_tokenize_when` / questionnaire parser に書くか、依存から外すか決める
-- [ ] **setup 重複を composite action 化し、runner 分岐を統一する**
+- [ ] **setup 重複を composite action 化する**（runner 分岐の方は 2026-09-16 に完了）
       - `_tasks.yml` / `_test.yml` / `_docs.yml` / `_dist.yml` の
         checkout(fetch-depth:0) + setup-uv/pixi/poetry + setup-task/just 約30行を
-        `setup-runner` composite action に抽出する
-      - `_test` / `_docs` が `task/just/make/poe/pixi` のみ対応で `invoke/duty` が
-        `Unknown task runner` になる分岐漏れを修正（template 側に loud-fail か対応追加）
-      - `test_task_runner_just_works` 並みに `invoke` / `duty` の実走テストを追加する
-        （poe `cmd &&` / make tab バグはまさに未実走から漏れた）
+        `setup-runner` composite action に抽出する（**未着手**。この一式は
+        `template/.../workflows/` の symlink で生成物にも入るので、変更の確認は
+        CI 実走が要る）
+      - ~~`_test` / `_docs` が `task/just/make/poe/pixi` のみ対応で `invoke/duty` が
+        `Unknown task runner` になる分岐漏れを修正（template 側に loud-fail か対応追加）~~
+        → **完了（2026-09-16）**: `_test.yml` / `_docs.yml` の `case "$TASK_RUNNER"` に
+        invoke/duty を追加（`_tasks.yml` と同じ poetry.lock 分岐つき）。invoke/duty を
+        選んだ生成物の CI が実行時に `Unknown task runner` で落ちる実バグで、
+        render では見えない。input description の列挙も追随
+      - ~~`test_task_runner_just_works` 並みに `invoke` / `duty` の実走テストを追加する
+        （poe `cmd &&` / make tab バグはまさに未実走から漏れた）~~
+        → **完了**: `test_test_task_executes_on_invoke_and_duty`（heavy+network。
+        生成物で `uv run --locked invoke|duty test` を実走。`test` は `_test.yml` が
+        毎 push で叩くタスク）。再発防止として
+        `test_every_runner_switch_handles_every_task_runner_choice`（fast）が
+        3 workflow の switch を questionnaire の全 choice + pixi と照合し、
+        loud-fail が残っていることも検査する
 - [ ] **未検証の組合せ・経路を埋める**
       - テンプレ本体 CI は 3.11 / ubuntu-latest のみ。生成 matrix（3.11-3.14）/
         windows-macos / pixi・poetry venv 経路は render のみ
@@ -1348,17 +1360,32 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 > 2026-09-13 追記: 導入の実務（モード判定・衝突一覧・加算マージ・対話確認・ロールバック）は
 > `tools/detect.py` / `tools/adopt.py` として実装し、`docs/how-to/{detect,adopt}.md` と
-> `docs/tutorials/adopt-existing.md` を実測ベースに書き直した（節22）。README の TL;DR、
-> Features/mermaid の drift 解消、wrapper CLI（§W6）、孤児ページは下記のまま未着手。
+> `docs/tutorials/adopt-existing.md` を実測ベースに書き直した（節22）。
+> 2026-09-16 追記: README の TL;DR と wrapper CLI（`python-copier-template new` +
+> `presets/`）は着地済みで、Features/mermaid の drift 解消（§22.2 W5）・孤児ページ
+> （下の [x] 行）・生成 README の堅牢化・create-new の runner 分岐も完了。節20 の
+> `- [ ]` は残っていない。
 
-- [ ] **コピペで通る導入導線にする**（2026-09-09 更新: `--with` は不要になった。
+- [x] **コピペで通る導入導線にする**（2026-09-09 更新: `--with` は不要になった。
       copier-template-extensions 依存を排除したため残りは `--trust` / `--vcs-ref` の2 flag）
-      → **残り（2026-09-14 監査）**: wrapper script / alias が未着手（本文の §W6）で、docs/tutorials/adopt-existing.md:28 / :43 の経路不整合も残る
+      → **完了（2026-09-16 監査）**: 下の3つの残りはすべて解消済みを実測で確認
       - ~~tutorials/installation.md に `--with` を足す~~ → 不要（依存排除で解消）
-      - `tutorials/adopt-existing.md:28` の skeleton 経路と :43 非 skeleton 経路の不整合を解消する
-      - `--vcs-ref=main` の理由説明3箇所の矛盾を解消する（README は「v1.0 で re-tag 済み」、
-        adopt-existing は「v1.0 未到達で必須」）。単一の version-status 注記に集約し TODO-11 漏れを消す
-      - 2 flag（`--trust` / `--vcs-ref`）を隠す wrapper script / alias を検討する
+      - ~~`tutorials/adopt-existing.md:28` の skeleton 経路と :43 非 skeleton 経路の不整合を解消する~~
+        → **解消済みを確認**: 例の2行は 2026-09-13 の書き直しで消え、現行は
+          skeleton 経路（`--vcs-ref=6.0.0` で detach タグから adopt → `copier update`）と
+          非 skeleton 経路（`--data existing_project=true` + `--skip`）が別節に分かれ、
+          冒頭の注記（URL 版は最新タグを展開）と矛盾しない
+      - ~~`--vcs-ref=main` の理由説明3箇所の矛盾を解消する（README は「v1.0 で re-tag 済み」、
+        adopt-existing は「v1.0 未到達で必須」）。単一の version-status 注記に集約し TODO-11 漏れを消す~~
+        → **完了（§22.2 + 2026-09-16 実測）**: `--vcs-ref=main` は docs/README から消滅
+          （grep で 0 件）。残るのは「URL 版は最新タグを展開」「`--vcs-ref=6.0.0` は exact pin」
+          「`--vcs-ref=HEAD` は作業ツリー」の3用途だけで、`template-dev.md` の
+          「Documented generation commands must run without `--vcs-ref`」が規約として固定
+      - ~~2 flag（`--trust` / `--vcs-ref`）を隠す wrapper script / alias を検討する~~
+        → **完了**: `python-copier-template new`（`tools/cli.py`、`--trust` 内蔵で
+          release 選択・create/adopt 判定・preset 適用まで行う）が wrapper そのもので、
+          README の TL;DR がこれを第一の導線として提示。`--vcs-ref` は
+          「exact pin したい人」だけが触る
 - [x] **欠落・孤児ページを解消する**
       - ~~生成 README が link する `{{docs_url}}/how-to/run-container` に対応する
         `docs/how-to/run-container.md` を書く~~ → **誤認と判明（2026-09-14 実測）**:
@@ -1373,30 +1400,51 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       → **完了（§22.2 W5 + 1981f367）**: README は `tools/gen_docs.py` が生成し、
         機能カタログは `docs/reference/features.md` へ分離。README は 120 行の
         エントリポイントに（§22.5 #5 も解消）。mermaid の CTF / scraping 分岐も導入済み
-- [ ] **生成ドキュメントを堅くする**
-      → **残り（2026-09-14 監査）**: 生成 README 側が未着手（`<details>` の Linux/macOS ノイズ、`**pkg** is a Python package ...` プレースホルダ、docs 無効時の `See ... (.github/CONTRIBUTING.md)` 代替）
+- [x] **生成ドキュメントを堅くする**
+      → **完了（2026-09-16、README 側の3点を実測で確認）**: 下の3つの残りを修正
       - ~~生成 `CONTRIBUTING.md.jinja`（30行・外部 how-to URL 依存・`_commit.split` pin 脆弱）を
         `AGENTS.md` と同じコマンドブロック内蔵型にし、offline でも作業可能にする~~
         → **完了（2026-09-14、031be19b）**: Common commands 節が `_tasks.jinja` の
         `_t.agent_cmd_specs` モデルから導出（AGENTS.md と同一ソースで乖離不能）。
         `_commit.split` pin とテンプレ how-to への link は廃止し、docs ルート URL に
-      - 生成 README の `<details> Platform-specific setup` の Linux/macOS vs Windows
-        同一コマンド並列（noise）を差分化または削除、`**pkg** is a Python package that ...`
-        プレースホルダの ship しやすさに対処（validator / コメント誘導）、docs 無効時の
-        `See ... (.github/CONTRIBUTING.md)` 弱代替を手当てする（生成 README 側は未着手）
-- [ ] **質問票の小粒改善**
-      → **残り（2026-09-14 監査）**: docs/tutorials/create-new.md の commit 手順が `uv sync` 固定のまま（runner 分岐が未対応）
+      - ~~生成 README の `<details> Platform-specific setup` の Linux/macOS vs Windows
+        同一コマンド並列（noise）を差分化または削除~~ → **完了**: web_api は
+        `uvicorn` が全 OS 同一なので表をやめて1コマンド、他は「Windows は `py`」と
+        差の理由を1行で述べる表に（`<details>` 直後の余分な空行も除去）
+      - ~~`**pkg** is a Python package that ...` プレースホルダの ship しやすさに対処~~
+        → **完了**: この行を削除（タグラインが既に `description` を出している）。
+        NOTE は「tagline はあなたの `description` 回答、下の features を置き換える」と
+        実在のプレースホルダ（Features 3行）だけを指す文に
+      - ~~docs 無効時の `See ... (.github/CONTRIBUTING.md)` 弱代替を手当てする~~
+        → **完了**: ラベルとリンク先を一致させた
+        （`See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for ...`）。GitLab 版が
+        `.github/CONTRIBUTING.md` を ship しない件は `template-dev.md` の
+        GitLab スコープ節に既知の残りとして明記済み（full parity は別プロジェクト）
+      - 実測: `copier copy --vcs-ref=HEAD` で web_api / cli / gitlab+docs-off の
+        3構成を render して確認。fast+meta（891 passed）と heavy（47 passed）は緑
+- [x] **質問票の小粒改善**
+      → **完了（2026-09-16）**: 残っていた3点を処理
       - ~~`project_type=web_django` の罠選択肢（選ぶと abort）を choices から外し、文書ポインタにする~~
         → **完了（§22.2 W6）**: choice・help・`_tasks` ガードとも除去済み
       - ~~`license` help の40行 SPDX ダンプを端末向けに短縮（全文は docs 参照）~~
         → **完了（2026-09-14、75f5595a）**: choices を素の SPDX ID に（保存値は
           従来から ID なので answers 互換・順序も同一）。名称は
           choosealicense.com と docs/reference/questionnaire.md を参照
-      - `example-answers.yml`（全 gate-off 網羅 fixture）を `create-new.md` +
-        `reference/questionnaire.md` から non-interactive 起点として link する
-      - `create-new.md` の commit 手順 `uv sync` 固定を runner 対応に
-        （`uv sync` / `pixi install` / `poetry install` / ros2 / micropython 分岐）
-      - README 先頭に5行 TL;DR quickstart + prerequisites（uv / git init）を置く
+      - ~~`example-answers.yml`（全 gate-off 網羅 fixture）を `create-new.md` +
+        `reference/questionnaire.md` から non-interactive 起点として link する~~
+        → **完了**: `create-new.md`（preset 節と raw copier 節の2箇所）と
+          `reference/questionnaire.md` の冒頭注記から repo の blob URL へ link。
+          何をする fixture か（全 gate off = 詳細質問を全部答える / data_science base /
+          CI が render する当のもの）も1文で書いた
+      - ~~`create-new.md` の commit 手順 `uv sync` 固定を runner 対応に
+        （`uv sync` / `pixi install` / `poetry install` / ros2 / micropython 分岐）~~
+        → **完了**: 回答→install コマンドの表（uv / poetry / pixi / ros2+apt の
+          `rosdep install` / micropython の `--target typings`）に置換し、
+          以降の shell 例は uv を既定として残した。コマンドは生成 README の
+          Installation 節（`_tasks.jinja` 由来）と同じ語彙
+      - ~~README 先頭に5行 TL;DR quickstart + prerequisites（uv / git init）を置く~~
+        → **確認済み（既存）**: README.md の `## TL;DR` が prerequisites（uv / git）と
+          CLI 1行 + `uvx copier copy` 1行を提示済み
 
 ### 修正詳細
 
@@ -2356,7 +2404,7 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
        permissions 契約はそのまま）。seed は毎回新規でヘッダに出力。実測 50.3s
        （741 テスト、順序依存なし）。台帳側は test_marker_drift.py が「`-p randomly` を払う
        タスクは test-randomly 一つ」と構造で固定し、tiers.json に test-randomly 行を記録
-8. **`task test`（全 879 件）を `-n auto`（32 ワーカ）で回すと、full tier の docs ビルドが
+8. [x] **`task test`（全 879 件）を `-n auto`（32 ワーカ）で回すと、full tier の docs ビルドが
    無音で空の `site/` を残す**（2026-09-14 実測。CI の選択には出ない）
    - 症状: `test_witness_full_tier[...]` が「the docs build produced no site/ output」で
      1〜5 件落ちる（毎回同じ葉ではない）。失敗メッセージに出力を足して分かったのは、
@@ -2371,6 +2419,101 @@ fast tier の上位（`--durations=15`、同一リビジョン）:
      fast tier の
      `test_support_matrix.py::test_supported_combinations_have_a_recorded_full_tier_pass`
      まで赤くなる（クリーンな `-n 8 -m full` で消える。今日は赤→緑を 2 往復した）
-   - 次の一手（未着手）: 次に再現したら失敗メッセージの出力（成功と書いて書いていないのか）を
-     確定する。恒久策は full tier の並列度を明示（CI は 4 コアなので実害なし）か、
-     docs ビルドを harness 側で直列化する
+   → **解決（2026-09-16、485f3618）**: 根本原因は zensical のファイルウォッチャ。
+     one-shot の `build` を inotify ウォッチャ経由で駆動し、ウォッチャを起動できないと
+     無音で死ぬ（monitor スレッドが panic → 入力チャネルが切断 → "Build finished" を
+     出して rc=0、`site/` は空のまま）。引き金は 1 ユーザーあたりの inotify インスタンス
+     上限（128。ボックスの全プロセスと共有）の枯渇で、本 suite を `-n auto` で回す
+     dev box が普通に到達する。`tests/support.py` に `build_docs` を新設し、
+     `ZENSICAL_POLL_WATCHER=1`（zensical 公認の no-inotify フォールバック）で 1 回だけ
+     再試行する。両試行の出力を assert に載せたので、「マシンがウォッチャを拒んだ」
+     （再試行で緑）と「render の docs ソース/設定が壊れた」（どちらの試行も 1 ページも
+     書かない）を区別できる。恒久策としていた「full tier の並列度を明示」は不要になった
+
+### 27.8 逆テンプレの旗艦クエリに答える葉を足し、その過程の drift を直す（2026-09-16）
+
+`include_mcp` は `use_recommended_integrations` の裏の詳細質問で、Z3 の投影
+（gate × include layer × project_type）には乗らない。全葉がデフォルト false のまま
+だったので、「docker + MCP」を要求する逆テンプレの旗艦クエリ
+（`--require docker=true --require mcp_effective=true`）に答えられる葉が 1 本も無かった
+（§18.8 の残り）。
+
+- **葉空間の派生**（`tools/z3_witnesses.py`）: integrations gate を切った web_api 葉 3 本
+  それぞれに、その gate の詳細を選んだ変種葉を 1 本導出（`DETAIL_VARIANTS` = docker +
+  include_mcp を on）。web_api 限定なのは mcp_effective が成立するのがそこだけだからで、
+  scaffold は固定の `app/` に生えるので 1 行で全配置を主張できる。225 → 228 葉。
+  宣言先は invariants.yml の新行 `gate_off=use_recommended_integrations/details-chosen`
+  （ships: `.mcp.json`, `app/mcp_server.py`）。`include=include_mcp` 行は src/flat 配置
+  専用に `web_api: false` で絞り、`excluded` から include_mcp を外した（残りは
+  include_sentry 1 件）
+- **単一源**: 詳細変種が答える名前は `DETAIL_VARIANTS` 1 箇所。導出（`build()`）・含有
+  チェック（`_check_includes`）・証人側の検証（`test_excluded_names_hold_*` は「宣言された
+  質問が実際に列挙葉で true になっているか」を列挙葉から確かめる）が全部そこを読む。
+  leaf_space の `restrictions` にも変種の規則を 1 行足した
+- **葉数を二重管理していた assert を派生に**: `test_mcp_server` は jsonl の id 数、
+  `test_update_rehearsal` は台帳の `coverage.total`（+ 225 の下限ラチェット）と比較。
+  葉空間が動いても「数え直し忘れ」では落ちず、落ちるのは実体がずれた時だけになる
+- **render_delta が葉空間の変化で落ちていた**（この作業で発見。slow tier の
+  `test_verify_delta_proves_an_untouched_tree`）: ベースラインが宣言していない葉を
+  `_render_side` が描画しようとして KeyError。修正は (a) 宣言に無い id はスキップ、
+  (b) 片側にしか無い葉は added / removed として名指しし diff failure にはしない
+  （比べる相手が無いだけで、render が変わったわけではない）、(c) diff の集合内包が値を使わない
+  死んだ dict 内包だったので set 内包に。さらに `_context_hashes` が copier の context
+  全体（`_src_path` / `_commit` / `_copier_conf`（LazyDict の repr = アドレス）/
+  `_copier_answers` / `_folder_name`）をハッシュしていたため、両側が同じ cache entry を
+  共有しない状況——まさに葉空間を変えた時——では 228 葉すべてが候補になり semantic diff の
+  絞り込みが消えていた。実測（同一解答を baseline worktree と TOP で描画）: context 全体は
+  不一致、public entry（解答とそこから導かれた internal）だけなら一致。よって public entry
+  のみをハッシュし、`CONTEXT_HASH_SCHEME` で cache を版管理する。回帰テストは crafted state の
+  `_classify` 2 本 + 上の slow 統合テスト（candidates == 追加葉数）
+- **台帳の再収集**: `UPDATE_TIERS=1` で葉数の動いた 4 行（test-fast / test-randomly / test /
+  witness-fast）を再収集し、wall_seconds/measured も実測で置き換えた（当時の静箱・ウォーム
+  キャッシュ: witness-fast cold 11.2s（warm 3.3s）/ test-fast 25.8s / test-randomly 24.7s /
+  test 159.7s）。§27.9 のテスト追加でもう一度再収集しているので、最終値は tiers.json を正とする。
+  test-loop.md の tier 表と prose も追随。225 を読んでいた記述
+  （tools / tests / Taskfile / docs / 生成 block）は 228 か「葉空間」に置換し、歴史記録
+  （205 葉の 2026-09-13 監査など）は日付つきのまま残した
+- **実証**: 旗艦クエリは 3 葉に一致（web_api base / +bot / +data_science）。
+  `task test-fast` + `task test-meta` green、`-m slow` green（228 葉の serial batch 判定と
+  render twin）、lint / type-check / `zensical build` / `gen_docs --check` green
+
+### 27.9 生成 README / 導入ドキュメント / 生成 CI の実バグ（2026-09-16）
+
+節20 の `- [ ]`（生成ドキュメント・質問票の小粒改善・導入導線）と、節19 の runner 分岐の
+残りを処理した。render では見えない「ユーザーの生成物が壊れる」修正が2つ含まれる。
+
+- **生成 README の3点**（`template/.../README.md.jinja`）:
+  - `**pkg** is a Python package that ...` のプレースホルダ行を削除（タグラインが既に
+    `description` を出している）。NOTE は「tagline は `description` 回答で、置き換えるのは
+    下の features」と実在のプレースホルダだけを指す文に
+  - `<details> Platform-specific setup`: web_api は `uvicorn` が全 OS 同一なので表をやめて
+    1 コマンドに、他は「Windows は `py`」という差の理由を1行添えた表に。直後の余分な空行も除去
+  - docs 無効時の `See [how-to guides](.github/CONTRIBUTING.md)` → ラベルとリンク先を一致
+    （`See [CONTRIBUTING.md](.github/CONTRIBUTING.md)`）。GitLab 版が当該ファイルを
+    ship しない件は `template-dev.md` の GitLab スコープ節に既知の残りとして記載済み
+  - 実測: `copier copy --vcs-ref=HEAD` で web_api / cli / gitlab+docs-off を render して確認
+- **create-new.md**: commit 手順の `uv sync` 固定を、回答→install コマンドの表
+  （uv / poetry / pixi / ros2+apt の `rosdep install` / micropython の `--target typings`）に。
+  `example-answers.yml` を preset 節と raw copier 節から、`reference/questionnaire.md` の
+  冒頭注記から link（何をする fixture かも1文で）
+- **導入導線の残りは解消済みを確認**: `--vcs-ref=main` は docs/README から 0 件、
+  adopt-existing の skeleton / 非 skeleton 経路は別節で整合、2 flag を隠す wrapper は
+  `python-copier-template new`（`tools/cli.py`）がそのもので README TL;DR が第一導線に置いている
+- **生成 CI の実バグ（invoke/duty）**: `.github/workflows/_test.yml` / `_docs.yml` の
+  `case "$TASK_RUNNER"` に invoke/duty が無く、その toolchain を選んだ生成物の CI が
+  `Unknown task runner` で落ちていた（`_tasks.yml` には有った。workflows は
+  `template/.../workflows/` の symlink で生成物にも入る一式）。両方に poetry.lock 分岐つきの
+  branch を追加し、input description の列挙も追随
+- **再発防止と実走**: `test_every_runner_switch_handles_every_task_runner_choice`（fast）が
+  3 workflow の switch を questionnaire の全 choice + pixi と照合し、loud-fail の存在も検査。
+  `test_test_task_executes_on_invoke_and_duty`（heavy+network）が生成物で
+  `uv run --locked invoke|duty test` を実走（`test` は `_test.yml` が毎 push で叩くタスク）
+- **台帳**: 追加テストで 4 行を再収集・再実測（test-fast 889 / test-randomly 889 /
+  test-heavy 49 / test 954。他セッションが同居した負荷下の値なので note に明記）
+- **render twin の前提を明示**: 作業ツリーが base と一致しない時（今回のように
+  テンプレ本体を編集中）は `test_verify_delta_proves_an_untouched_tree` が skip し、
+  twin が見つけた差（今回は 225 葉が README.md を再レンダー）をメッセージに載せる。
+  常時要求するのは `proven + failures == leaves`（全葉の会計）だけで、prove-clean は
+  base と一致する木に限る。一致木での実測: 作業ツリーを一時 worktree に commit して
+  `tools/render_delta.py --base HEAD` を実走 → `228 leaves, 0 candidate(s) re-rendered
+  against HEAD` と `PROVEN render-identical: ... 228 unaffected`

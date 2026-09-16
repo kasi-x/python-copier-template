@@ -36,7 +36,7 @@ tasks:
       {{ .CLI_ARGS }}
 
   test-slow:
-    desc: 'Run the slow tier: the serial 225-leaf witness batch runner (~2 min)'
+    desc: 'Run the slow tier: the serial 228-leaf witness batch runner (~2 min)'
     cmd: uv run --locked pytest -q -m slow {{ .CLI_ARGS }}
 
   test-heavy:
@@ -104,7 +104,7 @@ tasks:
     cmd: uv run --locked python tools/update_rehearsal.py {{ .CLI_ARGS }}
 
   witness:
-    desc: 'Regenerate the 225 witness leaves and judge them all (JOBS=N, CLI_ARGS=...)'
+    desc: 'Regenerate the 228 witness leaves and judge them all (JOBS=N, CLI_ARGS=...)'
     vars:
       JOBS: '{{ .JOBS | default numCPU }}'
     cmds:
@@ -114,7 +114,7 @@ tasks:
   predicates:
     desc: >-
       Classify every condition site (question whens, internals, template body/filename ifs,
-      _tasks whens) over the 225 witness leaves: classification tree, equivalence classes,
+      _tasks whens) over the 228 witness leaves: classification tree, equivalence classes,
       unification candidates and shortcut suggestions (--json for the machine report)
     cmd: uv run --locked python tools/predicates.py {{ .CLI_ARGS }}
 

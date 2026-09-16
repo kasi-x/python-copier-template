@@ -645,7 +645,7 @@ def render_support_doc(support: dict[str, Any]) -> str:
         "",
         "Declared so the questionnaire's existing answers keep rendering, but",
         "never executed by CI. The witness fast tier renders and ruff-checks",
-        "these leaves (225 renders at ~1.3 s each, 10-20 s in parallel); a",
+        "these leaves (228 renders at ~1.3 s each, 10-20 s in parallel); a",
         "regression that only breaks install or run is not caught there.",
         "",
         _matrix_rows(sections["best_effort"], plain=("why",)),

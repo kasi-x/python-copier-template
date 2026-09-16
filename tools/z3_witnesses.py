@@ -34,21 +34,25 @@ are encoded as Z3 constraints:
 Everything else stays at its copier default (tools/batch.py renders with
 `defaults=True`): the detail questions an off gate reveals keep their
 defaults, so a leaf is one branch of the questionnaire, not a second full
-question matrix. `project_type` is its static choices minus the excluded
-project types, and the include dimension is INCLUDE_LAYERS minus nothing:
-every name the leaf space keeps out -- web_django, which aborts generation
-by design (`_tasks.jinja` exits 1 for it) and so cannot render, and the
-integration detail questions include_mcp/include_sentry behind
-use_recommended_integrations, which are not layers -- is declared in
-tests/matrix/invariants.yml's `excluded` with a one-line reason (TODO §23.4).
-That file is the single source for exclusions, as it is for every leaf
-class's invariants, and this tool accounts for the whole questionnaire:
-an include question that is neither a layer nor declared excluded is an
-error, and every exclusion must still describe the live questionnaire. The
-one-line accounting is printed on every run, so "enumerated" and "excluded"
-are both numbers a reader can trust:
+question matrix. The one derived exception is the integrations-details
+variant: for each web_api leaf whose integrations gate is off, one extra leaf
+answers that gate's details (``DETAIL_VARIANTS``: docker and the MCP
+scaffold), because no leaf on the projection's own axes carries them and
+"docker + MCP" is a configuration the inverse template is asked for
+(TODO §18.8). `project_type` is its static choices minus the excluded project
+types, and the include dimension is INCLUDE_LAYERS minus nothing: every name
+the leaf space keeps out -- web_django, which aborts generation by design
+(`_tasks.jinja` exits 1 for it) and so cannot render, and the integration
+detail question include_sentry behind use_recommended_integrations, which is
+not a layer -- is declared in tests/matrix/invariants.yml's `excluded` with a
+one-line reason (TODO §23.4). That file is the single source for exclusions,
+as it is for every leaf class's invariants, and this tool accounts for the
+whole questionnaire: an include question that is neither a layer nor varied by
+the derivation nor declared excluded is an error, and every exclusion must
+still describe the live questionnaire. The one-line accounting is printed on
+every run, so "enumerated" and "excluded" are both numbers a reader can trust:
 
-    leaves: 225 enumerated, 3 excluded (project_type=web_django, ...)
+    leaves: 228 enumerated, 2 excluded (project_type=web_django, ...)
 
 Usage:
 
@@ -105,6 +109,13 @@ INCLUDE_LAYERS: tuple[str, ...] = (
     "include_scraping",
     "include_bot",
 )
+
+# The integrations details the derived leaf variants answer (``build()``): the
+# docker artifact and the MCP scaffold. include_mcp is also the include_*
+# question ``_check_includes`` accounts for as varied -- it is behind
+# use_recommended_integrations, so the Z3 projection keeps it at its default
+# and the derivation is what turns it on.
+DETAIL_VARIANTS: tuple[str, ...] = ("docker", "include_mcp")
 
 GATE_PREFIX = "use_recommended_"
 
@@ -183,10 +194,14 @@ class Space:
 def _check_includes(questions: dict[str, dict]) -> None:
     """Every include_* question the questionnaire asks is accounted for.
 
-    It is either a layer varied here or a declared exclusion
+    It is either a layer varied here, a detail question ``DETAIL_VARIANTS``
+    varies on a derived leaf variant, or a declared exclusion
     (tests/matrix/invariants.yml's ``excluded``, which also names the excluded
     project types), never a silent default (TODO §23.4).
     """
+    # The projection keeps these out (their values derive from the answers, not
+    # from the space); build()'s derivation varies them instead.
+    varied_details = frozenset(DETAIL_VARIANTS)
     excluded_questions = INVARIANTS.excluded_questions
     overlapped = sorted(set(excluded_questions) & set(INCLUDE_LAYERS))
     if overlapped:
@@ -195,7 +210,10 @@ def _check_includes(questions: dict[str, dict]) -> None:
     unaccounted = sorted(
         name
         for name in questions
-        if name.startswith("include_") and name not in INCLUDE_LAYERS and name not in excluded_questions
+        if name.startswith("include_")
+        and name not in INCLUDE_LAYERS
+        and name not in excluded_questions
+        and name not in varied_details
     )
     if unaccounted:
         msg = (
@@ -386,6 +404,28 @@ def build() -> tuple[dict[str, Any], list[Leaf]]:
     space = _build_space(questions, pt_domain, oj_categories)
     domains = when_model.str_domains(questions, pt_domain)
     leaves = [_leaf(questions, space, values, domains) for values in _models(space)]
+
+    # The integrations-details variant: for the web_api leaf with the
+    # integrations gate off, a render with the details *chosen* (docker and
+    # the MCP scaffold on) is a distinct configuration -- it is what the
+    # inverse template's flagship query matches, and without it no leaf can
+    # answer "docker + mcp" (TODO §18.8). Only web_api: mcp_effective holds
+    # there, and the scaffold lives at the fixed app/ path, so one row claims
+    # every placement.
+    variant_leaves: list[Leaf] = []
+    for leaf in leaves:
+        if leaf.answers.get("use_recommended_integrations") is False and leaf.answers.get("project_type") == "web_api":
+            chosen = {**leaf.answers, **dict.fromkeys(DETAIL_VARIANTS, True)}
+            variant_leaves.append(
+                Leaf(
+                    id=f"{leaf.id}/details=chosen",
+                    note=f"{leaf.note}; integrations details chosen ({', '.join(DETAIL_VARIANTS)} on)",
+                    answers=chosen,
+                    expect=INVARIANTS.expect_for(chosen),
+                )
+            )
+    leaves.extend(variant_leaves)
+
     leaves.sort(key=lambda leaf: leaf.id)
     ids = [leaf.id for leaf in leaves]
     if len(ids) != len(set(ids)):
@@ -403,6 +443,10 @@ def build() -> tuple[dict[str, Any], list[Leaf]]:
             "no include layer, or exactly one include layer on",
             "a gate may only be off, and an include only on, where its own `when` holds",
             "every other question stays at its copier default",
+            (
+                f"the web_api leaves with the integrations gate off also get a variant leaf answering "
+                f"that gate's details ({', '.join(DETAIL_VARIANTS)})"
+            ),
         ],
         "enumerated": len(leaves),
         "excluded": exclusions(),

@@ -9,6 +9,13 @@ text. Answer **yes** and that area is configured from its recommended defaults
 without asking anything else; answer **no** and the detailed question(s) for
 that area are asked.
 
+Every answer can also come from a file instead of the prompt —
+[Non-interactive Generation](non-interactive.md) covers the flags — and
+[`example-answers.yml`](https://github.com/kasi-x/python-copier-template/blob/main/example-answers.yml)
+at the template root is a ready-made starting point: it turns every area gate
+off, so it spells out each detailed question that the recommended path would
+otherwise leave at its default.
+
 ## Project type (`project_type`)
 
 Asked first, ahead of every area, because the toolchain and several later

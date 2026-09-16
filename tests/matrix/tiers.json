@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta",
-      "collected": 883,
+      "collected": 889,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -41,22 +41,22 @@
         "tests/test_qa.py": 3,
         "tests/test_questionnaire.py": 9,
         "tests/test_recommended_path.py": 11,
-        "tests/test_render_delta.py": 7,
+        "tests/test_render_delta.py": 9,
         "tests/test_render_invariants.py": 31,
         "tests/test_support_matrix.py": 5,
-        "tests/test_task_runners.py": 9,
+        "tests/test_task_runners.py": 10,
         "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 1,
         "tests/test_update_rehearsal.py": 3,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 231,
+        "tests/test_witness_matrix.py": 234,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "0f64e92a05812f254fa915e01b459f7b0472519195c513bc99de4edf09c2c0a7",
-      "wall_seconds": 43.0,
-      "measured": "2026-09-14",
+      "ids_sha256": "d01b2c3d328b34d9201e7f9fac99069dc621051fd179354542d8a135b6625de1",
+      "wall_seconds": 30.7,
+      "measured": "2026-09-16",
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta\"",
-      "note": "time uv run --locked pytest -q <the task's own selection> (835 tests; measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 31.5s the same day while the box was quiet, before the line platform and the two MCP tools landed). The edit loop's 30s budget is the contract; this number is an observation of the contention"
+      "note": "time uv run --locked pytest -q <the task's own selection> (889 tests; measured 2026-09-16 on this 32-CPU box while other sessions were also running: 30.7s -- the same row measured 26.3s minutes earlier with the box quieter, before the render-twin guard test landed. History: 2026-09-14 recorded 31.5s quiet / 43.0s under another session's load average ~59, at 835 tests). The edit loop's 30s budget is the contract; this number is an observation of the machine"
     },
     "test-slow": {
       "task": "test-slow",
@@ -77,7 +77,7 @@
     "test-heavy": {
       "task": "test-heavy",
       "expression": "heavy",
-      "collected": 47,
+      "collected": 49,
       "files": {
         "tests/test_bot_layer.py": 3,
         "tests/test_example_adopt.py": 2,
@@ -89,14 +89,14 @@
         "tests/test_example_toolchain.py": 8,
         "tests/test_example_web_api.py": 1,
         "tests/test_generated_typecheck.py": 7,
-        "tests/test_task_runners.py": 6,
+        "tests/test_task_runners.py": 8,
         "tests/test_witness_matrix.py": 8
       },
-      "ids_sha256": "1829b131ccd83a9b554843edc75c0c915641e6839a35f31d5d790aa7712d844a",
-      "wall_seconds": 42.9,
-      "measured": "2026-09-14",
+      "ids_sha256": "c02ee45048096bf97d29e04255e8f8b7879b2f4dc1c77b87efdeb8483554ec11",
+      "wall_seconds": 19.9,
+      "measured": "2026-09-16",
       "command": "uv run --no-sync pytest -q -m heavy",
-      "note": "time uv run --locked pytest -q <the task's own selection> (47 tests; measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 29.6s the same day while the box was quiet, before the line platform and the two MCP tools landed). The edit loop's 30s budget is the contract; this number is an observation of the contention"
+      "note": "time uv run --locked pytest -q <the task's own selection> (49 tests; measured 2026-09-16 on this 32-CPU box while other sessions were also running, warm venvs: 19.9s -- the same row measured 25.7s earlier the same day including the two new invoke/duty execution cases. History: 2026-09-14 recorded 29.6s quiet / 42.9s under load average ~59, at 47 tests). The edit loop's 30s budget is the contract; this number is an observation of the machine"
     },
     "test-meta": {
       "task": "test-meta",
@@ -114,7 +114,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 946,
+      "collected": 954,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -153,27 +153,27 @@
         "tests/test_qa.py": 3,
         "tests/test_questionnaire.py": 9,
         "tests/test_recommended_path.py": 11,
-        "tests/test_render_delta.py": 8,
+        "tests/test_render_delta.py": 10,
         "tests/test_render_invariants.py": 31,
         "tests/test_support_matrix.py": 5,
-        "tests/test_task_runners.py": 15,
+        "tests/test_task_runners.py": 18,
         "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 5,
         "tests/test_update_rehearsal.py": 4,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 240,
+        "tests/test_witness_matrix.py": 243,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "7bc0b39e5ba1112285b8a317be077f16d30d5c34273c59920b9829625418cd9f",
-      "wall_seconds": 88.2,
-      "measured": "2026-09-14",
+      "ids_sha256": "5147c7bd60c92d6ea842c33f635bb00179a84776fffacf5868ce3ce1dd21b12e",
+      "wall_seconds": 171.1,
+      "measured": "2026-09-16",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
-      "note": "time uv run --locked pytest -q <the task's own selection> (895 tests; measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 77.6s the same day while the box was quiet, before the line platform and the two MCP tools landed). The edit loop's 30s budget is the contract; this number is an observation of the contention plus a cold .cache/renders would add minutes (337s once, pre-split)"
+      "note": "time uv run --locked pytest -q <the task's own selection> (954 tests; measured 2026-09-16 on this 32-CPU box while other sessions were also running: 171.1s -- the same row measured 156.5s minutes earlier with the box quieter, before the two invoke/duty execution cases landed. The selection includes the heavy tier and the serial 228-leaf batch runner. History: 2026-09-14 recorded 77.6s quiet / 88.2s under another session's load average ~59, at 895 tests). The edit loop's 30s budget does not apply to this tier; a cold .cache/renders would add minutes (337s once, pre-split)"
     },
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta",
-      "collected": 883,
+      "collected": 889,
       "files": {
         "tests/test_adopt.py": 35,
         "tests/test_adopt_stateful.py": 1,
@@ -210,22 +210,22 @@
         "tests/test_qa.py": 3,
         "tests/test_questionnaire.py": 9,
         "tests/test_recommended_path.py": 11,
-        "tests/test_render_delta.py": 7,
+        "tests/test_render_delta.py": 9,
         "tests/test_render_invariants.py": 31,
         "tests/test_support_matrix.py": 5,
-        "tests/test_task_runners.py": 9,
+        "tests/test_task_runners.py": 10,
         "tests/test_tool_layers.py": 3,
         "tests/test_update_path.py": 1,
         "tests/test_update_rehearsal.py": 3,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 231,
+        "tests/test_witness_matrix.py": 234,
         "tests/test_workflow_security.py": 8
       },
-      "ids_sha256": "0f64e92a05812f254fa915e01b459f7b0472519195c513bc99de4edf09c2c0a7",
-      "wall_seconds": 44.3,
-      "measured": "2026-09-14",
+      "ids_sha256": "d01b2c3d328b34d9201e7f9fac99069dc621051fd179354542d8a135b6625de1",
+      "wall_seconds": 26.7,
+      "measured": "2026-09-16",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta\"",
-      "note": "time uv run --locked pytest -q -p randomly -m \"not heavy and not slow and not meta\" (835 tests, one random seed per run, printed in the header; two consecutive seeds green). measured 2026-09-14 at load average ~59 on this 32-CPU box (another session's work was running): the same row measured 21.2s quiet"
+      "note": "time uv run --locked pytest -q -p randomly -m \"not heavy and not slow and not meta\" (889 tests, one random seed per run, printed in the header; this run's seed green). measured 2026-09-16 while other sessions were also running: 26.7s -- the same row measured 23.8s minutes earlier with the box quieter, before the render-twin guard test landed. History: 2026-09-14 recorded 21.2s quiet / 44.3s under load average ~59, at 835 tests"
     }
   },
   "witness": {
@@ -233,16 +233,16 @@
       "workflow": ".github/workflows/witness.yml",
       "job": "fast",
       "expression": "fast",
-      "collected": 231,
+      "collected": 234,
       "files": {
-        "tests/test_witness_matrix.py": 231
+        "tests/test_witness_matrix.py": 234
       },
-      "ids_sha256": "86b026bec751ee040df92af0720abbc382c18d191d2ee9db5bd35ce84398dca2",
-      "wall_seconds": 39.4,
-      "measured": "2026-09-14",
+      "ids_sha256": "97de88a3aecc6eeae7dcb03b6cc8e12e3d85d9b5fb4c319b5b4d0bc7022a3796",
+      "wall_seconds": 11.2,
+      "measured": "2026-09-16",
       "timeout_seconds": 1800,
       "command": "uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast",
-      "note": "time uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast (at the 205-leaf tree of the measurement: 208 tests = 205 leaf renders plus the three leaf-list checks; the render cache emptied first -- the PR job is always cold because a fresh runner has no .cache/renders; 6.4s warm, 39.4s cold, both on a machine carrying unrelated work at load average ~80-106 of 16 cores). The job's timeout in .github/workflows/witness.yml is 30 minutes, so the cold local wall is ~2% of it."
+      "note": "time uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast (at the 228-leaf tree of the measurement: 234 tests = 228 leaf renders plus the six leaf-list checks; the render cache emptied first -- the PR job is always cold because a fresh runner has no .cache/renders; 3.3s warm, 11.2s cold, on a quiet 32-CPU box). The job's timeout in .github/workflows/witness.yml is 30 minutes, so the cold local wall is under 1% of it."
     }
   }
 }
