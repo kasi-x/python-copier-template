@@ -177,23 +177,6 @@ def _include_graph(root: Path) -> dict[str, set[str]]:
     return graph
 
 
-def _reverse_closure(changed: set[str], graph: dict[str, set[str]]) -> set[str]:
-    """`changed` plus every file that (transitively) includes a changed file."""
-    reverse: dict[str, set[str]] = {}
-    for source, targets in graph.items():
-        for target in targets:
-            reverse.setdefault(target, set()).add(source)
-    reach = set(changed)
-    frontier = list(changed)
-    while frontier:
-        current = frontier.pop()
-        for parent in reverse.get(current, ()):
-            if parent not in reach:
-                reach.add(parent)
-                frontier.append(parent)
-    return reach
-
-
 def _forward_closure(sources: set[str], graph: dict[str, set[str]]) -> set[str]:
     """`sources` plus every file they (transitively) include."""
     consumed = set(sources)
