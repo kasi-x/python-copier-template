@@ -8,6 +8,7 @@ your own code. The HTTP tests at the end go the other way: they launch
 by a running server rather than by a mock of it.
 """
 
+import hashlib
 import json
 import os
 import re
@@ -183,13 +184,66 @@ async def test_render_project_keeps_stdout_clean(client: Client, tmp_path: Path,
     )
     assert isinstance(result, dict)
     assert result["dest"] == str(dest)
-    assert "pyproject.toml" in result["files"]
-    assert "README.md" in result["files"]
+    paths = {entry["path"] for entry in result["files"]}
+    assert "pyproject.toml" in paths
+    assert "README.md" in paths
     assert result["file_count"] == len(result["files"])
 
     captured = capfd.readouterr()
     assert captured.out == "", "rendering wrote to stdout, which would corrupt the MCP session"
     assert (dest / "pyproject.toml").is_file()
+
+
+@pytest.mark.anyio
+async def test_render_project_files_carry_digests_and_can_diff_against(client: Client, tmp_path: Path):
+    """The payload feeds a regression check: per-file sha256, and diff_against
+    names a previous render to compare against (render_diff's shape, one
+    render). The answers file's per-render stamps are masked, so two renders
+    of the same answers diff clean."""
+    first_dest = tmp_path / "first"
+    first = await call(
+        client,
+        "render_project",
+        {"answers": {**BASE_ANSWERS, "project_type": "script"}, "dest": str(first_dest)},
+    )
+    digests = {entry["path"]: entry["sha256"] for entry in first["files"]}
+    pyproject = first_dest / "pyproject.toml"
+    assert digests["pyproject.toml"] == hashlib.sha256(pyproject.read_bytes()).hexdigest()
+
+    second_dest = tmp_path / "second"
+    second = await call(
+        client,
+        "render_project",
+        {
+            "answers": {**BASE_ANSWERS, "project_type": "script"},
+            "dest": str(second_dest),
+            "diff_against": str(first_dest),
+        },
+    )
+    diff = second["diff"]
+    assert diff["changed"] == [], "two renders of the same answers are identical modulo the stamps"
+    assert diff["same_count"] == len(second["files"])
+    assert diff["only_in_a"] == [] and diff["only_in_b"] == []
+
+    moved = await call(
+        client,
+        "render_project",
+        {
+            # A data-supplied value applies even when its question's `when`
+            # hides it (tests/test_generated_lint.py's JAPANESE_VARIANTS
+            # precedent), so this flips the generated [tool.ruff] width.
+            "answers": {**BASE_ANSWERS, "project_type": "script", "allow_japanese": True},
+            "dest": str(tmp_path / "third"),
+            "diff_against": str(first_dest),
+        },
+    )
+    moved_diff = moved["diff"]
+    assert moved_diff["same_count"] < len(moved["files"]), "an answer change must move at least one file"
+
+    # The refusal happens before any render, so a direct call is enough
+    # (the client wraps ToolErrors in is_error results; see the tier tests).
+    with pytest.raises(ToolError, match="diff_against is not a directory"):
+        mcp_server.render_project({"project_type": "script"}, diff_against=str(tmp_path / "gone"))
 
 
 @pytest.mark.anyio
@@ -436,7 +490,9 @@ async def test_run_tests_returns_a_verdict_per_test(client: Client):
     assert verdict["ok"] is True, verdict["output"]
     assert verdict["counts"] == {"passed": 1, "failed": 0, "skipped": 0}
     assert verdict["command"][:3] == [sys.executable, "-m", "pytest"], "the verdict reports how to rerun it"
-    assert "not heavy and not slow and not meta" in verdict["command"], "the expression is the ledger's fast row"
+    assert "not heavy and not slow and not meta and not network" in verdict["command"], (
+        "the expression is the ledger's fast row"
+    )
     assert [line["ok"] for line in verdict["lines"]] == [True]
     assert verdict["lines"][0]["checks"], "a verdict carries at least one check"
 

@@ -20,6 +20,7 @@ if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
 from tools import gen_docs  # noqa: E402
+from tools import support_ledger  # noqa: E402
 
 LEDGER = TOP / "tests" / "matrix" / "witnesses.json"
 SECTIONS = ("supported", "best_effort", "tier_policy")
@@ -32,8 +33,8 @@ def ledger() -> dict[str, dict[str, Any]]:
 
 
 def support() -> dict[str, Any]:
-    """The committed declaration, as `tools/gen_docs.py` reads it."""
-    return gen_docs.load_support(gen_docs.SUPPORT_YML)
+    """The committed declaration, as tools/support_ledger.py reads it."""
+    return support_ledger.load_support(support_ledger.SUPPORT_YML)
 
 
 def test_supported_combinations_are_exactly_the_full_tier_sample():
@@ -75,8 +76,8 @@ def test_every_support_entry_has_a_why():
 
 def test_support_doc_is_exactly_the_generator_output():
     """`docs/reference/support.md` is the generated file, prose included."""
-    assert gen_docs.SUPPORT_DOC.read_text(encoding="utf-8") == gen_docs.support_doc_text()
-    target = next(block for block in gen_docs.targets() if block.path == gen_docs.SUPPORT_DOC)
+    assert support_ledger.SUPPORT_DOC.read_text(encoding="utf-8") == gen_docs.support_doc_text()
+    target = next(block for block in gen_docs.targets() if block.path == support_ledger.SUPPORT_DOC)
     assert gen_docs.check(gen_docs.Model.load(), [target]) == []
 
 

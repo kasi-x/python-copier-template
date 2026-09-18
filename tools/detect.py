@@ -17,6 +17,10 @@ What it derives from the template tree, not from a hardcoded list: which
 outputs exist and under which `existing_project` / `adopt_protect` condition
 each is rendered. The report therefore stays true as those protection rules
 change -- including for a template revision that predates `adopt_protect`.
+Conditions that name a derived flag (`render_docs`, `tests_scaffold`,
+`pkg_scaffold`, ...) are resolved through that flag's `when: false` default in
+the live questionnaire, so moving a protection clause into `questions/
+_internal.yml` does not hide it from this report either.
 
 Usage:
     python tools/detect.py                  # inspect the current directory
@@ -34,12 +38,12 @@ import argparse
 import json
 import re
 import shlex
-import shutil
 import subprocess
 import sys
 import tomllib
 from dataclasses import dataclass
 from dataclasses import field
+from functools import cache
 from pathlib import Path
 from typing import Any
 from typing import Literal
@@ -47,7 +51,13 @@ from typing import Literal
 import yaml
 
 TOP = Path(__file__).resolve().parent.parent
-GIT = shutil.which("git") or "git"
+if str(TOP) not in sys.path:
+    sys.path.insert(0, str(TOP))
+
+from tools import git  # noqa: E402
+from tools.questionnaire import TolerantLoader  # noqa: E402
+from tools.when_model import load_questions  # noqa: E402
+
 TEMPLATE_DIR = TOP / "template"
 
 RenderState = Literal["overwrite", "omit"]
@@ -80,6 +90,10 @@ JINJA_TAG = re.compile(r"{%.*?%}", re.DOTALL)
 JINJA_VAR = re.compile(r"{{.*?}}", re.DOTALL)
 PROTECT_CONDITION = re.compile(r"'([a-z_]+)'\s+(?:not\s+)?in\s+adopt_protect")
 GIT_REMOTE = re.compile(r"(?:github\.com|gitlab\.com)[:/]+([^/]+)/(.+?)(?:\.git)?$")
+# A question-name line in copier.yml / questions/*.yml: a top-level key with
+# no value. One definition, shared with tools/adopt.py's ref scan (MULTILINE,
+# so it also finds the names in `git show` output).
+QUESTION_LINE = re.compile(r"^([a-z][a-z0-9_]*):\s*$", re.MULTILINE)
 
 
 class DetectError(Exception):
@@ -101,6 +115,10 @@ class Output:
     path: str
     condition: str
     token: str | None
+    # `condition` with the derived-flag names expanded to their questionnaire
+    # defaults (identical to `condition` when it names none): the string the
+    # adopt-mode decision actually reads.
+    resolved: str = ""
 
 
 @dataclass
@@ -144,13 +162,7 @@ class Detection:
 def _git(where: Path, *args: str) -> str | None:
     """Run git in `where`, returning stripped stdout or None on any failure."""
     try:
-        proc = subprocess.run(  # noqa: S603  WHYNOT: fixed argv, no user input.
-            [GIT, "-C", str(where), *args],
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=30,
-        )
+        proc = git.run(where, *args, timeout=30)
     except (OSError, subprocess.SubprocessError):
         return None
     return proc.stdout.strip() if proc.returncode == 0 else None
@@ -449,6 +461,42 @@ def _plain_part(part: str) -> str:
     return JINJA_TAG.sub("", part).strip()
 
 
+@cache
+def _internal_conditions() -> dict[str, str]:
+    """`when: false` internal name -> its default expression, from the live questionnaire.
+
+    The protection clauses moved into derived flags (TODO §28.5 R1) live here
+    rather than in the path conditions, so resolving a condition reads the same
+    source the render will -- no hardcoded flag list to go stale.
+    """
+    questions, _order = load_questions()
+    return {
+        name: str(question["default"])
+        for name, question in questions.items()
+        if question.get("when") is False and question.get("default")
+    }
+
+
+def _resolve_condition(condition: str, _depth: int = 0) -> str:
+    """Expand every derived-flag name in a path condition to its definition.
+
+    A name is replaced only where it is a whole word, so `docs` inside
+    `render_docs` does not self-replace. Each expansion round can surface new
+    names (a flag defined in terms of another flag), hence the recursion; the
+    depth bound turns an accidental definition cycle into a stop, not a hang.
+    """
+    internals = _internal_conditions()
+    if not internals or _depth > 5:
+        return condition
+
+    def substitute(match: re.Match[str]) -> str:
+        name = match.group(0)
+        return f"({internals[name]})" if name in internals else name
+
+    expanded = re.sub(r"\b[a-z_][a-z0-9_]*\b", substitute, condition)
+    return condition if expanded == condition else _resolve_condition(expanded, _depth + 1)
+
+
 def template_outputs(template_dir: Path) -> list[Output]:
     """Every file the template can render, with its adopt-mode condition.
 
@@ -464,17 +512,18 @@ def template_outputs(template_dir: Path) -> list[Output]:
             continue
         rendered = "/".join(parts).removesuffix(".jinja")
         condition = " ".join(JINJA_TAG.findall(str(path.relative_to(template_dir))))
+        resolved = _resolve_condition(condition)
         token: str | None = None
-        match = PROTECT_CONDITION.search(condition)
+        match = PROTECT_CONDITION.search(resolved)
         if match:
             token = match.group(1)
-        elif "existing_project" in condition:
+        elif "existing_project" in resolved:
             token = FILENAME_TOKENS.get(Path(rendered).name)
         if any(existing.path == rendered for existing in outputs):
             # Several branches (e.g. zensical vs sphinx docs) render the same
             # path; it is one file to the adopter, so report it once.
             continue
-        outputs.append(Output(path=rendered, condition=condition, token=token))
+        outputs.append(Output(path=rendered, condition=condition, token=token, resolved=resolved))
     return outputs
 
 
@@ -483,9 +532,11 @@ def render_state(output: Output, protections: dict[str, bool]) -> RenderState:
 
     A condition that mentions `existing_project` is false in adopt mode, so
     the file is omitted -- unless it names an `adopt_protect` token the
-    adopter left deselected, which re-enables it.
+    adopter left deselected, which re-enables it. The condition read here is
+    the flag-resolved one: a bare `render_docs` names the clauses only after
+    expansion.
     """
-    if "existing_project" not in output.condition:
+    if "existing_project" not in (output.resolved or output.condition):
         return "overwrite"
     if output.token is None:
         return "omit"
@@ -505,7 +556,7 @@ def template_questions(template_dir: Path) -> set[str]:
         if not path.is_file():
             continue
         for line in path.read_text(encoding="utf-8").splitlines():
-            match = re.match(r"^([a-z][a-z0-9_]*):\s*$", line)
+            match = QUESTION_LINE.match(line)
             if match:
                 names.add(match.group(1))
     return names
@@ -513,11 +564,6 @@ def template_questions(template_dir: Path) -> set[str]:
 
 def skip_if_exists(template_dir: Path) -> set[str]:
     """Read `_skip_if_exists` from the copier.yml that owns `template_dir`."""
-
-    class TolerantLoader(yaml.SafeLoader):
-        """SafeLoader that ignores copier's custom tags instead of failing."""
-
-    TolerantLoader.add_multi_constructor("!", lambda _loader, _suffix, _node: None)
     config_path = template_dir.parent / "copier.yml"
     try:
         # noqa: S506  WHYNOT: TolerantLoader subclasses SafeLoader; it only

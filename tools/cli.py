@@ -41,7 +41,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import copier
 import copier.errors
 import yaml
 
@@ -103,25 +102,17 @@ def collision_warning(collisions: list[str]) -> str:
 
 
 def _render(target: Path, data: dict[str, Any], ref: str, *, defaults: bool) -> None:
-    """Render this checkout into `target`, the way `tools/batch.py:render` does.
+    """Render this checkout into `target`, through `tools/batch.py:render`.
 
-    The flags are that convention's (`unsafe` is copier's `--trust`); the one
-    difference is `defaults`, which batch.render pins to True. A `--preset` run
-    is fully specified, so it keeps copier's defaults for every question the
-    preset leaves out; without a preset the questionnaire is the interface, and
-    copier asks it (which needs a terminal).
+    The convention pins `unsafe` (copier's `--trust`) and `quiet`; the one
+    knob this CLI turns is `defaults`, which the convention otherwise pins to
+    True. A `--preset` run is fully specified, so it keeps copier's defaults
+    for every question the preset leaves out; without a preset the
+    questionnaire is the interface, and copier asks it (which needs a
+    terminal).
     """
     with batch.report_stream_only():
-        copier.run_copy(
-            src_path=str(TOP),
-            dst_path=target,
-            data=data,
-            vcs_ref=ref,
-            unsafe=True,
-            defaults=defaults,
-            overwrite=True,
-            quiet=True,
-        )
+        batch.render(str(TOP), target, data, ref, defaults=defaults)
 
 
 def _fresh(

@@ -18,6 +18,7 @@ of `template/renovate.json.jinja` (see render_cache.py).
 
 import json
 import re
+import sys
 from pathlib import Path
 
 import yaml
@@ -27,9 +28,13 @@ from render_cache import RenderCache
 # Imported so pytest can inject the fixture (the cache lives here, not in
 # conftest.py: the template renders that file into generated projects).
 from render_cache import render_cache as render_cache  # noqa: PLC0414
-from test_recommended_path import BASE
 
 TOP = Path(__file__).absolute().parent.parent
+if str(TOP) not in sys.path:  # tests/support.py does the same to reach tools/
+    sys.path.insert(0, str(TOP))
+
+from tools.answers import BASE  # noqa: E402
+
 WORKFLOWS_DIR = TOP / ".github" / "workflows"
 
 # Workflows that intentionally keep checkout credentials (they push).
@@ -180,6 +185,69 @@ def test_uses_are_pinned_to_full_sha():
                     f"{name}:{job_name} uses {uses!r} -- pin to a 40-char SHA "
                     f"with the version as a comment (e.g. @<sha> # vX.Y.Z)"
                 )
+
+
+COMPOSITE = TOP / ".github" / "actions" / "setup-runner" / "action.yml"
+"""The shared setup the four reusable workflows call (TODO archive §19)."""
+
+COMPOSITE_USERS = ("_tasks.yml", "_test.yml", "_docs.yml", "_dist.yml")
+"""The workflows whose duplicated setup block the composite replaced."""
+
+
+def test_setup_runner_composite_is_pinned_and_used():
+    """The extracted setup composite keeps the security bar, and the four
+    workflows that once repeated the block actually call it.
+
+    Two directions, the registry idiom: the composite itself is held to the
+    same static checks as the workflows (SHA-pinned `uses`, checkout without
+    persisted credentials), and each COMPOSITE_USERS workflow keeps exactly
+    one reference to it — so a caller reverting to inline steps (or a new
+    copy of the block) fails here instead of quietly re-forking the setup.
+    """
+    action = yaml.safe_load(COMPOSITE.read_text(encoding="utf-8"))
+    assert action.get("runs", {}).get("using") == "composite", "the action must be a composite"
+    steps = action["runs"].get("steps") or []
+    assert steps, "the composite has no steps"
+    sha_re = re.compile(r"^[0-9a-f]{40}$")
+    for step in steps:
+        uses = step.get("uses", "")
+        if not uses:
+            continue  # a run step
+        _owner_repo, _, ref = uses.partition("@")
+        assert sha_re.match(ref), f"composite step {step.get('name')!r} uses {uses!r} -- pin to a 40-char SHA"
+        if uses.startswith("actions/checkout"):
+            assert step.get("with", {}).get("persist-credentials") is False, (
+                "the composite's checkout must not persist credentials"
+            )
+
+    for name in COMPOSITE_USERS:
+        wf = _workflows()[name]
+        references = [
+            step.get("uses")
+            for job in _jobs(wf).values()
+            for step in job.get("steps") or []
+            if str(step.get("uses", "")).startswith("./.github/actions/setup-runner")
+        ]
+        assert references == ["./.github/actions/setup-runner"], (
+            f"{name} must call the setup-runner composite exactly once, got {references}"
+        )
+
+
+def test_setup_runner_ships_to_generated_projects(render_cache: RenderCache, tmp_path: Path):
+    """Generated projects calling the workflows must have the action too.
+
+    The reusable workflows reference `./.github/actions/setup-runner`, which
+    resolves inside the *generated* repository -- without the symlinked
+    action dir, every generated project's CI would break on its first run
+    (the archived item's own "CI 実走が要る" caveat). One render proves the
+    link survives as the composite's bytes.
+    """
+    render_cache.render(tmp_path, {**BASE, "project_type": "library"})
+    shipped = tmp_path / ".github" / "actions" / "setup-runner" / "action.yml"
+    assert shipped.is_file(), "the composite action is missing from the generated project"
+    assert shipped.read_text(encoding="utf-8") == COMPOSITE.read_text(encoding="utf-8"), (
+        "the shipped action must be content-identical to the repository's"
+    )
 
 
 def test_renovate_baseline_matches_generated_template(tmp_path: Path, render_cache: RenderCache):

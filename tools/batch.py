@@ -109,7 +109,11 @@ import copier
 import yaml
 
 TOP = Path(__file__).resolve().parent.parent
-GIT = shutil.which("git") or "git"
+if str(TOP) not in sys.path:
+    sys.path.insert(0, str(TOP))
+
+from tools.git import GIT  # noqa: E402
+from tools.git import run as run_git  # noqa: E402
 
 REQUEST_KEYS = frozenset(
     {"id", "note", "src", "ref", "answers", "answers_file", "dest", "update", "commands", "expect"}
@@ -122,6 +126,45 @@ TOML_KEYS = frozenset({"path", "key", "equals"})
 
 DEFAULT_TIMEOUT = 300
 OUTPUT_LIMIT = 2000
+
+ANSWERS_FILE = ".copier-answers.yml"
+"""Where copier records a render's answers -- and its per-render stamps."""
+
+RENDER_STAMPS = ("_commit", "_src_path")
+"""The `.copier-answers.yml` keys that vary per render instead of with the answers.
+
+`_commit` names the template revision the render came from (for a *dirty*
+template, a synthetic commit copier creates per render), `_src_path` the
+absolute checkout. Two renders of identical answers can differ in both, so
+every comparison of renders takes them out first (TODO.md §28.3 3c / §28.5
+R3: this tuple is the one declaration -- a new stamp is a one-line edit here,
+and the two readers below follow it)."""
+
+
+def strip_render_stamps(data: bytes) -> bytes:
+    """`.copier-answers.yml` bytes without the stamps, canonically re-encoded.
+
+    The comparison form: a manifest hash of a rendered tree, so two renders of
+    the same answers hash equal whatever checkout or revision produced them.
+    The canonical re-encoding (sorted-key JSON) is part of the definition --
+    the YAML key order copier chose is not worth carrying.
+    """
+    parsed = yaml.safe_load(data.decode("utf-8")) or {}
+    for key in RENDER_STAMPS:
+        parsed.pop(key, None)
+    return json.dumps(parsed, sort_keys=True).encode("utf-8")
+
+
+def mask_render_stamps(data: bytes, mask: str = "<per-render>") -> bytes:
+    """The stamps' values masked in place (`_commit: <per-render>`), line shape kept.
+
+    The display form, for a unified diff: the YAML stays line-readable and two
+    renders of the same answers still compare equal -- only the values are
+    hidden, not the keys or the file's shape.
+    """
+    for key in RENDER_STAMPS:
+        data = re.sub(rf"^{re.escape(key)}:.*$".encode(), f"{key}: {mask}".encode(), data, flags=re.MULTILINE)
+    return data
 
 
 class SpecError(Exception):
@@ -371,13 +414,7 @@ def _answers_for(request: Request, phase: dict[str, Any] | None, repo: Path) -> 
 
 def git(where: Path, *args: str) -> subprocess.CompletedProcess[str]:
     """Run git in `where`, capturing output (exit code is the caller's business)."""
-    return subprocess.run(  # noqa: S603  WHYNOT: fixed argv, no user input.
-        [GIT, "-C", str(where), *args],
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=DEFAULT_TIMEOUT,
-    )
+    return run_git(where, *args, timeout=DEFAULT_TIMEOUT)
 
 
 def update_precondition(request: Request) -> Check:
@@ -403,12 +440,29 @@ def update_precondition(request: Request) -> Check:
     return Check(name=name, ok=True, detail="no uncommitted changes")
 
 
-def _git_snapshot(dest: Path, request_id: str) -> Check:
-    """Commit the destination so copier will accept an update of it."""
+def git_snapshot(  # noqa: PLR0913  WHYNOT: dest plus the four git-metadata knobs; a bag object would hide the argv being built.
+    dest: Path,
+    label: str,
+    *,
+    message: str = "batch: copy",
+    branch: str | None = None,
+    user: str = "batch",
+    email: str = "batch@example.invalid",
+) -> Check:
+    """Init, add, and commit `dest` so copier will accept an update of it.
+
+    The one "make this rendered tree updatable" helper: copier only updates
+    git-tracked subprojects, and the state both callers replay is the same --
+    a user's project right after `copier copy`, i.e. one commit. The commit's
+    message, identity and branch name are not part of any contract (copier
+    never reads them); they only say who staged the snapshot when a failed
+    line's output is being debugged, so callers pass their own.
+    """
+    init = [GIT, "init", "-q", *(["-b", branch] if branch else [])]
     commands = [
-        [GIT, "init", "-q"],
+        init,
         [GIT, "add", "-A"],
-        [GIT, "-c", "user.name=batch", "-c", "user.email=batch@example.invalid", "commit", "-qm", "batch: copy"],
+        [GIT, "-c", f"user.name={user}", "-c", f"user.email={email}", "commit", "-qm", message],
     ]
     for command in commands:
         proc = subprocess.run(  # noqa: S603  WHYNOT: fixed argv, no user input.
@@ -416,11 +470,11 @@ def _git_snapshot(dest: Path, request_id: str) -> Check:
         )
         if proc.returncode != 0:
             detail = (proc.stderr or proc.stdout).strip()[-OUTPUT_LIMIT:]
-            return Check(name=f"{request_id}: git {' '.join(command[1:3])}", ok=False, detail=detail)
-    return Check(name=f"{request_id}: git snapshot", ok=True)
+            return Check(name=f"{label}: git {' '.join(command[1:3])}", ok=False, detail=detail)
+    return Check(name=f"{label}: git snapshot", ok=True)
 
 
-def render(  # noqa: PLR0913  WHYNOT: a thin wrapper over copier's own 19-parameter API; a bag object would hide the two flags that matter.
+def render(  # noqa: PLR0913  WHYNOT: a thin wrapper over copier's own 19-parameter API; a bag object would hide the flags that matter.
     src: str,
     dest: Path,
     data: dict[str, Any],
@@ -428,13 +482,36 @@ def render(  # noqa: PLR0913  WHYNOT: a thin wrapper over copier's own 19-parame
     *,
     skip_if_exists: tuple[str, ...] = (),
     overwrite: bool = True,
+    defaults: bool = True,
+    skip_tasks: bool = False,
 ) -> None:
-    """Render `src` into `dest` — the one copier invocation convention.
+    """Render `src` into `dest` — the one copier `copy` invocation convention.
+
+    Every tool in this repository that renders a project goes through here
+    (batch, adopt, cli, mcp_server, update_rehearsal); a direct
+    `copier.run_copy` anywhere else breaks the convention, and a guard test
+    (tests/test_render_convention.py) fails when one appears. The flags the
+    convention pins: `unsafe` (copier's `--trust`, this template's tasks need
+    it) and `quiet`. The knobs callers may turn:
 
     `overwrite=False` turns a collision into an error instead of a
     replacement, which is how tools/adopt.py stays transactional: `skip` (and
     the adopt-mode file-name conditions) should prevent every collision, and
     anything left reaches the caller as an exception it can roll back from.
+    `skip_if_exists` redirects collisions instead of failing.
+
+    `defaults=False` lets copier prompt for the questions `data` leaves out --
+    how tools/cli.py makes a preset-less run interactive -- instead of taking
+    each unset question's default (the pinned-True behaviour everything else
+    wants).
+
+    `skip_tasks=True` renders without running the template's post-generation
+    tasks -- how update_rehearsal renders, because what it rehearses is the
+    merge, not the tasks.
+
+    `copier.update` is a different copier verb, not this function's business:
+    its sanctioned direct call sites are this module's update phase and
+    tools/update_rehearsal.py, whose subject is the update itself.
     """
     copier.run_copy(
         src_path=src,
@@ -442,9 +519,10 @@ def render(  # noqa: PLR0913  WHYNOT: a thin wrapper over copier's own 19-parame
         data=data,
         vcs_ref=ref,
         unsafe=True,
-        defaults=True,
+        defaults=defaults,
         overwrite=overwrite,
         skip_if_exists=skip_if_exists,
+        skip_tasks=skip_tasks,
         quiet=True,
     )
 
@@ -455,7 +533,7 @@ def _run_phase(request: Request, dest: Path, repo: Path, phase: dict[str, Any] |
     render(request.src, dest, data, request.ref)
     if phase is None:
         return
-    snapshot = _git_snapshot(dest, request.id)
+    snapshot = git_snapshot(dest, request.id)
     if not snapshot.ok:
         msg = f"{request.id}: cannot update: {snapshot.detail}"
         raise SpecError(msg)
@@ -589,6 +667,95 @@ def check_commands(dest: Path, commands: list[dict[str, Any]], request_id: str) 
                     )
                 )
     return checks
+
+
+LINT_TIMEOUT = 300
+LINT_COMMANDS: tuple[tuple[str, ...], ...] = (("format", "--check"), ("check",))
+"""The generated project's lint recipe: the two ruff invocations its own Taskfile runs."""
+
+
+def ruff_bin() -> Path:
+    """This repository's ruff: the repo venv's, then the interpreter's, then PATH.
+
+    A rendered project has no environment of its own -- that is the point of
+    rendering it -- so the lint comes from the venv of whatever process runs
+    this module (the MCP server's, a test session's). The repo venv is probed
+    first because pytest-xdist workers may run under a different interpreter.
+    """
+    for candidate in (TOP / ".venv" / "bin" / "ruff", Path(sys.executable).parent / "ruff"):
+        if candidate.is_file():
+            return candidate
+    found = shutil.which("ruff")
+    if found:
+        return Path(found)
+    msg = "ruff not found in TOP/.venv/bin, next to the running interpreter, or on PATH"
+    raise FileNotFoundError(msg)
+
+
+def ruff_checks(dest: Path) -> list[Check]:
+    """The ruff verdicts for a rendered tree, or nothing when it cannot be linted.
+
+    Only where the generated lint applies: a render that ships no Python (bare
+    workspaces) or no ``[tool.ruff]`` has nothing for it to judge, which is
+    what tests/test_generated_lint.py assumes too.
+    """
+    if not any(dest.rglob("*.py")):
+        return []
+    pyproject = dest / "pyproject.toml"
+    if not pyproject.is_file() or "[tool.ruff" not in pyproject.read_text(encoding="utf-8"):
+        return []
+    ruff = ruff_bin()
+    checks: list[Check] = []
+    for args in LINT_COMMANDS:
+        proc = subprocess.run(  # noqa: S603  WHYNOT: fixed argv, the render supplies the input.
+            [str(ruff), *args, "--no-cache", "."],
+            cwd=dest,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=LINT_TIMEOUT,
+        )
+        detail = "" if proc.returncode == 0 else (proc.stdout + proc.stderr).strip()[-OUTPUT_LIMIT:]
+        checks.append(Check(name=f"ruff {' '.join(args)}", ok=proc.returncode == 0, detail=detail))
+    return checks
+
+
+def junit_verdicts(report: Path) -> tuple[list[LineResult], dict[str, int]]:
+    """Turn a pytest JUnit XML report into one LineResult per executed test.
+
+    The verdict machinery behind any "run a pytest tier, return structured
+    verdicts" caller (TODO.md §28.3 3e): a failure or error is a failed check
+    carrying pytest's message, a skip is an ok check named `skipped`, and the
+    counts summarize the run. Line ids are `classname::name`, so they read
+    like pytest's own node ids.
+    """
+    import xml.etree.ElementTree as ET  # noqa: PLC0415  WHYNOT: stdlib; junit parsing only matters to callers that launch pytest.
+
+    lines: list[LineResult] = []
+    counts = {"passed": 0, "failed": 0, "skipped": 0}
+    # WHYNOT: the report is written by the pytest process the caller launches
+    # over a fixed argv; no XML here comes from a peer.
+    root = ET.parse(report).getroot()  # noqa: S314
+    for index, case in enumerate(root.iter("testcase")):
+        failure = case.find("failure") if case.find("failure") is not None else case.find("error")
+        skipped = case.find("skipped")
+        if failure is not None:
+            verdict, name, detail = False, "pytest", (failure.get("message") or failure.text or "").strip()
+        elif skipped is not None:
+            # A W4 `tier: none` opt-out: not a failure, and not a verified leaf.
+            verdict, name, detail = True, "skipped", (skipped.get("message") or "").strip()
+        else:
+            verdict, name, detail = True, "pytest", ""
+        counts["failed" if failure is not None else "skipped" if skipped is not None else "passed"] += 1
+        lines.append(
+            LineResult(
+                id=f"{case.get('classname')}::{case.get('name')}",
+                index=index,
+                checks=[Check(name=name, ok=verdict, detail=detail[-OUTPUT_LIMIT:])],
+                seconds=float(case.get("time") or 0.0),
+            )
+        )
+    return lines, counts
 
 
 def prepare_command(dest: Path) -> list[str] | None:

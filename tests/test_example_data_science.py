@@ -5,9 +5,8 @@ sheets."""
 import tomllib
 from pathlib import Path
 
-from copier import run_copy
-
-from support import TOP
+from render_cache import RenderCache
+from render_cache import render_cache as render_cache  # noqa: PLC0414  # the session fixture, made visible here
 from support import copy_project
 
 
@@ -119,7 +118,13 @@ def test_template_online_judge_no_solutions_for_kaggle(tmp_path: Path):
     assert not (tmp_path / "solutions").exists()
 
 
-def test_template_data_governance_asked_on_recommended_path(tmp_path: Path):
+# The render inputs of test_template_data_governance_asked_on_recommended_path,
+# composed with tools/answers.py BASE at the call site: registered in
+# tests/test_answer_fixtures.py like every other answer fixture.
+DATA_GOV_ANSWERS: dict[str, object] = {"project_type": "data_science"}
+
+
+def test_template_data_governance_asked_on_recommended_path(tmp_path: Path, render_cache: RenderCache):
     """DUO/CARE are asked even when the data_science gate stays recommended.
 
     The recommended answer only settles GPU now; data_reusable/data_ethics
@@ -127,18 +132,9 @@ def test_template_data_governance_asked_on_recommended_path(tmp_path: Path):
     not an unseen question.
     """
 
-    from test_recommended_path import BASE
+    from tools.answers import BASE
 
-    run_copy(
-        src_path=str(TOP),
-        dst_path=tmp_path,
-        data={**BASE, "project_type": "data_science"},
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,
-    )
+    render_cache.render(tmp_path, {**BASE, **DATA_GOV_ANSWERS})
     assert not (tmp_path / "data" / "DUO.md").exists()
     assert not (tmp_path / "data" / "CARE.md").exists()
     # The trio is unconditional on the data layout: guardrails ship even

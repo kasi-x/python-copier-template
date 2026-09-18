@@ -74,6 +74,8 @@ predicates:
     why: "every relative README.md link resolves inside the render"
   - id: docs-nav
     why: "every zensical.toml / mkdocs.yml nav target exists in the render"
+  - id: ethics-appendix
+    why: "the AGENTS.md ethics appendix ships exactly the sections the render's project kind selects (license drift everywhere the guide ships; PQC on library/cli/web_api; AI-and-copyright on cli and the data-science layout), per _shared/ethics/REGISTRY.yml's active rows"
 
 # Names the witness leaf space deliberately keeps out, one line of reason
 # each (TODO.md §23.4: "enumerated" and "excluded" are both numbers). A
@@ -129,7 +131,7 @@ leaf_classes:
     markers:
       # The common layout is not a branch tell: every class ships it.
       ships: []
-    predicates: [pyproject, readme-links]
+    predicates: [pyproject, readme-links, ethics-appendix]
     why: "the layout every leaf ships, recommended gates or not; `absent` catches a branch that was copied verbatim instead of rendered"
 
   # -- layout switches ---------------------------------------------------- #
@@ -146,6 +148,8 @@ leaf_classes:
     predicates: [agents-md, docs-nav]
     content:
       - [pyproject.toml, polars]
+      - [AGENTS.md, "ライセンス変動"]
+      - [AGENTS.md, "AIと著作権"]
     why: "the data-science layout (notebooks/ data/ models/ reports/), from project_type=data_science or the include_data_science layer; it changes questions/_internal.yml's pkg_dir"
 
   - id: layout=web_api
@@ -157,6 +161,8 @@ leaf_classes:
     content:
       - [.github/workflows/ci.yml, postgres]
       - [pyproject.toml, fastapi]
+      - [AGENTS.md, "PQC標準"]
+      - [AGENTS.md, "ライセンス変動"]
     why: "the FastAPI scaffold: the app lives in a top-level app/ package, so this row (not the project type's) owns the package directory"
 
   - id: layout=no_src
@@ -176,6 +182,9 @@ leaf_classes:
     markers:
       absent: [compose.local.yml, smoke_example/__init__.py]
     predicates: [agents-md, docs-nav]
+    content:
+      - [AGENTS.md, "PQC標準"]
+      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: full
       why: "recommended library path, executed end to end (~3 min): uv sync + generated pytest + basedpyright + docs"
@@ -189,6 +198,10 @@ leaf_classes:
     markers:
       absent: [compose.local.yml, app/main.py]
     predicates: [agents-md, docs-nav]
+    content:
+      - [AGENTS.md, "PQC標準"]
+      - [AGENTS.md, "ライセンス変動"]
+      - [AGENTS.md, "AIと著作権"]
     tier:
       name: full
       why: "recommended CLI path, executed end to end (~3 min): console-script entry point and its CLI tests in the generated pytest run"
@@ -202,6 +215,8 @@ leaf_classes:
     markers:
       absent: [src, compose.local.yml]
     predicates: [agents-md, docs-nav]
+    content:
+      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: full
       why: "recommended script path, executed end to end (~3 min): flat stdlib-style workspace, pytest + basedpyright + docs run"
@@ -280,6 +295,7 @@ leaf_classes:
     predicates: [agents-md]
     content:
       - [pyproject.toml, torch]
+      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: fast
       why: "AtCoder carries the execution sample; kaggle is render-only"
@@ -296,6 +312,7 @@ leaf_classes:
     predicates: [agents-md]
     content:
       - [pyproject.toml, pwntools]
+      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: fast
       why: "AtCoder carries the execution sample; the CTF judge is render-only"

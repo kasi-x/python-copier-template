@@ -51,6 +51,13 @@ rules:
     ignore:
       - ci.yml
       - scheduled-check.yml
+      # _{tasks,test,docs,dist}.yml call the local ./.github/actions/
+      # setup-runner composite; same local-reusable form as above (see
+      # the "all workflows" note at the top of this file).
+      - _tasks.yml
+      - _test.yml
+      - _docs.yml
+      - _dist.yml
   template-injection:
     ignore:
       # required-checks-passed renders toJSON(needs) — the workflow's own job

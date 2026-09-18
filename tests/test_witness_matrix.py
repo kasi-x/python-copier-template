@@ -86,6 +86,7 @@ from tools import z3_witnesses  # noqa: E402
 from render_cache import RenderCache  # noqa: E402
 from render_cache import render_cache as render_cache  # noqa: E402, PLC0414
 from support import build_docs  # noqa: E402
+from support import render_answers  # noqa: E402
 
 WITNESSES = TOP / "tests" / "matrix" / "witnesses.jsonl"
 COVERAGE = TOP / "tests" / "matrix" / "witnesses.json"
@@ -579,21 +580,11 @@ def _render_leaf(dest: Path, leaf: Witness) -> None:
     """Render one leaf the way example-answers-based heavy tests do (git-tracked).
 
     The git repo matters: the generated project versions itself with
-    setuptools_scm, which needs one (tests/support.py's heavy recipe).
+    setuptools_scm, which needs one (tests/support.py's heavy recipe). The
+    render goes through support.render_answers -- the cache-served pure render
+    plus the `_tasks` replay, the same output the direct run_copy produced.
     """
-    from copier import run_copy  # noqa: PLC0415  WHYNOT: only the heavy tier needs copier's API.
-
-    init = subprocess.run(["git", "init", str(dest)], capture_output=True, text=True, check=False)
-    assert init.returncode == 0, f"git init {dest} failed:\n{init.stdout}{init.stderr}"
-    run_copy(
-        src_path=str(TOP),
-        dst_path=dest,
-        data=dict(leaf.answers),
-        vcs_ref="HEAD",
-        unsafe=True,
-        defaults=True,
-    )
-    _run("git add .", dest, dest / ".venv")
+    render_answers(dest, dict(leaf.answers))
 
 
 def _make_venv(dest: Path) -> None:

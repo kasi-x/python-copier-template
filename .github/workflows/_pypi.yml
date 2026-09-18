@@ -1,4 +1,10 @@
 on:
+  # workflow_call only, by design: the caller (a generated project's ci.yml
+  # `pypi` job) gates this on a tag push, and the job downloads the `dist`
+  # artifact from its own run -- a manual dispatch would find no artifacts
+  # and fail, so there is deliberately no workflow_dispatch here. First real
+  # execution additionally needs the `release` environment to exist and PyPI
+  # trusted publishing (OIDC) configured for the repository.
   workflow_call:
 
 permissions:

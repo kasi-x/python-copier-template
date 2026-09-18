@@ -6,6 +6,21 @@
 # kaggle, oj_code) live in their genre fragment instead, before the asking
 # gate.
 
+# Platform identity. git_platform is asked in Project Details, so the raw
+# comparison cannot gate a question's `when` and render-side paths and bodies
+# used to re-spell it per site (TODO.md §28.5 R1, §28.4 item 4d — the same
+# comparison in three spellings). Defined FIRST so the effective settings
+# below can compose it.
+is_github:
+    type: bool
+    default: "{{ git_platform == 'github.com' }}"
+    when: false
+
+is_gitlab:
+    type: bool
+    default: "{{ git_platform == 'gitlab.com' }}"
+    when: false
+
 # Security & compliance effective settings. security_policy / scorecard keep
 # their defaults when unasked (gate on); the git_platform guard here is what
 # keeps GitHub-only files (SECURITY.md / scorecard.yml) out of GitLab
@@ -13,12 +28,12 @@
 # applied at render time, not in the questions' `when`.
 security_policy_effective:
     type: bool
-    default: "{{ security_policy and git_platform == 'github.com' }}"
+    default: "{{ security_policy and is_github }}"
     when: false
 
 scorecard_effective:
     type: bool
-    default: "{{ scorecard and git_platform == 'github.com' }}"
+    default: "{{ scorecard and is_github }}"
     when: false
 
 # Project-type derived booleans (render-time only; the ones questions
@@ -93,15 +108,15 @@ bot_effective:
     when: false
 # Bot platform selection. use_recommended_bot keeps its default (true) when
 # unasked (include_bot off); bot_platform keeps its default (discord). Discord,
-# Slack and LINE are the generated platforms today: adding Gmail later is a
-# new choice here plus a new _shared body, not a new project type.
+# Slack, LINE and Gmail are the generated platforms: adding another is a new
+# choice here plus a new _shared body, not a new project type.
 bot_discord_effective:
     type: bool
     default: "{{ bot_effective and (use_recommended_bot or bot_platform == 'discord') }}"
     when: false
-# The other half of the Bot platform selection above: the three are mutually
-# exclusive (this one is recommended-or-discord, the next is custom-and-slack,
-# the last custom-and-line), so exactly one bot module is ever rendered.
+# The other half of the Bot platform selection above: the four are mutually
+# exclusive (this one is recommended-or-discord; the next three are
+# custom-and-<platform>), so exactly one bot module is ever rendered.
 bot_slack_effective:
     type: bool
     default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'slack' }}"
@@ -112,6 +127,34 @@ bot_slack_effective:
 bot_line_effective:
     type: bool
     default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'line' }}"
+    when: false
+# Gmail polls outward on an interval, so it is back in discord/slack's camp:
+# a client connection that dials the Gmail API, no listening port and no
+# webhook (bot_gmail.py's docstring). Its credentials are files rather than
+# environment strings — the only platform whose .env entries are paths.
+bot_gmail_effective:
+    type: bool
+    default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'gmail' }}"
+    when: false
+# The agent scaffold: pydantic-ai prompts/ + <pkg>.tools/ demo, rendered when
+# the recommended agent guide is declined on a library / cli base. TODO.md
+# §28.5 R1 (§28.4 item 4b) names the predicate that used to repeat across the
+# pkg tree's agent gates, prompts/, tests/, the agent dependency and the
+# setuptools flat-layout guard (the §18 `oj_bare`/`no_pkg` pattern recurring
+# for a predicate that had no internal yet).
+agent_scaffold:
+    type: bool
+    default: "{{ not use_recommended_agent and project_type in ['library', 'cli'] }}"
+    when: false
+# .env.example exists whenever any rendered feature documents environment
+# variables: the effective layers (web_api / mcp / scraping / bot), the
+# include_sentry leaf — raw by design (template-dev.md), which is why this
+# internal composes a raw answer with effective ones — or the agent scaffold.
+# TODO.md §28.5 R1 (§28.4 item 4c) un-names the ~130-char OR that repeated on
+# the file name and in the README body.
+needs_env_example:
+    type: bool
+    default: "{{ web_api or mcp_effective or scraping_effective or include_sentry or bot_effective or agent_scaffold }}"
     when: false
 # oj_category == 'ctf'). The base guard keeps the CTF deps and workspace out
 # of other project types when render tests force the answer on them
@@ -145,13 +188,30 @@ data_science_layout:
     default: "{{ data_science }}"
     when: false
 
+# The data-science analysis stack. `data_science or kaggle` used to repeat
+# across the payload: the src/ working tree's data/ features/ models/
+# .gitkeep sentinels are byte-identical between the data_science layout and
+# the kaggle competition workspace (kaggle adds configs/input/logs/notebook/
+# output/scripts beside them and shares pkg_dir=src/utils), and the analysis
+# dependencies (duckdb / pyarrow / polars / ipykernel / ...) gate on the same
+# union. Neither owner alone spells it: data_science_layout misses kaggle (an
+# online_judge genre that use_src_layout excludes), and kaggle misses the
+# data_science base (TODO.md §28.4 item 4h).
+ds_stack:
+    type: bool
+    default: "{{ data_science_layout or kaggle }}"
+    when: false
+
 use_src_layout:
     type: bool
-    # Own exclusion list — NOT layout.when's: script is additionally excluded
-    # (the question is asked there, but a src/ tree is meaningless without a
-    # package), oj_ctf is re-admitted, and web_api is excluded by the `not
-    # web_api` clause (layout.when never asks it, but the default `layout ==
-    # 'src'` would otherwise apply). Pinned by tests/test_copier_structure.py::
+    # Own exclusion list — NOT layout.when's: script is excluded here as a
+    # forced-answer guard (layout.when no longer asks the question there, but
+    # copier applies a data-file answer even to a question whose `when` is
+    # false, so a forced layout=src on a script project must still not
+    # produce a src/ tree without a package), oj_ctf is re-admitted, and
+    # web_api is excluded by the `not web_api` clause (layout.when never asks
+    # it, but the default `layout == 'src'` would otherwise apply). Pinned by
+    # tests/test_copier_structure.py::
     # test_layout_exclusion_lists_stay_deliberately_different.
     default: "{{ layout == 'src' and (oj_ctf or project_type not in ['script', 'online_judge', 'ros2', 'micropython']) and not web_api }}"
     when: false
@@ -229,6 +289,45 @@ ros2_cpp:
 ros2_python:
     type: bool
     default: "{{ ros2_pkg and pkg_language == 'python' }}"
+    when: false
+
+# Tree gates: one line each owns a whole subtree's policy, so child path
+# segments reference the name instead of re-spelling the parent condition
+# (TODO.md §28.5 R1, §28.4 items 4a/4e). pkg_scaffold is the pkg tree's parent
+# gate PLUS the ros2 exclusion its three inner `{% if project_type != 'ros2'
+# %}` file gates used to carry (ros2 walked the whole tree and rendered
+# nothing from it, so folding it into the parent is byte-identical). The
+# tests tree and the pkg tree keep their deliberately different exclusion
+# lists (ros2+micropython vs oj+micropython+web_api) — named now, so the
+# difference is reviewable instead of silent.
+pkg_scaffold:
+    type: bool
+    default: "{{ (not existing_project or 'scaffold' not in adopt_protect) and not online_judge and not micropython_pkg and not web_api and not ros2_pkg }}"
+    when: false
+
+tests_scaffold:
+    type: bool
+    default: "{{ (not existing_project or 'scaffold' not in adopt_protect) and not ros2_pkg and not micropython_pkg }}"
+    when: false
+
+# The prompts/ tree: the agent guide's prompt half (the pydantic-ai demo
+# package half lives under pkg_scaffold's tools/ gate below). Same scaffold
+# adopt-protect clause pkg_scaffold / tests_scaffold carry -- the agent
+# scaffold is scaffold, so adopt mode protecting 'scaffold' protects it too --
+# composed with agent_scaffold, which alone would re-render the guide into a
+# protected project. Spelled as one named flag so the prompts/ path follows
+# the same convention as the pkg/tests trees: a tree gate references a name,
+# and the child path (agent.md) re-states nothing (TODO.md §28.4 item 4f).
+prompts_scaffold:
+    type: bool
+    default: "{{ (not existing_project or 'scaffold' not in adopt_protect) and agent_scaffold }}"
+    when: false
+
+# The docs tree: docs_type != README, minus the adopter's own docs (adopt
+# mode protects them instead of overwriting).
+render_docs:
+    type: bool
+    default: "{{ docs and not (existing_project and 'docs' in adopt_protect) }}"
     when: false
 
 # MicroPython release the frozen-firmware build tracks (freeze.py clones this

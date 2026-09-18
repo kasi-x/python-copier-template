@@ -146,24 +146,37 @@
                               ~ '-e MCP_ALLOWED_HOSTS=localhost,127.0.0.1 '
                               ~ '--entrypoint mcp-server-' ~ repo_name ~ ' ' ~ repo_name
                               ~ ' --transport streamable-http --host 0.0.0.0']}] %}
-{# Same one-off shape as `mcp-serve`: the bot needs LINE / Slack / Discord's
-   servers (and your credentials, passed through from the host environment),
-   so it is a `docker run` recipe, not part of `check`. The entry point and
-   the credential variables follow the selected platform — each platform's
-   Dockerfile ships only its own console script. #}
+{# Same one-off shape as `mcp-serve`: the bot needs LINE / Slack / Discord /
+   Gmail's servers (and your credentials, passed through from the host
+   environment), so it is a `docker run` recipe, not part of `check`. The
+   entry point and the credential variables follow the selected platform —
+   each platform's Dockerfile ships only its own console script. #}
 {% set bot_entry = ('bot-discord-' if bot_discord_effective
-                    else ('bot-slack-' if bot_slack_effective else 'bot-line-')) ~ repo_name %}
+                    else ('bot-slack-' if bot_slack_effective
+                          else ('bot-line-' if bot_line_effective else 'bot-gmail-'))) ~ repo_name %}
 {% set bot_token_env = ('-e DISCORD_BOT_TOKEN ' if bot_discord_effective
                         else ('-e SLACK_BOT_TOKEN -e SLACK_APP_TOKEN ' if bot_slack_effective
-                              else '-e LINE_CHANNEL_SECRET -e LINE_CHANNEL_ACCESS_TOKEN ')) %}
+                              else ('-e LINE_CHANNEL_SECRET -e LINE_CHANNEL_ACCESS_TOKEN '
+                                    if bot_line_effective
+                                    else '-e GMAIL_CREDENTIALS_JSON -e GMAIL_TOKEN_JSON '))) %}
+{# Gmail is the platform whose credentials are FILES, not strings: the poll
+   reads them in place, so only its recipe binds them into the container
+   (read-only — the token file is written by the first consent on the host,
+   refreshed in place afterwards). #}
+{% set bot_credential_mounts = ('-v ./credentials.json:/run/secrets/credentials.json:ro '
+                                '-v ./token.json:/run/secrets/token.json:ro '
+                                if bot_gmail_effective else '') %}
 {% set bot_desc = 'Build and run the Discord bot in Docker (Gateway; needs DISCORD_BOT_TOKEN)'
                   if bot_discord_effective
                   else ('Build and run the Slack bot in Docker (Socket Mode; needs SLACK_BOT_TOKEN and SLACK_APP_TOKEN)'
                         if bot_slack_effective
-                        else 'Build and run the LINE bot in Docker (webhook on :8000; needs '
-                             'LINE_CHANNEL_SECRET and LINE_CHANNEL_ACCESS_TOKEN)') %}
+                        else ('Build and run the LINE bot in Docker (webhook on :8000; needs '
+                             'LINE_CHANNEL_SECRET and LINE_CHANNEL_ACCESS_TOKEN)'
+                             if bot_line_effective
+                             else 'Build and run the Gmail bot in Docker (INBOX polling; needs '
+                                  'GMAIL_CREDENTIALS_JSON and GMAIL_TOKEN_JSON, mounted)')) %}
 {# LINE is the platform that listens: the Messaging API posts to its webhook,
-   so only its recipe publishes a port (discord and slack dial out). #}
+   so only its recipe publishes a port (discord, slack and gmail dial out). #}
 {% set bot_publish = '-p 8000:8000 ' if bot_line_effective else '' %}
 {% set bot_tasks = [{'name': 'bot-serve',
                       'desc': bot_desc,
@@ -171,6 +184,7 @@
                       'run': ['docker build -t ' ~ repo_name ~ ' . && docker run --rm '
                               ~ bot_publish
                               ~ bot_token_env
+                              ~ bot_credential_mounts
                               ~ '--entrypoint ' ~ bot_entry ~ ' ' ~ repo_name]}] %}
 {# The single declarative assembly: conditions that used to gate eight
    separate `set tasks = tasks + [...]` blocks are the inline guards here. #}

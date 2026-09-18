@@ -7,18 +7,24 @@ never render is the path a real user actually takes -- accept every "use the
 recommended ...?" default and only answer project_type + Project Details.
 Those fast paths are covered here.
 
-Rendering uses `skip_tasks=True`: copier's `_tasks` (the REUSE LICENSES/
-copy, ...) need a checkout or external tools, and the `test_example_*`
-modules already run them. This module only checks that the whole `template/`
-tree survives jinja rendering for the fast path, without paying for uv
-sync/docs.
+Rendering goes through the render cache (render_cache.py, `.cache/renders/`),
+i.e. pure renders with `skip_tasks=True`: copier's `_tasks` (the REUSE
+LICENSES/ copy, ...) need a checkout or external tools, and the
+`test_example_*` modules run them via support.copy_project's replay. This
+module only checks that the whole `template/` tree survives jinja rendering
+for the fast path, without paying for uv sync/docs.
 """
 
 import sys
 from pathlib import Path
 
 import pytest
-from copier import run_copy
+
+from render_cache import RenderCache
+
+# Imported so pytest can inject the fixture (the cache lives here, not in
+# conftest.py: the template renders that file into generated projects).
+from render_cache import render_cache as render_cache  # noqa: PLC0414
 
 TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach tools/
@@ -34,9 +40,10 @@ INVARIANTS = invariants.load()
 
 # Answers shared by every case: the required "Project Details" plus values
 # that keep generated content self-consistent (URLs, validators, ...). The one
-# literal lives in tools/answers.py so the witness tool, the batch sample and
-# the other render tests cannot drift from this module (TODO §23.1);
-# tests/test_answer_fixtures.py checks its keys against the questionnaire.
+# literal lives in tools/answers.py, so the witness tool, the batch sample and
+# the render tests import it from there and cannot drift from one another
+# (TODO §23.1); tests/test_answer_fixtures.py checks its keys against the
+# questionnaire.
 BASE = answers.BASE
 
 # One fast-path case per project_type reachable with every use_recommended_*
@@ -104,17 +111,8 @@ CONTENT: dict[str, tuple[tuple[str, str], ...]] = {
 
 
 @pytest.mark.parametrize("answers", FAST_PATHS, ids=[_id(a) for a in FAST_PATHS])
-def test_recommended_path_renders(tmp_path: Path, answers: dict[str, object]):
-    run_copy(
-        src_path=str(TOP),
-        dst_path=tmp_path,
-        data={**BASE, **answers},
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,  # REUSE-copy tasks need a checkout; jinja is what we test
-    )
+def test_recommended_path_renders(tmp_path: Path, render_cache: RenderCache, answers: dict[str, object]):
+    render_cache.render(tmp_path, {**BASE, **answers})
     key = _id(answers)
     expect, not_expect = MARKERS[key]
     for rel in expect:
@@ -131,23 +129,14 @@ def test_recommended_path_renders(tmp_path: Path, answers: dict[str, object]):
     assert leftovers == [], f"unrendered .jinja files left in {[str(p) for p in leftovers]}"
 
 
-def test_recommended_path_ships_security_hardening(tmp_path: Path):
+def test_recommended_path_ships_security_hardening(tmp_path: Path, render_cache: RenderCache):
     """The recommended path (all gates true) ships the security defaults.
 
     SECURITY.md and the zizmor security workflow are part of the
     recommended settings; the OpenSSF Scorecard workflow is opt-in
     (public-repo only), so it must NOT appear on the fast path.
     """
-    run_copy(
-        src_path=str(TOP),
-        dst_path=tmp_path,
-        data={**BASE, "project_type": "library"},
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,
-    )
+    render_cache.render(tmp_path, {**BASE, "project_type": "library"})
     assert (tmp_path / "SECURITY.md").exists(), "recommended path should ship SECURITY.md"
     assert (tmp_path / ".github" / "workflows" / "security.yml").exists(), (
         "recommended path should ship the zizmor security workflow"

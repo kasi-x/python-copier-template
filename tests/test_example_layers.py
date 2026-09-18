@@ -1,18 +1,236 @@
 """The opt-in layers stacked on a base project type: include_mcp,
 include_scraping, include_ctf, include_sentry, include_web_api /
 include_data_science combos, and the agent scaffold -- with the *_effective
-guards that keep each layer inside the base it belongs to."""
+guards that keep each layer inside the base it belongs to.
+
+The "a layer is not offered elsewhere" half is a property of the QUESTION
+SPACE, not of any render, so it is pinned once, at L1, by evaluating the real
+questionnaire over every project_type choice
+(test_effective_flags_are_not_offered_outside_their_declared_bases) -- the
+tests/test_layer_matrix.py oracle (one Worker._ask pass per answer set, the
+derived flag read out of Worker._render_context). What a flag gates on the
+ARTIFACT side is pinned render-side, on one representative leaf per flag, by
+the single-render tests below (test_template_include_mcp /
+test_template_mcp_on_web_api, test_template_include_ctf,
+test_template_include_scraping_httpx, test_template_agent_scaffold /
+test_template_agent_cli_only) and, over the whole witness leaf space, by the
+exact file-set expectations of tests/matrix/witnesses.jsonl. The former
+per-off-type render sweeps (ctf / scraping / mcp x3 / agent-scaffold placement)
+were the L2 spelling of the L1 table and are gone (TODO archive T12)."""
 
 import json
+import sys
+import tempfile
 import tomllib
+from collections.abc import Iterator
+from collections.abc import Sequence
+from dataclasses import dataclass
+from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 import pytest
 
-from support import copy_project
-from support import copy_project_capturing_stderr
-from support import copy_project_recommended
-from support import make_venv
+TOP = Path(__file__).resolve().parent.parent
+if str(TOP) not in sys.path:  # tests/test_layer_matrix.py does the same to reach tools/
+    sys.path.insert(0, str(TOP))
+
+from copier._main import Worker  # noqa: E402
+from tools import answers  # noqa: E402
+from tools import when_model  # noqa: E402
+
+from support import copy_project  # noqa: E402
+from support import copy_project_capturing_stderr  # noqa: E402
+from support import copy_project_recommended  # noqa: E402
+from support import make_venv  # noqa: E402
+
+# -- L1: the derived-layer flags, evaluated on the real questionnaire ------- #
+
+
+@dataclass(frozen=True)
+class FlagRow:
+    """One declared row of the flag truth table.
+
+    `expected` is the set of audited flags that must resolve True for these
+    answers; every other audited flag must resolve False. `answers` are the
+    overrides beyond the shared Project Details and `project_type` -- at the
+    polarity the deleted render sweeps used: the include layers forced ON (the
+    sweeps rendered with them forced to prove the guards hold) and the agent
+    gate forced OFF (its sweep declined the recommended scaffold).
+    """
+
+    project_type: str
+    expected: frozenset[str]
+    answers: dict[str, Any]
+    note: str = ""
+
+    @property
+    def where(self) -> str:
+        """The row's name in failure messages."""
+        return f"{self.project_type} {self.note}".strip()
+
+
+# The render-time guards the deleted sweeps exercised. `license_check_effective`
+# is in the table to pin that it is NOT one of them: its gate is
+# use_recommended_security / license_check (questions/_internal.yml), so it
+# resolves True on every base -- the one former sweep family (license_check)
+# that lost its "not offered elsewhere" property when the check moved behind
+# the security gate; its render side lives in tests/test_example_docs_ci.py.
+AUDITED_FLAGS: tuple[str, ...] = (
+    "ctf_effective",
+    "scraping_effective",
+    "mcp_effective",
+    "agents_md_effective",
+    "agent_scaffold",
+    "license_check_effective",
+)
+
+
+# The answers the deleted render sweeps forced, kept as the table's evaluation
+# polarity (FlagRow's): the include layers ON, the agent gate OFF -- the
+# sweeps rendered with those answers forced to prove the guards hold, so the
+# L1 evaluation must see them too, or every guard would look green while
+# reading its default-off answer.
+SWEEP_POLARITY: dict[str, Any] = {
+    "include_ctf": True,
+    "include_scraping": True,
+    "include_mcp": True,
+    "use_recommended_agent": False,
+}
+
+
+def _row(project_type: str, expected: frozenset[str], note: str = "", **answers: Any) -> FlagRow:
+    return FlagRow(
+        project_type=project_type,
+        expected=expected,
+        answers={**SWEEP_POLARITY, **answers},
+        note=note,
+    )
+
+
+# The declared truth table (TODO archive T12: "project_type x include_* ->
+# derived flag, verified over every combination"). One row per project_type
+# choice plus one per online-judge polarity the sweeps rendered; a new
+# project_type without a row fails the check, and so does any cell whose
+# resolved flag drifts from the declaration.
+FLAG_TABLE: tuple[FlagRow, ...] = (
+    _row(
+        "library",
+        frozenset({"ctf_effective", "agents_md_effective", "agent_scaffold", "license_check_effective"}),
+    ),
+    _row(
+        "cli",
+        frozenset(
+            {
+                "ctf_effective",
+                "scraping_effective",
+                "mcp_effective",
+                "agents_md_effective",
+                "agent_scaffold",
+                "license_check_effective",
+            }
+        ),
+    ),
+    _row("web_api", frozenset({"mcp_effective", "agents_md_effective", "license_check_effective"})),
+    _row("data_science", frozenset({"agents_md_effective", "license_check_effective"})),
+    _row("script", frozenset({"agents_md_effective", "license_check_effective"})),
+    _row(
+        "online_judge",
+        frozenset({"agents_md_effective", "license_check_effective"}),
+        note="(the oj defaults: kaggle always allows AI agents)",
+    ),
+    _row(
+        "online_judge",
+        frozenset({"license_check_effective"}),
+        note="(competitive_coding/atcoder, AI not allowed: no agent guide)",
+        oj_category="competitive_coding",
+        oj_kind="atcoder",
+    ),
+    _row("ros2", frozenset({"license_check_effective"})),
+    _row("micropython", frozenset({"license_check_effective"})),
+)
+
+
+@pytest.fixture(scope="module")
+def worker() -> Iterator[Worker]:
+    """One copier Worker for the L1 checks: the checkout's own questionnaire
+    (vcs_ref=HEAD), the setup tests/test_layer_matrix.py uses."""
+    with tempfile.TemporaryDirectory() as dst:
+        yield Worker(src_path=str(TOP), dst_path=Path(dst), defaults=True, quiet=True, vcs_ref="HEAD")
+
+
+def _flag_table_problems(worker: Worker, table: tuple[FlagRow, ...], choices: Sequence[str]) -> list[str]:
+    """Diff the declared table against the flags the real questionnaire resolves.
+
+    One questionnaire pass per row (Worker._ask; `worker.data` seeds the pass
+    with the shared Project Details, the row's project_type and the sweep
+    polarity, exactly as tests/test_layer_matrix.py evaluates its matrix), the
+    audited flags read from Worker._render_context(). Both are private,
+    because copier exposes no other way to run that pass.
+    """
+    problems: list[str] = []
+    covered: set[str] = set()
+    for row in table:
+        worker.data = {**answers.BASE, "project_type": row.project_type, **row.answers}
+        worker._ask()  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001  WHYNOT: the oracle is copier's own questionnaire pass, the tests/test_layer_matrix.py precedent.
+        context = worker._render_context()  # pyright: ignore[reportPrivateUsage]  # noqa: SLF001  WHYNOT: same oracle as above.
+        covered.add(row.project_type)
+        for flag in AUDITED_FLAGS:
+            resolved = context.get(flag, "<missing from the render context>")
+            if bool(resolved) != (flag in row.expected):
+                problems.append(
+                    f"{row.where}: {flag} resolved to {resolved!r}, expected {'on' if flag in row.expected else 'off'}"
+                )
+    uncovered = sorted(set(choices) - covered)
+    if uncovered:
+        problems.append(f"no FLAG_TABLE row covers project_type(s) {uncovered}: declare one")
+    return problems
+
+
+def test_effective_flags_are_not_offered_outside_their_declared_bases(worker: Worker) -> None:
+    """L1 (TODO archive T12): each derived layer flag resolves True exactly on
+    the bases that offer its question.
+
+    The deleted render sweeps (test_template_include_{ctf,scraping}_not_offered_elsewhere,
+    test_template_mcp_not_offered_to_{library,online_judge,data_science},
+    test_template_agent_not_offered_for_web_api) rendered up to five projects
+    each to observe one flag's absence; that is a property of the question
+    space, so it is evaluated here over every project_type choice -- including
+    the ros2 / micropython bases the sweeps never reached -- at the sweep
+    polarity (include layers forced on, the agent gate forced off). That the
+    flags actually gate artifacts render-side is the single-render
+    representatives' business (module docstring), and the judge-side absences
+    (challenges on kaggle / code judges, AGENTS.md on code judges) stay
+    declared in tests/matrix/invariants.yml.
+    """
+    questions, _order = when_model.load_questions()
+    choices = when_model.static_str_choices(questions["project_type"])
+    assert choices, "project_type lost its static choices: there is no base space to iterate"
+    problems = _flag_table_problems(worker, FLAG_TABLE, choices)
+    assert not problems, (
+        "the derived-layer flags drift from the declared truth table (evaluated by copier's own "
+        "questionnaire pass at the sweep polarity) -- update FLAG_TABLE or questions/_internal.yml, "
+        "whichever is wrong:\n  " + "\n  ".join(problems)
+    )
+
+
+def test_the_flag_table_check_fails_on_a_wrong_expectation(worker: Worker) -> None:
+    """Guard for the guard (the tests/test_copier_structure.py error-sweep
+    precedent): one wrong declared cell and the L1 check must name it.
+
+    The mutation is in-process, on the expectation table only -- the real
+    questions are not touched. The flipped cell is the old sweep's signature
+    failure (include_mcp leaking onto library); a checker that stayed green
+    here would be comparing nothing.
+    """
+    leaked = replace(FLAG_TABLE[0], expected=FLAG_TABLE[0].expected | {"mcp_effective"})
+    questions, _order = when_model.load_questions()
+    choices = when_model.static_str_choices(questions["project_type"])
+    problems = _flag_table_problems(worker, (leaked,), choices[:1])
+    assert problems == ["library: mcp_effective resolved to False, expected on"], problems
+
+
+# -- L2: one representative render per layer's artifact set ------------------ #
 
 
 def test_template_web_api_data_science_combo_guide(tmp_path: Path):
@@ -104,45 +322,6 @@ def test_template_mcp_runs_in_process(tmp_path: Path):
     run("uv run --locked ruff check src tests")
 
 
-def test_template_mcp_not_offered_to_library(tmp_path: Path):
-    """A plain library must not ship a server module, and forcing the answer
-    must not add an orphan mcp dep. (Adding the web_api layer opts back in:
-    see test_template_mcp_on_web_api.)"""
-    copy_project(tmp_path, project_type="library", include_mcp=True)
-    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
-    assert not (tmp_path / "src" / "python_copier_template_example" / "mcp_server.py").exists()
-    assert not (tmp_path / "tests" / "test_mcp_server.py").exists()
-
-
-def test_template_mcp_not_offered_to_online_judge(tmp_path: Path):
-    """online_judge renders no package module: forcing include_mcp must not
-    add an orphan mcp dependency or a server file."""
-    copy_project(
-        tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="atcoder", include_mcp=True
-    )
-    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
-    assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
-    assert not (tmp_path / "mcp_server.py").exists()
-    assert not (tmp_path / "tests" / "test_mcp_server.py").exists()
-
-
-def test_template_mcp_not_offered_to_data_science(tmp_path: Path):
-    """data_science / script / kaggle render no mcp_server.py variant:
-    forcing include_mcp must not add an orphan mcp dependency."""
-    cases = [
-        ("data_science", {}),
-        ("script", {}),
-        ("online_judge", {"oj_category": "data_science", "oj_kind": "kaggle"}),
-    ]
-    for index, (project_type, extra) in enumerate(cases):
-        project_path = tmp_path / f"case_{index}"
-        copy_project(project_path, project_type=project_type, include_mcp=True, **extra)
-        pyproject_toml = tomllib.loads((project_path / "pyproject.toml").read_text())
-        assert not any(d.startswith("mcp") for d in pyproject_toml["project"]["dependencies"])
-        assert not (project_path / "tests" / "test_mcp_server.py").exists()
-
-
 def test_template_mcp_on_web_api(tmp_path: Path):
     """web_api offers the MCP scaffold in app/: the server module, its
     in-process client test, the mcp dependency and the console script all
@@ -220,24 +399,6 @@ def test_template_include_ctf_runs(tmp_path: Path):
     run("uv run --locked ruff check challenges tests/test_ctf_example.py")
 
 
-def test_template_include_ctf_not_offered_elsewhere(tmp_path: Path):
-    """Forcing include_ctf outside library/cli must not leak the workspace
-    or the ctf extra (ctf_effective guard)."""
-    cases = [
-        ("web_api", {}),
-        ("data_science", {}),
-        ("script", {}),
-        ("online_judge", {"oj_category": "competitive_coding", "oj_kind": "atcoder"}),
-    ]
-    for index, (project_type, extra) in enumerate(cases):
-        project_path = tmp_path / f"case_{index}"
-        copy_project(project_path, project_type=project_type, include_ctf=True, **extra)
-        pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
-        assert "ctf" not in pyproject["project"].get("optional-dependencies", {})
-        assert not (project_path / "challenges").exists()
-        assert not (project_path / "tests" / "test_ctf_example.py").exists()
-
-
 def test_template_include_scraping_httpx(tmp_path: Path):
     """include_scraping layers the polite fetcher: CHARTER.md, fetcher.py,
     its offline test, the httpx dep, ruff banned-api and gitignore guards."""
@@ -273,26 +434,6 @@ def test_template_include_scraping_runs(tmp_path: Path):
     run = make_venv(tmp_path)
     run("uv run --locked pytest tests/test_scraping.py -q")
     run("uv run --locked ruff check src tests/test_scraping.py")
-
-
-def test_template_include_scraping_not_offered_elsewhere(tmp_path: Path):
-    """Forcing include_scraping outside cli must not leak the fetcher
-    (scraping_effective guard)."""
-    cases = [
-        ("library", {}),
-        ("web_api", {}),
-        ("data_science", {}),
-        ("script", {}),
-        ("online_judge", {"oj_category": "competitive_coding", "oj_kind": "atcoder"}),
-    ]
-    for index, (project_type, extra) in enumerate(cases):
-        project_path = tmp_path / f"case_{index}"
-        copy_project(project_path, project_type=project_type, include_scraping=True, **extra)
-        pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
-        assert not any(d.startswith("httpx") for d in pyproject["project"]["dependencies"])
-        assert not (project_path / "CHARTER.md").exists()
-        assert not list(project_path.rglob("fetcher.py"))
-        assert not (project_path / "tests" / "test_scraping.py").exists()
 
 
 def test_template_scraping_engine_choices(tmp_path: Path):
@@ -374,14 +515,6 @@ def test_template_agent_cli_only(tmp_path: Path):
     copy_project(tmp_path, project_type="cli", use_recommended_agent=False)
     assert (tmp_path / "prompts" / "agent.md").exists()
     assert (tmp_path / "src" / "python_copier_template_example" / "agent.py").exists()
-
-
-def test_template_agent_not_offered_for_web_api(tmp_path: Path):
-    # The agent gate only exists for library/cli; web_api never scaffolds it,
-    # even when the answer is forced.
-    copy_project(tmp_path, project_type="web_api", use_recommended_agent=False)
-    assert not (tmp_path / "prompts").exists()
-    assert not (tmp_path / "src" / "python_copier_template_example" / "agent.py").exists()
 
 
 def test_combo_data_science_with_web_api(tmp_path: Path):

@@ -1,0 +1,42 @@
+{# Section template for _shared/ethics-* (start as draft: documentation
+   only, never included from template/). Copy this file to the matching
+   bundle directory, fill in every field, register the row in
+   _shared/ethics/REGISTRY.yml, and keep the row and this header in
+   agreement (tests/test_ethics_registry.py checks both directions; a
+   promoted section is included only from the parents its row names in
+   `rendered_from`). #}
+{# ethics: id=<registry-id> version=<YYYY-MM-DD.rev> status=<draft|active|kind> #}
+# <Section title> — <one-line scope>
+
+> **適用条件**: <who must read this, in one paragraph. LLM entry: the first
+> five lines decide. If none of the triggers apply, ignore the rest.>
+> 規模: <国内問題 / 地域問題 / 世界問題のいずれか + 一行理由>。
+> 配布: <届ける相手。最小に。例: IoT・CLIのみ>。
+> 要約: (1) <rule> (2) <rule> (3) <rule>. 詳細は本文。
+> Triggers: `<keyword>` / `<pattern>`.
+
+## 事実
+
+<What happened, with numbers. Cite the primary source inline; do not copy
+statutes or articles verbatim — one-line summary plus link.>
+
+## 禁止パターン
+
+<What must not be generated or configured. Concrete shapes, not slogans.>
+
+## 推奨設定
+
+<Copy-pasteable configuration or code sketch with versioned defaults.>
+
+## 運用チェック
+
+<Monitoring, sunset plan, review cadence. Name the owner role.>
+
+## 制度変更ウォッチ
+
+- 変更予告: <one line + source + 確度: 報道/審議中/法案/施行済>
+- 確認TODO: 一次ソースで○○を確認 (review_by: YYYY-MM-DD)
+- 影響TODO: <cost / contract / procedure deltas>
+
+<!-- 法域・業法に触れる節は下の定型免責を残す。法的助言ではない。
+     専門家レビュー必須。 / This is not legal advice; expert review required. -->

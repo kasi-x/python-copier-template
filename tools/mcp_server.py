@@ -68,12 +68,10 @@ import hashlib
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
 import time
-import xml.etree.ElementTree as ET
 from collections import Counter
 from collections.abc import Sequence
 from pathlib import Path
@@ -94,13 +92,12 @@ from tools import adopt  # noqa: E402
 from tools import answers_for  # noqa: E402
 from tools import batch  # noqa: E402
 from tools import detect  # noqa: E402
-from tools import gen_docs  # noqa: E402
 from tools import questionnaire  # noqa: E402
+from tools import support_ledger  # noqa: E402
 from tools.render_inputs import RENDER_INPUT_DIRS  # noqa: E402
 from tools.render_inputs import RENDER_INPUT_FILES  # noqa: E402
 from tools.render_inputs import render_fingerprint  # noqa: E402
 
-GIT = batch.GIT
 OUTPUT_LIMIT = batch.OUTPUT_LIMIT
 server = MCPServer("python-copier-template")
 
@@ -243,7 +240,9 @@ def adopt_project(
 
 
 @server.tool()
-def render_project(answers: dict[str, Any], *, dest: str | None = None, prepare: bool = False) -> dict[str, Any]:
+def render_project(
+    answers: dict[str, Any], *, dest: str | None = None, prepare: bool = False, diff_against: str | None = None
+) -> dict[str, Any]:
     """Render the template with `answers` and report what it produced.
 
     `answers` are the copier answers; unset questions fall back to their
@@ -255,9 +254,28 @@ def render_project(answers: dict[str, Any], *, dest: str | None = None, prepare:
     `dest` defaults to a fresh temporary directory. `prepare=True` also runs
     the project's install command (`uv sync` / `pixi install` / `poetry
     install`, chosen from what was rendered), which needs the network on a
-    cold cache. Returns the destination path, the file count and the paths
-    (relative) so a caller can read the files it needs.
+    cold cache.
+
+    Returns the destination path, the file count, `top_level` and `files`: one
+    entry per rendered file, {path, sha256} with the digest over the file's
+    own bytes, so the payload feeds a regression check without re-reading the
+    tree.
+
+    `diff_against` optionally names a previous render's directory: the payload
+    then also carries `diff`, the manifest comparison in `render_diff`'s shape
+    with `a` the diff target and `b` this render -- `same_count` (paths on
+    both sides with equal bytes), `changed` ({path, sha256_a, sha256_b} per
+    differing path), `only_in_a` (paths only in the diff target) and
+    `only_in_b` (paths only in this render). `.copier-answers.yml` is compared
+    with copier's per-render stamps masked, like every render comparison here.
+    A `diff_against` path that is not a directory raises before anything is
+    rendered. One render plus a byte comparison; no install, no network unless
+    `prepare`.
     """
+    previous = Path(diff_against).resolve() if diff_against else None
+    if previous is not None and not previous.is_dir():
+        msg = f"diff_against is not a directory: {diff_against}"
+        raise ToolError(msg)
     work = Path(dest).resolve() if dest else Path(tempfile.mkdtemp(prefix="mcp-render-"))
     work.mkdir(parents=True, exist_ok=True)
     _render_into(answers, work)
@@ -267,12 +285,51 @@ def render_project(answers: dict[str, Any], *, dest: str | None = None, prepare:
     if failed:
         msg = f"render succeeded but prepare failed: {failed[0].detail}"
         raise ToolError(msg)
-    files = sorted(str(path.relative_to(work)) for path in work.rglob("*") if path.is_file())
-    return {
+    tree = _tree(work)
+    files = [
+        {"path": name, "sha256": hashlib.sha256(body.read_bytes()).hexdigest()} for name, body in sorted(tree.items())
+    ]
+    payload: dict[str, Any] = {
         "dest": str(work),
         "file_count": len(files),
         "files": files,
-        "top_level": sorted({name.split("/")[0] for name in files}),
+        "top_level": sorted({entry["path"].split("/")[0] for entry in files}),
+    }
+    if previous is not None:
+        payload["diff"] = _manifest_diff(previous, tree)
+    return payload
+
+
+def _manifest_diff(target: Path, tree: dict[str, Path]) -> dict[str, Any]:
+    """Manifest comparison of a previous render's directory and this render.
+
+    The `render_diff` shape narrowed to what "render again and diff against
+    the tree I already have" needs: `a` is the diff target, `b` this render,
+    files equal under `_compared` count as `same_count`, and the changed
+    entries carry both sides' digests of the compared bytes. Only paths
+    present on both sides can differ -- one-sided paths are listed as
+    `only_in_a` / `only_in_b`, never as changes.
+    """
+    tree_a = _tree(target)
+    changed: list[dict[str, Any]] = []
+    same = 0
+    for name in sorted(set(tree_a) & set(tree)):
+        body_a, body_b = _compared(tree_a[name], name), _compared(tree[name], name)
+        if body_a == body_b:
+            same += 1
+        else:
+            changed.append(
+                {
+                    "path": name,
+                    "sha256_a": hashlib.sha256(body_a).hexdigest(),
+                    "sha256_b": hashlib.sha256(body_b).hexdigest(),
+                }
+            )
+    return {
+        "same_count": same,
+        "changed": changed,
+        "only_in_a": sorted(set(tree_a) - set(tree)),
+        "only_in_b": sorted(set(tree) - set(tree_a)),
     }
 
 
@@ -305,7 +362,9 @@ def list_batch_requests(jsonl: str) -> dict[str, Any]:
 
 
 @server.tool()
-def run_batch(jsonl: str, *, only: str | None = None, prepare: bool = False, keep: bool = False) -> dict[str, Any]:
+def run_batch(
+    jsonl: str, *, only: str | None = None, prepare: bool = False, keep: bool = False, jobs: int = 1
+) -> dict[str, Any]:
     """Run a batch of generation requests and return the verdict.
 
     `jsonl` is a request list (docs/how-to/batch.md); `only` is a regular
@@ -315,7 +374,9 @@ def run_batch(jsonl: str, *, only: str | None = None, prepare: bool = False, kee
     line passed; `lines[].checks[].detail` carries the observed value for a
     failure. Renders are real (uncommitted template changes included) and
     `prepare=True` additionally installs each project (network on a cold
-    cache). `keep=True` leaves the rendered projects on disk and reports
+    cache). `jobs` renders up to that many requests concurrently in worker
+    processes (default 1: serial, in file order; rendering is not
+    thread-safe). `keep=True` leaves the rendered projects on disk and reports
     their directory.
     """
     try:
@@ -332,7 +393,7 @@ def run_batch(jsonl: str, *, only: str | None = None, prepare: bool = False, kee
 
     work = Path(tempfile.mkdtemp(prefix="mcp-batch-"))
     with batch.report_stream_only():
-        results = [batch.run_request(request, work, TOP, prepare=prepare) for request in requests]
+        results = batch.run_requests(requests, work, TOP, jobs=jobs, prepare=prepare)
     return {
         "ok": all(result.ok for result in results),
         "work": str(work) if keep else None,
@@ -369,23 +430,23 @@ DIFF_LINES = 40
 """Unified-diff lines kept per changed file (the byte comparison is not truncated)."""
 DIFF_FILE_LIMIT = 25
 """Changed files that carry a diff; beyond it the entry keeps its digests and sizes."""
-ANSWERS_FILE = ".copier-answers.yml"
-"""Where copier records the answers -- and the checkout it rendered from."""
-CHECKOUT_STAMP = re.compile(rb"^_commit:.*$", re.MULTILINE)
-"""Copier's stamp of the template revision the render came from."""
 
 
 def _compared(path: Path, name: str) -> bytes:
-    """The bytes to compare for `name`, with copier's checkout stamp normalized.
+    """The bytes to compare for `name`, with copier's per-render stamps masked.
 
-    `.copier-answers.yml` records `_commit`, and for a *dirty* template that is
-    a synthetic commit copier creates per render: its sha changes between two
-    renders of identical answers, so comparing it as-is would report every
-    comparison of a working tree as different. The stamp is reported separately
-    (`answers_commit`) instead, and every other byte is compared as it is.
+    `.copier-answers.yml` records `_commit` and `_src_path`, and for a *dirty*
+    template that commit is a synthetic one copier creates per render: its sha
+    changes between two renders of identical answers, so comparing it as-is
+    would report every comparison of a working tree as different. The stamps
+    are masked by batch.mask_render_stamps (RENDER_STAMPS is the one stamp
+    list, shared with the render twin and the rehearsal) -- the line shape
+    stays, so a diff of genuinely different answers is still readable -- and
+    the commit value is reported separately (`answers_commit`) instead. Every
+    other byte is compared as it is.
     """
     body = path.read_bytes()
-    return CHECKOUT_STAMP.sub(b"_commit: <checkout>", body) if name == ANSWERS_FILE else body
+    return batch.mask_render_stamps(body) if name == batch.ANSWERS_FILE else body
 
 
 def _checkout_stamp(path: Path) -> str | None:
@@ -470,58 +531,15 @@ def render_diff(answers_a: dict[str, Any], answers_b: dict[str, Any], *, keep: b
         "only_in_a": only_in_a,
         "only_in_b": only_in_b,
         "answers_commit": {
-            "a": _checkout_stamp(tree_a[ANSWERS_FILE]) if ANSWERS_FILE in tree_a else None,
-            "b": _checkout_stamp(tree_b[ANSWERS_FILE]) if ANSWERS_FILE in tree_b else None,
+            "a": _checkout_stamp(tree_a[batch.ANSWERS_FILE]) if batch.ANSWERS_FILE in tree_a else None,
+            "b": _checkout_stamp(tree_b[batch.ANSWERS_FILE]) if batch.ANSWERS_FILE in tree_b else None,
         },
     }
 
 
-LINT_TIMEOUT = 300
-LINT_COMMANDS: tuple[tuple[str, ...], ...] = (("format", "--check"), ("check",))
-
-
-def _ruff_bin() -> Path:
-    """This repository's ruff: the interpreter's own directory, then PATH.
-
-    The rendered project has no environment of its own -- that is the point of
-    this tool -- so the lint comes from the venv the server runs in.
-    """
-    for candidate in (Path(sys.executable).parent / "ruff", TOP / ".venv" / "bin" / "ruff"):
-        if candidate.is_file():
-            return candidate
-    found = shutil.which("ruff")
-    if found:
-        return Path(found)
-    msg = "ruff not found next to the running interpreter or on PATH"
-    raise ToolError(msg)
-
-
 def _lint_checks(dest: Path) -> list[batch.Check]:
-    """The ruff verdicts for a rendered tree, or nothing when it cannot be linted.
-
-    Only where the generated lint applies: a leaf whose render ships no Python
-    (bare workspaces) or no ``[tool.ruff]`` has nothing for it to judge, which
-    is what ``tests/test_generated_lint.py`` assumes too.
-    """
-    if not any(dest.rglob("*.py")):
-        return []
-    pyproject = dest / "pyproject.toml"
-    if not pyproject.is_file() or "[tool.ruff" not in pyproject.read_text(encoding="utf-8"):
-        return []
-    ruff = _ruff_bin()
-    checks: list[batch.Check] = []
-    for args in LINT_COMMANDS:
-        proc = subprocess.run(  # noqa: S603  WHYNOT: fixed argv, the render supplies the input.
-            [str(ruff), *args, "--no-cache", "."],
-            cwd=dest,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=LINT_TIMEOUT,
-        )
-        detail = "" if proc.returncode == 0 else (proc.stdout + proc.stderr).strip()[-OUTPUT_LIMIT:]
-        checks.append(batch.Check(name=f"ruff {' '.join(args)}", ok=proc.returncode == 0, detail=detail))
-    return checks
+    """The ruff verdicts for a rendered tree (the machinery lives in batch.ruff_checks)."""
+    return batch.ruff_checks(dest)
 
 
 @server.tool()
@@ -645,38 +663,61 @@ WITNESS_TIMEOUTS = {"fast": 900, "slow": 900, "full": 7200}
 """Per-tier wall-clock budget in seconds; the full tier builds venvs, slowest first."""
 
 
-def _junit_verdicts(report: Path) -> tuple[list[batch.LineResult], dict[str, int]]:
-    """Turn pytest's JUnit XML into one batch.LineResult per executed test."""
-    lines: list[batch.LineResult] = []
-    counts = {"passed": 0, "failed": 0, "skipped": 0}
-    # WHYNOT: the report is written by the pytest process this tool launches
-    # over a fixed argv; no XML here comes from a peer.
-    root = ET.parse(report).getroot()  # noqa: S314
-    for index, case in enumerate(root.iter("testcase")):
-        failure = case.find("failure") if case.find("failure") is not None else case.find("error")
-        skipped = case.find("skipped")
-        if failure is not None:
-            verdict, name, detail = False, "pytest", (failure.get("message") or failure.text or "").strip()
-        elif skipped is not None:
-            # A W4 `tier: none` opt-out: not a failure, and not a verified leaf.
-            verdict, name, detail = True, "skipped", (skipped.get("message") or "").strip()
-        else:
-            verdict, name, detail = True, "pytest", ""
-        counts["failed" if failure is not None else "skipped" if skipped is not None else "passed"] += 1
-        lines.append(
-            batch.LineResult(
-                id=f"{case.get('classname')}::{case.get('name')}",
-                index=index,
-                checks=[batch.Check(name=name, ok=verdict, detail=detail[-OUTPUT_LIMIT:])],
-                seconds=float(case.get("time") or 0.0),
-            )
-        )
-    return lines, counts
-
-
 def _output_tail(stdout: str, stderr: str) -> str:
     """The tail of a subprocess' output: enough to see why it did not run."""
     return (stdout + stderr).strip()[-OUTPUT_LIMIT:]
+
+
+def _run_pytest_tier(
+    tier: str, expression: str | None, tests: Path | None, *, only: str | None, timeout: int
+) -> dict[str, Any]:
+    """Run one pytest selection in a subprocess and return the structured verdict.
+
+    The one body behind run_witness and run_tests (TODO.md §28.3 3e -- the two
+    tools were ~60 duplicated lines each): `expression` is the ``-m`` marker
+    selection (None omits it), `tests` an optional file to run, `only` the
+    ``-k`` narrowing. The verdict machinery (junit -> LineResult) is
+    batch.junit_verdicts.
+    """
+    report = Path(tempfile.mkdtemp(prefix="mcp-pytest-")) / "report.xml"
+    command = [sys.executable, "-m", "pytest", "-q", "--junit-xml", str(report)]
+    if expression:
+        command += ["-m", expression]
+    if only:
+        command += ["-k", only]
+    if tests is not None:
+        command.append(str(tests))
+    started = time.monotonic()
+    try:
+        proc = subprocess.run(  # noqa: S603  WHYNOT: fixed argv; `only` is passed to pytest, not a shell.
+            command, cwd=TOP, capture_output=True, text=True, check=False, timeout=timeout
+        )
+    except subprocess.TimeoutExpired:
+        msg = f"the {tier} tier did not finish within {timeout}s"
+        raise ToolError(msg) from None
+    seconds = round(time.monotonic() - started, 3)
+    if not report.is_file():
+        return {
+            "ok": False,
+            "tier": tier,
+            "only": only,
+            "command": command,
+            "seconds": seconds,
+            "counts": {"passed": 0, "failed": 0, "skipped": 0},
+            "output": _output_tail(proc.stdout, proc.stderr),
+            "lines": [],
+        }
+    lines, counts = batch.junit_verdicts(report)
+    return {
+        "ok": proc.returncode == 0,
+        "tier": tier,
+        "only": only,
+        "command": command,
+        "seconds": seconds,
+        "counts": counts,
+        "output": "" if proc.returncode == 0 else _output_tail(proc.stdout, proc.stderr),
+        "lines": [line.as_dict() for line in lines],
+    }
 
 
 @server.tool()
@@ -705,42 +746,7 @@ def run_witness(
         msg = f"unknown tier {tier!r}; expected one of {', '.join(sorted(WITNESS_MARKERS))}"
         raise ToolError(msg)
     limit = timeout or WITNESS_TIMEOUTS[tier]
-    report = Path(tempfile.mkdtemp(prefix="mcp-witness-")) / "report.xml"
-    command = [sys.executable, "-m", "pytest", "-q", "--junit-xml", str(report), "-m", WITNESS_MARKERS[tier]]
-    if only:
-        command += ["-k", only]
-    command.append(str(WITNESS_TESTS))
-    started = time.monotonic()
-    try:
-        proc = subprocess.run(  # noqa: S603  WHYNOT: fixed argv; `only` is passed to pytest, not a shell.
-            command, cwd=TOP, capture_output=True, text=True, check=False, timeout=limit
-        )
-    except subprocess.TimeoutExpired:
-        msg = f"the {tier} tier did not finish within {limit}s"
-        raise ToolError(msg) from None
-    seconds = round(time.monotonic() - started, 3)
-    if not report.is_file():
-        return {
-            "ok": False,
-            "tier": tier,
-            "only": only,
-            "command": command,
-            "seconds": seconds,
-            "counts": {"passed": 0, "failed": 0, "skipped": 0},
-            "output": _output_tail(proc.stdout, proc.stderr),
-            "lines": [],
-        }
-    lines, counts = _junit_verdicts(report)
-    return {
-        "ok": proc.returncode == 0,
-        "tier": tier,
-        "only": only,
-        "command": command,
-        "seconds": seconds,
-        "counts": counts,
-        "output": "" if proc.returncode == 0 else _output_tail(proc.stdout, proc.stderr),
-        "lines": [line.as_dict() for line in lines],
-    }
+    return _run_pytest_tier(tier, WITNESS_MARKERS[tier], WITNESS_TESTS, only=only, timeout=limit)
 
 
 # The suite tiers a caller can ask for, and the ledger row each one is. The
@@ -787,45 +793,9 @@ def run_tests(
     except (OSError, KeyError, json.JSONDecodeError) as exc:
         msg = f"cannot read the tier ledger {TIER_LEDGER}: {exc}"
         raise ToolError(msg) from exc
-    expression = str(rows.get(task, {}).get("expression", ""))
+    expression = str(rows.get(task, {}).get("expression", "")) or None
     limit = timeout or TIER_TIMEOUTS[tier]
-    report = Path(tempfile.mkdtemp(prefix="mcp-tests-")) / "report.xml"
-    command = [sys.executable, "-m", "pytest", "-q", "--junit-xml", str(report)]
-    if expression:
-        command += ["-m", expression]
-    if only:
-        command += ["-k", only]
-    started = time.monotonic()
-    try:
-        proc = subprocess.run(  # noqa: S603  WHYNOT: fixed argv; `only` is passed to pytest, not a shell.
-            command, cwd=TOP, capture_output=True, text=True, check=False, timeout=limit
-        )
-    except subprocess.TimeoutExpired:
-        msg = f"the {tier} tier did not finish within {limit}s"
-        raise ToolError(msg) from None
-    seconds = round(time.monotonic() - started, 3)
-    if not report.is_file():
-        return {
-            "ok": False,
-            "tier": tier,
-            "only": only,
-            "command": command,
-            "seconds": seconds,
-            "counts": {"passed": 0, "failed": 0, "skipped": 0},
-            "output": _output_tail(proc.stdout, proc.stderr),
-            "lines": [],
-        }
-    lines, counts = _junit_verdicts(report)
-    return {
-        "ok": proc.returncode == 0,
-        "tier": tier,
-        "only": only,
-        "command": command,
-        "seconds": seconds,
-        "counts": counts,
-        "output": "" if proc.returncode == 0 else _output_tail(proc.stdout, proc.stderr),
-        "lines": [line.as_dict() for line in lines],
-    }
+    return _run_pytest_tier(tier, expression, None, only=only, timeout=limit)
 
 
 # --------------------------------------------------------------------------- #
@@ -887,11 +857,11 @@ def support_resource() -> str:
 
     What the project promises to have executed, per combination and per leaf
     class, each entry carrying the measured `why`. Read through
-    tools/gen_docs.py's loader -- the same one the generated docs blocks and
-    tests/test_support_matrix.py use -- so a caller sees the live declaration
-    rather than a second reading of the file.
+    tools/support_ledger.py -- the one reader of the file, shared with the
+    generated docs blocks and tests/test_support_matrix.py -- so a caller sees
+    the live declaration rather than a second reading of it.
     """
-    return json.dumps(gen_docs.load_support(gen_docs.SUPPORT_YML), indent=2, sort_keys=True)
+    return json.dumps(support_ledger.load_support(), indent=2, sort_keys=True)
 
 
 @server.custom_route("/health", methods=["GET"])

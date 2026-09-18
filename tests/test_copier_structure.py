@@ -427,18 +427,22 @@ def test_layout_exclusion_lists_stay_deliberately_different():
     questions, _ = when_model.load_questions()
 
     layout_excluded = _project_type_exclusions(questions["layout"]["when"])
-    assert layout_excluded == {"data_science", "online_judge", "ros2", "micropython", "web_api"}, (
+    assert layout_excluded == {"data_science", "online_judge", "ros2", "micropython", "web_api", "script"}, (
         "layout.when excludes the types that take no layout choice at all: data_science "
         "(its fixed analysis tree) and web_api (always top-level app/) never ask, and "
-        "online_judge / ros2 / micropython have no package layout to choose"
+        "online_judge / ros2 / micropython have no package layout to choose; script joins "
+        "because a src/ tree is meaningless without a package — use_src_layout would "
+        "silently discard the answer, and the silent-discard rule says don't ask"
     )
 
     src_default = questions["use_src_layout"]["default"]
     src_excluded = _project_type_exclusions(src_default)
     assert src_excluded == {"script", "online_judge", "ros2", "micropython"}, (
-        "use_src_layout's internal default is NOT layout.when's list: script is additionally "
-        "excluded (the question is asked there, but a src/ tree is meaningless without a "
-        "package) and oj_ctf is re-admitted below"
+        "use_src_layout's internal default is NOT layout.when's list: the script exclusion "
+        "stays here as the forced-answer guard (layout.when no longer asks the question "
+        "there, but copier applies a data-file answer even to a question whose `when` is "
+        "false, so a forced layout=src on a script project must still not produce a src/ "
+        "tree) and oj_ctf is re-admitted below"
     )
     assert "oj_ctf or" in src_default, (
         "oj_ctf must be re-admitted: a CTF workspace is a real src-layout package even "
@@ -456,10 +460,12 @@ def test_layout_exclusion_lists_stay_deliberately_different():
         "layout, so neither of the other two lists fits"
     )
 
-    # And the differences the messages above claim are the actual set
-    # differences — collapse the lists and these stop holding.
+    # And the inclusions the messages above claim: src's list is contained in
+    # layout's (script is excluded by both, in different roles), while layout
+    # still excludes two types use_src_layout handles by its own clauses —
+    # collapse the lists and these stop holding.
     assert layout_excluded - src_excluded == {"data_science", "web_api"}
-    assert src_excluded - layout_excluded == {"script"}
+    assert not src_excluded - layout_excluded
     assert log_excluded not in (layout_excluded, src_excluded)
 
 

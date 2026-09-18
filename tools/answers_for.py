@@ -44,9 +44,10 @@ general proof), and where an internal ships a name-gated artifact
 must agree. The render is the proof the answers are real.
 
 The render contexts are cached under `.cache/answers-for/`, keyed by
-copier.yml + questions/*.yml + witnesses.jsonl -- the same inputs
-tools/render_delta.py keys its context hashes by -- so a template body edit
-never re-runs the pass; only a questionnaire or leaf-list change does.
+tools/render_inputs.py's `context_fingerprint` (copier.yml + questions/*.yml +
+witnesses.jsonl, scheme-tagged) -- the same key tools/render_delta.py names its
+context hashes by -- so a template body edit never re-runs the pass; only a
+questionnaire or leaf-list change does.
 
 Usage:
 
@@ -63,7 +64,6 @@ from __future__ import annotations
 
 import argparse
 import difflib
-import hashlib
 import json
 import re
 import shutil
@@ -83,6 +83,7 @@ if str(TOP) not in sys.path:  # tools/ is no root package (pyproject.toml)
 from tools import batch  # noqa: E402
 from tools import invariants  # noqa: E402
 from tools import predicates  # noqa: E402
+from tools.render_inputs import context_fingerprint  # noqa: E402
 
 #: Where the render contexts are cached (see the module docstring for the key).
 CACHE = TOP / ".cache" / "answers-for"
@@ -130,7 +131,12 @@ class Constraint:
 
 @dataclass(frozen=True)
 class _Recorded:
-    """A rendered project's recorded answers, shaped like a leaf for the oracle pass."""
+    """A rendered project's recorded answers, shaped like a leaf for the oracle pass.
+
+    Structurally a ``predicates.LeafLike`` (the oracle's own contract): a
+    recorded render is not a questionnaire leaf, but the pass neither knows
+    nor cares -- `id` and `answers` are all it reads.
+    """
 
     id: str
     answers: dict[str, Any]
@@ -217,20 +223,12 @@ def load_witnesses(root: Path = TOP) -> list[batch.Request]:
 def context_key(root: Path) -> str:
     """The cache key: the questionnaire and the leaf list, and nothing else.
 
-    Kept in lockstep with tools/render_delta.py's context-hash key (same
-    inputs, same reason): contexts are a function of copier.yml, questions/
-    and the witnesses' answers, so a template body edit must not retrigger
-    the pass.
+    `tools/render_inputs.py`'s `context_fingerprint` is the one implementation
+    (scheme-tagged), shared with tools/render_delta.py's context-hash key:
+    contexts are a function of copier.yml, questions/ and the witnesses'
+    answers, so a template body edit must not retrigger the pass.
     """
-    parts = [root / "copier.yml", root / "tests" / "matrix" / "witnesses.jsonl"]
-    parts += sorted((root / "questions").glob("*.yml"))
-    digest = hashlib.sha256()
-    for path in parts:
-        digest.update(path.name.encode())
-        digest.update(b"\0")
-        digest.update(path.read_bytes())
-        digest.update(b"\0")
-    return digest.hexdigest()
+    return context_fingerprint(root)
 
 
 def load_contexts(root: Path = TOP) -> dict[str, dict[str, Any]]:

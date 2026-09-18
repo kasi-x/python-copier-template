@@ -1,3 +1,13 @@
+{#- Unconditional by design, and not only a container-publish recipe:
+    .devcontainer/devcontainer.json builds this file's `developer` target for
+    every project type except ros2 (micropython included: its dev container
+    still hosts the CPython dev toolchain -- pyproject, uv.lock, the core
+    test). The build/runtime stages below render only when the docker answer
+    is on; that question is never asked for micropython, so a micropython
+    render ships the developer stage alone. On ros2 the dev container builds
+    Dockerfile.ros2 instead, and this file remains the publish image the
+    README's Docker section documents (the two Dockerfiles coexist by
+    design). -#}
 # The devcontainer should use the developer target and run as root with podman
 # or docker with user namespaces.
 FROM ghcr.io/diamondlightsource/ubuntu-devcontainer:resolute AS developer
@@ -123,4 +133,17 @@ EXPOSE 8000{% endif %}{% if bot_discord_effective %}
 #     -e LINE_CHANNEL_SECRET -e LINE_CHANNEL_ACCESS_TOKEN \
 #     --entrypoint bot-line-{{ repo_name }} {{ repo_name }}
 # Point the channel's webhook URL at https://<your host>/callback.
-EXPOSE 8000{% endif %}{% endif %}{% endif %}
+EXPOSE 8000{% endif %}{% if bot_gmail_effective %}
+# The image also ships the Gmail bot console script. It polls the Gmail API
+# (an outbound call, like Discord's Gateway), so this container listens on no
+# port (nothing to EXPOSE) and runs with both credential paths from the
+# environment; bot_gmail.py refuses to start without either. The credentials
+# are FILES, so they are mounted read-only into the paths the variables name:
+#   docker run --rm \
+#     -e GMAIL_CREDENTIALS_JSON=/run/secrets/credentials.json \
+#     -e GMAIL_TOKEN_JSON=/run/secrets/token.json \
+#     -v ./credentials.json:/run/secrets/credentials.json:ro \
+#     -v ./token.json:/run/secrets/token.json:ro \
+#     --entrypoint bot-gmail-{{ repo_name }} {{ repo_name }}
+# The token file is written only by the very first consent — consent once on
+# the host, then mount both files read-only as above.{% endif %}{% endif %}{% endif %}

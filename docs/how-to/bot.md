@@ -1,4 +1,4 @@
-# Chat bot layer (Discord / Slack / LINE)
+# Chat bot layer (Discord / Slack / LINE / Gmail)
 
 The template can layer a **long-running chat bot** onto a `cli` or `web_api`
 project. It is the second implementation of the
@@ -10,13 +10,14 @@ never a new project type.
 Answering **Yes** to `include_bot` (asked for the `cli` / `web_api` bases)
 generates the **discord** scaffold, the recommended platform. Answer **No**
 to `use_recommended_bot` to pick from `bot_platform`, whose other choices are
-**slack** and **line**:
+**slack**, **line** and **gmail**:
 
 | `bot_platform` | Module | Runtime dependency | Credentials |
 |---|---|---|---|
 | `discord` (recommended) | `bot_discord.py` | `discord.py>=2,<3` | `DISCORD_BOT_TOKEN` |
 | `slack` | `bot_slack.py` | `slack-bolt>=1.21,<2` | `SLACK_BOT_TOKEN` + `SLACK_APP_TOKEN` |
 | `line` | `bot_line.py` | `line-bot-sdk>=3,<4` + `fastapi` / `uvicorn[standard]` | `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN` |
+| `gmail` | `bot_gmail.py` | `google-api-python-client` + `google-auth` + `google-auth-oauthlib` | `GMAIL_CREDENTIALS_JSON` + `GMAIL_TOKEN_JSON` (paths to the two OAuth JSON files) |
 
 Whichever platform is selected, the layer ships:
 
@@ -36,11 +37,12 @@ Whichever platform is selected, the layer ships:
   passed through from the host environment. The task follows the selected
   platform: one entry point, one token set.
 
-Two of the three generated platforms reach their service over an **outbound**
-connection, so neither needs a public endpoint: Discord over the Gateway,
-Slack over Socket Mode. That is the property the MCP stdio transport has too,
-and the reason those two work on a laptop and behind NAT. LINE is the
-exception — the Messaging API can only push, so its bot serves a webhook.
+Three of the four generated platforms reach their service over an
+**outbound** connection, so none needs a public endpoint: Discord over the
+Gateway, Slack over Socket Mode, Gmail by polling the INBOX. That is the
+property the MCP stdio transport has too, and the reason those three work on
+a laptop and behind NAT. LINE is the exception — the Messaging API can only
+push, so its bot serves a webhook.
 
 ## Discord
 
@@ -205,15 +207,68 @@ client, no network. (The transport is httpx's rather than starlette's
 project sets `filterwarnings = error`, and starlette 1.x deprecates httpx
 inside `TestClient`.)
 
+## Gmail
+
+### Getting the two Gmail credential files
+
+Gmail splits the credential like Slack and LINE do, but into **files**
+instead of environment strings: the OAuth *client* identifies the
+application, and the granted *token* is the inbox itself. The scaffold
+refuses to start without either path in the environment and names the
+missing one.
+
+1. In Google Cloud Console (<https://console.cloud.google.com/>), create a
+   project and enable the **Gmail API** (APIs & Services → Library). While
+   the app is unpublished, add your own account as a **test user** on the
+   OAuth consent screen.
+2. **APIs & Services → Credentials → Create credentials → OAuth client ID →
+   Desktop app**, download the JSON, and keep it as `credentials.json` (the
+   repo root is the convention; both names are git-ignored). That path is
+   `GMAIL_CREDENTIALS_JSON`.
+3. Copy `.env.example` to `.env` and set `GMAIL_TOKEN_JSON=token.json` — the
+   file does not exist yet; the first run writes it. Never commit either
+   file: the token IS the inbox. The generated `.gitignore` covers both the
+   way it covers CTF `flag*` files.
+4. Scope: the scaffold asks for `gmail.modify` only — read, send and label
+   edit, everything the poll needs, nothing more.
+
+### Run it
+
+```sh
+uv run bot-gmail-<name>
+```
+
+The first run opens a browser once for consent and writes `token.json`;
+every later run refreshes the stored grant, so nothing sits between `uv
+run` and the mailbox. The bot then polls every `GMAIL_POLL_SECONDS`
+(default 60): each unread INBOX message whose subject contains `/ping`
+gets a `pong` reply on its own thread and is marked read — which is what
+makes the poll answer each ping exactly once. Mail that never says `/ping`
+is left unread: the bot never hides a human's mail. Logging goes through
+the generated `logging_setup`, so `LOG_FORMAT=json` gives the poll loop
+the same structured logs as the CLI. With Docker: `task bot-serve` /
+`just bot-serve` (the credential files are mounted read-only into the
+container; consent once on the host first).
+
+Why polling and not Pub/Sub push? Push would need a public HTTPS endpoint
+to receive at — infrastructure to host and verify. Polling is an outbound
+call, the same self-contained property the other dial-out platforms have,
+at the cost of the interval's latency instead of push immediacy.
+
+`poll_once()` takes the API client as a parameter, the seam the tests
+fake: `tests/test_bot_gmail.py` hands it a recording stand-in for the
+discovery client and asserts the exact call set — `list`, `get`, `send`,
+`modify` — decoding the RFC 2822 reply bytes right in the test.
+`build_service()` is split from `main()` like every platform's
+`build_*()`; the OAuth dance is the only part that cannot run offline,
+and it is the only part the tests skip.
+
 ## Non-goals
 
 The generated bots are working starting points, not frameworks: no moderation
 tooling, no databases/persistence, no scheduled tasks, no voice, no i18n, no
 command catalogue. Platform-specific operational concerns (rate-limit handling
 and reconnection backoff are discord.py's / Bolt's / line-bot-sdk's own, on by
-default) are not re-implemented. Add the web_api layer (or any other) on top
-by answering the same gates.
-
-Gmail (`google-api-python-client` + OAuth) is a **planned platform, not
-offered yet**: it will join `bot_platform` as a new choice with its own shared
-body — no new project type, no new question axis.
+default; the Gmail poller simply retries on the next tick) are not
+re-implemented. Add the web_api layer (or any other) on top by answering the
+same gates.

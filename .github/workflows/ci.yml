@@ -91,7 +91,7 @@ jobs:
     uses: ./.github/workflows/_hygiene.yml
 
   test:
-    # PR/push: the fast tier (`-m "not heavy and not slow and not meta"`) -- no venv builds.
+    # PR/push: the fast tier (`-m "not heavy and not slow and not meta and not network"`) -- no venv builds.
     # Docs-only PRs skip this job (see `changes`): the tier re-renders the
     # template, which a markdown change cannot affect.
     if: github.event_name != 'schedule' && needs.changes.outputs.docs-only != 'true'

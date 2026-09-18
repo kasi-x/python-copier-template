@@ -63,16 +63,18 @@ packages = ["tools"]
 addopts = """
     --tb=native -vv -n auto -p no:randomly
     """
-# Cost tiers. `-m "not heavy and not slow and not meta"` is the edit loop
-# (`task test-fast`, budget 30s: anything slower than that belongs to a marker
-# below or is a regression); `slow` is the serial witness batch runner
-# (`task test-slow`); `heavy` builds venvs and `network` says the run needs the
-# wire (`task test-heavy`, pre-push and nightly); `meta` is the cost ledger's
-# own guard (`task test-meta`, its own CI job: it re-collects every tier in its
-# own pytest sessions, which is what the edit loop cannot afford). fast/full
-# are the witness render tiers from .github/workflows/witness.yml. The
-# collected sets and measured costs of the task tiers and of the PR witness
-# tier live in tests/matrix/tiers.json, checked by tests/test_marker_drift.py.
+# Cost tiers. `-m "not heavy and not slow and not meta and not network"` is the
+# edit loop (`task test-fast`, budget 30s: anything slower than that belongs to
+# a marker below or is a regression -- the budget is mechanically enforced by
+# tests/test_marker_drift.py against the ledger row's budget_seconds); `slow`
+# is the serial witness batch runner (`task test-slow`); `heavy` builds venvs
+# and `network` says the run needs the wire (`task test-heavy`, pre-push and
+# nightly); `meta` is the cost ledger's own guard (`task test-meta`, its own
+# CI job: it re-collects every tier in its own pytest sessions, which is what
+# the edit loop cannot afford). fast/full are the witness render tiers from
+# .github/workflows/witness.yml. The collected sets and measured costs of the
+# task tiers and of the PR witness tier live in tests/matrix/tiers.json,
+# checked by tests/test_marker_drift.py.
 markers = [
     "heavy: builds a virtualenv (uv sync), i.e. installs dependencies",
     "network: touches the network (uv sync, uvx downloads, remote clones)",
@@ -314,8 +316,11 @@ max-string-length = 20
 ignore-fully-untyped = true
 
 [tool.typos.default]
-extend-ignore-words-re = ['\b[A-Z]{3}\b']
-extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
+# The ethics baseline files carry trigger-regex stems (`certificat`,
+# `advertis` -- deliberate word-stem matches) and proper nouns (`certifi`
+# the package, `HashiCorp`) that the spellchecker must not correct.
+extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis']
 
 [tool.typos.files]
 # template/ は生成コード。生成先プロジェクト側でチェックされる。
@@ -325,7 +330,9 @@ extend-exclude = ["template", "docs", "tools/licenses", "*.po", "src/3rdParty", 
 paths = ["tests", "tools"]
 min_confidence = 60
 # pytestmark is read by pytest's module reflection, which vulture cannot see.
-ignore_names = ["pytestmark"]
+# dst_path / quiet are copier Worker attributes tests/support.py rebinds per
+# replay call; copier itself reads them.
+ignore_names = ["pytestmark", "dst_path", "quiet"]
 # Entry points whose callers vulture cannot see: the MCP tools in
 # tools/mcp_server.py are invoked by MCP hosts (same idea as @app.route),
 # HTTP routes are registered by their decorator, and pytest discovers

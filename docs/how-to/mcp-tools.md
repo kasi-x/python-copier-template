@@ -50,7 +50,7 @@ witness tiers run into minutes.
 | `list_witnesses` | the 228 Z3 witness leaves with the tier and result the ledger records | filesystem |
 | `template_fingerprint` | sha256 of the render inputs: what a render is a function of | hashes ~0.8 MB (~5 ms) |
 | `inspect_project` | what a target already has, which mode fits it, which files would be overwritten | filesystem |
-| `render_project` | render a set of answers, and report the files it produced | one render; `prepare=True` adds an install (network on a cold cache) |
+| `render_project` | render a set of answers, and report the files it produced (`{path, sha256}` per file; `diff_against` a previous render for a manifest diff) | one render; `prepare=True` adds an install (network on a cold cache) |
 | `render_diff` | two answer sets rendered and compared file by file | two renders, no install |
 | `lint_render` | render, then `ruff format --check` + `ruff check` under the generated config | one render + two ruff runs, no venv |
 | `run_batch` | a batch file's verdict (`tools/batch.py` semantics, structured) | one render per line; `prepare=True` adds installs |

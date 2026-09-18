@@ -1,4 +1,10 @@
 on:
+  # workflow_call only, by design: both callers (root ci.yml and a generated
+  # project's ci.yml) gate the `release` job on `github.ref_type == 'tag'`,
+  # and the job consumes the artifacts uploaded by the `dist`/`docs` jobs of
+  # the same run -- a manual dispatch would find no artifacts and fail, so
+  # there is deliberately no workflow_dispatch here. The only execution path
+  # is pushing a release tag.
   workflow_call:
 
 permissions:

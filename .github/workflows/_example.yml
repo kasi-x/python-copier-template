@@ -3,6 +3,12 @@ on:
     secrets:
       EXAMPLE_DEPLOY_KEY:
         required: true
+  # Manual run = the same regenerate + publish the ci.yml call performs on
+  # every push to main; dispatching re-publishes the example repo on demand
+  # (still requires the EXAMPLE_DEPLOY_KEY secret, which a direct dispatch
+  # resolves from the repo's secret store -- `secrets:` is only declarable
+  # under workflow_call, not here).
+  workflow_dispatch: {}
 
 permissions:
   contents: read

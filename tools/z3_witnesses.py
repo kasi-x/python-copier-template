@@ -24,8 +24,9 @@ are encoded as Z3 constraints:
   questionnaire. Those `when` conditions are *projected* onto the leaf space
   below (the derived `has_data_science` / `has_web_api` / `kaggle` /
   `combinable` internals from questions/_internal.yml are inlined there).
-  copier.yml stays the source of truth: every question is loaded with
-  copier's own loader, a gate/include with no projection is an error, and
+  copier.yml stays the source of truth: every question is loaded through
+  the one parser (tools/questionnaire.py, via when_model.load_questions), a
+  gate/include with no projection is an error, and
   each projected branch a leaf takes is cross-checked against the shared
   encoder (tools/when_model.py `when_expr_satisfiable`; its grammar and its
   blind spots are documented there, and tests/test_when_model.py is the

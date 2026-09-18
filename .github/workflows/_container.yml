@@ -8,6 +8,16 @@ on:
         type: string
         description: Command to run in the image to prove it starts (e.g. "--version")
         default: "--version"
+  # Manual run = build + smoke-test only: `publish` stays false and the push
+  # step additionally requires a tag ref, so dispatching can never touch the
+  # registry. This is the on-demand path for the build that the ci.yml call
+  # otherwise runs only on push/PR/tag of a generated (docker) project.
+  workflow_dispatch:
+    inputs:
+      smoke-command:
+        type: string
+        description: Command to run in the image to prove it starts (e.g. "--version")
+        default: "--version"
 
 permissions:
   contents: read

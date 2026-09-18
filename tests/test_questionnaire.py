@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from copier._template import load_template_config
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
@@ -141,6 +142,24 @@ def test_real_questionnaire_reads_in_ask_order():
     assert any(q.name == "use_recommended_toolchain" and not q.internal for q in questions)
     internal = {q.name for q in questions if q.internal}
     assert {"micropython_pkg", "online_judge", "kaggle"} <= internal, "derived variables stay out of the asked set"
+
+
+def test_raw_view_agrees_with_copiers_loader():
+    """The parser and copier's own loader resolve the same questions in the same order.
+
+    tools/questionnaire.py is the one parser (tools/when_model.load_questions
+    delegates to its raw view), and copier's `load_template_config` is kept
+    only as the differential oracle -- including here. A resolver drift (an
+    `!include` one of the two sees differently, an order or value mismatch)
+    would split the tool surface in two again, so it fails in this one place:
+    the raw view ({non-underscore, dict-valued} entries) must equal copier's
+    resolved config, order included.
+    """
+    raw, order = questionnaire.load_raw_questions()
+    resolved = load_template_config(TOP / "copier.yml")
+    copier_questions = {k: v for k, v in resolved.items() if not k.startswith("_") and isinstance(v, dict)}
+    assert order == list(copier_questions), "ask order diverged from copier's own loader"
+    assert raw == copier_questions, "question details diverged from copier's own loader"
 
 
 def test_main_prints_names_and_filters_internal(capsys: pytest.CaptureFixture[str]):

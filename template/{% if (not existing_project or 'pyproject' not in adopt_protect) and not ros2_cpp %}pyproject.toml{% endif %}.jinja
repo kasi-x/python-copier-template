@@ -25,12 +25,13 @@ classifiers = [
 {% else %}dynamic = [ "version" ]
 {% endif %}
 {# The runtime `dependencies` one-liner is shared (see _shared/pyproject-deps.toml.jinja). #}{% include "_shared/pyproject-deps.toml.jinja" %}
-{% if git_platform == 'gitlab.com' %}urls.Homepage{% else %}urls.GitHub{% endif %} = "{{ repo_url }}"
+{% if is_gitlab %}urls.Homepage{% else %}urls.GitHub{% endif %} = "{{ repo_url }}"
 {% if not web_api and not online_judge and not ros2_pkg and not micropython_pkg %}scripts.{{ repo_name }} = "{{ package_name }}.__main__:main"
 {% endif %}{% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ import_pkg }}.mcp_server:main"
 {% endif %}{% if bot_discord_effective %}scripts.bot-discord-{{ repo_name }} = "{{ import_pkg }}.bot_discord:main"
 {% endif %}{% if bot_slack_effective %}scripts.bot-slack-{{ repo_name }} = "{{ import_pkg }}.bot_slack:main"
 {% endif %}{% if bot_line_effective %}scripts.bot-line-{{ repo_name }} = "{{ import_pkg }}.bot_line:main"
+{% endif %}{% if bot_gmail_effective %}scripts.bot-gmail-{{ repo_name }} = "{{ import_pkg }}.bot_gmail:main"
 {% endif %}
 {# The MicroPython firmware is not a pip-installable Python package: it is
    deployed to the device with mpremote. The [project] table above exists so
@@ -57,13 +58,13 @@ dev = [
     {% endif %}"ruff",{% if mcp_effective or web_api or bot_discord_effective or bot_line_effective %}
     "anyio",{% endif %}{% if web_api %}
     "aiosqlite>=0.20,<1",
-    "httpx>=0.27,<1",{% endif %}{% if bot_line_effective and not web_api %}
+    "httpx>=0.27,<1",{% endif %}{% if bot_line_effective and pkg_scaffold %}
     "httpx>=0.27,<1",{% endif %}
     {% if rec %}{% if sphinx %}{{ sphinx_docs_deps }}{% endif %}    {% endif %}{% if not rec %}{% if micropython_pkg %}{{ mpremote_deps }}{% endif %}{% if zensical %}{{ zensical_deps }}{% endif %}{% if sphinx %}{{ sphinx_theme_deps }}{{ sphinx_docs_deps }}{% endif %}{% endif %}{% if great_docs %}"great-docs",
-    {% endif %}{% if rec %}    {% endif %}{% if data_science or kaggle %}"ipykernel",
+    {% endif %}{% if rec %}    {% endif %}{% if ds_stack %}"ipykernel",
     "nbclient",
     "nbstripout",
-    {% endif %}{% if data_science or kaggle %}"pandas",
+    {% endif %}{% if ds_stack %}"pandas",
     "tomli",
     "quartodoc",
     {% endif %}{% if task_runner_effective == 'poe' %}"poethepoet",
@@ -86,7 +87,7 @@ dev = [
 ]
 
 {% if data_science or kaggle or ctf_effective %}[project.optional-dependencies]
-{% endif %}{% if data_science or kaggle %}experiment = [
+{% endif %}{% if ds_stack %}experiment = [
     # 実験・探索・デバッグ用の依存 (marimo / 可視化 / LLM API)。
     # uv: `uv sync --extra experiment` で追加インストール。
     # pixi: `[tool.pixi.feature.experiment]` として分離。
@@ -119,9 +120,9 @@ platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 [tool.pixi.environments]
 default = { solve-group = "default" }
 dev = { features = ["dev"], solve-group = "default" }
-{% if data_science or kaggle %}experiment = { features = ["experiment"], solve-group = "default" }
+{% if ds_stack %}experiment = { features = ["experiment"], solve-group = "default" }
 {% endif %}
-{% if data_science or kaggle %}[tool.pixi.feature.experiment.pypi-dependencies]
+{% if ds_stack %}[tool.pixi.feature.experiment.pypi-dependencies]
 httpx = ">=0.27,<1"
 ipykernel = "*"
 marimo = "*"
@@ -165,7 +166,7 @@ packages = []
 # flat-layout auto-discovery.
 [tool.setuptools]
 packages = ["app"]
-{% elif not micropython_pkg and not online_judge and not use_src_layout and not use_recommended_agent and project_type in ['library', 'cli'] %}# Flat layout + agent scaffold: prompts/ at the repo root would otherwise be
+{% elif not micropython_pkg and not online_judge and not use_src_layout and agent_scaffold %}# Flat layout + agent scaffold: prompts/ at the repo root would otherwise be
 # picked up by setuptools' automatic flat-layout discovery, so list the real
 # packages explicitly.
 [tool.setuptools]

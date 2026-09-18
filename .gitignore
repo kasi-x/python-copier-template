@@ -162,3 +162,9 @@ challenges/**/flag*
 # conditional scraping branch — generated non-scraping projects don't get these)
 .cache/fetcher/
 .cache/ms-playwright/
+
+# Gmail OAuth grant (union of the conditional gmail branch — generated non-bot
+# projects don't get these): never commit the inbox — the credentials file
+# downloaded from Google Cloud Console and the token the first consent writes
+/credentials.json
+/token.json

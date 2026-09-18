@@ -75,6 +75,10 @@ def test_template_ros2_cpp_apt(tmp_path: Path):
     # (the standard toolchain files stay, but the ament build is authoritative).
     assert not (tmp_path / "pyproject.toml").exists()
     assert not (tmp_path / "setup.py").exists()
+    # That pyproject absence is also why the generated lint/typecheck tiers
+    # skip this flavour (no [tool.ruff] to judge, nothing to type-check):
+    # declared at test_generated_lint.py's EXTRA_PATHS and in
+    # test_generated_typecheck.py's module docstring.
 
 
 def test_template_ros2_python_pixi(tmp_path: Path):

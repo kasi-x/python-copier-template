@@ -6,12 +6,12 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 896 | ~31s |
+| Edit loop | `task test-fast` | 936 | ~31s |
 | Slow | `task test-slow` | 7 | ~35s |
-| Pre-push / nightly | `task test-heavy` | 49 | ~20s |
-| Nightly, shuffled | `task test-randomly` | 896 | ~27s |
-| Everything | `task test` | 961 | ~171s |
-| Cost ledger guard | `task test-meta` | 9 | ~18s |
+| Pre-push / nightly | `task test-heavy` | 50 | ~20s |
+| Nightly, shuffled | `task test-randomly` | 936 | ~27s |
+| Everything | `task test` | 1003 | ~171s |
+| Cost ledger guard | `task test-meta` | 10 | ~18s |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
 it is the cost ledger's own guard (`tests/test_marker_drift.py`) split out of
@@ -34,7 +34,8 @@ does. [Verification](../explanations/verification.md) states the three layers
 (L1 input space, L2 render invariants, L3 execution), the edit-loop budget
 (**30s**) and where a new check belongs; this page is the practical side.
 
-- `task test-fast` runs `-m "not heavy and not slow and not meta"`: everything
+- `task test-fast` runs `-m "not heavy and not slow and not meta and not
+  network"`: everything
   that neither builds a virtualenv nor touches the network, minus the serial
   batch runner and minus the cost ledger's own guards (`tests/test_marker_drift.py`,
   see `task test-meta` below). That is the whole edit loop and what CI runs on
@@ -91,7 +92,10 @@ venv or touches the network without `heavy` / `network`, which is what would
 otherwise leak a 20-second case into the edit loop unnoticed. It also fails
 when a row's `measured` date is more than 30 days old: a wall time is the one
 column nothing recomputes, so the failure names the row's own `command` to
-re-measure with rather than letting a stale number be quoted.
+re-measure with rather than letting a stale number be quoted. And a row that
+declares `budget_seconds` (only the edit loop does) fails when its
+`wall_seconds` measures over it — the 30s budget is enforced, not just
+declared.
 
 After a deliberate tier change, re-record the ledger and the counts in the
 table above in one step:
@@ -107,7 +111,7 @@ because a wall time is a measurement, not a projection: fill those in from a
 `time` run of the row's own `command`, e.g.
 
 ```shell
-time uv run --no-sync pytest -q -m "not heavy and not slow and not meta"
+time uv run --no-sync pytest -q -m "not heavy and not slow and not meta and not network"
 ```
 
 on an otherwise idle machine. Adding a whole tier is a matter of adding its

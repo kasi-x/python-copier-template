@@ -18,8 +18,8 @@ own "how to apply these terms" appendix, which uses angle brackets like
 Run this script (`python tools/generate_license_template.py`) after updating
 the files in `tools/licenses/` to refresh:
 
-- `template/LICENSE.jinja` (the full if/elif chain, one branch per license
-  choice)
+- the gated LICENSE template (the full if/elif chain, one branch per
+  license choice)
 
 It also prints the `license:` question's `choices:` mapping to paste into
 `copier.yml` if the license set has changed.
@@ -76,22 +76,22 @@ def render_chain(licenses: list[tuple[str, str, str]]) -> str:
     parts.append(f'{{% elif license_effective == "Confidential" -%}}\n{CONFIDENTIAL_BODY}')
     parts.append(f'{{% elif license_effective == "Proprietary" -%}}\n{PROPRIETARY_BODY}')
     # No separator: each body already ends in exactly one "\n", so whichever
-    # branch Jinja picks renders with exactly one trailing newline too. And no
-    # newline after `{% endif %}` itself: copier sets `keep_trailing_newline`,
-    # so a trailing "\n" in the *source* here would be appended, literally,
-    # after every rendered branch.
-    parts.append("{% endif %}")
+    # branch Jinja picks renders with exactly one trailing newline too. The
+    # closing tag is `{% endif -%}` followed by exactly one "\n": the `-`
+    # strips that newline (so copier's `keep_trailing_newline` has nothing to
+    # append after a rendered branch), and the newline keeps the file
+    # POSIX-final so editors and git do not re-add one behind the generator's
+    # back -- regeneration must stay byte-clean against the shipped template.
+    parts.append("{% endif -%}\n")
     return "".join(parts)
 
 
 def main() -> None:
     licenses = load_licenses()
 
-    # No trailing newline after the source's closing `{% endif %}`: copier
-    # sets `keep_trailing_newline`, so one here would be appended, literally,
-    # after every rendered branch (each branch's own body already ends in
-    # exactly one "\n").
-    license_path = TEMPLATE_DIR / "LICENSE.jinja"
+    license_path = (
+        TEMPLATE_DIR / "{% if not existing_project or 'license' not in adopt_protect %}LICENSE{% endif %}.jinja"
+    )
     license_path.write_text(render_chain(licenses), encoding="utf-8")
     print(f"wrote {license_path}")
 

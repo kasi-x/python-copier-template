@@ -122,25 +122,36 @@ question/internal reads and feeds, recomputes the forward-reference rule
 the legal position window after the last definition it reads, what
 currently occupies that spot, and which fragment the insertion lands in.
 
-## Question `when:`s read raw answers; render reads effective internals
+## Ask time reads the prefix of the chain; render time reads it all
 
 The questionnaire keeps two vocabularies apart, and every condition below
 lives on one side of the line:
 
-- **Question `when:` conditions use raw answers.** A question is offered
-  based on what was actually answered — the base `project_type`, the raw
-  `include_*` opt-ins — never on a derived internal.
-- **Everything render-side uses the effective internal.** Template bodies,
-  file-name conditions (`{% if ... %}` in `template/` paths), `_tasks.jinja`
-  and copier.yml's `_tasks` blocks read the `*_effective` family (plus the
+- **Question `when:` conditions run at ask time.** Copier resolves a
+  question's `when` / `default` / `choices` when it is reached in ask order,
+  so a question sees exactly the prefix of the include chain built so far:
+  raw answers *and* any internal already defined earlier
+  (`has_data_science` in questions/data_science.yml, `has_web_api` in
+  questions/web_api.yml, `oj_bare` / `online_judge` in
+  questions/_common_b.yml, `include_web_api` in questions/_combo.yml, ...).
+  A reference to anything later is a forward reference — Undefined (falsy)
+  — and the question silently never asks. The rule is include order, not
+  vocabulary, and it is mechanically enforced by
+  `test_question_references_are_forward_only` in
+  `tests/test_copier_structure.py`.
+- **Everything render-side runs at render time and reads the effective
+  internal.** Template bodies, file-name conditions (`{% if ... %}` in
+  `template/` paths), `_tasks.jinja` and copier.yml's `_tasks` blocks see
+  every answer, and they should read the `*_effective` family (plus the
   effective `web_api` / `data_science`, `pkg_dir`, `import_pkg`, ...) from
-  `questions/_internal.yml`, so "the base *or* the combo opt-in" is resolved
-  in exactly one place and render conditions cannot drift from the layer
-  rules they encode.
+  `questions/_internal.yml`, so "the base *or* the combo opt-in" is
+  resolved in exactly one place and render conditions cannot drift from the
+  layer rules they encode.
 
 The `include_*.when` gates and the `mcp_effective` / `bot_effective` base
-guards are therefore the same predicate written in the two vocabularies;
-when you change one, mirror the other. Two pinned consequences:
+guards are therefore the same predicate written in the two vocabularies —
+the ask-time half in raw answers, the render-time half in internals; when
+you change one, mirror the other. Two pinned consequences:
 
 - `include_mcp.when` spells out
   `(project_type == 'cli' or project_type == 'web_api' or include_web_api)`
@@ -148,24 +159,52 @@ when you change one, mirror the other. Two pinned consequences:
   `questions/_internal.yml`, which the include chain puts *after*
   `questions/_common_b.yml`, so referencing it from the question would be a
   forward reference (Undefined — the question would silently never ask).
-  `has_web_api` would resolve, but it is an effective, and a `when` reads
-  raw answers. This is a known, deliberate exception to "one predicate, one
-  definition": keep it in sync with `mcp_effective` by hand (the comment on
-  the question says so).
-- Gate answers with no effective of their own (`include_sentry`,
-  `use_recommended_agent`, `include_mcp`) are leaves: nothing derives them,
-  so render conditions use them raw and that is correct. Do not "fix"
-  `include_sentry` in the `.env.example` / README conditions into an
-  internal — there is no base guard it needs that its own `when` does not
-  already settle.
+  `has_web_api` *would* resolve — it is defined earlier, in
+  `questions/_combo.yml`, so the include-order rule permits it — but raw
+  answers suffice at ask time, so the gate spells its base out in raw
+  form. This is the documented exception pattern to "one predicate, one
+  definition": an ask-time gate that cannot reach its render-time twin is
+  hand-synced with it (the comment on the question says so).
+- Gate answers with no effective of their own (`use_recommended_agent`,
+  `include_mcp`) are leaves: nothing derives them, so render conditions use
+  them raw and that is correct. `include_sentry` is a leaf too, but its
+  `when` carries its own base guard (hand-synced with the pkg-tree parent
+  gate, the same exception pattern as `include_mcp`): the raw answer is
+  only ever true where `<pkg>/__main__.py` — its only init site — renders,
+  so the raw uses in the `.env.example` / README conditions stay correct
+  without needing an internal.
 
 The render-side agreement between a file-name gate and the README section
 documenting the same file is enforced by
 `tests/test_bot_layer.py::test_env_example_gate_and_readme_section_agree`
 (the bot layer regressed exactly this way: `.env.example` shipped the bot
 tokens while the README's "Environment variables" section stayed hidden);
-the forward-reference half is `test_question_references_are_forward_only`
+the include-order half is `test_question_references_are_forward_only`
 in `tests/test_copier_structure.py`.
+
+## An answer render time discards is never silent
+
+A question is asked only where its answer can matter. If a render-time
+derivation would throw an answer away, either move the discard to ask time
+— add the case to the question's `when` so it is not asked (preferred) —
+or warn on stderr at render time (copier.yml's `_tasks` echo pattern;
+validators can neither warn nor rewrite, and there is no pre-copy task
+stage). The three `_tasks` warnings are the inventory: the micropython
+sphinx → zensical override, the memorious → AGPL license override, and the
+GitLab discard of `security_policy` / `scorecard` (the files they ask for
+are GitHub-only machinery). The two non-asks: `layout` is not asked for
+`script` (`use_src_layout` would drop a src/ tree without a package) and
+`include_sentry` is not asked where no pkg tree can render `__main__.py`.
+
+## A file-name branch belongs to its parent directory's condition
+
+A branch is owned by the parent directory's name condition, and a child
+must not restate its parent's predicate — a duplicated condition is two
+definitions that can drift. When a path has to embed a condition of its
+own, prefer a derived internal flag
+(`{% if security_policy_effective %}SECURITY.md{% endif %}`) over
+re-spelling the raw derivation: the internal is the one definition the
+render side cannot drift from.
 
 ## Keep the predicate inventory mechanical: `task predicates`
 
@@ -301,8 +340,8 @@ one-line root cause.
 ## GitLab scope
 
 `git_platform` offers `github.com` (default) and `gitlab.com`. The platform
-distinction is enforced in two places: filename gates
-(`{% if git_platform=="github.com" %}...{% endif %}`) decide whole files, and
+distinction is enforced in two places: the `is_github` / `is_gitlab`
+internals (questions/_internal.yml) gate whole files by filename, and
 the `repo_url` / `docs_url` internals in `questions/_internal.yml` decide URL
 bytes. What that means for a `gitlab.com` render:
 
@@ -367,9 +406,9 @@ up:
 | Layer | Modules | What it is |
 | --- | --- | --- |
 | `standalone` | `check_upstream`, `check_upstream_fork`, `check_questionnaire_diff`, `generate_license_template` | maintenance/CI scripts that import nothing from `tools/` (a pristine checkout or a released tarball is their world) |
-| `foundations` | `answers`, `questionnaire`, `when_model`, `render_inputs` | the questionnaire model and shared primitives: data and meaning, no behavior on real trees |
+| `foundations` | `answers`, `questionnaire`, `when_model`, `render_inputs`, `support_ledger` | the questionnaire model and shared primitives: data and meaning, no behavior on real trees |
 | `machinery` | `file_merge`, `pyproject_merge`, `invariants`, `z3_witnesses` | pure transformations and verifiers over template/adoption artifacts |
-| `drivers` | `detect`, `batch`, `adopt`, `predicates`, `question_graph`, `render_delta`, `answers_for` | act on real trees with copier/subprocess; consume the machinery |
+| `drivers` | `detect`, `batch`, `adopt`, `git`, `predicates`, `question_graph`, `render_delta`, `answers_for`, `update_rehearsal` | act on real trees with copier/subprocess; consume the machinery |
 | `frontends` | `cli`, `gen_docs`, `mcp_server` | the entry points a human or an agent calls; consume the drivers |
 
 Rules:
@@ -409,3 +448,55 @@ to compare. `--audit N` re-renders N
 unaffected leaves as a continuous soundness probe of Layer A; a mismatch
 means the semantic diff missed a flow, and that is a bug in this tool, not
 in your change.
+
+## Accumulate ethics/regional/operational rules as sections first
+
+Field rules (a retired public NTP, a telecom secrecy duty, a regional
+backbone's quiet hours) arrive one at a time and must not each move the
+questionnaire, the leaf space, or the witness matrix. Write each as a
+section under `_shared/ethics/` (`baseline/`, `sector/`, `region/`,
+`domain/`; `lang/` is reserved for the translation dictionaries), register
+it in `_shared/ethics/REGISTRY.yml`, and leave it `draft` until a bundle
+forms:
+
+- The registry row is the single source: id, file, `YYYY-MM-DD.rev`
+  version, `effective` / `review_by` dates, primary-source URLs (no
+  statute pasted verbatim — one-line summary plus link), scope
+  (`jurisdiction` / `sector` / `category`), scale (`domestic` /
+  `regional` / `global`: who suffers vs who causes, in one line),
+  audience (minimal distribution list, e.g. `iot` / `cli` — a section
+  ships only where its triggers can fire), enforcement (`L0` doc /
+  `L1` presence assert / `L2` real gate), and lifecycle status
+  (`draft` → `active` → `kind`, with `superseded_by` naming the
+  successor). The file opens with the matching
+  `{# ethics: id=.. version=.. status=.. #}` header, states its scale
+  line and audience up front (so humans and LLMs route it without
+  reading the body), and repeats its `review_by` in the body.
+- Scale is the routing axis: `domestic` (rule and sufferer inside one
+  country), `regional` (one region's infrastructure), `global` (one
+  country suffers, the world causes — e.g. the retired Fukuoka NTP
+  drowned from 239 countries). Audience is the minimization axis:
+  the smallest project kinds that can trip the rule (IoT firmware and
+  CLI pollers for NTP hardcoding — not every project).
+- A draft section takes no copier context (`{{ }}`) and nothing includes
+  it — it is documentation only, so the leaf space does not move.
+- Promote `draft` → `active` (appendix into an existing conditional doc)
+  or `kind` (its own distribution condition) only when a bundle forms:
+  three sections sharing one distribution condition, or one section
+  needing a distinct code/test gate. A `kind` promotion names the
+  audience in its distribution condition (so the section keeps shipping
+  only where it applies). The promotion PR wires the questionnaire,
+  the witness leaves, `invariants.yml`, and the registry row together.
+  The first promotion (2026-09) is the baseline trio
+  `pqc-fips` / `license-drift` / `copyright-ai` as the AGENTS.md ethics
+  appendix: no new question — the appendix gates on the existing
+  `project_type` / `web_api` / `data_science_layout` answers, and the
+  `ethics-appendix` content predicate in `tests/test_render_invariants.py`
+  holds the rendered guide to exactly those conditions. A section whose
+  audience outruns its channel stays draft — `pki-chain` needs a channel
+  that reaches micropython, which AGENTS.md does not render for.
+
+Enforced by `tests/test_ethics_registry.py` (row shape incl. scale /
+audience, header agreement, body scale line, draft isolation, the
+parents a distributed row names actually including its file, and the
+retired-identifier denylist the first section exists for).

@@ -1,0 +1,68 @@
+{# ethics: id=baseline-license-drift version=2026-09-18.1 status=active
+   triggers=["license","bsl","sspl","copyleft","gpl","terraform"] #}
+# ライセンス変動 — 依存の現行ライセンスを追跡し、BSL/SSPL混入を防ぐ
+
+> **適用条件**: 依存パッケージ・ツールチェーン・コンテナイメージを
+> 追加・更新する場面すべて。フォーク元が非OSS化した事例の引用も含む。
+> 規模: 世界問題(ライセンス変更はどの法域でも起き、汚染は世界の
+> リポジトリに広がる)。
+> 配布: library / cli / script / web / data-science(依存を1つでも
+> 持つ全プロジェクト種別)。
+> 要約: (1)追加時に現行ライセンスを確認し、allowlistと照合する
+> (2)BSL/SSPL等のソース可用ライセンスを確認なしで混入させない
+> (3)フォーク移行(Terraform→OpenTofu等)は正当な後継を通す。
+> 詳細は本文。
+> Triggers: `(?i)\b(licen[cs]e|bsl|busl|sspl|rsal|elv2|copyleft|gpl|agpl|lgpl|terraform|opentofu|elasticsearch|redis|source-available)\b`.
+
+## 事実
+
+HashiCorpは2023-08-10、TerraformをMPL 2.0からBusiness Source License
+(BUSL 1.1)へ変更した。コミュニティはフォークOpenTofuを設立し、
+Linux Foundation傘下で継続している。2024-04にHashiCorpはOpenTofuに対し
+BSL適用後コードの不正利用を主張する書簡を送付し、OpenTofuは公開で反論した
+(MPL 2.0版のコードに基づくとする立場。係争は公開記録の範囲で確認できる)。
+方向が逆の例もある: Elasticは2024-08にElasticsearchへAGPLv3を
+追加選択肢として復帰させ、Redisも2025-05にAGPLv3を追加した。
+つまり依存のライセンスは「追加時点の記憶」では正しくなく、
+リポジトリ単位で変動する。BUSL自体は発行からChange Date(原則4年)経過で
+指定ライセンスへ切り替わるため、版ごとに扱いが変わる点にも注意する。
+出典: HashiCorp公式ブログ、OpenTofu FAQ(REGISTRY.ymlに記録)。
+
+## 禁止パターン
+
+- ライセンス確認なしの依存追加(BSL/SSPL/RSAL/ELv2等のソース可用、
+  強copyleftの確認漏れ)。
+- フォーク元・フォーク先の取り違え(Terraform本家をMPL 2.0と誤記載、
+  OpenTofuをBUSLと誤記載)。
+- 「昔追加したからOSSのはず」という版の据え置き(renovateやlock更新で
+  ライセンス欄を再確認しない運用)。
+- ライセンス表示の捏造(README/NOTICEに実態と異なる表記)。
+
+## 推奨設定
+
+- allowlist方針を明文化(Apache-2.0/MIT/BSD/MPL-2.0等を許可、
+  GPL系は配布形態照合、BSL/SSPLは例外承認制)。
+- CIにライセンス列挙を組み込む(`pip-licenses`相当で依存のlicense欄を
+  出力し、allowlistと照合。uv/poetryどちらでもタスク化できる)。
+- renovate等の自動更新でメジャー更新・ライセンス欄変化を通知対象にする。
+- 競合サービスを作る予定がある場合、SSPL/BSL類は「自分が提供する形」で
+  制限に触れるため、早期に弁護士照会(本節はその判断の代行ではない)。
+
+## 運用チェック
+
+- 設定側トリガー(Copier QA L1用):
+  `(?i)\b(BUSL|SSPL|RSAL|ELv2|licen[cs]e)\b`
+  hit時は本節の存在をassert。
+- 依存のライセンス棚卸しを半期に一度、pyproject/lockの差分レビューで
+  実施する。担当: 依存管理と同じレビュー役。
+
+## 制度変更ウォッチ
+
+- 変更予告: HashiCorpとOpenTofuの係争は動き得る。確度: 係争中(公開記録)。
+  Elastic/Redisの復帰のように逆方向の変更もあり得る。
+- 確認TODO: OpenTofu FAQとHashiCorp公式の現行方針を一次で確認
+  (review_by: 2027-03-31)。
+- 影響TODO: 自プロジェクトがTerraform/OpenTofu類のツールを参照する場合、
+  どちらを後継として扱うかドキュメントに明記する。
+
+<!-- 法的助言ではない。専門家レビュー必須。 / This is not legal advice; expert review required. -->

@@ -13,20 +13,25 @@ import subprocess
 import sys
 from pathlib import Path
 
-from copier import run_copy
+import render_cache  # the tests/ dir is on sys.path (pytest's rootless imports)
 
 TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
 from tools import questionnaire  # noqa: E402
-
-from test_recommended_path import BASE  # noqa: E402
+from tools.answers import BASE  # noqa: E402
 
 MICROPYTHON_DOC = TOP / "docs" / "how-to" / "micropython.md"
 
 # Somewhere else entirely: the render must follow the value, not the default.
 OVERRIDE_VERSION = "v9.9.9"
+
+# The static answers of the MicroPython render (micropython_version is
+# appended per case: the questionnaire's tag, or OVERRIDE_VERSION's drift
+# probe). Registered in tests/test_answer_fixtures.py like every other
+# answer fixture, so a renamed question cannot silently rot the render.
+MICROPYTHON_ANSWERS: dict[str, object] = {"project_type": "micropython", "micropython_port": "esp32"}
 
 
 def run_checker(offline: bool = True) -> subprocess.CompletedProcess[str]:
@@ -50,18 +55,13 @@ def micropython_version() -> str:
 
 
 def render_micropython(tmp_path: Path, version: str) -> Path:
-    """Render the MicroPython fast path, pinning ``micropython_version``."""
+    """Render the MicroPython fast path, pinning ``micropython_version``.
+
+    Through the session render cache -- the same pure render (skip_tasks,
+    HEAD) a fresh run_copy would produce, one copier run per pin value.
+    """
     tmp_path.mkdir(parents=True)
-    run_copy(
-        src_path=str(TOP),
-        dst_path=tmp_path,
-        data={**BASE, "project_type": "micropython", "micropython_port": "esp32", "micropython_version": version},
-        vcs_ref="HEAD",
-        defaults=True,
-        unsafe=True,
-        overwrite=True,
-        skip_tasks=True,
-    )
+    render_cache.shared_cache().render(tmp_path, {**BASE, **MICROPYTHON_ANSWERS, "micropython_version": version})
     return tmp_path
 
 

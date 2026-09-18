@@ -1,0 +1,320 @@
+"""Gmail bot for {{ package_name }} — the long-running layer's platform module.
+
+Run it against Gmail over the API (both credential paths come from the
+environment):
+
+    uv run bot-gmail-{{ repo_name }}
+
+Gmail delivers new mail to a bot two ways: Pub/Sub push (an HTTPS endpoint
+you have to host) and plain polling. This module polls: once per
+`GMAIL_POLL_SECONDS` it lists the unread mail in the INBOX, replies `pong`
+on the thread of every message whose subject contains `/ping`, and marks
+exactly those messages read. Polling is an outbound call — the same
+"runs locally, no inbound port" property Discord's Gateway and Slack's
+Socket Mode have — bought at the interval's latency instead of push
+immediacy.
+
+Two credential paths are REQUIRED and the scaffold refuses to start without
+either variable set:
+
+- `GMAIL_CREDENTIALS_JSON` — the OAuth **client** downloaded from Google
+  Cloud Console (APIs & Services → Credentials → OAuth client ID → Desktop
+  app). It identifies the application, not a user.
+- `GMAIL_TOKEN_JSON` — the **user's** grant. It is created on first run by
+  the installed-app flow (a browser opens once) and refreshed from disk on
+  every later run, so nothing sits between `uv run` and the mailbox. This
+  file IS the inbox: git-ignored like the CTF `flag*` files, never
+  committed.
+
+Copy `.env.example` to `.env` (git ignored, loaded by direnv) and put the
+two paths there. `LOG_FORMAT=json` works here too: this module's own logging
+goes through the generated `logging_setup`, so the poll loop logs in the
+same format as the CLI. The API client keeps its internal stdlib loggers,
+the way bot-discord.py passes discord.py `log_handler=None`.
+
+`poll_once()` takes the Gmail API resource as a parameter — that is the seam
+the tests use (tests/test_bot_gmail.py hands it a recording stand-in and
+drives `/ping` → `pong` with no OAuth, no network and no mailbox).
+`build_service()` is split from `main()` like every platform's `build_*()`;
+the OAuth dance is the only part that cannot run offline, and it is the
+only part the tests skip.
+"""
+
+# google-api-python-client / google-auth / google-auth-oauthlib ship no type
+# stubs (no py.typed), so basedpyright reads every member — and every
+# annotation naming one, like `-> Credentials` — as unknown. These four rules
+# are off for this file — the module whose whole job is those SDKs — and stay
+# on everywhere else in the project; `reportAny` stays on here too, so
+# nothing untyped flows into the module's own logic without a cast naming the
+# type it has at runtime (the `GmailApi` protocol below).
+# pyright: reportUnknownMemberType=false
+# pyright: reportUnknownArgumentType=false
+# pyright: reportUnknownVariableType=false
+# pyright: reportUnknownParameterType=false
+
+from __future__ import annotations
+
+import argparse
+import base64
+import os
+import time
+from collections.abc import Mapping
+from collections.abc import Sequence
+from email.message import EmailMessage
+from pathlib import Path
+from typing import Protocol
+from typing import cast
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+# The other google imports read as Unknown (no py.typed), but googleapiclient
+# inlines partial annotations that leave `build` declared Any — the one Any
+# this module cannot cast at its import, hence the targeted WHYNOT here and
+# the cast that names the client at the build_service() boundary instead.
+from googleapiclient.discovery import build  # pyright: ignore[reportAny]
+
+from {{ import_pkg }}.logging_setup import logger
+
+__all__ = ["build_service", "handle_message", "main", "poll_once"]
+
+# gmail.modify, not gmail.readonly: the same grant must send the reply and
+# clear the UNREAD label (readonly can do neither); and not the wider scopes:
+# the bot gets no access it does not use.
+SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
+
+# The subject substring that triggers a reply, and the inbox slice polled:
+# unread mail only, so a message is answered at most once (the reply marks
+# it read, below).
+POLL_TRIGGER = "/ping"
+UNREAD_QUERY = "in:inbox is:unread"
+
+# Seconds between polls when `GMAIL_POLL_SECONDS` says nothing else.
+DEFAULT_POLL_SECONDS = 60
+
+USER = "me"  # the Gmail API's alias for the authenticated account
+
+# A module-level alias for the protocol annotation below: inside a class body
+# whose first method is named `list` (the client's own verb), `list[str]`
+# would read as a subscript of that method.
+Headers = list[str]
+
+
+class GmailRequest(Protocol):
+    """One pending API call — `.execute()` performs it and decodes the JSON."""
+
+    def execute(self) -> Mapping[str, object]: ...
+
+
+# The protocol method names are the client's own keyword spellings, which is
+# why `id` / `format` shadow builtins (A002) and `userId` / `metadataHeaders`
+# are camelCase (N803): renaming them would desynchronize the protocol from
+# the wire calls it types.
+class GmailMessages(Protocol):
+    """The `users.messages` slice this bot uses, named by hand.
+
+    google-api-python-client assembles its resource objects at runtime from
+    the Gmail discovery document, so a checker sees no `users().messages()`
+    chain on `build()`'s return. This protocol is the typed boundary:
+    `build_service()` casts its runtime resource onto it once, and the rest
+    of the module reads the protocol — every call below stays named and
+    checked even though the client itself is dynamic.
+    """
+
+    def list(self, *, userId: str, q: str) -> GmailRequest: ...  # noqa: N803
+
+    def get(
+        self,
+        *,
+        userId: str,  # noqa: N803
+        id: str,  # noqa: A002
+        format: str,  # noqa: A002
+        metadataHeaders: Headers,  # noqa: N803
+    ) -> GmailRequest: ...
+
+    def send(self, *, userId: str, body: Mapping[str, object]) -> GmailRequest: ...  # noqa: N803
+
+    def modify(
+        self,
+        *,
+        userId: str,  # noqa: N803
+        id: str,  # noqa: A002
+        body: Mapping[str, object],
+    ) -> GmailRequest: ...
+
+
+class GmailApi(Protocol):
+    """The root of the resource chain the bot walks."""
+
+    def messages(self) -> GmailMessages: ...
+
+
+def _field(payload: Mapping[str, object], key: str) -> str:
+    """One string field of an API payload, checked instead of assumed.
+
+    The discovery client decodes JSON into plain dicts whose values are
+    untyped, so the field is narrowed here once instead of trusted at every
+    call site.
+    """
+    value = payload.get(key)
+    return value if isinstance(value, str) else ""
+
+
+def _header(detail: Mapping[str, object], name: str) -> str:
+    """One header of a `format="metadata"` message payload (`Subject`, `From`)."""
+    payload = detail.get("payload")
+    if not isinstance(payload, Mapping):
+        return ""
+    headers = payload.get("headers")
+    if not isinstance(headers, Sequence) or isinstance(headers, (str, bytes)):
+        return ""
+    for item in headers:
+        if isinstance(item, Mapping) and item.get("name") == name:
+            return _field(item, "value")
+    return ""
+
+
+def handle_message(service: GmailApi, message: Mapping[str, object]) -> bool:
+    """Answer one unread message that asks `ping` — the liveness handler.
+
+    `message` is the stub `messages().list()` returns (`{"id": ...}`), so the
+    full message is fetched with metadata only: the Subject decides and the
+    From addresses the reply. A reply goes out on the same thread — `pong`,
+    the minimal liveness answer every platform's module starts with — and
+    the message is then marked read, which is what makes the poll loop
+    answer each ping exactly once. Unread mail without the trigger is left
+    unread: this bot never hides a human's mail.
+
+    Returns whether a reply was sent; the tests drive this directly with a
+    recording service and assert on the sent RFC 2822 bytes.
+    """
+    message_id = _field(message, "id")
+    if not message_id:
+        return False
+    detail = (
+        service.messages()
+        .get(
+            userId=USER,
+            id=message_id,
+            format="metadata",
+            metadataHeaders=["Subject", "From"],
+        )
+        .execute()
+    )
+    subject = _header(detail, "Subject")
+    if POLL_TRIGGER not in subject:
+        return False
+    reply = EmailMessage()
+    reply["To"] = _header(detail, "From")
+    reply["Subject"] = f"Re: {subject}"
+    reply.set_content("pong")
+    service.messages().send(
+        userId=USER,
+        body={
+            "threadId": _field(detail, "threadId"),
+            # gmail.send carries the RFC 2822 message itself, base64url-encoded
+            # — the API has no structured to/subject/body fields.
+            "raw": base64.urlsafe_b64encode(reply.as_bytes()).decode(),
+        },
+    ).execute()
+    service.messages().modify(
+        userId=USER,
+        id=message_id,
+        body={"removeLabelIds": ["UNREAD"]},
+    ).execute()
+    logger.info("pong", command="/ping", message_id=message_id)
+    return True
+
+
+def poll_once(service: GmailApi) -> int:
+    """Poll the unread INBOX once and answer the pings; return the reply count."""
+    listed = service.messages().list(userId=USER, q=UNREAD_QUERY).execute()
+    stubs = listed.get("messages")
+    if not isinstance(stubs, Sequence) or isinstance(stubs, (str, bytes)):
+        return 0
+    return sum(
+        1
+        for stub in stubs
+        if isinstance(stub, Mapping) and handle_message(service, stub)
+    )
+
+
+def _authorized(token_path: str, credentials_path: str) -> Credentials:
+    """Load the user grant from `token_path`, refresh it when stale, consent if absent.
+
+    The token file is written back after a first consent so every later run
+    refreshes the stored grant instead of opening a browser again.
+    """
+    token_file = Path(token_path)
+    creds = (
+        cast("Credentials", Credentials.from_authorized_user_file(token_path, SCOPES))
+        if token_file.is_file()
+        else None
+    )
+    if creds is not None and creds.valid:
+        return creds
+    if creds is not None and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        return creds
+    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
+    creds = cast("Credentials", flow.run_local_server(port=0))
+    token_file.write_text(creds.to_json())
+    return creds
+
+
+def build_service(credentials_path: str, token_path: str) -> GmailApi:
+    """Authorize the installed-app flow and build the API client.
+
+    Split from main() like every platform's `build_*()` — a deployment can
+    hand its own credentials in — and the only piece the generated tests
+    skip: it performs real OAuth (a browser on first run, a refresh from
+    `token_path` afterwards) and returns the dynamic discovery client.
+    """
+    creds = _authorized(token_path, credentials_path)
+    # The runtime object is the discovery client assembled from Gmail's
+    # published schema; the cast names the slice of it this module calls.
+    return cast("GmailApi", build("gmail", "v1", credentials=creds))
+
+
+def main(args: Sequence[str] | None = None) -> None:
+    """Poll forever, `GMAIL_POLL_SECONDS` seconds between polls."""
+    # No options yet: the parser is here for `--help` and because
+    # parser.error() is what gives the refusal below its exit code 2, the
+    # same shape bot-discord.py builds its token check on.
+    parser = argparse.ArgumentParser(description="Gmail bot for {{ repo_name }}")
+    parser.parse_args(args)
+    credentials_path = os.environ.get("GMAIL_CREDENTIALS_JSON")
+    token_path = os.environ.get("GMAIL_TOKEN_JSON")
+    if not credentials_path or not token_path:
+        names = (
+            ("GMAIL_CREDENTIALS_JSON", credentials_path),
+            ("GMAIL_TOKEN_JSON", token_path),
+        )
+        missing = [name for name, value in names if not value]
+        # parser.error() is the refusal: exit code 2 on stderr, naming the
+        # variable that is not set (never a half-started poller). The token
+        # path is the one a deployment forgets: the console hands you the
+        # credentials file first, while the token only exists after the
+        # first successful consent.
+        parser.error(
+            "polling Gmail needs both credential paths in the environment; "
+            + ", ".join(missing)
+            + " not set. Download the OAuth client (Desktop app) from Google "
+            "Cloud Console (APIs & Services → Credentials) for the credentials "
+            "path, and point the token path at the file the first consent will "
+            "write. Copy both paths into .env — `.env.example` documents the "
+            "two variables and `.env` is git-ignored"
+        )
+    seconds = int(os.environ.get("GMAIL_POLL_SECONDS", str(DEFAULT_POLL_SECONDS)))
+    service = build_service(credentials_path, token_path)
+    logger.info("polling", interval=seconds, query=UNREAD_QUERY)
+    while True:
+        answered = poll_once(service)
+        if answered:
+            logger.info("answered", pings=answered)
+        time.sleep(seconds)
+
+
+if __name__ == "__main__":
+    main()

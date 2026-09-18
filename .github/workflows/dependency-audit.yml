@@ -3,11 +3,19 @@ name: Dependency audit
 on:
   workflow_dispatch:
   schedule:
-    # pip-audit (OSV-based) over the root repo's own dependencies. Renovate's
-    # vulnerabilityAlerts cover the GitHub Advisory feed, but the sources
-    # differ -- the same reason the generated projects keep `task audit`
-    # separate from `task check`. Staggered from the other scheduled
-    # workflows (Mon/Tue/Wed/Sat) so a failure names one workflow.
+    # `task audit` == `uv run --locked pip-audit` (OSV-based) over the root
+    # repo's own dependencies. PR CI deliberately does NOT run it: `check`
+    # must work offline (Taskfile.yml keeps `audit` out of `check` for the
+    # same reason), so this weekly schedule -- plus the manual
+    # workflow_dispatch above -- is the only verification the audit task
+    # gets. Renovate's vulnerabilityAlerts cover the GitHub Advisory feed,
+    # but the sources differ. Results land in a deduplicated issue titled
+    # "pip-audit found vulnerabilities in the template's own dependencies"
+    # (the job below files it only when `task audit` exits nonzero).
+    # Staggered from the other scheduled workflows (ci.yml nightly,
+    # check-upstream.yml MON 06:00, check-upstream-fork.yml TUE 06:00,
+    # scheduled-check.yml TUE 07:00, periodic.yml WED 08:00, scorecard.yml
+    # SAT 01:30) so a failure names one workflow.
     - cron: "0 7 * * THU"
 
 permissions:

@@ -45,7 +45,6 @@ import argparse
 import hashlib
 import json
 import random
-import re
 import shutil
 import subprocess
 import sys
@@ -56,29 +55,18 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 TOP = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(TOP))
 
 from copier import Worker  # noqa: E402  # pyright: ignore[reportPrivateImportUsage]  WHYNOT: copier ships no stubs.
 from tools import batch  # noqa: E402
+from tools.render_inputs import context_fingerprint  # noqa: E402
+from tools.render_inputs import include_graph  # noqa: E402
+from tools.render_inputs import output_name  # noqa: E402
+from tools.render_inputs import watched_relative_paths  # noqa: E402
 
 CACHE = TOP / ".cache" / "render-delta"
-ANSWERS_FILE = ".copier-answers.yml"
 DEFAULT_JOBS = 8
-
-# The render-context hash definition (which entries are hashed). Bumped when
-# that changes, so a cache directory written under the old definition is not
-# served under the new one.
-CONTEXT_HASH_SCHEME = "answers-only-v1"
-
-# Rendered content comes from these roots; copier.yml holds the settings and
-# the generation tasks, so any byte there conservatively affects every leaf.
-WATCHED_DIRS = ("template", "_shared")
-WATCHED_FILES = ("_tasks.jinja", "copier.yml")
-
-INCLUDE_TAG = re.compile(r'\{%-?\s+(?:include|import)\s+"([^"]+)"')
 
 
 @dataclass(frozen=True)
@@ -99,19 +87,7 @@ def _sha(data: bytes) -> str:
 
 def _template_hashes(root: Path) -> dict[str, str]:
     """Content hash of every watched template input file."""
-    hashes: dict[str, str] = {}
-    for directory in WATCHED_DIRS:
-        base = root / directory
-        if not base.is_dir():
-            continue
-        for path in sorted(base.rglob("*")):
-            if path.is_file():
-                hashes[f"{directory}/{path.relative_to(base).as_posix()}"] = _sha(path.read_bytes())
-    for name in WATCHED_FILES:
-        path = root / name
-        if path.is_file():
-            hashes[name] = _sha(path.read_bytes())
-    return hashes
+    return {rel: _sha((root / rel).read_bytes()) for rel in watched_relative_paths(root)}
 
 
 def _path_set(root: Path) -> tuple[str, ...]:
@@ -122,39 +98,24 @@ def _path_set(root: Path) -> tuple[str, ...]:
 
 
 def _read_leaves(root: Path) -> dict[str, dict[str, Any]]:
-    """Leaf id -> answers, from that tree's committed witness list."""
-    path = root / "tests" / "matrix" / "witnesses.jsonl"
-    leaves: dict[str, dict[str, Any]] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        record = json.loads(line)
-        leaves[record["id"]] = record.get("answers", {})
-    return leaves
+    """Leaf id -> answers, from that tree's committed witness list.
 
-
-def _context_key(root: Path) -> str:
-    """The context hash cache key: contexts change only when these change.
-
-    ``CONTEXT_HASH_SCHEME`` is part of the key so a change to *which* entries
-    are hashed invalidates every cached pass instead of mixing two hash
-    definitions in one cache directory.
+    Parsed by batch.load_requests -- the one reader of the format -- so an
+    invalid or drifted leaf list is a loud SpecError, not a quietly half-read
+    ledger (TODO.md §28.3 3c).
     """
-    parts = [root / "copier.yml", root / "tests" / "matrix" / "witnesses.jsonl"]
-    parts += sorted((root / "questions").glob("*.yml"))
-    digest = hashlib.sha256()
-    digest.update(CONTEXT_HASH_SCHEME.encode())
-    digest.update(b"\0")
-    for path in parts:
-        digest.update(path.name.encode())
-        digest.update(b"\0")
-        digest.update(path.read_bytes())
-        digest.update(b"\0")
-    return digest.hexdigest()
+    return {
+        request.id: dict(request.answers)
+        for request in batch.load_requests([root / "tests" / "matrix" / "witnesses.jsonl"])
+    }
 
 
 def _context_hashes(root: Path, leaves: dict[str, dict[str, Any]]) -> dict[str, str]:
     """Hash of copier's answer-derived render context, one pass per leaf, cached by question state.
+
+    The cache key is `tools/render_inputs.py`'s `context_fingerprint` -- the
+    one context-cache key, shared with tools/answers_for.py, scheme-tagged and
+    covering the questionnaire and the leaf list but not the template body.
 
     Only the context's public entries are hashed -- the answers and the
     internals copier derived from them. Its underscore-prefixed entries
@@ -171,7 +132,7 @@ def _context_hashes(root: Path, leaves: dict[str, dict[str, Any]]) -> dict[str, 
     """
     cache_dir = CACHE / "contexts"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    cache_path = cache_dir / f"{_context_key(root)}.json"
+    cache_path = cache_dir / f"{context_fingerprint(root)}.json"
     if cache_path.is_file():
         return {leaf_id: str(h) for leaf_id, h in json.loads(cache_path.read_text(encoding="utf-8")).items()}
 
@@ -187,35 +148,6 @@ def _context_hashes(root: Path, leaves: dict[str, dict[str, Any]]) -> dict[str, 
             hashes[leaf_id] = _sha(serialized.encode())
     cache_path.write_text(json.dumps(hashes, indent=1, sort_keys=True), encoding="utf-8")
     return hashes
-
-
-def _resolve_include_target(target: str, watched: set[str]) -> str | None:
-    """An include tag's target, resolved against the watched files.
-
-    Include tags are repo-root-relative ("_shared/x.jinja" from a file in
-    template/), so the raw target matches a watched file only when the file
-    lives at that level; the suffix fallback covers tags written relative to
-    the including file. None = the target names nothing we watch.
-    """
-    if target in watched:
-        return target
-    matches = [path for path in watched if path.endswith("/" + target)]
-    return matches[0] if len(matches) == 1 else None
-
-
-def _include_graph(root: Path) -> dict[str, set[str]]:
-    """template-side file -> the files it pulls in via literal include/import tags."""
-    graph: dict[str, set[str]] = {}
-    watched = set(_template_hashes(root))
-    for rel in _template_hashes(root):
-        if not rel.endswith((".jinja", ".yml")):
-            continue
-        text = (root / rel).read_text(encoding="utf-8")
-        for match in INCLUDE_TAG.finditer(text):
-            resolved = _resolve_include_target(match.group(1), watched)
-            if resolved is not None:
-                graph.setdefault(rel, set()).add(resolved)
-    return graph
 
 
 def load_manifests(state: State) -> dict[str, dict[str, str]]:
@@ -235,12 +167,13 @@ def save_manifests(state: State, manifests: dict[str, dict[str, str]]) -> None:
 
 def build_state(root: Path) -> State:
     """Tabulate one template state: context hashes, input hashes, paths, leaves."""
+    leaves = _read_leaves(root)
     state = State(
-        context_hashes=_context_hashes(root, _read_leaves(root)),
+        context_hashes=_context_hashes(root, leaves),
         file_hashes=_template_hashes(root),
         path_set=_path_set(root),
-        leaves=frozenset(_read_leaves(root)),
-        include_graph=_include_graph(root),
+        leaves=frozenset(leaves),
+        include_graph=include_graph(root),
     )
     manifests = load_manifests(state)
     return replace(state, manifests=manifests)
@@ -253,20 +186,6 @@ def state_hash(state: State) -> str:
     digest.update(json.dumps(sorted(state.path_set)).encode())
     digest.update(json.dumps(sorted(state.leaves)).encode())
     return digest.hexdigest()[:16]
-
-
-def _output_name(template_rel: str) -> str:
-    """The destination name a template path renders to, tags and `.jinja` stripped.
-
-    The leading `template/` directory (copier's `_subdirectory`) strips out
-    too, so the name is what appears in the rendered tree. `{{ pkg_dir }}`
-    interpolations strip out as well, so the comparison to manifest keys is
-    by suffix: over-inclusive on collisions, the safe direction for a
-    candidacy rule.
-    """
-    stripped = re.sub(r"{%.*?%}|{{.*?}}|{#.*?#}", "", template_rel)
-    stripped = stripped.removeprefix("template/")
-    return stripped.removesuffix(".jinja") if stripped.endswith(".jinja") else stripped
 
 
 def _reverse_closure(changed: set[str], graph: dict[str, set[str]]) -> set[str]:
@@ -316,7 +235,7 @@ def compute_candidates(old: State, new: State) -> tuple[frozenset[str], dict[str
     for source, targets in (*old.include_graph.items(), *new.include_graph.items()):
         graph.setdefault(source, set()).update(targets)
     reach = _reverse_closure({rel for rel in changed_files if rel != "copier.yml"}, graph)
-    reach_outputs = {_output_name(rel) for rel in reach}
+    reach_outputs = {output_name(rel) for rel in reach}
 
     for leaf_id, why in sorted(reasons.items()):
         if old.context_hashes.get(leaf_id) != new.context_hashes.get(leaf_id):
@@ -351,13 +270,15 @@ def compute_candidates(old: State, new: State) -> tuple[frozenset[str], dict[str
 
 
 def _normalize(data: bytes, rel: str) -> bytes:
-    """File bytes, with the answers file's per-render stamps removed."""
-    if Path(rel).name != ANSWERS_FILE:
+    """File bytes, with the answers file's per-render stamps removed.
+
+    batch.strip_render_stamps is the one normalization (RENDER_STAMPS the one
+    stamp list, shared with the MCP server's mask and the rehearsal's
+    manifest); this wrapper only decides *when* it applies.
+    """
+    if Path(rel).name != batch.ANSWERS_FILE:
         return data
-    parsed = yaml.safe_load(data.decode("utf-8")) or {}
-    for key in ("_commit", "_src_path"):
-        parsed.pop(key, None)
-    return json.dumps(parsed, sort_keys=True).encode("utf-8")
+    return batch.strip_render_stamps(data)
 
 
 def _manifest(dest: Path) -> dict[str, str]:

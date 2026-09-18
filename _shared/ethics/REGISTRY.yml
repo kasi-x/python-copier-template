@@ -1,0 +1,189 @@
+version: 1
+# The single source for the ethics/regional/operational sections accumulated
+# under _shared/ethics/. A row answers: what rule, which version, from which
+# primary source, who it applies to, how strongly it is enforced, and where
+# (if anywhere) it is distributed. A draft lives here as documentation only
+# and no template/ file includes it (leaf +0); an active section is included
+# from exactly the parents its row names in `rendered_from` (first promotion:
+# the AGENTS.md ethics appendix, 2026-09).
+#
+# Lifecycle: draft (repo-local reference only) -> active (bundled as an
+# appendix into an existing conditional doc, e.g. CHARTER/data appendix) ->
+# kind (distributed on its own condition; the promotion PR wires the
+# questionnaire, the witness leaves, invariants.yml and this registry row).
+# `superseded_by` names the successor id; the file stays one version.
+sections:
+  - id: region-kyushu-ntp
+    file: _shared/ethics/region/kyushu-ntp.md.jinja
+    version: 2026-09-18.1
+    effective: 2019-07-02
+    review_by: 2026-12-18
+    sources:
+      - https://www.janog.gr.jp/meeting/janog41/application/files/9815/1692/5488/janog41-sp10ntp-fujimura-03.pdf
+      - https://gigazine.net/news/20190702-fukuoka-u-ntp-server-shut-down/
+      - https://xtech.nikkei.com/atcl/nxt/mag/nc/18/020600011/092500040/
+    scope: {jurisdiction: [jp], sector: [telecom], category: []}
+    scale: global
+    audience: [iot, cli]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "Public NTP concentration case (Fukuoka University 133.100.9.2/133.100.11.8, clock.nc.fukuoka-u.ac.jp): single-IP hardcoding plus retry storms as the DDoS-to-self pattern. First sample section for the region bundle."
+
+  - id: baseline-pqc-fips
+    file: _shared/ethics/baseline/pqc-fips.md.jinja
+    version: 2026-09-18.1
+    effective: 2024-08-13
+    review_by: 2027-03-31
+    sources:
+      - https://www.nist.gov/news-events/news/2024/08/nist-releases-first-3-finalized-post-quantum-encryption-standards
+      - https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.pdf
+      - https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf
+      - https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.205.pdf
+      - https://nvlpubs.nist.gov/nistpubs/ir/2024/NIST.IR.8547.ipd.pdf
+    scope: {jurisdiction: [], sector: [], category: [crypto]}
+    scale: global
+    audience: [library, cli, web]
+    enforcement: L0
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    superseded_by: null
+    why: "FIPS 203/204/205 are function-divergent (KEM vs signatures) and the Kyber-era vernacular is stale; new crypto choices must be ML-KEM/ML-DSA based, hybrid, named by standard names."
+
+  - id: baseline-pki-chain
+    file: _shared/ethics/baseline/pki-chain.md.jinja
+    version: 2026-09-18.1
+    effective: 2024-06-06
+    review_by: 2026-12-18
+    sources:
+      - https://letsencrypt.org/certificates/
+      - https://letsencrypt.org/2023/07/10/cross-sign-expiration
+      - https://letsencrypt.org/2024/04/12/changes-to-issuance-chains
+      - https://community.letsencrypt.org/t/isrg-root-x2-cross-signed-by-isrg-root-x1/239124
+      - https://community.cloudflare.com/t/clarification-about-email-upcoming-lets-encrypt-certificate-chain-change/628713
+    scope: {jurisdiction: [], sector: [], category: [pki]}
+    scale: global
+    audience: [iot, cli, web]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "Chain-of-trust rewrites (DST Root CA X3 gone 2024-09, ISRG Root X2 cross-sign gone 2025-09, CDNs rotating issuers) break hardcoded intermediates and single-key pins."
+
+  - id: baseline-license-drift
+    file: _shared/ethics/baseline/license-drift.md.jinja
+    version: 2026-09-18.1
+    effective: 2023-08-10
+    review_by: 2027-03-31
+    sources:
+      - https://www.hashicorp.com/blog/terraform-is-now-source-available
+      - https://opentofu.org/faq/
+    scope: {jurisdiction: [], sector: [], category: [licensing]}
+    scale: global
+    audience: [library, cli, script, web, data-science]
+    enforcement: L0
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    superseded_by: null
+    why: "Terraform MPL-2.0 to BUSL 1.1 plus the OpenTofu cease-and-desist, and the reverse Elastic/Redis AGPL returns: a dependency's license is a moving value that must be re-checked, never remembered."
+
+  - id: baseline-copyright-ai
+    file: _shared/ethics/baseline/copyright-ai.md.jinja
+    version: 2026-09-18.1
+    effective: 2024-03-15
+    review_by: 2027-03-31
+    sources:
+      - https://www.bunka.go.jp/seisaku/chosakuken/aiandcopyright.html
+    scope: {jurisdiction: [jp], sector: [], category: [copyright]}
+    scale: domestic
+    audience: [cli, data-science]
+    enforcement: L0
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    superseded_by: null
+    why: "Agency of Culture's AI-and-copyright position: art. 30-4's enjoyment-purpose exception fails on overfitting, raw-expression RAG retrieval, and robots.txt circumvention; public-domain calls need per-jurisdiction term checks."
+
+  - id: domain-llm-appsec
+    file: _shared/ethics/domain/llm-appsec.md.jinja
+    version: 2026-09-18.1
+    effective: 2024-11-18
+    review_by: 2026-12-18
+    sources:
+      - https://genai.owasp.org/llm-top-10/
+    scope: {jurisdiction: [], sector: [], category: [ai-security]}
+    scale: global
+    audience: [mcp, web, cli]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "OWASP LLM Top 10 entry numbers move per edition (excessive agency was a different slot in 2023-24); reference by name, and gate destructive tool actions behind human approval."
+
+  - id: domain-ml-bias
+    file: _shared/ethics/domain/ml-bias.md.jinja
+    version: 2026-09-18.1
+    effective: 2024-08-01
+    review_by: 2026-12-18
+    sources:
+      - https://www.nejm.org/doi/full/10.1056/NEJMc1919366
+      - https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+    scope: {jurisdiction: [], sector: [], category: [ml-fairness]}
+    scale: global
+    audience: [data-science, kaggle]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "Pulse-oximetry occult-hypoxemia disparity and EU AI Act art. 10 data-governance duties: subgroup metrics, documented fairness-metric choice, and human review are the minimum evaluation surface."
+
+  - id: sector-samd-regulatory
+    file: _shared/ethics/sector/samd-regulatory.md.jinja
+    version: 2026-09-18.1
+    effective: 2024-12-04
+    review_by: 2026-12-18
+    sources:
+      - https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence-enabled-device-software-functions
+      - https://eur-lex.europa.eu/eli/reg/2017/745/oj
+      - https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+    scope: {jurisdiction: [], sector: [medtech], category: [regulatory]}
+    scale: global
+    audience: [data-science, web]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "FDA's PCCP final guidance (2024-12), Japan's IDATEN and the EU MDR + AI Act stack all converge on one rule: continuous learning is allowed only inside a pre-approved change envelope, with humans deciding."
+
+  - id: region-jp-external-transmission
+    file: _shared/ethics/region/jp-external-transmission.md.jinja
+    version: 2026-09-18.1
+    effective: 2023-06-16
+    review_by: 2027-03-31
+    sources:
+      - https://laws.e-gov.go.jp/law/404AC0000000086
+    scope: {jurisdiction: [jp], sector: [telecom], category: [privacy]}
+    scale: domestic
+    audience: [web]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "Telecom Business Act art. 27-12 (effective 2023-06-16): any third-party outbound user data needs plain-language advance disclosure (info / recipient / purpose) with legible UI; authentication-only flows are exempt with recorded grounds."
+
+  - id: region-eu-eaa
+    file: _shared/ethics/region/eu-eaa.md.jinja
+    version: 2026-09-18.1
+    effective: 2025-06-28
+    review_by: 2027-03-31
+    sources:
+      - https://eur-lex.europa.eu/eli/dir/2019/882/oj
+      - https://www.etsi.org/deliver/etsi_en/301500_301599/301549/
+    scope: {jurisdiction: [eu], sector: [], category: [accessibility]}
+    scale: regional
+    audience: [web]
+    enforcement: L0
+    status: draft
+    rendered_from: []
+    superseded_by: null
+    why: "European Accessibility Act applies from 2025-06-28 to consumer-facing UI (e-commerce, banking, e-books): EN 301 549 / WCAG 2.1 AA becomes a legal duty, with narrow microenterprise and legacy-contract carve-outs."

@@ -2,6 +2,7 @@
 byte-identical, copier update interop on an adopted project, and the git-less
 render publish pipelines use."""
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,21 @@ from support import TOP
 from support import copy_project
 from support import make_venv
 from support import run_pipe
+
+sys.path.insert(0, str(TOP))  # tests/test_task_runners.py does the same to reach tools/
+
+from tools.answers import BASE  # noqa: E402
+
+# The answers of the publish-pipeline render (git init comes later): the
+# suite's shared "Project Details" (tools/answers.py BASE) carrying this
+# scenario's own package name, description and sender identity. Registered in
+# tests/test_answer_fixtures.py like every other answer fixture.
+NOGIT_ANSWERS: dict[str, object] = dict(
+    BASE,
+    package_name="nogit_test",
+    description="generated outside git",
+    author_email="kasi-x@example.com",
+)
 
 
 def test_template_adopt_mode_protects_existing_files(tmp_path: Path):
@@ -107,14 +123,7 @@ def test_template_works_outside_git(tmp_path: Path):
     run_copy(
         src_path=str(TOP),
         dst_path=tmp_path,
-        data={
-            "package_name": "nogit_test",
-            "description": "generated outside git",
-            "git_platform": "github.com",
-            "github_org": "kasi-x",
-            "author_name": "kasi-x",
-            "author_email": "kasi-x@example.com",
-        },
+        data=NOGIT_ANSWERS,
         vcs_ref="HEAD",
         unsafe=True,
         defaults=True,

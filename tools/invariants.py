@@ -308,7 +308,7 @@ def _oj_kind_choices(questions: dict[str, dict], category: str) -> list[str]:
 
 
 def questionnaire_vocabulary(questions: dict[str, dict] | None = None) -> Vocabulary:
-    """The questionnaire's names, read with copier's own loader."""
+    """The questionnaire's names, read through the one parser (tools/questionnaire.py)."""
     if questions is None:
         questions, _order = when_model.load_questions()
     categories = tuple(_static_choices(questions, "oj_category"))

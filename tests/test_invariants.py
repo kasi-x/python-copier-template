@@ -39,8 +39,8 @@ if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.p
 
 from tools import batch  # noqa: E402
 from tools import invariants  # noqa: E402
+from tools.answers import BASE  # noqa: E402
 
-from test_recommended_path import BASE  # noqa: E402
 from test_recommended_path import FAST_PATHS  # noqa: E402
 
 INVARIANTS = invariants.load()

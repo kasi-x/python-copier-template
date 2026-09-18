@@ -134,7 +134,7 @@ Each area asks one gate question first: answering **Yes** configures it from the
 | Area gate | Recommended default | Asked when |
 |---|---|---|
 | `use_recommended_agent` | yes — a plain library / CLI without agent tooling. | library / cli |
-| `use_recommended_toolchain` | uv (package manager) + just (task runner). | not ros2 + pixi |
+| `use_recommended_toolchain` | uv (package manager) + just (task runner). | not ros2 + `ros2_package_manager` = pixi |
 | `use_recommended_data_science` | GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer). | the data_science layer is present |
 | `use_recommended_polish` | src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings. | all |
 | `use_recommended_docs` | zensical (Zensical, an MkDocs fork with mkdocstrings). | all |
@@ -155,8 +155,9 @@ An opt-in layer adds its area to a combinable base:
   (challenges/<category>/<problem>/ with a solve.py exploit starter, plus pwntools and z3-solver)?
 - **`include_scraping`** (asked when cli; default no) — Add a polite web-fetching layer (robots.txt
   + rate limit + cache)?
-- **`include_bot`** (asked when cli / web_api; default no) — Add a long-running chat bot on top of
-  this project (the long-running layer's second platform after the MCP server)?
+- **`include_bot`** (asked when cli / web_api / library + the web_api layer; default no) — Add a
+  long-running chat bot on top of this project (the long-running layer's second platform after the
+  MCP server)?
 
 An opt-in layer asks its own gate on top:
 
@@ -229,7 +230,7 @@ Answer **No** to pick scrapy / memorious / playwright instead (or all).
 
 Use the recommended bot platform? Recommended: discord = discord.py — the de-facto Discord library (async, typed, slash commands via app_commands, actively maintained, unlike the py-cord / nextcord forks).
 
-Answer **No** to pick a platform instead (discord, slack and line are the choices today; Gmail is planned).
+Answer **No** to pick a platform instead (discord, slack, line and gmail).
 
 - **`bot_platform`** (str; default `discord`) — Which chat platform should the bot layer prepare?
   - **`discord`** — a discord.py bot (Gateway intents declared explicitly, a /ping app command,
@@ -243,6 +244,13 @@ Answer **No** to pick a platform instead (discord, slack and line are the choice
     LINE_CHANNEL_ACCESS_TOKEN from the environment with a startup check that refuses to start
     without either). LINE listens on BOT_PORT (default 8000), unlike discord and slack, which only
     dial out.
+  - **`gmail`** — a Gmail bot on google-api-python-client + google-auth (OAuth installed-app flow:
+    the OAuth client downloaded from Google Cloud Console and the granted token are FILES, so
+    GMAIL_CREDENTIALS_JSON + GMAIL_TOKEN_JSON name their paths in the environment with a startup
+    check that refuses to start without either; the poll answers an unread INBOX message whose
+    subject contains /ping with a pong reply on the same thread and marks it read — an outbound poll
+    on GMAIL_POLL_SECONDS, so there is no Pub/Sub push endpoint to host and nothing listens, like
+    discord and slack).
 
 ### `use_recommended_data_science`
 

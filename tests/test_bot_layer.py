@@ -3,20 +3,25 @@
 tests/test_example_layers.py owns the per-feature render assertions for the
 layers that predate the witness ledger; this module is the bot layer's own file
 (TODO.md §4). The fast tests pin the wiring on each base (scaffold iff
-``bot_discord_effective`` / ``bot_slack_effective`` / ``bot_line_effective``,
+``bot_discord_effective`` / ``bot_slack_effective`` / ``bot_line_effective`` /
+``bot_gmail_effective``,
 the dependency / entry point / env-var gates, the leak check on the types that
 must never be offered the layer); the heavy tests render a cli project per
 platform, install it, and exercise the generated in-process test suite — a
 fake interaction driving ``build_bot()``'s ``/ping`` callback (discord), a fake
-``say`` driving the ``/app_mention`` listener (slack) or a signed
+``say`` driving the ``/app_mention`` listener (slack), a signed
 ``POST /callback`` over httpx's ASGITransport with a recording reply (line,
-where the unsigned and wrongly signed bodies are the cases that matter), with
+where the unsigned and wrongly signed bodies are the cases that matter) or a
+recording discovery client driving ``poll_once()`` (gmail, whose recorded
+``send`` kwargs are decoded RFC 2822 bytes), with
 no connection and no token either way.
 """
 
 import os
+import re
 import shlex
 import subprocess
+import sys
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -26,6 +31,12 @@ import yaml
 
 from support import copy_project_recommended
 from support import make_venv
+
+TOP = Path(__file__).absolute().parent.parent
+if str(TOP) not in sys.path:  # tests/test_copier_structure.py does the same to reach tools/
+    sys.path.insert(0, str(TOP))
+
+from tools import when_model  # noqa: E402
 
 # The package this file renders under: the shared "Project Details"
 # (tools/answers.py BASE) plus this name, with copier's own defaults driving
@@ -43,15 +54,21 @@ SLACK_ANSWERS: dict[str, Any] = {"use_recommended_bot": False, "bot_platform": "
 # what pins the port / BOT_PORT side of the render.
 LINE_ANSWERS: dict[str, Any] = {"use_recommended_bot": False, "bot_platform": "line"}
 
-# The two non-recommended platform answer sets, for the tests that must hold
+# The fourth generated platform's answers, same shape. GMAIL is the platform
+# that polls (an outbound call like discord/slack dial out) and whose
+# credentials are FILES (paths, not secrets in the environment), so this
+# fixture is also what pins the .gitignore side of the render.
+GMAIL_ANSWERS: dict[str, Any] = {"use_recommended_bot": False, "bot_platform": "gmail"}
+
+# The non-recommended platform answer sets, for the tests that must hold
 # for every platform rather than for one of them. The recommended one
 # (discord) is left out on purpose: `bot_discord_effective` is keyed on
 # `use_recommended_bot or bot_platform == 'discord'`, so it is not the same
 # branch as the custom ones.
-CUSTOM_PLATFORMS: list[dict[str, Any]] = [SLACK_ANSWERS, LINE_ANSWERS]
+CUSTOM_PLATFORMS: list[dict[str, Any]] = [SLACK_ANSWERS, LINE_ANSWERS, GMAIL_ANSWERS]
 
 
-def copy_project(project_path: Path, **kwargs: object) -> None:
+def copy_project(project_path: Path, **kwargs: Any) -> None:
     """Render the bot fixture into `project_path` (no venv — the fast recipe)."""
     copy_project_recommended(project_path, package_name=BOT_PACKAGE, **kwargs)
 
@@ -89,7 +106,9 @@ def test_bot_scaffold_on_cli(tmp_path: Path):
     # the recommended path renders the recommended platform and nothing else
     assert not (pkg / "bot_slack.py").exists()
     assert not (pkg / "bot_line.py").exists()
+    assert not (pkg / "bot_gmail.py").exists()
     assert "bot-line-bot-example" not in scripts_of(tmp_path)
+    assert "bot-gmail-bot-example" not in scripts_of(tmp_path)
     # the CLI contract is untouched: the console script stays the package's
     assert scripts_of(tmp_path)["bot-example"] == "bot_example.__main__:main"
 
@@ -137,9 +156,11 @@ def test_bot_slack_scaffold_on_cli(tmp_path: Path):
     assert "bot-slack-bot-example" in (tmp_path / "README.md").read_text()
     # one platform per render: nothing from the recommended one is generated
     assert not (pkg / "bot_discord.py").exists()
+    assert not (pkg / "bot_gmail.py").exists()
     assert not (tmp_path / "tests" / "test_bot_discord.py").exists()
-    assert not any(d.startswith("discord") for d in pyproject["project"]["dependencies"])
+    assert not any(d.startswith(("discord", "google")) for d in pyproject["project"]["dependencies"])
     assert "bot-discord-bot-example" not in scripts_of(tmp_path)
+    assert "bot-gmail-bot-example" not in scripts_of(tmp_path)
     # the CLI contract is untouched: the console script stays the package's
     assert scripts_of(tmp_path)["bot-example"] == "bot_example.__main__:main"
 
@@ -184,11 +205,67 @@ def test_bot_line_scaffold_on_cli(tmp_path: Path):
     # one platform per render: nothing from the other two is generated
     assert not (pkg / "bot_discord.py").exists()
     assert not (pkg / "bot_slack.py").exists()
+    assert not (pkg / "bot_gmail.py").exists()
     assert not (tmp_path / "tests" / "test_bot_discord.py").exists()
     assert not (tmp_path / "tests" / "test_bot_slack.py").exists()
-    assert not any(d.startswith(("discord", "slack")) for d in deps)
+    assert not any(d.startswith(("discord", "slack", "google")) for d in deps)
     assert "bot-discord-bot-example" not in scripts_of(tmp_path)
     assert "bot-slack-bot-example" not in scripts_of(tmp_path)
+    assert "bot-gmail-bot-example" not in scripts_of(tmp_path)
+    # the CLI contract is untouched: the console script stays the package's
+    assert scripts_of(tmp_path)["bot-example"] == "bot_example.__main__:main"
+
+
+def test_bot_gmail_scaffold_on_cli(tmp_path: Path):
+    """No + bot_platform=gmail on a cli base: the gmail module rides the
+    src-layout package with its own console script, its in-process test, the
+    google dependencies and both credential-path variables — and no part of
+    any sibling platform. Gmail is the platform whose credentials are FILES,
+    so the generated .gitignore covers the two JSON files the way it covers
+    CTF flag* files."""
+    copy_project(tmp_path, project_type="cli", include_bot=True, **GMAIL_ANSWERS)
+    pkg = tmp_path / "src" / "bot_example"
+    assert (pkg / "bot_gmail.py").is_file()
+    assert (tmp_path / "tests" / "test_bot_gmail.py").is_file()
+    pyproject = pyproject_deps(tmp_path)
+    deps = pyproject["project"]["dependencies"]
+    assert "google-api-python-client>=2,<3" in deps
+    assert "google-auth>=2,<3" in deps
+    assert "google-auth-oauthlib>=1,<2" in deps
+    # polling dials out: no ASGI stack is needed (that is line's)
+    assert not any(d.startswith(("fastapi", "uvicorn")) for d in deps)
+    assert scripts_of(tmp_path)["bot-gmail-bot-example"] == "bot_example.bot_gmail:main"
+    bot_module = (pkg / "bot_gmail.py").read_text()
+    # the startup env check for both credential paths, the build_service()/
+    # main() split, the poll loop, logging through the generated logging_setup
+    assert "GMAIL_CREDENTIALS_JSON" in bot_module
+    assert "GMAIL_TOKEN_JSON" in bot_module
+    assert "GMAIL_POLL_SECONDS" in bot_module
+    assert "def build_service(" in bot_module
+    assert "def poll_once(" in bot_module
+    assert "from bot_example.logging_setup import logger" in bot_module
+    # .env.example documents both credential paths and the polling interval
+    env_example = (tmp_path / ".env.example").read_text()
+    assert "GMAIL_CREDENTIALS_JSON=" in env_example
+    assert "GMAIL_TOKEN_JSON=" in env_example
+    assert "GMAIL_POLL_SECONDS=" in env_example
+    # the credentials are files: the gitignore covers them like the CTF flags
+    gitignore = (tmp_path / ".gitignore").read_text()
+    assert "/credentials.json" in gitignore
+    assert "/token.json" in gitignore
+    # the README advertises the platform that was selected
+    assert "bot-gmail-bot-example" in (tmp_path / "README.md").read_text()
+    # one platform per render: nothing from the siblings is generated
+    assert not (pkg / "bot_discord.py").exists()
+    assert not (pkg / "bot_slack.py").exists()
+    assert not (pkg / "bot_line.py").exists()
+    assert not (tmp_path / "tests" / "test_bot_discord.py").exists()
+    assert not (tmp_path / "tests" / "test_bot_slack.py").exists()
+    assert not (tmp_path / "tests" / "test_bot_line.py").exists()
+    assert not any(d.startswith(("discord", "slack", "line-bot")) for d in deps)
+    assert "bot-discord-bot-example" not in scripts_of(tmp_path)
+    assert "bot-slack-bot-example" not in scripts_of(tmp_path)
+    assert "bot-line-bot-example" not in scripts_of(tmp_path)
     # the CLI contract is untouched: the console script stays the package's
     assert scripts_of(tmp_path)["bot-example"] == "bot_example.__main__:main"
 
@@ -229,6 +306,28 @@ def test_bot_line_scaffold_on_web_api(tmp_path: Path):
     assert "bot-example" not in scripts_of(tmp_path)
 
 
+def test_bot_gmail_scaffold_on_web_api(tmp_path: Path):
+    """A web_api base hosts the gmail module in the top-level app/ package too,
+    and it stays a poller: unlike the line platform it drags no ASGI stack in
+    (the poll dials out), and the entry point points at the app import root."""
+    copy_project(tmp_path, project_type="web_api", include_bot=True, **GMAIL_ANSWERS)
+    pyproject = pyproject_deps(tmp_path)
+    deps = pyproject["project"]["dependencies"]
+    assert "google-api-python-client>=2,<3" in deps
+    assert "google-auth>=2,<3" in deps
+    assert "google-auth-oauthlib>=1,<2" in deps
+    # the google deps are the ONLY new runtime deps: fastapi/uvicorn count
+    # comes from the web_api base itself, untouched
+    assert deps.count("fastapi>=0.115,<1") == 1
+    assert deps.count("uvicorn[standard]>=0.30,<1") == 1
+    assert (tmp_path / "app" / "bot_gmail.py").is_file()
+    assert not list(tmp_path.rglob("src/*/bot_gmail.py"))
+    assert scripts_of(tmp_path)["bot-gmail-bot-example"] == "app.bot_gmail:main"
+    assert "from app import bot_gmail" in (tmp_path / "tests" / "test_bot_gmail.py").read_text()
+    # no console script for the web_api CLI (there is no <pkg> CLI at all)
+    assert "bot-example" not in scripts_of(tmp_path)
+
+
 def test_bot_slack_flat_layout(tmp_path: Path):
     """The flat-layout package variant also ships the slack module and its script."""
     copy_project(tmp_path, project_type="cli", layout="flat", include_bot=True, **SLACK_ANSWERS)
@@ -246,6 +345,16 @@ def test_bot_line_flat_layout(tmp_path: Path):
     assert "line-bot-sdk>=3,<4" in pyproject["project"]["dependencies"]
     assert (tmp_path / "bot_example" / "bot_line.py").is_file()
     assert (tmp_path / "tests" / "test_bot_line.py").is_file()
+    assert not (tmp_path / "src").exists()
+
+
+def test_bot_gmail_flat_layout(tmp_path: Path):
+    """The flat-layout package variant also ships the gmail module and its script."""
+    copy_project(tmp_path, project_type="cli", layout="flat", include_bot=True, **GMAIL_ANSWERS)
+    pyproject = pyproject_deps(tmp_path)
+    assert "google-api-python-client>=2,<3" in pyproject["project"]["dependencies"]
+    assert (tmp_path / "bot_example" / "bot_gmail.py").is_file()
+    assert (tmp_path / "tests" / "test_bot_gmail.py").is_file()
     assert not (tmp_path / "src").exists()
 
 
@@ -282,13 +391,16 @@ def test_bot_gate_recommendation_is_discord(tmp_path: Path):
     pyproject = pyproject_deps(tmp_path)
     assert "discord.py>=2,<3" in pyproject["project"]["dependencies"]
     assert not (tmp_path / "src" / "bot_example" / "bot_slack.py").exists()
-    assert not any(d.startswith("slack") for d in pyproject["project"]["dependencies"])
+    assert not (tmp_path / "src" / "bot_example" / "bot_gmail.py").exists()
+    assert not any(d.startswith(("slack", "google")) for d in pyproject["project"]["dependencies"])
     assert "bot-slack-bot-example" not in scripts_of(tmp_path)
     assert "bot-line-bot-example" not in scripts_of(tmp_path)
+    assert "bot-gmail-bot-example" not in scripts_of(tmp_path)
     assert "line-bot-sdk" not in pyproject["project"]["dependencies"]
     env_example = (tmp_path / ".env.example").read_text()
     assert "SLACK_BOT_TOKEN" not in env_example
     assert "LINE_CHANNEL_SECRET" not in env_example
+    assert "GMAIL_CREDENTIALS_JSON" not in env_example
 
 
 def test_bot_absent_by_default(tmp_path: Path):
@@ -297,18 +409,21 @@ def test_bot_absent_by_default(tmp_path: Path):
     assert not (tmp_path / "src" / "bot_example" / "bot_discord.py").exists()
     assert not (tmp_path / "src" / "bot_example" / "bot_slack.py").exists()
     assert not (tmp_path / "src" / "bot_example" / "bot_line.py").exists()
+    assert not (tmp_path / "src" / "bot_example" / "bot_gmail.py").exists()
     assert not (tmp_path / "tests" / "test_bot_discord.py").exists()
     assert not (tmp_path / "tests" / "test_bot_slack.py").exists()
     assert not (tmp_path / "tests" / "test_bot_line.py").exists()
+    assert not (tmp_path / "tests" / "test_bot_gmail.py").exists()
     deps = pyproject_deps(tmp_path)["project"]["dependencies"]
-    assert not any(d.startswith(("discord", "slack", "line-bot")) for d in deps)
+    assert not any(d.startswith(("discord", "slack", "line-bot", "google")) for d in deps)
     assert "bot-discord-bot-example" not in scripts_of(tmp_path)
     assert "bot-slack-bot-example" not in scripts_of(tmp_path)
     assert "bot-line-bot-example" not in scripts_of(tmp_path)
+    assert "bot-gmail-bot-example" not in scripts_of(tmp_path)
     assert not (tmp_path / ".env.example").exists()
 
 
-@pytest.mark.parametrize("platform_answers", CUSTOM_PLATFORMS, ids=["slack", "line"])
+@pytest.mark.parametrize("platform_answers", CUSTOM_PLATFORMS, ids=["slack", "line", "gmail"])
 @pytest.mark.parametrize(
     ("project_type", "extra"),
     [
@@ -333,25 +448,29 @@ def test_bot_not_offered_to_other_types(
     A custom platform is forced alongside include_bot on purpose: what keeps
     the layer out of these bases is ``bot_effective``'s base guard, not the
     platform selection, so the sharpest fixture is the one that would leak if
-    the guard were wired to a platform condition instead. Both custom
-    platforms are exercised — slack (an outbound client) and line (a module
-    that would also drag fastapi/uvicorn in) — because a guard wired to a
-    platform condition would leak differently for each.
+    the guard were wired to a platform condition instead. All three custom
+    platforms are exercised — slack (an outbound client), line (a module that
+    would also drag fastapi/uvicorn in) and gmail (whose dependency trio would
+    collide with a gcp cloud_provider's google-* deps) — because a guard wired
+    to a platform condition would leak differently for each.
     """
     project_path = tmp_path / project_type
     copy_project(project_path, project_type=project_type, include_bot=True, **platform_answers, **extra)
     assert not list(project_path.rglob("bot_discord.py"))
     assert not list(project_path.rglob("bot_slack.py"))
     assert not list(project_path.rglob("bot_line.py"))
+    assert not list(project_path.rglob("bot_gmail.py"))
     assert not (project_path / "tests" / "test_bot_discord.py").exists()
     assert not (project_path / "tests" / "test_bot_slack.py").exists()
     assert not (project_path / "tests" / "test_bot_line.py").exists()
+    assert not (project_path / "tests" / "test_bot_gmail.py").exists()
     deps = pyproject_deps(project_path)["project"]["dependencies"]
-    assert not any(d.startswith(("discord", "slack", "line-bot")) for d in deps)
+    assert not any(d.startswith(("discord", "slack", "line-bot", "google")) for d in deps)
     scripts = scripts_of(project_path)
     assert "bot-discord-bot-example" not in scripts
     assert "bot-slack-bot-example" not in scripts
     assert "bot-line-bot-example" not in scripts
+    assert "bot-gmail-bot-example" not in scripts
     # no bot-shaped directory is left empty by a half-applied layer (the
     # render's own empty dirs — .git internals, an unpopulated docs/ tree —
     # are pre-existing behaviour, not the layer's)
@@ -366,8 +485,9 @@ def test_bot_not_offered_to_other_types(
         ({}, "bot-discord-bot-example", ("DISCORD_BOT_TOKEN",), "--sync-guild"),
         (SLACK_ANSWERS, "bot-slack-bot-example", ("SLACK_BOT_TOKEN", "SLACK_APP_TOKEN"), "no port"),
         (LINE_ANSWERS, "bot-line-bot-example", ("LINE_CHANNEL_SECRET", "LINE_CHANNEL_ACCESS_TOKEN"), "8000:8000"),
+        (GMAIL_ANSWERS, "bot-gmail-bot-example", ("GMAIL_CREDENTIALS_JSON", "GMAIL_TOKEN_JSON"), "read-only"),
     ],
-    ids=["discord", "slack", "line"],
+    ids=["discord", "slack", "line", "gmail"],
 )
 def test_bot_docker_task(
     tmp_path: Path,
@@ -381,7 +501,8 @@ def test_bot_docker_task(
     its credentials, and the Dockerfile documents the same run. The container
     differences are the platform's: Slack opens no port (nothing is EXPOSEd
     for it), LINE serves its webhook, so both its task recipe and the
-    Dockerfile's example publish 8000."""
+    Dockerfile's example publish 8000, and Gmail is the one whose credentials
+    are files, so its task recipe and Dockerfile bind them read-only."""
     copy_project(tmp_path, project_type="cli", include_bot=True, docker=True, **platform_answers)
     taskfile = (tmp_path / "justfile").read_text()
     dockerfile = (tmp_path / "Dockerfile").read_text()
@@ -404,8 +525,9 @@ def test_bot_no_docker_no_task(tmp_path: Path):
         ({}, ("bot_discord", "bot-discord-bot-example", "discord.py", "DISCORD_BOT_TOKEN")),
         (SLACK_ANSWERS, ("bot_slack", "bot-slack-bot-example", "slack-bolt", "SLACK_BOT_TOKEN")),
         (LINE_ANSWERS, ("bot_line", "bot-line-bot-example", "line-bot-sdk", "LINE_CHANNEL_SECRET")),
+        (GMAIL_ANSWERS, ("bot_gmail", "bot-gmail-bot-example", "google-api-python-client", "GMAIL_CREDENTIALS_JSON")),
     ],
-    ids=["discord", "slack", "line"],
+    ids=["discord", "slack", "line", "gmail"],
 )
 def test_bot_and_mcp_entry_points_do_not_collide(
     tmp_path: Path,
@@ -436,6 +558,37 @@ def test_bot_questionnaire_records_the_answers(tmp_path: Path):
     copy_project(tmp_path, project_type="cli", include_bot=True)
     recorded = yaml.safe_load((tmp_path / ".copier-answers.yml").read_text())
     assert recorded["include_bot"] is True
+
+
+def test_include_bot_and_include_mcp_gates_stay_in_sync():
+    """The two long-running layers share one base set: `include_bot.when` must
+    offer the layer wherever `include_mcp.when` offers its.
+
+    Both gates are the ask-time half of the same base guard — the
+    `bot_effective` / `mcp_effective` base guards (questions/_internal.yml)
+    accept `project_type == 'cli'`, `project_type == 'web_api'` and the
+    library+`include_web_api` combo. include_mcp grew its `or include_web_api`
+    clause by hand before include_bot did, so one effective configuration (a
+    library base that opted into the web_api layer) was asked about MCP but
+    not about the bot. Pin the gates' base literals and combo reference so a
+    future base or layer changes both or neither; a drift here would open the
+    same hole `bot_effective`'s use of the effective `web_api` cannot paper
+    over, because the unasked question stays at its default.
+    """
+    questions, _ = when_model.load_questions()
+    bot = questions["include_bot"]["when"]
+    mcp = questions["include_mcp"]["when"]
+    for gate, when in (("include_bot", bot), ("include_mcp", mcp)):
+        bases = set(re.findall(r"'([a-z0-9_]+)'", when))
+        assert bases == {"cli", "web_api"}, (
+            f"{gate}.when's base literals drifted from the long-running layer's base set "
+            f"({sorted(bases)} != ['cli', 'web_api']); keep it in sync with include_bot / "
+            "include_mcp and the bot_effective / mcp_effective base guards"
+        )
+        assert "include_web_api" in when, (
+            f"{gate}.when lost the library+include_web_api combo — the effective "
+            "configuration cli/web_api bases see must see the layer question too"
+        )
 
 
 @pytest.mark.heavy
@@ -496,6 +649,29 @@ def test_bot_line_runs_in_process(tmp_path: Path):
     )
 
 
+@pytest.mark.heavy
+@pytest.mark.network
+def test_bot_gmail_runs_in_process(tmp_path: Path):
+    """The gmail scaffold must work the same way: sync the project and run its
+    own pytest (tests/test_bot_gmail.py drives poll_once() with a recording
+    stand-in for the Gmail discovery client — a `/ping` subject in, the pong
+    reply sent on the message's thread and the message marked read, and mail
+    without the trigger left unread; the raw RFC 2822 reply is decoded right
+    in the test, with no OAuth, no browser, no network, no mailbox), then
+    type-check and lint the gmail module with no exclusions."""
+    copy_project(tmp_path, project_type="cli", include_bot=True, **GMAIL_ANSWERS)
+    run = make_venv(tmp_path)
+    run("uv run --locked pytest -q")
+    run("uv run --locked basedpyright src tests")
+    run("uv run --locked ruff check src tests")
+    _refusal_output(
+        tmp_path,
+        tmp_path / ".venv",
+        "bot_example.bot_gmail",
+        ("GMAIL_CREDENTIALS_JSON", "GMAIL_TOKEN_JSON"),
+    )
+
+
 def _refusal_output(project_path: Path, venv: Path, module: str, tokens: tuple[str, ...]) -> str:
     """`python -m <pkg>.<module>` without tokens: the startup env check refuses
     (exit code 2, naming every variable that is not set) instead of
@@ -512,6 +688,8 @@ def _refusal_output(project_path: Path, venv: Path, module: str, tokens: tuple[s
             "SLACK_APP_TOKEN",
             "LINE_CHANNEL_SECRET",
             "LINE_CHANNEL_ACCESS_TOKEN",
+            "GMAIL_CREDENTIALS_JSON",
+            "GMAIL_TOKEN_JSON",
         }
     }
     proc = subprocess.run(

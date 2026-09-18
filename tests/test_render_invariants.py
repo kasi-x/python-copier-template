@@ -13,6 +13,9 @@ point at a page the render never wrote. This module adds the deterministic
   artifact is rendered;
 - the ``AGENTS.md`` command table names the runner this render ships and only
   tasks that runner defines;
+- the ``AGENTS.md`` ethics appendix ships exactly the sections the render's
+  project kind selects (the gates mirror _shared/ethics/REGISTRY.yml's
+  active rows);
 - every relative ``README.md`` link resolves inside the render;
 - every ``zensical.toml`` / ``mkdocs.yml`` nav target exists in the render.
 
@@ -24,7 +27,8 @@ fails if the file's registry and that table drift apart.
 Every predicate is a pure function of the rendered bytes: no venv, no network,
 no execution (PLAN-improvements §24.1 puts those in L3). The module therefore
 carries no ``heavy``/``slow``/``network``/``full`` marker and lands in
-``test-fast`` (``-m "not heavy and not slow and not meta"``) by construction.
+``test-fast`` (``-m "not heavy and not slow and not meta and not network"``)
+by construction.
 
 Why this sample -- §24.1 measures L2 at 0.58s/leaf, so the sample is what
 bounds the cost. All ten recommended paths of tests/test_recommended_path.py
@@ -62,6 +66,7 @@ if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.p
 
 from tools import batch  # noqa: E402
 from tools import invariants  # noqa: E402
+from tools.answers import BASE  # noqa: E402
 
 # The one source for which content predicates a leaf class must satisfy.
 INVARIANTS = invariants.load()
@@ -71,7 +76,6 @@ INVARIANTS = invariants.load()
 # conftest.py into every generated project, which has neither copier nor fcntl.
 from render_cache import RenderCache  # noqa: E402
 from render_cache import render_cache as render_cache  # noqa: E402, PLC0414
-from test_recommended_path import BASE  # noqa: E402
 from test_recommended_path import FAST_PATHS  # noqa: E402
 from test_task_runners import RENDER_ARGS  # noqa: E402
 
@@ -197,6 +201,7 @@ class Counters:
     third_party_imports: int = 0
     agent_tables: int = 0
     readme_links: int = 0
+    ethics_appendices: int = 0
     readme_relative: int = 0
     nav_files: int = 0
     nav_entries: int = 0
@@ -564,6 +569,48 @@ def _nav_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
     return problems
 
 
+# The ethics appendix's section markers (each section's h1 title) and the
+# answers that select them. The conditions mirror AGENTS.md.jinja's gates,
+# which mirror _shared/ethics/REGISTRY.yml's active rows' audiences: license
+# drift ships with the guide itself, PQC on library/cli/web_api, and
+# AI-and-copyright on cli and the data-science layout.
+ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
+    "license-drift": ("ライセンス変動", lambda answers: True),
+    "pqc-fips": (
+        "PQC標準",
+        lambda answers: (
+            answers.get("project_type") in ("library", "cli")
+            or answers.get("project_type") == "web_api"
+            or bool(answers.get("include_web_api", False))
+        ),
+    ),
+    "copyright-ai": (
+        "AIと著作権",
+        lambda answers: (
+            answers.get("project_type") == "cli"
+            or answers.get("project_type") == "data_science"
+            or bool(answers.get("include_data_science", False))
+        ),
+    ),
+}
+
+
+def _ethics_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
+    """Predicate 5: the AGENTS.md ethics appendix vs the kind's selected sections."""
+    path = root / "AGENTS.md"
+    if not path.exists():
+        return []  # no agent guide is rendered for online_judge, ros2 and micropython
+    counters.ethics_appendices += 1
+    text = path.read_text(encoding="utf-8")
+    problems: list[str] = []
+    for section, (marker, selects) in ETHICS_SECTIONS.items():
+        if selects(leaf.answers) and marker not in text:
+            problems.append(f"{leaf.id}: the ethics appendix is missing its {section} section")
+        if not selects(leaf.answers) and marker in text:
+            problems.append(f"{leaf.id}: the ethics appendix ships the {section} section uninvited")
+    return problems
+
+
 # One implementation per predicate id the invariants file may name. The ids
 # are the file's registry (tests/matrix/invariants.yml `predicates:`); a name
 # with no implementation here, or an implementation no row names, fails
@@ -573,6 +620,7 @@ PREDICATES: dict[str, Callable[[Leaf, Path, Counters], list[str]]] = {
     "agents-md": _agents_problems,
     "readme-links": _readme_problems,
     "docs-nav": _nav_problems,
+    "ethics-appendix": _ethics_problems,
 }
 
 

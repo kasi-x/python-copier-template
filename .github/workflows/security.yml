@@ -30,3 +30,8 @@ jobs:
         with:
           advanced-security: false
           inputs: .github/workflows
+          # pin the zizmor cli: a 2026-09-07 zizmor release added new
+          # audits and version: latest made every project's security
+          # workflow go red at once. renovate bumps the action sha
+          # above; move this pin in the same change.
+          version: "1.30.1"

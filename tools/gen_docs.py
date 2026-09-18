@@ -16,6 +16,8 @@ repeats that data, so none of it can silently drift again:
   combination), generated from `support.yml`.
 - `docs/reference/support.md`: the full support matrix, prose included, also
   generated from `support.yml`.
+- `docs/explanations/verification.md`: the cost-ledger table (selector, tests,
+  budget, measured), generated from `tests/matrix/tiers.json` (§28.6-D4).
 
 The support blocks are only generated when `support.yml` exists (W4 owns
 that file; no `support.yml`, no block).
@@ -38,6 +40,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from collections.abc import Callable
@@ -46,19 +49,19 @@ from itertools import count
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
 from tools import questionnaire  # noqa: E402
+from tools import support_ledger  # noqa: E402
+from tools import when_model  # noqa: E402
 from tools.questionnaire import Question  # noqa: E402
 
 QUESTIONNAIRE_DOC = TOP / "docs" / "reference" / "questionnaire.md"
 FEATURES_DOC = TOP / "docs" / "reference" / "features.md"
-SUPPORT_DOC = TOP / "docs" / "reference" / "support.md"
-SUPPORT_YML = TOP / "support.yml"
+SUPPORT_DOC = support_ledger.SUPPORT_DOC
+SUPPORT_YML = support_ledger.SUPPORT_YML
 
 BEGIN = "<!-- BEGIN GENERATED: {name} (tools/gen_docs.py --write) -->"
 END = "<!-- END GENERATED: {name} -->"
@@ -66,21 +69,17 @@ END = "<!-- END GENERATED: {name} -->"
 GATE_PREFIX = "use_recommended_"
 INCLUDE_PREFIX = "include_"
 
-# Conditions rendered in prose. The key is the `when` string exactly as the
-# questionnaire writes it, so a changed condition is a loud generator failure
-# instead of a stale sentence in the docs.
-CONDITION_PROSE: dict[str, str] = {
-    "{{ project_type in ['library', 'cli'] }}": "library / cli",
-    "{{ project_type in ['library', 'cli', 'web_api'] }}": "library / cli / web_api",
-    "{{ project_type in ['library', 'cli', 'data_science'] or kaggle }}": "library / cli / data_science / kaggle",
-    "{{ project_type in ['cli', 'web_api'] }}": "cli / web_api",
-    "{{ not (project_type == 'ros2' and ros2_package_manager == 'pixi') }}": "not ros2 + pixi",
-    "{{ include_scraping }}": "a `cli` base answers Yes to `include_scraping`",
-    "{{ include_bot }}": "a `cli` / `web_api` base answers Yes to `include_bot`",
-    "{{ has_data_science }}": "the data_science layer is present",
-    "{{ has_web_api }}": "the web_api layer is present",
-    "{{ git_platform == 'github.com' }}": "`git_platform` = github.com",
-    "{{ git_platform == 'gitlab.com' }}": "`git_platform` = gitlab.com",
+# Boolean identifiers a condition may name, with the explanation the prose
+# table gives them. Keyed by the identifier itself (the meaning), never by the
+# whole `when` string (the spelling): a semantically identical rewrite of a
+# condition renders the same sentence, and every other identifier renders
+# mechanically -- see `_condition_prose`. A genuinely new shape is a loud
+# generator failure, not a stale sentence in the docs.
+BOOL_PROSE: dict[str, str] = {
+    "include_scraping": "a `cli` base answers Yes to `include_scraping`",
+    "include_bot": "a `cli` / `web_api` base answers Yes to `include_bot`",
+    "include_web_api": "library + the web_api layer",
+    "kaggle": "kaggle",
 }
 ALL_TYPES = "all"
 
@@ -88,7 +87,6 @@ ALL_TYPES = "all"
 # (`Recommended: ...`, `Answer No to ...`): the prompt stops before them.
 PROMPT_STOPS = ("Recommended: ", "Answer No to ", "Answer Yes ", "Deselect ", "If yes", "If true")
 
-_PROJECT_TYPE_EQ = re.compile(r"^\{\{\s*project_type == '([a-z0-9_]+)'\s*\}\}$")
 _HELP_BULLET = re.compile(r"^- ([A-Za-z0-9_.\-]+): (.*)$")
 
 # Link targets for the task runners the questionnaire offers. The runner
@@ -114,21 +112,29 @@ class GenDocsError(Exception):
 
 
 def _mentions(question: Question, names: list[str]) -> bool:
-    """True when the raw `when` expression references any of `names`."""
-    when = str(question.when)
-    return any(name in when for name in names)
+    """True when the raw `when` expression references any of `names`.
+
+    The identifiers come from when_model's Jinja scanner -- the one scanner --
+    so a prefix-collision (`use_recommended_docs` inside
+    `use_recommended_docs_type`) cannot fake a reference the way a raw
+    substring match would.
+    """
+    return bool(when_model.jinja_identifiers(str(question.when)) & set(names))
 
 
 def _mentions_project_type(question: Question, choice: str) -> bool:
     """True when a question is asked for one `project_type` choice.
 
-    Either the `when` compares `project_type` to the literal, or it tests a
-    derived boolean named after the choice (`online_judge`, ...).
+    Either the `when` compares `project_type` to the literal (the quoted form
+    is exact, so `cli` cannot match `'client'`), or it tests a derived boolean
+    named after the choice (`online_judge`, ...), identified through the same
+    scanner as `_mentions`.
     """
     when = str(question.when)
-    if f"'{choice}'" in when:
+    identifiers = when_model.jinja_identifiers(when)
+    if "project_type" in identifiers and f"'{choice}'" in when:
         return True
-    return re.search(rf"\b{re.escape(choice)}\b", when) is not None
+    return choice in identifiers
 
 
 @dataclass(frozen=True)
@@ -301,16 +307,132 @@ def choice_help(question: Question) -> dict[str, str]:
 
 
 def condition(question: Question) -> str:
-    """The `when` condition in prose, or `all` when the question always runs."""
+    """The `when` condition in prose, or `all` when the question always runs.
+
+    Rendered from the parsed expression -- when_model owns the tokenizer -- so
+    the match is by meaning, not spelling: a semantically identical rewrite of
+    a condition renders the same sentence, and a shape no rule below covers is
+    a loud generator failure instead of a stale sentence in the docs.
+    """
     if question.when is None:
         return ALL_TYPES
-    raw = str(question.when)
-    match = _PROJECT_TYPE_EQ.match(raw)
-    if match:
-        return match.group(1)
-    if raw in CONDITION_PROSE:
-        return CONDITION_PROSE[raw]
-    msg = f"question {question.name!r} has an unmapped when condition: {raw!r}"
+    return _condition_prose(str(question.when))
+
+
+def _condition_prose(raw: str) -> str:
+    """One `when` expression as prose, parsed from when_model's token stream.
+
+    The grammar is the questionnaire's own Jinja subset; the prose rules: a
+    `project_type` comparison renders as its choices (`library / cli`), any
+    other comparison as `` `var` = value ``, a boolean identifier as its
+    BOOL_PROSE explanation (or the `has_*` layer sentence), `or` joins with
+    ` / ` and `and` with ` + `. A negative and-chain reads `not a + b`.
+    """
+    prose, rest = _or_prose(when_model.tokenize_when(raw))
+    if rest:
+        msg = f"unparsed trailing tokens in when condition {raw!r}: {rest}"
+        raise GenDocsError(msg)
+    return prose
+
+
+def _or_prose(tokens: list[str]) -> tuple[str, list[str]]:
+    """`a or b` renders as `a / b` (the choices a condition admits)."""
+    prose, rest = _and_prose(tokens)
+    while rest and rest[0] == "or":
+        rhs, rest = _and_prose(rest[1:])
+        prose = f"{prose} / {rhs}"
+    return prose, rest
+
+
+def _and_prose(tokens: list[str]) -> tuple[str, list[str]]:
+    """`a and b` renders as `a + b` (requirements stacked in one condition)."""
+    prose, rest = _atom_prose(tokens)
+    while rest and rest[0] == "and":
+        rhs, rest = _atom_prose(rest[1:])
+        prose = f"{prose} + {rhs}"
+    return prose, rest
+
+
+def _atom_prose(tokens: list[str]) -> tuple[str, list[str]]:
+    """One atom: a negation, a parenthesized group, or a comparison/name."""
+    if not tokens:
+        msg = "a when condition ends where an operand was expected"
+        raise GenDocsError(msg)
+    if tokens[0] == "not":
+        inner, rest = _atom_prose(tokens[1:])
+        return f"not {inner}", rest
+    if tokens[0] == "(":
+        inner, rest = _or_prose(tokens[1:])
+        if not rest or rest[0] != ")":
+            msg = "a when condition has an unbalanced parenthesis"
+            raise GenDocsError(msg)
+        return inner, rest[1:]
+    return _comparison_prose(tokens)
+
+
+def _comparison_prose(tokens: list[str]) -> tuple[str, list[str]]:
+    """One comparison or bare name, as prose.
+
+    A `project_type` comparison renders as its choices (`library / cli`), any
+    other comparison as `` `var` = value `` or `` `var` in [a, b] ``, and a
+    bare boolean identifier as its `_bool_prose` explanation.
+    """
+    name = tokens[0]
+    if len(tokens) > 2 and tokens[1] in ("==", "!="):
+        literal = _literal(tokens[2])
+        if name == "project_type":
+            if tokens[1] != "==":
+                msg = f"project_type != is not a shape the prose covers: {' '.join(tokens[:3])!r}"
+                raise GenDocsError(msg)
+            return literal, tokens[3:]
+        # Prose says `=` whatever the operator's arity: the sentence names the
+        # value, it does not re-spell Jinja.
+        return f"`{name}` = {literal}" if tokens[1] == "==" else f"`{name}` != {literal}", tokens[3:]
+    if len(tokens) > 2 and tokens[1] == "in":
+        values, rest = _literal_list(tokens[2:])
+        if name == "project_type":
+            return " / ".join(values), rest
+        return f"`{name}` in [{', '.join(values)}]", rest
+    if len(tokens) > 3 and tokens[1:3] == ["not", "in"]:
+        values, rest = _literal_list(tokens[3:])
+        return f"`{name}` not in [{', '.join(values)}]", rest
+    return _bool_prose(name), tokens[1:]
+
+
+def _literal(token: str) -> str:
+    """A quoted string token, unquoted."""
+    if len(token) >= 2 and token[0] == token[-1] and token[0] in "'\"":
+        return token[1:-1]
+    msg = f"expected a quoted literal, got {token!r}"
+    raise GenDocsError(msg)
+
+
+def _literal_list(tokens: list[str]) -> tuple[list[str], list[str]]:
+    """`['a', 'b', ...]` as unquoted values; returns the values and the rest."""
+    if not tokens or tokens[0] != "[":
+        msg = f"expected a literal list, got {' '.join(tokens[:3])!r}"
+        raise GenDocsError(msg)
+    values: list[str] = []
+    rest = tokens[1:]
+    while rest and rest[0] != "]":
+        if rest[0] == ",":
+            rest = rest[1:]
+            continue
+        values.append(_literal(rest[0]))
+        rest = rest[1:]
+    if not rest:
+        msg = "a when condition's literal list is never closed"
+        raise GenDocsError(msg)
+    return values, rest[1:]
+
+
+def _bool_prose(name: str) -> str:
+    """A bare boolean identifier as prose: the curated explanation or the layer sentence."""
+    if name in BOOL_PROSE:
+        return BOOL_PROSE[name]
+    if name.startswith("has_"):
+        return f"the {name.removeprefix('has_')} layer is present"
+    msg = f"no prose rule for the bare condition name {name!r} (add it to BOOL_PROSE)"
     raise GenDocsError(msg)
 
 
@@ -334,11 +456,6 @@ def asked_for_values(question: Question) -> list[str]:
     if "project_type" in raw:
         return []
     return re.findall(r"== '([A-Za-z0-9_.\-]+)'", raw)
-
-
-def _cell(text: str) -> str:
-    """A markdown table cell: one line, no unescaped pipes."""
-    return " ".join(text.split()).replace("|", "\\|")
 
 
 def _wrap(text: str, prefix: str = "", continuation: str = "  ", width: int = 100) -> list[str]:
@@ -425,7 +542,10 @@ def render_project_types(model: Model) -> str:
 def _area_table(model: Model) -> list[str]:
     """The area-gate table: gate, its recommended default, and when it is asked."""
     lines = ["| Area gate | Recommended default | Asked when |", "|---|---|---|"]
-    lines += [f"| `{gate.name}` | {_cell(recommended(gate))} | {_cell(condition(gate))} |" for gate in model.area_gates]
+    lines += [
+        f"| `{gate.name}` | {support_ledger.cell(recommended(gate))} | {support_ledger.cell(condition(gate))} |"
+        for gate in model.area_gates
+    ]
     return lines
 
 
@@ -527,8 +647,9 @@ def render_project_details(model: Model) -> str:
         "|---|---|---|---|",
     ]
     lines += [
-        f"| `{question.name}` | {_cell(default_prose(question))} | {_cell(condition(question))}"
-        f" | {_cell(prompt_line(question))} |"
+        f"| `{question.name}` | {support_ledger.cell(default_prose(question))}"
+        f" | {support_ledger.cell(condition(question))}"
+        f" | {support_ledger.cell(prompt_line(question))} |"
         for question in model.project_details
     ]
     return "\n".join(lines)
@@ -561,125 +682,19 @@ def _runner_list(question: Question) -> str:
     return " / ".join(parts)
 
 
-def _matrix_rows(rows: list[Any], *, drop: tuple[str, ...] = (), plain: tuple[str, ...] = ()) -> str:
-    """One markdown table over `rows`, deriving its columns from their keys.
-
-    `drop` removes keys that belong in the full reference but not in a
-    summary: the catalogue keeps one row per combination, while the `why`
-    column (the measured evidence) lives in `docs/reference/support.md`.
-
-    `plain` columns are prose cells, rendered without the code-span wrapping
-    `_support_cell` gives identifiers (`why` quotes commands and paths).
-    """
-    columns: list[str] = []
-    for row in rows:
-        if not isinstance(row, dict):
-            msg = "every support entry must be a mapping"
-            raise GenDocsError(msg)
-        columns += [str(key) for key in row if str(key) not in columns and str(key) not in drop]
-    if not columns:
-        msg = "a support section has no columns to render"
-        raise GenDocsError(msg)
-    lines = [f"| {' | '.join(columns)} |", f"|{'---|' * len(columns)}"]
-    for row in rows:
-        cells = [
-            _cell(str(row.get(column))) if column in plain else _cell(_support_cell(row.get(column)))
-            for column in columns
-        ]
-        lines.append(f"| {' | '.join(cells)} |")
-    return "\n".join(lines)
-
-
-def _support_section(support: dict[str, Any], key: str) -> list[Any]:
-    """One `support.yml` section, validated as a non-empty list of mappings."""
-    rows = support.get(key)
-    if not isinstance(rows, list) or not rows:
-        msg = f"support.yml has no non-empty `{key}:` list"
-        raise GenDocsError(msg)
-    return rows
-
-
 def render_support_table(support: dict[str, Any]) -> str:
     """`docs/reference/features.md`: the compact support summary, from `support.yml`.
 
-    One row per combination and no `why` column: the full matrix and its
-    evidence live in `docs/reference/support.md`, which the summary links to
-    (the link is relative to the page the summary is generated into).
-    The columns are the entry keys, in the order the file writes them, so the
-    table follows whatever shape W4 settles on instead of pinning one here.
+    Bound to the link into the full reference, which only this module knows
+    (the summary is generated into the catalogue page).
     """
-    blocks = [
-        "**Supported** — executed end to end by CI:",
-        "",
-        _matrix_rows(_support_section(support, "supported"), drop=("why",)),
-    ]
-    best_effort = support.get("best_effort")
-    if best_effort is not None:
-        blocks += [
-            "",
-            "**Best effort** — rendered by CI, but never executed:",
-            "",
-            _matrix_rows(_support_section(support, "best_effort"), drop=("why",)),
-        ]
     link = SUPPORT_DOC.relative_to(FEATURES_DOC.parent)
-    blocks += ["", f"Full matrix and the evidence behind each tier: [{link}]({link})."]
-    return "\n".join(blocks)
+    return support_ledger.render_support_table(support, full_link=str(link))
 
 
 def render_support_doc(support: dict[str, Any]) -> str:
     """`docs/reference/support.md`: the full support matrix, prose included."""
-    sections = {key: _support_section(support, key) for key in ("supported", "best_effort", "tier_policy")}
-    lines = [
-        "Every combination this template keeps working, the tier that guarantees",
-        "it, and the measured evidence behind that tier.",
-        "",
-        "## Supported",
-        "",
-        "Executed end to end in CI by the witness full tier: `uv sync`, the",
-        "generated project's own pytest, basedpyright and its docs build.",
-        f"Measured at ~3 minutes per leaf, so only these {len(sections['supported'])} run it.",
-        "",
-        _matrix_rows(sections["supported"], plain=("why",)),
-        "",
-        "## Best effort",
-        "",
-        "Declared so the questionnaire's existing answers keep rendering, but",
-        "never executed by CI. The witness fast tier renders and ruff-checks",
-        "these leaves (228 renders at ~1.3 s each, 10-20 s in parallel); a",
-        "regression that only breaks install or run is not caught there.",
-        "",
-        _matrix_rows(sections["best_effort"], plain=("why",)),
-        "",
-        "## Tier policy",
-        "",
-        "Which tier each class of witness leaf is declared for. `none` is",
-        "reserved for a future W4 exclusion: it is declared as `tier: none`",
-        "plus a `reason` in `tests/matrix/witnesses.json`, and no leaf uses it",
-        "today because every declared leaf has a recorded fast-tier run.",
-        "",
-        _matrix_rows(sections["tier_policy"], plain=("why",)),
-    ]
-    return "\n".join(lines)
-
-
-def _support_cell(value: Any) -> str:
-    """One support-matrix cell."""
-    if isinstance(value, list):
-        return ", ".join(f"`{item}`" for item in value)
-    if isinstance(value, bool):
-        return "yes" if value else "no"
-    if value is None:
-        return "—"
-    return f"`{value}`"
-
-
-def load_support(path: Path) -> dict[str, Any]:
-    """Read `support.yml`."""
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        msg = f"{path.name} must hold a mapping"
-        raise GenDocsError(msg)
-    return data
+    return support_ledger.render_support_doc(support)
 
 
 # ---------------------------------------------------------------------------
@@ -809,13 +824,38 @@ def _graph_tail(graph: _Graph, tail: list[Question], entries: list[str], after_i
         previous = after
 
 
+def _head_split(model: Model) -> tuple[list[Question], list[Question]]:
+    """Split the gates into the head run and the ones behind the ask diamonds.
+
+    The head gates are the leading run drawn straight off `project_type`; the
+    rest chain behind the mid-sequence ask diamonds. Derived from the ask
+    order, not a count (TODO.md §28.5 R5): the head gates are the ones asked
+    before the first project-type branch that itself follows a gate (today,
+    online_judge), so a new gate or a moved genre's questions reshape the
+    graph without editing a hardcoded slice.
+    """
+    gates = model.gates
+    order = {q.name: index for index, q in enumerate(model.questions)}
+    mid = min(
+        (
+            group.first_index
+            for group in _ask_groups(model)
+            if any(order[gate.name] < group.first_index for gate in gates)
+        ),
+        default=None,
+    )
+    if mid is None:
+        return gates, []
+    return [gate for gate in gates if order[gate.name] < mid], [gate for gate in gates if order[gate.name] >= mid]
+
+
 def render_mermaid(model: Model) -> str:
     """The questionnaire's ask order, with each gate's Yes/No branches."""
     gates = model.gates
     if not gates:
         msg = "the questionnaire has no use_recommended_* gate to draw"
         raise GenDocsError(msg)
-    head, tail = gates[:2], gates[2:]
+    head, tail = _head_split(model)
     early, late = _split_asks(model, head[0])
     graph = _Graph(model)
     early_ids = [graph.node("Q") for _ in early]
@@ -933,6 +973,8 @@ def targets(support: Path = SUPPORT_YML) -> list[Target]:
     keeps no generated region; the support matrix is only generated when
     `support.yml` exists: W4 owns that file, and its blocks (the catalogue's
     summary and the full `docs/reference/support.md` reference) appear with it.
+    The tier-ledger block (docs/explanations/verification.md) is generated
+    from the cost ledger, not the questionnaire (TODO.md §28.6-D4).
     """
     blocks = [
         Target(QUESTIONNAIRE_DOC, "project-types", render_project_types),
@@ -942,11 +984,50 @@ def targets(support: Path = SUPPORT_YML) -> list[Target]:
         Target(FEATURES_DOC, "features-areas", render_features_areas),
         Target(FEATURES_DOC, "features-mermaid", _mermaid_block),
         Target(FEATURES_DOC, "features-task-runner", render_features_task_runner),
+        Target(VERIFICATION_DOC, "tier-ledger", render_tier_ledger),
     ]
     if support.is_file():
         blocks.append(Target(FEATURES_DOC, "support-table", _support_block(support)))
         blocks.append(Target(SUPPORT_DOC, "support-matrix", _support_doc_block(support)))
     return blocks
+
+
+TIERS_JSON = TOP / "tests" / "matrix" / "tiers.json"
+"""The cost ledger (tests/test_marker_drift.py owns enforcing it)."""
+
+VERIFICATION_DOC = TOP / "docs" / "explanations" / "verification.md"
+"""The page whose tier table carries the ledger's numbers."""
+
+
+def render_tier_ledger(_model: Model) -> str:
+    """`docs/explanations/verification.md`: the cost ledger as a table.
+
+    The selector, the collected count, the budget and the measured wall are
+    the ledger's own numbers (TODO.md §28.6-D4), so this block is generated
+    from `tests/matrix/tiers.json` instead of a hand-copied table drifting
+    from it -- the same "the docs repeat the data, the generator owns the
+    region" treatment the questionnaire blocks get. The hand-written table
+    above it keeps the *roles* (what each tier is for); this one keeps the
+    *numbers* (what each tier costs and when that was measured).
+    """
+    ledger = json.loads(TIERS_JSON.read_text(encoding="utf-8"))
+    entries: list[tuple[str, dict[str, Any]]] = [
+        *ledger["tiers"].items(),
+        *ledger.get("witness", {}).items(),
+    ]
+    lines = ["| Ledger row | Selector | Tests | Budget | Measured |", "|---|---|---|---|---|"]
+    for name, row in entries:
+        selector = f'-m "{row["expression"]}"' if row.get("expression") else "—"
+        budget = (
+            f"{row['budget_seconds']}s (measured {row['wall_seconds']}s)"
+            if "budget_seconds" in row
+            else f"measured {row['wall_seconds']}s"
+        )
+        lines.append(
+            f"| `{row.get('task', name)}` | `{support_ledger.cell(selector)}`"
+            f" | {row['collected']} | {support_ledger.cell(budget)} | {row['measured']} |"
+        )
+    return "\n".join(lines)
 
 
 def _mermaid_block(model: Model) -> str:
@@ -958,7 +1039,7 @@ def _support_block(support: Path) -> Callable[[Model], str]:
     """A renderer for the catalogue's compact support summary, bound to `support.yml`."""
 
     def render(_model: Model) -> str:
-        return render_support_table(load_support(support))
+        return render_support_table(support_ledger.load_support(support))
 
     return render
 
@@ -967,7 +1048,7 @@ def _support_doc_block(support: Path) -> Callable[[Model], str]:
     """A renderer for the full `docs/reference/support.md`, bound to `support.yml`."""
 
     def render(_model: Model) -> str:
-        return render_support_doc(load_support(support))
+        return render_support_doc(support_ledger.load_support(support))
 
     return render
 

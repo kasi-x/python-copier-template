@@ -5,8 +5,9 @@ TODO.md §18's unification work (items 2/3/4) was done by hand: an inventory
 classified every condition site, equivalent forms were named as internal
 variables (`oj_bare`, `no_pkg`), and rot-guards were written by hand. This
 module mechanizes that inventory as a permanent facility, built on machinery
-that already exists: the questionnaire loaders (tools/questionnaire.py,
-tools/when_model.py), the 228-leaf witness space (tools/z3_witnesses.py), the
+that already exists: the questionnaire parser (tools/questionnaire.py -- the
+one `!include` resolver, whose raw view tools/when_model.py serves), the
+228-leaf witness space (tools/z3_witnesses.py), the
 leaf-class rows (tools/invariants.py) and the Z3 `when` encoder. Four
 capabilities:
 
@@ -51,9 +52,13 @@ import re
 import sys
 import tempfile
 from collections import defaultdict
+from collections.abc import Iterator
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from typing import Protocol
+from typing import cast
 from zlib import crc32
 
 import jinja2
@@ -93,13 +98,6 @@ TEMPLATE_DIR = "template"
 _BLOCK = re.compile(r"\{%-?\s*(if|elif|else|endif|for|endfor)\b\s*(.*?)\s*-?%\}", re.DOTALL)
 _RAW = re.compile(r"\{%-?\s*raw\s*-?%\}.*?\{%-?\s*endraw\s*-?%\}", re.DOTALL)
 
-# Jinja keywords `when_model.jinja_identifiers` reports as identifiers (the
-# same set tests/test_when_model.py pins): they are operators of the grammar,
-# never variables a condition reads.
-_JINJA_OPERATORS = frozenset(
-    {"and", "or", "not", "in", "true", "false", "True", "False", "is", "defined", "none", "None"}
-)
-
 
 @dataclass
 class Site:
@@ -133,7 +131,7 @@ def _inner(text: Any) -> str:
 
 def _refs(text: str) -> frozenset[str]:
     """The identifiers a condition reads (when_model's scanner owns the rules; keywords are not reads)."""
-    return frozenset(when_model.jinja_identifiers("{{ " + text + " }}")) - _JINJA_OPERATORS
+    return frozenset(when_model.jinja_identifiers("{{ " + text + " }}")) - when_model.JINJA_OPERATORS
 
 
 def _site(kind: str, location: str, expr: str, eval_expr: str | None = None) -> Site:
@@ -141,7 +139,16 @@ def _site(kind: str, location: str, expr: str, eval_expr: str | None = None) -> 
 
 
 def _questionnaire_records() -> tuple[dict[str, questionnaire.Question], dict[str, Any]]:
-    """The questionnaire as data: records by name, plus the `_`-prefixed settings."""
+    """The questionnaire as data: records by name, plus the `_`-prefixed settings.
+
+    The dataclass projection of the one parser (tools/questionnaire.py): the
+    records are what carry each question's `source` fragment. The raw-details
+    projection lives in `questionnaire.load_raw_questions` (the view
+    tools/when_model.load_questions delegates to); the two cannot stand in
+    for each other -- the records normalize `help`/`choices`, the raw view
+    discards `source` -- so callers that need both read both, through the
+    same parser.
+    """
     questions, settings = questionnaire.load_questions()
     return {question.name: question for question in questions}, settings
 
@@ -149,7 +156,8 @@ def _questionnaire_records() -> tuple[dict[str, questionnaire.Question], dict[st
 def bool_internals(questions: dict[str, dict]) -> dict[str, str]:
     """The named boolean internals: `when: false` entries whose type is bool, name -> definition.
 
-    The resolved copier.yml (when_model's loader) is the authority, per the
+    The resolved copier.yml (the raw view the questionnaire parser produces,
+    served by when_model.load_questions) is the authority, per the
     render-reads-effective rule: these are the names render-side conditions
     are supposed to reference. String-valued internals (`pkg_dir`,
     `task_runner_effective`, ...) compute placements and names, not
@@ -265,7 +273,12 @@ def collect_sites() -> list[Site]:
         for question in records.values()
         if isinstance(question.when, str)
     ]
-    resolved, _order = when_model.load_questions()
+    # Two projections, one parser: the records above carry each question's
+    # `source` fragment, the raw view below is what `bool_internals` reads.
+    # Both route through tools/questionnaire.py (when_model.load_questions is
+    # its delegate), so there is no second loader to reconcile -- only the
+    # two views the parser deliberately keeps distinct.
+    resolved, _order = questionnaire.load_raw_questions()
     internals = bool_internals(resolved)
     sites += [
         _site(INTERNAL, f"{records[name].source if name in records else 'copier.yml'}:{name}", definition)
@@ -277,15 +290,42 @@ def collect_sites() -> list[Site]:
     return sites
 
 
-def leaf_contexts(leaves: list[Any]) -> Any:
+class LeafLike(Protocol):
+    """The leaf surface the oracle pass reads: an id, and the answers that produce it.
+
+    Three representations flow through `leaf_contexts` -- the Z3 witness
+    (z3_witnesses.Leaf), the validated batch request (batch.Request) and the
+    recorded render answers (answers_for._Recorded) -- and none of them takes
+    this contract by inheritance: batch and the witness enumerator sit below
+    drivers in the layer table (tests/test_tool_layers.py), so the contract
+    is structural and lives with its only consumer. Read-only on purpose:
+    the pass never writes a leaf, and the witnesses are frozen dataclasses
+    (a writable protocol member would turn their immutability into a type
+    error). Anything carrying both attributes is a leaf, no adapter required.
+    """
+
+    @property
+    def id(self) -> str:
+        """The leaf's name: the sweep's sort key, and the leaf's name in reports."""
+        ...
+
+    @property
+    def answers(self) -> dict[str, Any]:
+        """The copier answers the questionnaire pass is seeded with."""
+        ...
+
+
+def leaf_contexts(leaves: Sequence[LeafLike]) -> Iterator[tuple[LeafLike, dict[str, Any], jinja2.Environment]]:
     """Yield (leaf, rendered context, jinja env) once per leaf, copier running the pass.
 
-    The oracle every consumer of "what does this answer set actually resolve
-    to" shares (tools/answers_for.py runs it over the whole leaf space the
-    same way ``evaluate`` does). `Worker._ask` is copier's own questionnaire
-    pass (it resolves the internal `when: false` variables in definition
-    order) and `_render_context` is the context every render sees; both are
-    private because copier exposes no other way to run that pass -- the
+    The leaf surface is ``LeafLike`` -- `id` orders the sweep, `answers` seeds
+    the pass -- so every leaf spelling rides this one oracle. It is the oracle
+    every consumer of "what does this answer set actually resolve to" shares
+    (tools/answers_for.py runs it over the whole leaf space the same way
+    ``evaluate`` does). `Worker._ask` is copier's own questionnaire pass (it
+    resolves the internal `when: false` variables in definition order) and
+    `_render_context` is the context every render sees; both are private
+    because copier exposes no other way to run that pass -- the
     tests/test_when_model.py oracle pattern, `vcs_ref="HEAD"` so the
     checkout's own questionnaire is what renders.
     """
@@ -294,7 +334,11 @@ def leaf_contexts(leaves: list[Any]) -> Any:
         for leaf in sorted(leaves, key=lambda leaf: leaf.id):
             worker.data = dict(leaf.answers)
             worker._ask()  # pyright: ignore[reportPrivateUsage]  WHYNOT: the oracle is copier's own pass (tests/test_when_model.py precedent).
-            yield leaf, worker._render_context(), worker.jinja_env  # pyright: ignore[reportPrivateUsage]  WHYNOT: same.
+            # copier types _render_context as a MutableMapping, but hands back the dict it
+            # builds inline (`return dict(**self.answers.combined, ...)` in copier/_main.py):
+            # the narrowing is what every consumer, answers_for's JSON contexts cache
+            # included, already assumes.
+            yield leaf, cast("dict[str, Any]", worker._render_context()), worker.jinja_env  # pyright: ignore[reportPrivateUsage]  WHYNOT: same.
 
 
 def _scalar_reads(refs: frozenset[str], context: Any) -> str | None:
@@ -346,7 +390,7 @@ def _evaluate_expression(
         return None, f"{type(error).__name__}: {error}"
 
 
-def evaluate(sites: list[Site], leaves: list[Any]) -> None:
+def evaluate(sites: list[Site], leaves: Sequence[LeafLike]) -> None:
     """Fill in each site's per-leaf vector (or its unevaluable reason), in place.
 
     Copier's pass runs once per leaf; identical expressions are rendered once
@@ -598,7 +642,7 @@ class FreeSpace:
         return self._encoder_verdict(site, definition, z3)
 
 
-def _classification_tree(leaves: list[Any]) -> list[tuple[invariants.LeafClass, int, list[str]]]:
+def _classification_tree(leaves: Sequence[LeafLike]) -> list[tuple[invariants.LeafClass, int, list[str]]]:
     """Every invariants.yml row with its leaf count and a summary of the leaves it selects."""
     matrix = invariants.load()
     rows: list[tuple[invariants.LeafClass, int, list[str]]] = []
@@ -680,7 +724,9 @@ def _unification_candidates(sites: list[Site], named: dict[str, tuple[bool, ...]
     return sorted(matched.values(), key=lambda entry: (-len(entry["internals"]), entry["site"]))
 
 
-def _shortcut_suggestions(sites: list[Site], classes: list[dict[str, Any]], leaves: list[Any]) -> dict[str, list[Any]]:
+def _shortcut_suggestions(
+    sites: list[Site], classes: list[dict[str, Any]], leaves: Sequence[LeafLike]
+) -> dict[str, list[Any]]:
     """The naming and flattening candidates (thresholds are module constants, with reasons)."""
     total = len(leaves)
     naming = [
@@ -800,7 +846,7 @@ def _shortcut_lines(suggestions: dict[str, list[Any]], total: int) -> list[str]:
 
 def report(
     sites: list[Site],
-    leaves: list[Any],
+    leaves: Sequence[LeafLike],
     tree: list[tuple[invariants.LeafClass, int, list[str]]],
     internals: dict[str, str],
 ) -> str:
@@ -838,7 +884,7 @@ def report(
 
 def json_report(
     sites: list[Site],
-    leaves: list[Any],
+    leaves: Sequence[LeafLike],
     tree: list[tuple[invariants.LeafClass, int, list[str]]],
     internals: dict[str, str],
 ) -> dict[str, Any]:
@@ -887,7 +933,7 @@ def main(argv: list[str] | None = None) -> int:
     _leaf_space, leaves = z3_witnesses.build()
     evaluate(sites, leaves)
     tree = _classification_tree(leaves)
-    _resolved, _order = when_model.load_questions()
+    _resolved, _order = questionnaire.load_raw_questions()
     internals = bool_internals(_resolved)
     if args.json:
         print(json.dumps(json_report(sites, leaves, tree, internals), indent=2))

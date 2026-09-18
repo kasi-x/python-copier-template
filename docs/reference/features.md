@@ -20,7 +20,7 @@ are asked — [the questionnaire reference](questionnaire.md) lists every one.
 | Area gate | Recommended default | Asked when |
 |---|---|---|
 | `use_recommended_agent` | yes — a plain library / CLI without agent tooling. | library / cli |
-| `use_recommended_toolchain` | uv (package manager) + just (task runner). | not ros2 + pixi |
+| `use_recommended_toolchain` | uv (package manager) + just (task runner). | not ros2 + `ros2_package_manager` = pixi |
 | `use_recommended_data_science` | GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer). | the data_science layer is present |
 | `use_recommended_polish` | src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings. | all |
 | `use_recommended_docs` | zensical (Zensical, an MkDocs fork with mkdocstrings). | all |
@@ -43,7 +43,7 @@ flowchart TD
     PT -->|ros2| Q0["ask: pkg_language (python / cpp), ros_distro (humble / jazzy),<br/>ros2_package_manager (apt / pixi)"]
     PT -->|micropython| Q1["ask: micropython_port (esp32 / esp8266 / rp2 / stm32 / samd / unix /<br/>windows / mimxrt)"]
     PT -->|library / cli| G_agent{"use_recommended_agent?<br/>(library / cli)"}
-    PT -->|other| G_toolchain{"use_recommended_toolchain?<br/>(not ros2 + pixi)"}
+    PT -->|other| G_toolchain{"use_recommended_toolchain?<br/>(not ros2 + ros2_package_manager = pixi)"}
     Q0 --> G_toolchain
     Q1 --> G_toolchain
     G_agent -->|Yes| G_agent_yes["a plain library / CLI without agent tooling."]

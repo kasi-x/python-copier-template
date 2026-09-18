@@ -7,6 +7,7 @@ import json
 import re
 import tomllib
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -224,21 +225,27 @@ def test_template_gitleaks_blocks_deidentification_salt(tmp_path: Path):
     assert "secret_salt" in gitleaks
 
 
+# The render inputs of test_template_author_orcid_validator, composed with
+# tools/answers.py BASE at the call site: registered in
+# tests/test_answer_fixtures.py like every other answer fixture, so a renamed
+# question cannot silently rot the validator probe.
+ORCID_INVALID_ANSWERS: dict[str, object] = {
+    "project_type": "library",
+    "use_recommended_license": False,
+    "fair": True,
+    "author_orcid": "not-an-orcid",
+}
+
+
 def test_template_author_orcid_validator(tmp_path: Path):
     """A malformed ORCID iD is rejected at question time (validator)."""
-    from test_recommended_path import BASE
+    from tools.answers import BASE
 
     with pytest.raises(ValueError) as excinfo:
         run_copy(
             src_path=str(TOP),
             dst_path=tmp_path,
-            data={
-                **BASE,
-                "project_type": "library",
-                "use_recommended_license": False,
-                "fair": True,
-                "author_orcid": "not-an-orcid",
-            },
+            data={**BASE, **ORCID_INVALID_ANSWERS},
             vcs_ref="HEAD",
             defaults=True,
             unsafe=True,
@@ -553,9 +560,9 @@ def test_works_with_pydocstyle(tmp_path: Path):
         {"package_manager": "pixi"},
     ],
 )
-def test_renovate_actions_match_what_is_shipped(override: dict, tmp_path: Path):
+def test_renovate_actions_match_what_is_shipped(override: dict[str, Any], tmp_path: Path):
     # Generate a project with the given answers
-    answers = {
+    answers: dict[str, Any] = {
         "docker": False,
         "docker_debug": False,
         "pypi": False,
@@ -572,12 +579,24 @@ def test_renovate_actions_match_what_is_shipped(override: dict, tmp_path: Path):
         if rule.get("matchManagers") == ["github-actions"]:
             config_github_actions.update(rule.get("matchPackageNames", []))
     used_github_actions = set[str]()
-    for workflow_file in (tmp_path / ".github" / "workflows").glob("*.yml"):
+    workflow_files = list((tmp_path / ".github" / "workflows").glob("*.yml"))
+    # The reusable workflows' shared setup lives in a composite action (TODO
+    # archive §19); renovate's github-actions manager extracts from
+    # .github/actions/**/action.yml too, so the scanner must as well.
+    workflow_files += list((tmp_path / ".github" / "actions").rglob("action.yml"))
+    for workflow_file in workflow_files:
         workflow = yaml.safe_load(workflow_file.read_text())
-        for job in workflow.get("jobs", {}).values():
-            for step in job.get("steps", []):
+        # Workflows keep steps under jobs.<id>.steps; composite actions under
+        # runs.steps.
+        step_lists = [job.get("steps", []) for job in workflow.get("jobs", {}).values()]
+        if "runs" in workflow:
+            step_lists.append(workflow["runs"].get("steps", []))
+        for steps in step_lists:
+            for step in steps:
                 action = step.get("uses")
-                if action:
+                # Local references (the setup-runner composite, the reusable
+                # _*.yml workflows) are not third-party: renovate skips them.
+                if action and not action.startswith("./"):
                     name = action.split("@")[0]
                     # docker:// steps track the bare image name in renovate
                     name = name.removeprefix("docker://")

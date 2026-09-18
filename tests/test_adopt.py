@@ -14,6 +14,7 @@ import signal
 import subprocess
 import sys
 import tomllib
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -354,6 +355,55 @@ def test_taskfile_is_left_alone_without_approval(tmp_path: Path):
 
     assert result.ok
     assert (project / "Taskfile.yml").read_text() == before
+
+
+def test_plan_and_report_share_one_merge_summary(tmp_path: Path):
+    """The prompt's plan and the report's outcome are formatted once.
+
+    `_merge_summary_from` (a plan dict, the prompt's view) and `_merge_summary`
+    (an Adoption, the report's view) were two hand-rolled copies of the same
+    lines (TODO.md §28.5 R6) -- exactly the drift a summary exists to prevent.
+    The second is now an adapter over the first, and this pin holds both
+    entrances to the same lines on a real plan.
+    """
+    project = make_project(tmp_path)
+    result = adopt.adopt(project, ref="HEAD", dry_run=True)
+
+    plan = {"dependencies": result.deps, "tool_config": result.tool_config, "files": result.files_merged}
+    summary = adopt._merge_summary(result)  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    assert summary == adopt._merge_summary_from(plan)  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    assert summary, "the fixture has something to merge; an empty summary makes the equality vacuous"
+
+
+@pytest.mark.parametrize("ask", [lambda _question: "yes", None], ids=["interactive", "automatic"])
+def test_one_run_renders_the_fresh_scaffold_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, ask: Callable[[str], str] | None
+):
+    """The confirm-then-apply flow renders one fresh scaffold, not one per step.
+
+    The plan a human confirms and the merge that applies it need the same
+    scaffold, and nothing between the prompt and the answer can change the
+    answers or the template tree -- so the second scaffold the interactive flow
+    used to render (three copier renders per adoption) was byte-identical to
+    the first. The pin counts real renders, both ways of running: a merge step
+    growing its own render back fails here.
+    """
+    project = make_project(tmp_path)
+    (project / ".gitignore").write_text("*.pyc\n")
+    real = batch.render
+    renders = 0
+
+    def counting(*args: Any, **kwargs: Any) -> None:
+        nonlocal renders
+        renders += 1
+        real(*args, **kwargs)
+
+    monkeypatch.setattr(batch, "render", counting)
+    result = adopt.adopt(project, ref="HEAD", ask=ask)
+
+    assert result.ok and not result.cancelled
+    assert renders == 2, "the render into the target plus the one shared fresh scaffold"
+    assert "__pycache__" in (project / ".gitignore").read_text(), "the merge still applied"
 
 
 def test_adoption_does_not_merge_when_asked_not_to(tmp_path: Path):

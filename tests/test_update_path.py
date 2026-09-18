@@ -57,13 +57,14 @@ import yaml
 from copier import run_copy
 from copier import run_update
 
-from test_recommended_path import BASE
 from test_recommended_path import FAST_PATHS
 
 TOP = Path(__file__).absolute().parent.parent
 
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
+
+from tools.answers import BASE  # noqa: E402
 
 # The guard's ref resolution is the one W0 fixed (copier's own tag order):
 # resolving it twice could disagree, so the matrix asks the guard.

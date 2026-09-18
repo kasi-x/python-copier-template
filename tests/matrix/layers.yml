@@ -1,0 +1,144 @@
+# The layer availability matrix (TODO.md §28.6 D1 — the §28.4 1c remedy):
+# which opt-in layer can ride on which base. Each row declares,
+# machine-readably, the base project types that see an include question, the
+# non-base clauses its `when` reads, and WHY the availability set is what it
+# is. This is §10's rule ("増やしたい要求は必ず『既存の何の上に載るか』を答えて
+# から設計" — a request to add something must first answer what existing thing
+# it layers on top of) made checkable: tests/test_layer_matrix.py holds this
+# file and the live `when` gates in BOTH directions, so neither can drift
+# from the other and a row whose reason cannot be written cannot be snuck in.
+#
+#   matrix -> when  evaluating each question's real `when` through copier's
+#                   own Jinja, with every declared non-base clause at its off
+#                   polarity (layer rides not opted into, the extra trait
+#                   off, the revealing gate off) and every other answer at
+#                   its default, over every project_type choice, admits
+#                   exactly `bases`.
+#   when -> matrix  the identifiers a question's `when` reads are exactly
+#                   {project_type} + the row's declared clauses. A clause
+#                   added to a `when` without a declaration here fails, and
+#                   so does a declared clause the `when` no longer reads.
+#
+# Clause vocabulary (each optional, a list of question names):
+#   extras       an ask-time trait that admits the layer beyond `bases`
+#                (kaggle for the web_api layer).
+#   rides        a declared layer whose opt-in makes THIS layer available
+#                too (the long-running layers ride the web_api layer: a
+#                library that opted into the app/ scaffold has an
+#                executable host).
+#   revealed_by  the gate that must be OFF for the question to be asked at
+#                all — the detail-question reveal, availability-neutral:
+#                it decides WHEN the question is asked, never FOR WHOM.
+#
+# `excluded` names include_* questions that are deliberately NOT layers, so
+# the accounting stays total in both directions: a new include question can
+# appear (or an old one vanish, or a layer's `when` stop being templated)
+# only by declaring it here or in `layers` — the same declared-not-discovered
+# rule tools/z3_witnesses.py enforces for the leaf space.
+
+version: 1
+
+layers:
+  # Ask order (questions/_combo.yml), not alphabetical: the rows mirror the
+  # fragment so a new layer between two others is visible in the diff.
+  - include: include_data_science
+    bases: [library, cli, web_api]
+    why: >-
+      the analysis layout (notebooks/, data/, models/, reports/, Quarto
+      paper) extends an existing codebase, so its bases are the
+      questionnaire's combinable set minus the one base that already IS the
+      layout: on library/cli the notebooks sit beside the src/ package, on
+      web_api beside the app/ package, and the directories the layout claims
+      are disjoint from both hosts. kaggle is combinable too but is
+      deliberately NOT offered the layer: its src/ already IS the competition
+      layout (data/ features/ models/ live under src/utils there,
+      byte-identical with this layout's sentinels — the ds_stack internal,
+      questions/_internal.yml), so layering the analysis layout on it would
+      duplicate the tree it shares. The non-combinable bases stay out for the
+      same reason a forced layer cannot leak into them: bare judge workspaces
+      (oj_code), a flat script module, and colcon / firmware builds have no
+      CPython package tree for the layout to extend.
+
+  - include: include_web_api
+    bases: [library, cli, data_science]
+    extras: [kaggle]
+    why: >-
+      the FastAPI scaffold claims exactly one directory — the top-level app/
+      package — so it stacks on every base that produces code without
+      touching what that base already owns: the library/cli src package, the
+      data-science analysis layout, and kaggle's competition workspace (its
+      src/utils pipeline is untouched by a top-level app/, which is why the
+      kaggle extra admits this layer where the mirror-image data_science
+      layer cannot be admitted on kaggle: disjointness, not genre). The
+      web_api base itself is excluded because it already IS the app/
+      scaffold.
+
+  - include: include_ctf
+    bases: [library, cli]
+    why: >-
+      the participant workspace is a code-first layout (per-problem
+      challenges/<category>/<problem>/ solve.py exploit starters plus the
+      pwntools / z3-solver dependencies), layered on the two bases whose
+      product is a Python codebase. The online_judge base is not a missing
+      row: it has the judge-native form instead (oj_category == 'ctf' drives
+      the same ctf_effective flag — questions/online_judge.yml spells out the
+      two paths sharing one generated shape), so a layer row there would be a
+      second spelling of the judge choice. The remaining bases are a service,
+      an analysis, a flat script, a firmware build and a ROS package: none has
+      a per-problem exploit workspace to add.
+
+  - include: include_scraping
+    bases: [cli]
+    why: >-
+      a CLI-owned fetching layer (the scraping_effective guard,
+      questions/_internal.yml): the generated fetcher module ships with a
+      project-wide ruff banned-api list that redirects every direct
+      requests / httpx / urlopen call through it, and that whole-program
+      policy only fits a tool whose own code does all the fetching. A library
+      must leave its HTTP stack to its users, and the layer is defined
+      against the src-layout package a CLI renders — so the audit's
+      "generates a fetcher module inside the CLI's package and bans direct
+      HTTP" is the reason, not an accident of implementation.
+
+  - include: include_bot
+    bases: [cli, web_api]
+    rides: [include_web_api]
+    why: >-
+      the long-running layer rides an executable host (the bot_effective
+      comment, questions/_internal.yml): a bot owns an entry point that stays
+      up, which only the cli and web_api bases have. A bare library ships no
+      runnable process — the same reason include_mcp skips the bare library
+      base — and the data_science analysis base has no long-running process
+      or server for the bot to be (the audit's asymmetry). The include_web_api
+      ride is the §28.4 1b fix: a library that opted into the web_api layer
+      HAS an executable host (the app/ scaffold), so that effective
+      configuration must be asked about the bot the same way it is asked
+      about MCP.
+
+  - include: include_mcp
+    bases: [cli, web_api]
+    rides: [include_web_api]
+    revealed_by: [use_recommended_integrations]
+    why: >-
+      an MCP server is a runnable server: the scaffold generates
+      mcp_server.py plus a console script an MCP host launches (the include
+      question's help), so it needs the same executable host as the bot —
+      cli / web_api bases, or the web_api layer on a library via the
+      include_web_api ride; the bare library base ships nothing runnable to
+      publish (the mcp_effective guard, questions/_internal.yml), and the
+      data_science analysis base has no server to expose as tools. The
+      revealed_by gate is the detail-question reveal, not availability: the
+      MCP scaffold is one of the integrations details, so the gate decides
+      only whether the question is asked, and the guard reads availability
+      with the gate off.
+
+excluded:
+  - include: include_sentry
+    why: >-
+      an integration detail question behind use_recommended_integrations, not
+      a layer — tests/matrix/invariants.yml excludes it from the leaf space
+      for the same reason. Its `when` mirrors the pkg-tree parent gate in raw
+      form (Sentry's only init site is <pkg>/__main__.py; the
+      questions/_common_b.yml comment owns the raw-mirror reasoning and its
+      documented remainder), which is a render-placement guard, not a layer
+      availability declaration.

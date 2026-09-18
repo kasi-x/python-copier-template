@@ -25,9 +25,17 @@ from tools import questionnaire  # noqa: E402
 
 import test_batch  # noqa: E402
 import test_bot_layer  # noqa: E402
+import test_example_adopt  # noqa: E402
+import test_example_data_science  # noqa: E402
+import test_example_docs_ci  # noqa: E402
 import test_generated_lint  # noqa: E402
+import test_generated_typecheck  # noqa: E402
+import test_generation_docs  # noqa: E402
+import test_machine_gate  # noqa: E402
 import test_mcp_server  # noqa: E402
+import test_micropython_maintenance  # noqa: E402
 import test_recommended_path  # noqa: E402
+import test_task_runners  # noqa: E402
 
 # The live questionnaire, by name: the only authority on which questions exist
 # and which values each accepts.
@@ -79,6 +87,38 @@ DEFAULT_REPEATS_ALLOWED: dict[str, dict[str, str]] = {
         "allow_japanese": "the off state is the variant's subject (its sibling states True), so"
         " restating it is the variant, not drift",
     },
+    "test_generated_typecheck.TYPECHECK_PATHS": {
+        "project_type": "tools/invariants.facts refuses a case without a stated project_type",
+    },
+    "test_machine_gate.RENDER_MATRIX": {
+        "project_type": "tools/invariants.facts refuses a case without a stated project_type",
+        "oj_category": "oj_kind's choices are resolved from oj_category (kaggle exists only under"
+        " data_science), so the case declares the pair",
+        "micropython_port": "the case names the branch it renders; the value is the variant's subject",
+        "pkg_language": "the case names the branch it renders; the value is the variant's subject",
+        "ros_distro": "the case names the branch it renders; the value is the variant's subject",
+        "ros2_package_manager": "the case names the branch it renders; the value is the variant's subject",
+    },
+    "test_generation_docs.MINIMAL_ANSWERS": {
+        "project_type": "the case names the branch it renders; the value is the variant's subject",
+        "git_platform": "the module mirrors the documented minimal answers file"
+        " (docs/reference/non-interactive.md), which states the platform even at its default",
+        "docs_type": "copier validates a supplied value against the question's choices even while"
+        " use_recommended_docs keeps `when` false, so zensical being accepted is the fork-only signal",
+    },
+    "test_task_runners.RENDER_ARGS": {
+        "task_runner": "the case names the runner it renders; the value is the variant's subject",
+        "task_runner_pixi": "the case names the runner it renders; the value is the variant's subject",
+    },
+    "test_example_adopt.NOGIT_ANSWERS": {
+        "git_platform": "inherited from answers.BASE, which the witness bytes pin",
+    },
+    "test_micropython_maintenance.MICROPYTHON_ANSWERS": {
+        "micropython_port": "the case names the branch it renders; the value is the variant's subject",
+    },
+    "test_example_docs_ci.ORCID_INVALID_ANSWERS": {
+        "project_type": "the case names the branch it renders; the value is the variant's subject",
+    },
 }
 
 
@@ -87,13 +127,21 @@ def _fixtures() -> Mapping[str, Sequence[Mapping[str, Any]]]:
 
     The fixtures are declared by their own modules (`list[dict[str, object]]`,
     `dict[str, Any]`, ...), so the registry takes the covariant view of them:
-    it only reads.
+    it only reads. Answer literals that live inside a test module register
+    here too -- complete sets (test_example_adopt.NOGIT_ANSWERS) and the
+    BASE-composed overrides of a render call site
+    (test_example_docs_ci.ORCID_INVALID_ANSWERS) alike -- so a dict a grep
+    would miss is still checked against the questionnaire.
     """
     return {
         "tools/answers.py BASE": [answers.BASE],
         "example-answers.yml": [EXAMPLE_ANSWERS],
         "batches/base.yml": [BATCH_BASE],
         "test_recommended_path.FAST_PATHS": test_recommended_path.FAST_PATHS,
+        "test_generated_typecheck.TYPECHECK_PATHS": test_generated_typecheck.TYPECHECK_PATHS,
+        "test_machine_gate.RENDER_MATRIX": test_machine_gate.RENDER_MATRIX,
+        "test_generation_docs.MINIMAL_ANSWERS": [test_generation_docs.MINIMAL_ANSWERS],
+        "test_task_runners.RENDER_ARGS": list(test_task_runners.RENDER_ARGS.values()),
         "test_generated_lint.EXTRA_PATHS": test_generated_lint.EXTRA_PATHS,
         "test_generated_lint.MANAGER_PATHS": test_generated_lint.MANAGER_PATHS,
         "test_generated_lint.LAYER_PATHS": test_generated_lint.LAYER_PATHS,
@@ -102,6 +150,11 @@ def _fixtures() -> Mapping[str, Sequence[Mapping[str, Any]]]:
         "test_batch.BASE_ANSWERS": [test_batch.BASE_ANSWERS],
         "test_bot_layer.SLACK_ANSWERS": [test_bot_layer.SLACK_ANSWERS],
         "test_bot_layer.LINE_ANSWERS": [test_bot_layer.LINE_ANSWERS],
+        "test_bot_layer.GMAIL_ANSWERS": [test_bot_layer.GMAIL_ANSWERS],
+        "test_example_adopt.NOGIT_ANSWERS": [test_example_adopt.NOGIT_ANSWERS],
+        "test_micropython_maintenance.MICROPYTHON_ANSWERS": [test_micropython_maintenance.MICROPYTHON_ANSWERS],
+        "test_example_docs_ci.ORCID_INVALID_ANSWERS": [test_example_docs_ci.ORCID_INVALID_ANSWERS],
+        "test_example_data_science.DATA_GOV_ANSWERS": [test_example_data_science.DATA_GOV_ANSWERS],
     }
 
 
@@ -186,6 +239,27 @@ def test_example_answers_keeps_every_gate_off():
     }
     assert unconditional, "no unconditional gate found: GATE_PREFIX no longer matches the questionnaire"
     assert unconditional <= set(gates), f"the fixture stopped turning off {sorted(unconditional - set(gates))}"
+
+
+def test_agent_gate_stays_absent_from_the_example_fixture():
+    """example-answers.yml deliberately does NOT state `use_recommended_agent`.
+
+    The question is asked only for library / cli (questions/_common_a.yml's
+    `when`), and the example is a data_science project -- so the key would
+    change nothing about the example itself. But example-answers.yml is also
+    the base fixtures/support.py `copy_project` derives its library / cli
+    renders from, and copier uses a data-supplied value even for a question
+    whose `when` is false: a `false` here would flip `agent_scaffold` on
+    (questions/_internal.yml) for every derived fixture. The non-recommended
+    agent route is exercised where it belongs instead -- the cli witness leaf
+    `project_type=cli/gate=off:use_recommended_agent` and
+    test_example_layers.py's `use_recommended_agent=False` renders.
+    """
+    assert "use_recommended_agent" not in EXAMPLE_ANSWERS, (
+        "use_recommended_agent in example-answers.yml leaks agent_scaffold=true into"
+        " every library / cli render copy_project derives from this file; see this"
+        " test's docstring before changing that on purpose"
+    )
 
 
 def test_batch_sample_base_is_the_shared_answer_set():

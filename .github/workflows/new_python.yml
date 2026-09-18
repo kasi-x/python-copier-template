@@ -1,5 +1,9 @@
 name: Support new version of python
 on:
+  # The cron fires once a year (December 1st, ahead of the October release
+  # cadence's follow-up); dispatch exists so the checklist issue can be
+  # filed manually at any other time too.
+  workflow_dispatch:
   schedule:
     - cron: 0 9 1 12 *
 

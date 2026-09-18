@@ -1,0 +1,65 @@
+{# ethics: id=baseline-pki-chain version=2026-09-18.1 status=draft
+   triggers=["tls","cert","trust-store","pinning","mtls","ca_bundle"] #}
+# PKIチェーン再編 — 中間証明書・発行チェーンをハードコードしない
+
+> **適用条件**: TLSクライアントの実装、証明書ピン留め、trust storeの
+> 同梱・固定、mTLS、長寿命デバイスのファームに証明書を焼く場面。
+> 規模: 世界問題(チェーン切れは全世界のクライアントで同時に起きる)。
+> 配布: IoT・cli・web(長寿命クライアント・証明書ピン留めを行うもの)。
+> 要約: (1)中間証明書や発行チェーンの同梱・固定をしない
+> (2)検証はOS/システムのtrust storeに従い、更新手段を持つ
+> (3)pinする場合は公開鍵集合+バックアップ鍵で、単一鍵に結びつけない。
+> 詳細は本文。
+> Triggers: `(?i)\b(certificat|trust\s?store|ca_bundle|pinn|openssl|requests|httpx|urllib3|mtls|root\s?ca|intermediate)\b`.
+
+## 事実
+
+Let's Encryptはクロス署名チェーンの段階的廃止を進めている。
+DST Root CA X3によるクロス署名は2024-09-30に失効し、長いチェーン自体も
+2024-06-06に提供終了した。2024-04からは中間証明書1枚だけの新しい発行
+チェーンに移行している。さらにISRG Root X2をISRG Root X1が署名した
+クロス署名証明書は2025-09に失効した。Cloudflareも2024-05-15以降、
+クロス署名チェーンからの発行を停止している。発行CAやチェーン構成は
+事前告知の上で切り替わる(Let's Encryptはロート鍵儀式も計画発表済み)。
+ハードコードされた中間証明書、同梱の古いtrust bundle、特定発行チェーンへ
+のピン留めは、この種の切り替えで検証失敗(通信障害)になる。
+出典: Let's Encrypt公式(chains/ブログ)、コミュニティスレッド、
+Cloudflareコミュニティ(REGISTRY.ymlに記録)。
+
+## 禁止パターン
+
+- 中間証明書のリポジトリ同梱・ファーム焼き込み(`chain.pem`の固定同梱)。
+- 特定の中間証明書・SPKI単体へのピン留め(バックアップ鍵なし)。
+- 独自trust storeの固定(システム更新を取り込めない形)。
+- 検証の握りつぶし(`verify=False`, `ssl.CERT_NONE`での障害回避)。
+- 発行CA名・チェーン構成を前提にした分岐(`issuer CN == "R3"`等)。
+
+## 推奨設定
+
+- 検証はOS/システムのtrust storeを使い、`certifi`等は依存更新で追う。
+  長寿命デバイスはOTA/設定更新でtrust storeを更新できる経路を持つ。
+- ピン留めが必要な場合は公開鍵の集合(現行+バックアップ)に対して行い、
+  鍵ローテーション手順と失効時の緊急解除を文書化する。
+- チェーン検証をCIに入れる(`openssl s_client -showcerts`相当で
+  実チェーンを確認し、issuer前提コードを検出する)。
+- 有効期限・失効情報(OCSP/CRL・CTログ)の監視を証明書運用の一部にする。
+
+## 運用チェック
+
+- 設定側トリガー(Copier QA L1用):
+  `(?i)\b(chain\.pem|ca_bundle|CERT_NONE|verify\s*=\s*False|pin_sha256)\b`
+  hit時は本節の存在をassert。
+- 自プロジェクトが同梱する証明書・ピン留め一覧を棚卸しし、
+  「発行チェーン切り替えで壊れるか」を質問できる状態にする。
+  担当: リリース管理者。
+
+## 制度変更ウォッチ
+
+- 変更予告: Let's Encryptは新しいルート証明書の鍵儀式を計画中。
+  確度: 公式告知あり(実施時期は未定)。発行チェーンは今後も変更があり得る。
+- 確認TODO: letsencrypt.org/certificates/ で現行チェーン構成を確認
+  (review_by: 2026-12-18)。
+- 影響TODO: 同梱chain/pinを持つリリース物がある場合、
+  チェーン変更告知を監視対象に追加する。
+
+<!-- 法的助言ではない。専門家レビュー必須。 / This is not legal advice; expert review required. -->

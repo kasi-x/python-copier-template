@@ -35,10 +35,11 @@ What this does not cover (a narrower claim beats an overstated one)
   unmodeled membership test or a str-typed reference makes the pair
   UNMODELABLE (skipped, counted), never equivalent -- the encoder only
   proves equivalence inside the grammar it actually models.
-- Question `when:`s are out of scope: they read raw answers by design
-  (docs/explanations/template-dev.md), so an equivalence there is a
-  vocabulary question, not a unification candidate; the tool's report
-  still shows their vectors.
+- Question `when:`s are out of scope: they are ask-time surface — an
+  equivalence there is a vocabulary question, and the include-order rule
+  (test_question_references_are_forward_only,
+  docs/explanations/template-dev.md) governs them, not this sweep; the
+  tool's report still shows their vectors.
 - Leaf-space coincidences (`web_api` == `cors_effective` on every leaf
   because the recommended gate stays on) are the tool report's findings,
   not this test's: they are not unconditional, and Z3 separates them.
@@ -101,7 +102,7 @@ def test_every_unconditional_site_internal_equivalence_is_accounted_for():
     violations: list[str] = []
     for site in sites:
         if site.kind == predicates.QUESTION:
-            continue  # question `when`s read raw answers by design; see the docstring
+            continue  # question `when`s are ask-time surface; see the docstring
         for name, definition in internals.items():
             if site.kind == predicates.INTERNAL and site.location.endswith(f":{name}"):
                 continue  # (b): the internal's own definition site

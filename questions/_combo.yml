@@ -1,13 +1,14 @@
 # Combo follow-ups: opt-in layers on top of the single-choice base
 # project_type (base + layer booleans, same idea as include_mcp).
 #
-# Raw/effective rule (see docs/explanations/template-dev.md): a question
-# `when:` is written in RAW answers — a question is offered based on what
-# was actually answered — while everything render-side (template bodies,
-# file-name conditions, _tasks.jinja, the copier.yml tasks) reads the
-# EFFECTIVE internals: the has_* booleans below and the *_effective family
-# in questions/_internal.yml. The include_*.when gates here are the raw
-# half of that rule; the internals at the bottom are its effective half.
+# Ask-time/render-time rule (see docs/explanations/template-dev.md): a
+# question `when:` runs at ask time and sees the prefix of the include chain
+# built so far — raw answers and any internal defined earlier — while
+# everything render-side (template bodies, file-name conditions,
+# _tasks.jinja, the copier.yml tasks) reads the EFFECTIVE internals: the
+# has_* booleans below and the *_effective family in questions/_internal.yml.
+# The include_*.when gates here are the ask-time half of that rule; the
+# internals at the bottom are its render-time half.
 #
 # Ask order matters (enforced by
 # tests/test_copier_structure.py::test_question_references_are_forward_only):
@@ -91,15 +92,25 @@ scraping_engine:
 
 include_bot:
     type: bool
-    when: "{{ project_type in ['cli', 'web_api'] }}"
+    # The `include_web_api` clause mirrors include_mcp's when
+    # (questions/_common_b.yml) and bot_effective's base guard
+    # (questions/_internal.yml): the long-running layer rides the effective
+    # web_api too, so a library project with the web_api layer must be asked
+    # about the bot the same way it is asked about MCP. The effective `web_api`
+    # alias cannot be referenced here — questions/_internal.yml is included
+    # after this fragment, so it would be a forward reference (Undefined — the
+    # question would never ask) — hence the raw disjunction, hand-synced.
+    # Pinned by tests/test_bot_layer.py::
+    # test_include_bot_and_include_mcp_gates_stay_in_sync.
+    when: "{{ project_type in ['cli', 'web_api'] or include_web_api }}"
     default: false
     help: |
         Add a long-running chat bot on top of this project (the long-running
         layer's second platform after the MCP server)?
         If yes, a bot module with its own entry point is generated and the
-        detail questions follow when answered Yes. Discord, Slack and LINE are
-        the generated platforms; Gmail is a planned choice on the same
-        question, never a new project type.
+        detail questions follow when answered Yes. Discord, Slack, LINE and
+        Gmail are the generated platforms — choices on the same question,
+        never a new project type.
 use_recommended_bot:
     type: bool
     when: "{{ include_bot }}"
@@ -109,8 +120,7 @@ use_recommended_bot:
         Recommended: discord = discord.py — the de-facto Discord library
         (async, typed, slash commands via app_commands, actively maintained,
         unlike the py-cord / nextcord forks).
-        Answer No to pick a platform instead (discord, slack and line are the
-        choices today; Gmail is planned).
+        Answer No to pick a platform instead (discord, slack, line and gmail).
 bot_platform:
     type: str
     when: "{{ include_bot and not use_recommended_bot }}"
@@ -132,12 +142,21 @@ bot_platform:
           environment with a startup check that refuses to start without
           either). LINE listens on BOT_PORT (default 8000), unlike discord
           and slack, which only dial out.
-        Gmail is a planned platform, not generated yet — it will be added
-        here as a new choice, not as a new project type.
+        - gmail: a Gmail bot on google-api-python-client + google-auth
+          (OAuth installed-app flow: the OAuth client downloaded from
+          Google Cloud Console and the granted token are FILES, so
+          GMAIL_CREDENTIALS_JSON + GMAIL_TOKEN_JSON name their paths in
+          the environment with a startup check that refuses to start
+          without either; the poll answers an unread INBOX message whose
+          subject contains /ping with a pong reply on the same thread and
+          marks it read — an outbound poll on GMAIL_POLL_SECONDS, so
+          there is no Pub/Sub push endpoint to host and nothing listens,
+          like discord and slack).
     choices:
         - discord
         - slack
         - line
+        - gmail
     default: discord
 
 combinable:

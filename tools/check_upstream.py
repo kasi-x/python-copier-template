@@ -54,8 +54,7 @@ PYPROJECT_JINJA = TEMPLATE_DIR / (
 GPU_DOCKERFILE = TEMPLATE_DIR / ("{% if use_gpu_effective %}Dockerfile.gpu{% endif %}.jinja")
 COMPOSE_JINJA = TEMPLATE_DIR / ("{% if web_api and docker %}compose.local.yml{% endif %}.jinja")
 CI_JINJA = TEMPLATE_DIR / (
-    '{% if git_platform=="github.com" %}.github{% endif %}'
-    "/{% if ci_provider == 'github_actions' %}workflows{% endif %}/ci.yml.jinja"
+    "{% if is_github %}.github{% endif %}/{% if ci_provider == 'github_actions' %}workflows{% endif %}/ci.yml.jinja"
 )
 ROS2_QUESTIONS = QUESTIONS_DIR / "ros2.yml"
 MACROS_JINJA = TEMPLATE_DIR.parent / "_shared" / "macros.jinja"

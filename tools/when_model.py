@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-"""Model the questionnaire's `when` expressions, and read the questionnaire.
+"""Model the questionnaire's `when` expressions, on the one shared parse.
 
 Copier's `when` conditions are Jinja, and the questionnaire's shape is only
 checkable if something can reason about them: which project types can reach a
 question, which gate is asked where, whether a branch is satisfiable at all.
-This module is that reasoner. It reads copier.yml through copier's own loader
-(so `!include` fragments are merged in ask order) and encodes a `when`
-expression as a Z3 formula.
+This module is that reasoner, and it encodes a `when` expression as a Z3
+formula. The layering is fixed: tools/questionnaire.py owns parsing (the one
+`!include` resolver, which also keeps each question's source fragment), and
+this module owns only the `when`-expression semantics layered on the raw view
+it exposes (`load_questions` delegates to `questionnaire.load_raw_questions`).
+Copier's own loader is not consulted here -- it survives as a differential
+oracle in tests, which pin that it agrees with the parser.
 
 What it models
 - the `when` grammar the questionnaire actually uses: `==`, `!=`, `in` and
@@ -49,28 +53,42 @@ against copier/Jinja evaluation).
 from __future__ import annotations
 
 import re
+import sys
 from collections.abc import Mapping
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from copier._template import load_template_config
+TOP = Path(__file__).resolve().parent.parent
+if str(TOP) not in sys.path:  # tools/ is no root package (pyproject.toml)
+    sys.path.insert(0, str(TOP))
 
-TOP = Path(__file__).absolute().parent.parent
+from tools import questionnaire  # noqa: E402
+
 COPIER_YML = TOP / "copier.yml"
 
 
 def load_questions() -> tuple[dict[str, dict], list[str]]:
     """Return ({key: raw-question-dict}, ordered-keys) from copier.yml.
 
-    The config is loaded with copier's own loader so `!include` fragments
-    under questions/ are resolved and merged in ask order. The question order
-    is read from the resolved config (copier asks in this order).
+    A thin delegate to `questionnaire.load_raw_questions`: the dataclass
+    parser in tools/questionnaire.py is the one `!include` resolver (only its
+    Question records keep the source fragment a question came from, which the
+    raw view cannot carry), so this module re-parses nothing and owns the
+    `when`-expression semantics on top. The shape is unchanged -- the same
+    raw dicts in copier's ask order the module always returned.
     """
-    data = load_template_config(COPIER_YML)
-    questions = {k: v for k, v in data.items() if not k.startswith("_") and isinstance(v, dict)}
-    order = list(questions)
-    return questions, order
+    return questionnaire.load_raw_questions(COPIER_YML)
+
+
+#: Jinja keywords `jinja_identifiers` reports as identifiers (the same set
+#: tests/test_when_model.py pins): they are operators of the grammar, never
+#: variables a condition reads. Consumers of the scanner subtract this set;
+#: tools/question_graph.py extends it with `if`/`else`, which only its
+#: `default:` expressions use.
+JINJA_OPERATORS = frozenset(
+    {"and", "or", "not", "in", "true", "false", "True", "False", "is", "defined", "none", "None"}
+)
 
 
 def jinja_identifiers(text: str) -> set[str]:
@@ -177,7 +195,9 @@ def tokenize_when(text: str) -> list[str]:
         elif text.startswith("!=", i):
             out.append("!=")
             i += 2
-        elif text.startswith("not in", i):
+        elif text.startswith("not in", i) and not (text[i + 6 : i + 7].isalnum() or text[i + 6 : i + 7] == "_"):
+            # The lookahead keeps `not include_web_api` from reading as the
+            # operator `not in` plus a truncated identifier.
             out.append("not in")
             i += 6
         elif c in "'\"":

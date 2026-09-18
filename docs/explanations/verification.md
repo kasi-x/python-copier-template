@@ -94,7 +94,7 @@ check moves between tiers, the budget moves with it.
 
 | Tier | Command | Selector | What runs |
 |---|---|---|---|
-| Edit loop | `task test-fast` | `-m "not heavy and not slow and not meta"` | L1 + L2 + everything that neither builds a venv nor touches the network |
+| Edit loop | `task test-fast` | `-m "not heavy and not slow and not meta and not network"` | L1 + L2 + everything that neither builds a venv nor touches the network |
 | Cost ledger guard | `task test-meta` | `-m meta` | the guards in `tests/test_marker_drift.py`: the venv/network marker scan, the tier-membership check, the cost-staleness check and the leaf-space budget |
 | Slow | `task test-slow` | `-m slow` | the serial 228-leaf batch runner (`tools/batch.py` over `tests/matrix/witnesses.jsonl`) |
 | Pre-push / nightly | `task test-heavy` | `-m heavy` | L3: `uv sync` + the generated project's pytest / type check / docs build (`network` follows where the case downloads) |
@@ -108,21 +108,53 @@ check on the cost contract, not a cost the edit loop can carry. `ci.yml` runs
 `task test-meta` as its own job on every push and PR, and `task test` includes
 it.
 
-When a number in this table disagrees with the suite, the ledger wins:
-`tests/matrix/tiers.json` records each tier's marker expression, the node ids
-it collects, a measured wall time and the command that time came from, plus —
-for the witness fast job — the CI timeout the time has to fit inside.
+One measured hole remains in that nightly type-check coverage:
+`tests/test_generated_typecheck.py` (the heavy tier's `uv sync` + basedpyright
++ pyrefly module) does not render the kaggle answers — the only render whose
+dependencies pull the torch cu126 wheels. The weight reason (minutes of
+download into a multi-GB venv) is why the module is heavy+network and
+nightly-only to begin with; the blocking reason (measured 2026-09-18) is
+that a render must reach zero findings to pass — basedpyright enables
+`failOnWarnings` by default — and the kaggle scaffold carries 31
+reportAny-family warnings (structlog logger typing, DictConfig attribute
+access, the hydra decorator). The one error-level defect that measurement
+surfaced (a `FixedTrial` passed into an `optuna.Trial`-annotated objective
+in the generated `src/utils/modeling/train.py`) is fixed; the decision
+record, with the unblocking steps, lives at that module's `TYPECHECK_PATHS`.
+The torch-free `data_science` leaf is already executed nightly by the
+witness `full` tier.
+
+The numbers themselves are not hand-copied into this page: the table below is
+a generated block (tools/gen_docs.py, the same generator that owns the
+questionnaire and support tables), rendered from `tests/matrix/tiers.json`.
+When a number in it disagrees with the suite, the ledger wins:
 `tests/test_marker_drift.py` re-collects every tier and fails on drift, fails
-when a row's `measured` date is more than 30 days old, and
+when a row's `measured` date is more than 30 days old, and fails when a row
+with a declared `budget_seconds` measures over it.
 `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`
 re-records the collected sets — and the Tests column of the tier table in
 [test-loop.md](../how-to/test-loop.md), the hand-edited counts this used to
 leave behind — after a deliberate tier change.
 
+<!-- BEGIN GENERATED: tier-ledger (tools/gen_docs.py --write) -->
+| Ledger row | Selector | Tests | Budget | Measured |
+|---|---|---|---|---|
+| `test-fast` | `-m "not heavy and not slow and not meta and not network"` | 936 | 30s (measured 22.7s) | 2026-09-18 |
+| `test-slow` | `-m "slow"` | 7 | measured 89.6s | 2026-09-17 |
+| `test-heavy` | `-m "heavy"` | 50 | measured 25.7s | 2026-09-17 |
+| `test-meta` | `-m "meta"` | 10 | measured 6.6s | 2026-09-17 |
+| `test` | `—` | 1003 | measured 178.6s | 2026-09-17 |
+| `test-randomly` | `-m "not heavy and not slow and not meta and not network"` | 936 | measured 22.3s | 2026-09-17 |
+| `witness-fast` | `-m "fast"` | 234 | measured 11.2s | 2026-09-16 |
+<!-- END GENERATED: tier-ledger -->
+
 The edit-loop budget is **30 s**; anything that pushes `task test-fast` past it
 is either marked `slow` / `heavy` / `meta` or is a regression — for venv and
-network work the marker-drift guard enforces that structurally, and the ledger's
-own guards are out of the loop by the `meta` marker. The run taken for this page
+network work the marker-drift guard enforces that structurally, and the
+ledger's `test-fast` row carries the budget as `budget_seconds`, which the
+same guard compares against the measured wall: the budget is a checked
+statement, not prose. The ledger's own guards are out of the loop by the
+`meta` marker. The run taken for this page
 on 2026-09-14 was **731 tests in 47 s**
 (`uv run --no-sync pytest -q -m "not heavy and not slow and not meta"`), on a
 machine whose 32 logical CPUs were also carrying unrelated work at load average

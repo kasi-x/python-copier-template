@@ -21,7 +21,7 @@ from utils.config import logger
 app = typer.Typer()
 
 
-def objective(trial: optuna.Trial, _cfg: DictConfig) -> float:
+def objective(trial: optuna.Trial | optuna.trial.FixedTrial, _cfg: DictConfig) -> float:
     """Optuna objective: tune hyperparameters, return a metric to maximize."""
     lr = trial.suggest_float("lr", 1e-4, 1e-2, log=True)
     n_estimators = trial.suggest_int("n_estimators", 50, 500, step=50)

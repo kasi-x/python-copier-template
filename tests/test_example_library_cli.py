@@ -55,6 +55,34 @@ def test_template_script_type(tmp_path: Path):
     assert "{% if" not in (pkg / "logging_setup.py").read_text()
 
 
+def test_template_library_dependencies_come_from_the_log_choice(tmp_path: Path):
+    """TODO §17 decision: library dependencies ARE the log_library question's output.
+
+    The audit asked whether the library's near-empty dependency set should be
+    kept as a "start with zero deps" design or become a question. It already
+    IS a question: `log_library` (behind the integrations gate, asked for
+    library) decides the single runtime dependency, and its `logging` choice
+    is the zero-deps path. So the decision is KEEP — no second question, and
+    this pin holds both ends of the existing mechanism: the recommended
+    default (structlog) lands as the one dependency, and the standard-library
+    choice renders the empty list the audit described.
+    """
+    # The RECOMMENDED path keeps the pin independent of example-answers.yml's
+    # own overrides (sentry and friends): the deps read here are the
+    # log_library mechanism's, nothing else.
+    copy_project_recommended(tmp_path, project_type="library")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["dependencies"] == ["structlog"], (
+        "the recommended library carries exactly the log_library default's dependency"
+    )
+    copy_project_recommended(tmp_path, project_type="library", log_library="logging")
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["dependencies"] == [], (
+        "`log_library: logging` is the standard-library zero-dep path -- the "
+        "'start with zero deps' option the §17 audit asked about already exists"
+    )
+
+
 def test_template_recommended_settings(tmp_path: Path):
     copy_project_recommended(tmp_path, project_type="data_science")
     # Accepting every "use the recommended ...?" gate still generates a

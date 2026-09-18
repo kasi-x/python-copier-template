@@ -16,10 +16,13 @@ layout:
     type: str
     # Own exclusion list — NOT use_src_layout's (questions/_internal.yml) or
     # log_library's below: data_science and web_api are here because neither
-    # takes a layout choice. The three lists are pinned as deliberately
-    # different by tests/test_copier_structure.py::
+    # takes a layout choice, and script joins because a src/ tree is
+    # meaningless without a package — use_src_layout would silently discard
+    # the answer, and the silent-discard rule (docs/explanations/template-dev.md)
+    # says don't ask. The three lists are pinned as deliberately different by
+    # tests/test_copier_structure.py::
     # test_layout_exclusion_lists_stay_deliberately_different.
-    when: "{{ project_type not in ['data_science', 'online_judge', 'ros2', 'micropython', 'web_api'] and not use_recommended_polish }}"
+    when: "{{ project_type not in ['data_science', 'online_judge', 'ros2', 'micropython', 'web_api', 'script'] and not use_recommended_polish }}"
     help: |
         Which layout would you like to use for the package?
         - src: package in a src/ directory (recommended, prevents accidental
@@ -265,7 +268,20 @@ aws_services:
 
 include_sentry:
     type: bool
-    when: "{{ not use_recommended_integrations }}"
+    # Base guard mirrors the pkg-tree parent gate (the `{% if %}` on the
+    # {{ pkg_dir }} directory) in raw form, like include_mcp's above: Sentry's
+    # only init site is <pkg>/__main__.py, so a Yes on a base whose pkg tree
+    # never renders would generate a sentry-sdk dependency and a .env.example
+    # entry with no code referencing either. A `when` runs at ask time and
+    # questions/_internal.yml is included after this fragment, so the
+    # effective `web_api` alias cannot be referenced — hence the raw list of
+    # the types whose pkg tree renders __main__.py, with `not include_web_api`
+    # as the raw mirror of the gate's `not web_api` clause (include_web_api is
+    # defined earlier, in questions/_combo.yml, so it resolves). Known
+    # remainder: the gate's existing_project + 'scaffold' adopt-protect clause
+    # also suppresses the pkg tree, and no clean raw formulation of it exists
+    # at ask time — this guard stays one hand-synced step narrow.
+    when: "{{ not use_recommended_integrations and project_type in ['library', 'cli', 'script', 'data_science'] and not include_web_api }}"
     help: |
         Would you like to include Sentry for error tracking?
         If yes, sentry-sdk is added and initialised from SENTRY_DSN.
@@ -274,12 +290,14 @@ include_sentry:
 include_mcp:
     type: bool
     # The base guard mirrors mcp_effective's (questions/_internal.yml) in raw
-    # answers, per the raw/effective rule (docs/explanations/template-dev.md).
+    # answers, per the ask-time/render-time rule (docs/explanations/template-dev.md).
     # The `web_api` alias cannot be referenced here: questions resolve in
     # include order and questions/_internal.yml is included after this
     # fragment, so it would be a forward reference (Undefined — the question
-    # would never ask). `has_web_api` would resolve but is an effective, and
-    # a `when` uses raw answers. Known exception: keep this disjunction in
+    # would never ask). `has_web_api` would resolve (questions/_combo.yml
+    # precedes this fragment — the include-order rule permits it); the raw
+    # disjunction stays because raw answers suffice at ask time. Known
+    # exception to "one predicate, one definition": keep this disjunction in
     # sync with mcp_effective's base guard by hand.
     when: "{{ not use_recommended_integrations and (project_type == 'cli' or project_type == 'web_api' or include_web_api) }}"
     help: |

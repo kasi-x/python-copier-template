@@ -35,8 +35,11 @@ skip_covered = true
 skip_empty = true
 
 [tool.typos.default]
-extend-ignore-words-re = ['\b[A-Z]{3}\b']
-extend-ignore-identifiers-re = ['\b[A-Z]{3}\b']
+# The ethics appendix (AGENTS.md) carries trigger-regex stems (`certificat`,
+# `advertis` — deliberate word-stem matches) and proper nouns (`certifi` the
+# package, `HashiCorp`) that the spellchecker must not correct.
+extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis']
 
 [tool.typos.files]
 # docs のビルド出力 (site/) はチェック対象外。

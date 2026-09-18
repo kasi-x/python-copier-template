@@ -26,10 +26,13 @@ from render_cache import RenderCache
 # Imported so pytest can inject the fixture (the cache lives here, not in
 # conftest.py: the template renders that file into generated projects).
 from render_cache import render_cache as render_cache  # noqa: PLC0414
-from test_recommended_path import BASE
 from test_recommended_path import FAST_PATHS
 
 TOP = Path(__file__).absolute().parent.parent
+if str(TOP) not in sys.path:  # tests/support.py does the same to reach tools/
+    sys.path.insert(0, str(TOP))
+
+from tools.answers import BASE  # noqa: E402
 
 
 def _id(answers: dict[str, object]) -> str:
@@ -40,6 +43,18 @@ def _id(answers: dict[str, object]) -> str:
 # generated Python is ruff-checked. (FAST_PATHS deliberately skips these
 # because the test_example_* renders already cover them;
 # this module needs them here to lint the output.)
+#
+# ros2 rides here in its python/apt flavour only, and the absence of the cpp
+# (ament_cmake) flavour is the declared exclusion, not an oversight: its
+# render ships no pyproject.toml (the CMake build is authoritative;
+# test_example_ros2.py pins the absence), so there is no [tool.ruff] of the
+# render's own and these tiers -- which judge a render under the generated
+# project's own ruff config -- would either run ruff's defaults over foreign
+# code or check nothing. The witness fast tier applies the same rule
+# generically (_ruff_problems in tests/test_witness_matrix.py: no
+# [tool.ruff] -> not judged) while still covering the cpp render's declared
+# file expectations. Its sole Python file (.github/pages/make_switcher.py)
+# is judged there too, in renders that do carry a [tool.ruff].
 EXTRA_PATHS: list[dict[str, object]] = [
     {"project_type": "data_science"},
     {"project_type": "micropython", "micropython_port": "esp32"},

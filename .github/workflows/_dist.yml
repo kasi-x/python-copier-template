@@ -18,29 +18,10 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up the runner
+        uses: ./.github/actions/setup-runner
         with:
-          persist-credentials: false
-          # Need this to get version number from last tag
-          fetch-depth: 0
-
-      - name: Install uv
-        if: hashFiles('pixi.lock', 'poetry.lock') == ''
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
-        with:
-          # Explicit true (not the "auto" default) so tag-push runs also
-          # cache: "auto" disables caching on tag pushes.
-          enable-cache: true
-
-      - name: Install pixi
-        if: hashFiles('pixi.lock') != ''
-        uses: prefix-dev/setup-pixi@f00437f565399d418b0acc85936d12c1fb668347 # v0.10.1
-
-      - name: Install poetry
-        if: hashFiles('poetry.lock') != ''
-        uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1
-
+          uv_cache: true
       - name: Build sdist and wheel
         run: |
           export SOURCE_DATE_EPOCH

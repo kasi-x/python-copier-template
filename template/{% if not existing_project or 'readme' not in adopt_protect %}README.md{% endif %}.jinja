@@ -426,6 +426,30 @@ rejected before any event is read. Send the bot `ping` and it replies `pong`.
 `tests/test_bot_line.py` drives `POST /callback` over httpx's ASGITransport
 with a recording reply, so the whole route — signature check included — is
 tested in-process, with no token and no network.
+{% endif %}{% if bot_gmail_effective %}
+The project also ships a **Gmail bot** (`{{ import_pkg }}/bot_gmail.py`,
+[google-api-python-client](https://github.com/googleapis/google-api-python-client)
++ google-auth) that polls the INBOX:
+
+```sh
+# put both credential paths in .env first (cp .env.example .env)
+uv run bot-gmail-{{ repo_name }}
+```
+
+`GMAIL_CREDENTIALS_JSON` names the OAuth client downloaded from Google Cloud
+Console (APIs & Services → Credentials → OAuth client ID → Desktop app), and
+`GMAIL_TOKEN_JSON` names the granted token file the first run writes (the
+consent browser opens once; every later run refreshes from disk). Both are
+required — the bot refuses to start without either and names the one that is
+missing (see `.env.example`; both files stay git-ignored). Every
+`GMAIL_POLL_SECONDS` (default 60) it answers an unread INBOX message whose
+subject contains `/ping` with a `pong` reply on the same thread and marks it
+read — mail that never says `/ping` is left unread.
+
+`poll_once()` takes the API client as a parameter: `tests/test_bot_gmail.py`
+drives the poll with a recording stand-in — the raw RFC 2822 reply is decoded
+right in the test — so the bot is tested in-process, with no OAuth, no
+network and no mailbox.
 {% endif %}{% else %}```python
 from {{package_name}} import __version__
 
@@ -545,6 +569,35 @@ rejected before any event is read. Send the bot `ping` and it replies `pong`.
 `tests/test_bot_line.py` drives `POST /callback` over httpx's ASGITransport
 with a recording reply, so the whole route — signature check included — is
 tested in-process, with no token and no network.
+{% endif %}{% if bot_gmail_effective %}
+
+The project also ships a **Gmail bot** (`{{ pkg_dir }}/bot_gmail.py`,
+[google-api-python-client](https://github.com/googleapis/google-api-python-client)
++ google-auth) that polls the INBOX — the no-infrastructure delivery Gmail
+offers besides Pub/Sub push:
+
+```sh
+# put both credential paths in .env first (cp .env.example .env)
+uv run bot-gmail-{{ repo_name }}
+
+# or without installing:
+uv run python -m {{ package_name }}.bot_gmail
+```
+
+`GMAIL_CREDENTIALS_JSON` names the OAuth client downloaded from Google Cloud
+Console (APIs & Services → Credentials → OAuth client ID → Desktop app), and
+`GMAIL_TOKEN_JSON` names the granted token file the first run writes (the
+consent browser opens once; every later run refreshes from disk). Both are
+required — the bot refuses to start without either and names the one that is
+missing (see `.env.example`; both files stay git-ignored). Every
+`GMAIL_POLL_SECONDS` (default 60) it answers an unread INBOX message whose
+subject contains `/ping` with a `pong` reply on the same thread and marks it
+read — mail that never says `/ping` is left unread.
+
+`poll_once()` takes the API client as a parameter: `tests/test_bot_gmail.py`
+drives the poll with a recording stand-in — the raw RFC 2822 reply is decoded
+right in the test — so the bot is tested in-process, with no OAuth, no
+network and no mailbox.
 {% endif %}{% if scraping_effective %}
 
 The project also ships a **polite web-fetching layer** under the
@@ -653,7 +706,7 @@ Before committing, run the `fix` task to auto-fix formatting and lint
 (`ruff check --fix` + `ruff format`); repo hygiene (secret scanning, workflow
 linting, conventional commit messages) is enforced in CI.
 
-{% if web_api or mcp_effective or scraping_effective or include_sentry or bot_effective or (not use_recommended_agent and project_type in ['library', 'cli']) %}
+{% if needs_env_example %}
 ### Environment variables
 
 Copy the example file and adjust the values:

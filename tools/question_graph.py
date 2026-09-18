@@ -78,14 +78,11 @@ EXTERNAL = "external"
 #: when/default wiring the placement guide reasons over.
 FIELDS = ("when", "default")
 
-# Jinja keywords `when_model.jinja_identifiers` reports as identifiers (the
-# same set tools/predicates.py subtracts), plus `if`/`else`: this module also
-# reads `default:` values, which use Jinja's inline conditional (`x if y else
-# z`) -- those two name operators of the grammar, never variables a
-# definition reads.
-_JINJA_OPERATORS = frozenset(
-    {"and", "or", "not", "in", "true", "false", "True", "False", "is", "defined", "none", "None", "if", "else"}
-)
+# when_model.JINJA_OPERATORS plus `if`/`else`: this module also reads
+# `default:` values, which use Jinja's inline conditional (`x if y else z`)
+# -- those two name operators of the grammar, never variables a definition
+# reads.
+_JINJA_OPERATORS = when_model.JINJA_OPERATORS | {"if", "else"}
 
 #: A top-level YAML key at column 0 -- what maps each node to its line inside
 #: its fragment (the fragments keep every definition at column 0; help text
@@ -279,7 +276,8 @@ def _placement_note(kind: str, *, exists: bool) -> str:
     """The convention line that comes with every placement answer."""
     if kind == QUESTION:
         return (
-            "a question `when:` reads raw answers, not effective internals"
+            "a question `when:` runs at ask time, so it may reference anything defined"
+            " earlier in the include chain -- raw answers and already-defined internals alike"
             " (docs/explanations/template-dev.md); every definition it references must sit"
             " before it, so place the internals first, then re-run --where for the question"
         )

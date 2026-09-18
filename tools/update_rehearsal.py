@@ -52,6 +52,8 @@ import yaml
 TOP = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(TOP))
 
+from tools import batch  # noqa: E402
+from tools import git  # noqa: E402
 from tools.check_questionnaire_diff import release_tag  # noqa: E402
 
 CACHE = TOP / ".cache" / "update-rehearsal"
@@ -73,13 +75,9 @@ def _sha(data: bytes) -> str:
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    # argv built by this module from literals and paths; no shell involved.
-    return subprocess.run(  # noqa: S603  WHYNOT: fixed git argv of our own checkout, like tests/test_update_path.py.
-        ["git", "-C", str(repo), *args],  # noqa: S607  WHYNOT: same.
-        capture_output=True,
-        text=True,
-        check=False,  # the callers assert on the verdict; a failed lookup is a message, not a crash
-    )
+    # check=False on purpose: the callers assert on the verdict; a failed
+    # lookup is a message, not a crash.
+    return git.run(repo, *args)
 
 
 def _git_out(repo: Path, *args: str) -> str:
@@ -89,17 +87,17 @@ def _git_out(repo: Path, *args: str) -> str:
 
 
 def _read_leaves() -> dict[str, dict[str, Any]]:
-    leaves: dict[str, dict[str, Any]] = {}
-    for line in WITNESSES.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        record = json.loads(line)
-        leaves[record["id"]] = record.get("answers", {})
-    return leaves
+    """Leaf id -> answers, via batch.load_requests -- the one reader of the format.
+
+    The loader validates the schema, the ids and the dests, so a drifted
+    witness list is a loud SpecError instead of a quietly half-read ledger
+    (TODO.md §28.3 3c).
+    """
+    return {request.id: dict(request.answers) for request in batch.load_requests([WITNESSES])}
 
 
 def _answers(project: Path) -> dict[str, Any]:
-    return yaml.safe_load((project / ".copier-answers.yml").read_text(encoding="utf-8"))
+    return yaml.safe_load((project / batch.ANSWERS_FILE).read_text(encoding="utf-8"))
 
 
 def _conflict_residue(project: Path) -> list[str]:
@@ -122,18 +120,19 @@ def _conflict_residue(project: Path) -> list[str]:
 
 
 def _manifest(project: Path) -> dict[str, str]:
-    """{relpath: sha256} with the answers file's per-render stamps removed."""
+    """{relpath: sha256} with the answers file's per-render stamps removed.
+
+    batch.strip_render_stamps is the one normalization (RENDER_STAMPS the one
+    stamp list, shared with the render twin and the MCP server).
+    """
     manifest: dict[str, str] = {}
     for path in sorted(project.rglob("*")):
         if not path.is_file() or ".git" in path.parts:
             continue
         rel = path.relative_to(project).as_posix()
         data = path.read_bytes()
-        if rel == ".copier-answers.yml":
-            parsed = yaml.safe_load(data.decode("utf-8")) or {}
-            for key in ("_commit", "_src_path"):
-                parsed.pop(key, None)
-            data = json.dumps(parsed, sort_keys=True).encode("utf-8")
+        if rel == batch.ANSWERS_FILE:
+            data = batch.strip_render_stamps(data)
         manifest[rel] = _sha(data)
     return manifest
 
@@ -176,16 +175,8 @@ class ReleasedRenders:
             hit = complete.exists()
             if not hit:
                 shutil.rmtree(rendered, ignore_errors=True)
-                copier.run_copy(
-                    src_path=str(TOP),
-                    dst_path=rendered,
-                    data=dict(answers),
-                    vcs_ref=self.base_ref,
-                    defaults=True,
-                    unsafe=True,
-                    overwrite=True,
-                    skip_tasks=True,  # the merge is what is rehearsed; tasks need no rehearsal here
-                )
+                # skip_tasks: the merge is what is rehearsed; tasks need no rehearsal here
+                batch.render(str(TOP), rendered, dict(answers), self.base_ref, skip_tasks=True)
                 complete.touch()
         if hit:
             self.reuses += 1
@@ -242,19 +233,19 @@ def rehearse_leaf(  # noqa: PLR0913 C901  WHYNOT: the arguments are the replay's
     renders.render(leaf_id, answers, project)
     recorded = _answers(project).get("_commit", "")
 
-    # The state a user's repo is in after `copier copy`: one commit.
-    _git_out(project, "init", "-q", "-b", "main")
-    _git_out(project, "add", "-A")
-    _git_out(
+    # The state a user's repo is in after `copier copy`: one commit. The
+    # snapshot helper is batch.git_snapshot's, and an unusable snapshot stays
+    # a crash (like the _git_out asserts) rather than a verdict: without the
+    # commit no later check means anything.
+    snapshot = batch.git_snapshot(
         project,
-        "-c",
-        "user.name=rehearsal",
-        "-c",
-        "user.email=rehearsal@example.com",
-        "commit",
-        "-qm",
-        f"scaffold from {base_rev}",
+        leaf_id,
+        message=f"scaffold from {base_rev}",
+        branch="main",
+        user="rehearsal",
+        email="rehearsal@example.com",
     )
+    assert snapshot.ok, f"{snapshot.name} failed in {project}:\n{snapshot.detail}"
 
     failed: list[str] = []
     copier.run_update(
@@ -299,16 +290,7 @@ def rehearse_leaf(  # noqa: PLR0913 C901  WHYNOT: the arguments are the replay's
     if fresh_render_available:
         fresh = work / "fresh"
         fresh.parent.mkdir(parents=True, exist_ok=True)
-        copier.run_copy(
-            src_path=str(TOP),
-            dst_path=fresh,
-            data=dict(answers),
-            vcs_ref="HEAD",
-            defaults=True,
-            unsafe=True,
-            overwrite=True,
-            skip_tasks=True,
-        )
+        batch.render(str(TOP), fresh, dict(answers), "HEAD", skip_tasks=True)
         before, after = _manifest(fresh), _manifest(project)
         convergence.extend(rel for rel in sorted(set(before) | set(after)) if before.get(rel) != after.get(rel))
 

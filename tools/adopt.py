@@ -63,7 +63,6 @@ import base64
 import contextlib
 import json
 import os
-import re
 import shutil
 import signal
 import sys
@@ -91,7 +90,6 @@ from tools import detect  # noqa: E402
 from tools import file_merge  # noqa: E402
 from tools import pyproject_merge  # noqa: E402
 
-QUESTION_LINE = re.compile(r"^([a-z][a-z0-9_]*):\s*$", re.MULTILINE)
 CONFIG_FILES = ("copier.yml", "copier.yaml")
 
 # The crash journal: written before the first change to the target, removed on
@@ -207,7 +205,7 @@ def _ref_questions(ref: str) -> set[str]:
         shown = batch.git(TOP, "show", f"{ref}:{path}")
         if shown.returncode != 0:
             continue
-        names.update(QUESTION_LINE.findall(shown.stdout))
+        names.update(detect.QUESTION_LINE.findall(shown.stdout))
     return names
 
 
@@ -258,6 +256,17 @@ def _plan_data(detection: detect.Detection, answers: dict[str, Any]) -> dict[str
     return data
 
 
+# --- the merge step ----------------------------------------------------------
+#
+# Deliberately not its own module (TODO.md §28.5 R6 asked for the candidate to
+# be weighed): this is the transaction's write phase. It records old bytes into
+# the same `_Run.backup` dict the journal covers and the rollback restores, and
+# its `_MergeError` is a rollback trigger -- so a tools/adopt_merge.py would
+# need `_Run`, `Adoption` and the undo machinery from this file while this file
+# needs the merge calls from it: a cycle whose only escapes (passing the
+# transaction through in slices, or a lazy import) cost more than the ~350
+# lines save. Cohesive and circular: it stays.
+
 # The template files an adopter commonly already has, and how to merge each.
 MERGE_KINDS = {
     ".gitignore": "gitignore",
@@ -276,29 +285,38 @@ MERGE_TARGETS = ("pyproject.toml", ".github/workflows/ci.yml", *MERGE_KINDS)
 
 
 def plan_merges(target: Path, data: dict[str, Any], ref: str) -> dict[str, Any]:
-    """Compute every merge without writing, for a dry run and the prompts."""
+    """Compute every merge without writing, for a dry run.
+
+    Renders the fresh scaffold it plans against and removes it afterwards. A
+    caller that already holds the run's scaffold (`_finish_with_merges` renders
+    one and the plan and the application share it) plans with `_plan_merges`
+    instead of paying for a second render of the same answers.
+    """
     source = render_fresh_source(data, ref)
     try:
-        dependencies = pyproject_merge.merge_dependencies(
-            target / "pyproject.toml", source / "pyproject.toml", apply=False
-        )
-        config = pyproject_merge.merge_tool_config(
-            target / "pyproject.toml",
-            source / "pyproject.toml",
-            identity=_merge_identity(data, source),
-            apply=False,
-        )
-        files = [
-            file_merge.merge_text_file(target / name, source / name, kind, apply=False).as_dict()
-            for name, kind in MERGE_KINDS.items()
-            if (target / name).is_file() and (source / name).is_file()
-        ]
-        ci_plan = _plan_ci_jobs(target, source)
-        if ci_plan is not None:
-            files.append(ci_plan)
-        return {"dependencies": dependencies.as_dict(), "tool_config": config.as_dict(), "files": files}
+        return _plan_merges(target, data, source)
     finally:
         shutil.rmtree(source, ignore_errors=True)
+
+
+def _plan_merges(target: Path, data: dict[str, Any], source: Path) -> dict[str, Any]:
+    """The merge plan, computed against an already-rendered fresh scaffold."""
+    dependencies = pyproject_merge.merge_dependencies(target / "pyproject.toml", source / "pyproject.toml", apply=False)
+    config = pyproject_merge.merge_tool_config(
+        target / "pyproject.toml",
+        source / "pyproject.toml",
+        identity=_merge_identity(data, source),
+        apply=False,
+    )
+    files = [
+        file_merge.merge_text_file(target / name, source / name, kind, apply=False).as_dict()
+        for name, kind in MERGE_KINDS.items()
+        if (target / name).is_file() and (source / name).is_file()
+    ]
+    ci_plan = _plan_ci_jobs(target, source)
+    if ci_plan is not None:
+        files.append(ci_plan)
+    return {"dependencies": dependencies.as_dict(), "tool_config": config.as_dict(), "files": files}
 
 
 def render_fresh_source(data: dict[str, Any], ref: str) -> Path:
@@ -333,14 +351,25 @@ def merge_generated_files(
     *,
     approved: frozenset[str] = frozenset(),
     approved_files: frozenset[str] = frozenset(),
+    source: Path | None = None,
 ) -> None:
-    """Merge what the template generated into the files the adopter already had."""
-    target_pyproject = run.target / "pyproject.toml"
-    before_pyproject = run.backup.get("pyproject.toml") or (
-        target_pyproject.read_bytes() if target_pyproject.is_file() else None
-    )
-    source = render_fresh_source(run.data, run.ref)
+    """Merge what the template generated into the files the adopter already had.
+
+    `source` is a fresh scaffold the caller already rendered: a run renders one
+    scaffold and the confirmation plan and this merge share it, because nothing
+    between showing the plan and the human's answer can change the answers or
+    the template tree. Without one, a scaffold is rendered here and removed
+    afterwards, which is what a standalone call wants; the caller's scaffold is
+    the caller's to free.
+    """
+    owned = source is None
+    if source is None:
+        source = render_fresh_source(run.data, run.ref)
     try:
+        target_pyproject = run.target / "pyproject.toml"
+        before_pyproject = run.backup.get("pyproject.toml") or (
+            target_pyproject.read_bytes() if target_pyproject.is_file() else None
+        )
         merged = pyproject_merge.merge_dependencies(target_pyproject, source / "pyproject.toml")
         adoption.deps = merged.as_dict()
         adoption.notes.extend(merged.notes)
@@ -358,7 +387,8 @@ def merge_generated_files(
         _merge_text_files(run, adoption, source, approved_files=approved_files)
         _merge_ci_caller(run, adoption, source, approved_files=approved_files)
     finally:
-        shutil.rmtree(source, ignore_errors=True)
+        if owned:
+            shutil.rmtree(source, ignore_errors=True)
 
 
 class _MergeError(Exception):
@@ -967,20 +997,41 @@ def adopt(  # noqa: PLR0913  WHYNOT: the keyword-only options are the operation'
 
 
 def _finish_with_merges(run: _Run, adoption: Adoption, ask: Callable[[str], str] | None) -> None:
-    """Confirm the merge plan (when asked), apply it, or take the run back."""
-    confirmation = _confirm_merges(run, ask)
-    if confirmation.cancel:
-        _undo_run(run, adoption, None, "cancelled: the render was rolled back too")
-        adoption.cancelled = True
-        return
-    if not confirmation.merge:
-        adoption.notes.append("merges skipped: your files were left as they were")
-        return
+    """Confirm the merge plan (when asked), apply it, or take the run back.
+
+    The run's one fresh scaffold is rendered here, before the prompt, and
+    shared by the plan the human confirms and the merge that applies it:
+    within a run the answers and the template tree cannot change, so the
+    second scaffold this step used to render (three copier renders per
+    interactive adoption) produced byte-identical files. Rendering it before
+    asking also means a decline or a cancel never renders a second time, and
+    the scaffold is freed whichever way the run goes.
+    """
+    source = render_fresh_source(run.data, run.ref)
     try:
-        with _crash_on_write("merge", run.target):
-            merge_generated_files(run, adoption, approved=confirmation.approved, approved_files=confirmation.files)
-    except _MergeError as exc:
-        _undo_run(run, adoption, f"merge failed and was rolled back: {exc}", "rolled back: the project is unchanged")
+        confirmation = _confirm_merges(run, ask, source)
+        if confirmation.cancel:
+            _undo_run(run, adoption, None, "cancelled: the render was rolled back too")
+            adoption.cancelled = True
+            return
+        if not confirmation.merge:
+            adoption.notes.append("merges skipped: your files were left as they were")
+            return
+        try:
+            with _crash_on_write("merge", run.target):
+                merge_generated_files(
+                    run,
+                    adoption,
+                    source=source,
+                    approved=confirmation.approved,
+                    approved_files=confirmation.files,
+                )
+        except _MergeError as exc:
+            _undo_run(
+                run, adoption, f"merge failed and was rolled back: {exc}", "rolled back: the project is unchanged"
+            )
+    finally:
+        shutil.rmtree(source, ignore_errors=True)
 
 
 @dataclass(frozen=True)
@@ -993,18 +1044,19 @@ class Confirmation:
     files: frozenset[str] = frozenset()
 
 
-def _confirm_merges(run: _Run, ask: Callable[[str], str] | None) -> Confirmation:
+def _confirm_merges(run: _Run, ask: Callable[[str], str] | None, source: Path) -> Confirmation:
     """Show what would be merged and ask; returns the answer.
 
     Without an `ask` callback this is a no-op: the automatic plan is applied,
     which is what a non-interactive caller (CI, an MCP tool) wants. With one,
     the questions are the plan itself and then, one by one, the values that
     were *not* copied because they name the generated project -- those are the
-    decisions a human should make.
+    decisions a human should make. The plan is computed against the run's
+    already-rendered scaffold, so prompting adds no render of its own.
     """
     if ask is None:
         return Confirmation()
-    plan = plan_merges(run.target, run.data, run.ref)
+    plan = _plan_merges(run.target, run.data, source)
     lines = _merge_summary_from(plan)
     if not lines:
         return Confirmation()
@@ -1219,7 +1271,13 @@ def render_report(adoption: Adoption) -> str:
 
 
 def _merge_summary_from(plan: dict[str, Any]) -> list[str]:
-    """The same summary, computed from a plan (used by the prompt and dry runs)."""
+    """The merge-summary lines, computed from a plan: the one implementation.
+
+    Both readers of a merge come through here -- the confirmation prompt (via
+    `_confirm_merges`) and the human report (via `_merge_summary`) -- so the
+    plan a human approves and the outcome they review can never drift into
+    describing two different merges.
+    """
     lines: list[str] = []
     dependencies = plan.get("dependencies") or {}
     if dependencies.get("added"):
@@ -1241,24 +1299,17 @@ def _merge_summary_from(plan: dict[str, Any]) -> list[str]:
 
 
 def _merge_summary(adoption: Adoption) -> list[str]:
-    """One line per file the merge step touched, for the review step."""
-    lines: list[str] = []
-    if adoption.deps:
-        added = [f"{section}: {', '.join(names)}" for section, names in adoption.deps["added"].items()]
-        if added:
-            lines.append(f"pyproject.toml dependencies -> {'; '.join(added)}")
-    if adoption.tool_config and adoption.tool_config["added"]:
-        tables = sorted(adoption.tool_config["added"])
-        shown = ", ".join(f"[{table}]" for table in tables[:3])
-        more = f" and {len(tables) - 3} more" if len(tables) > 3 else ""
-        lines.append(f"pyproject.toml tool config -> {len(tables)} table(s): {shown}{more}")
-    for entry in adoption.files_merged:
-        detail = ", ".join(entry["added"][:6]) + ("..." if len(entry["added"]) > 6 else "")
-        if detail:
-            lines.append(f"{Path(entry['path']).name} -> {detail}")
-        elif entry["reported"]:
-            lines.append(f"{Path(entry['path']).name} -> not written: {', '.join(entry['reported'][:6])}")
-    return lines
+    """One line per file the merge step touched, for the review step.
+
+    An adapter over `_merge_summary_from`, deliberately not a second rendering
+    of it: the two used to be twin implementations of the same lines (TODO.md
+    §28.5 R6), which is exactly the kind of drift a summary must not have. The
+    fields an Adoption carries are the plan's dict shape under other names, so
+    the adapter is the whole difference.
+    """
+    return _merge_summary_from(
+        {"dependencies": adoption.deps, "tool_config": adoption.tool_config, "files": adoption.files_merged}
+    )
 
 
 def render_recovery(recovery: Recovery) -> str:

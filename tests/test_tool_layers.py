@@ -1,6 +1,6 @@
 """The tools/ dependency layers are declared, and no import points up.
 
-tools/ grew to nineteen modules with an IMPLICIT layering: every cross-module
+tools/ grew past nineteen modules with an IMPLICIT layering: every cross-module
 import is spelled `from tools import x`, but nothing recorded which modules sit
 where, so "may adopt.py use invariants?" was answerable only by reading all of
 them. The layering is now a declared contract, in the repo's registry idiom
@@ -19,17 +19,18 @@ next to the other structural rules):
     foundations  the questionnaire model and shared primitives: the
                  questionnaire as data (questionnaire), its when-expressions
                  (when_model), the shared answer fixture (answers), the
-                 render-input fingerprint (render_inputs)
+                 render-input fingerprint (render_inputs), the declared
+                 support contract (support_ledger)
     machinery    pure transformations over template/adoption artifacts: the
                  text and pyproject merges (file_merge, pyproject_merge), the
                  leaf invariants (invariants) and the Z3 leaf enumerator
                  (z3_witnesses)
     drivers      the tools that act on real trees with copier/subprocess:
-                 detect, batch, adopt, the condition classifier built on
-                 the machinery (predicates), the inverse selector that
-                 turns wanted features into witness answers (answers_for),
-                 and the questionnaire dependency graph built on the
-                 foundations (question_graph)
+                 detect, batch, adopt, the shared git runner (git), the
+                 condition classifier built on the machinery (predicates),
+                 the inverse selector that turns wanted features into
+                 witness answers (answers_for), and the questionnaire
+                 dependency graph built on the foundations (question_graph)
     frontends    the entry points an agent or a human calls: cli, gen_docs,
                  mcp_server
 
@@ -66,7 +67,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
     ),
     "foundations": (
         "the questionnaire model and shared primitives: data and meaning, no behavior on real trees",
-        frozenset({"answers", "questionnaire", "render_inputs", "when_model"}),
+        frozenset({"answers", "questionnaire", "render_inputs", "support_ledger", "when_model"}),
     ),
     "machinery": (
         "pure transformations and verifiers over template/adoption artifacts",
@@ -80,6 +81,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
                 "answers_for",
                 "batch",
                 "detect",
+                "git",
                 "predicates",
                 "question_graph",
                 "render_delta",

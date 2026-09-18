@@ -29,6 +29,7 @@ import re
 import sys
 import tomllib
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -42,7 +43,7 @@ from tools import questionnaire  # noqa: E402
 from support import copy_project  # noqa: E402
 from support import make_venv  # noqa: E402
 
-RENDER_ARGS: dict[str, dict[str, object]] = {
+RENDER_ARGS: dict[str, dict[str, Any]] = {
     "task": {"use_recommended_toolchain": False, "task_runner": "task"},
     "just": {"use_recommended_toolchain": False, "task_runner": "just"},
     "make": {"use_recommended_toolchain": False, "task_runner": "make"},
@@ -212,7 +213,7 @@ def test_check_task_executes_on_poe(tmp_path: Path):
 
 # The shipped workflows that dispatch on the task runner. They reach generated
 # projects through the symlinks in
-# `template/{% if git_platform=="github.com" %}.github{% endif %}/.../workflows/`,
+# `template/{% if is_github %}.github{% endif %}/.../workflows/`,
 # so a branch missing in one of them is a broken generated CI -- a runtime
 # `Unknown task runner` exit 1 that no render-only check sees. That is how
 # `_test.yml` and `_docs.yml` came to lack invoke/duty while `_tasks.yml` had

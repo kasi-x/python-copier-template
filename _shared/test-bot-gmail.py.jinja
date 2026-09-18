@@ -1,0 +1,202 @@
+"""In-process tests for the Gmail bot scaffold.
+
+`poll_once()` is fed a recording stand-in for the Gmail discovery client —
+no OAuth flow, no browser, no network, no mailbox — and `main()`'s startup
+refusal is asserted directly. This is also the worked example for testing
+your own poll handlers: the API boundary is the seam to fake, the canned
+`get()` payload is the mail, and the recorded `send()` kwargs carry the
+reply as raw RFC 2822 bytes, decodable right in the test.
+"""
+
+from __future__ import annotations
+
+import base64
+from email import message_from_bytes
+from typing import cast
+
+import pytest
+
+from {{ import_pkg }} import bot_gmail
+
+
+def unread_stub(message_id: str) -> dict[str, str]:
+    """Return the shape `messages().list()` reports for one message: just the id."""
+    return {"id": message_id}
+
+
+def metadata_payload(message_id: str, subject: str, sender: str) -> dict[str, object]:
+    """Return the `format="metadata"` payload `get()` decodes: headers and thread.
+
+    The thread id is derived from the message id, so the assertions can pin
+    the reply to the very message that was polled.
+    """
+    return {
+        "id": message_id,
+        "threadId": "thread-" + message_id,
+        "payload": {
+            "headers": [
+                {"name": "Subject", "value": subject},
+                {"name": "From", "value": sender},
+            ]
+        },
+    }
+
+
+class FakeRequest:
+    """One pending API call: execute() replays the canned payload."""
+
+    payload: dict[str, object]
+
+    def __init__(self, payload: dict[str, object]) -> None:
+        self.payload = payload
+
+    def execute(self) -> dict[str, object]:
+        return self.payload
+
+
+class FakeMessages:
+    """The slice of the Gmail `users.messages` resource the bot calls.
+
+    Every method swallows its keyword arguments verbatim and records them
+    under its verb, so the assertions read like the API calls they stand
+    for (`get` with `metadataHeaders`, `modify` removing `UNREAD`, ...).
+    """
+
+    calls: list[tuple[str, dict[str, object]]]
+    inbox: list[dict[str, str]]
+    mail: dict[str, dict[str, object]]
+
+    def __init__(self) -> None:
+        self.calls = []
+        self.inbox = []
+        self.mail = {}
+
+    def list(self, **kwargs: object) -> FakeRequest:
+        self.calls.append(("list", kwargs))
+        return FakeRequest({"messages": list(self.inbox)})
+
+    def get(self, **kwargs: object) -> FakeRequest:
+        self.calls.append(("get", kwargs))
+        return FakeRequest(self.mail[cast("str", kwargs["id"])])
+
+    def send(self, **kwargs: object) -> FakeRequest:
+        self.calls.append(("send", kwargs))
+        return FakeRequest({"id": "sent-1"})
+
+    def modify(self, **kwargs: object) -> FakeRequest:
+        self.calls.append(("modify", kwargs))
+        return FakeRequest({"id": cast("str", kwargs["id"])})
+
+
+class FakeApi:
+    """The root resource: only the chain the bot walks."""
+
+    messages_resource: FakeMessages
+
+    def __init__(self) -> None:
+        self.messages_resource = FakeMessages()
+
+    def messages(self) -> FakeMessages:
+        return self.messages_resource
+
+
+def as_api(fake: FakeApi) -> bot_gmail.GmailApi:
+    """Return the fake typed as the slice it implements.
+
+    Object first, so the cast is honest — the functions under test see the
+    protocol, the test reads the recordings.
+    """
+    return cast("bot_gmail.GmailApi", cast("object", fake))
+
+
+def verbs_of(fake: FakeApi) -> list[str]:
+    """Return the API verbs the poll made, in order."""
+    return [verb for verb, _kwargs in fake.messages_resource.calls]
+
+
+def test_a_ping_is_answered_pong_and_marked_read() -> None:
+    """The happy path: `/ping` in the subject, `pong` on the thread, read.
+
+    One poll performs exactly the four calls the scaffold promises — list,
+    get, send, modify — and nothing else: no other label is touched.
+    """
+    fake = FakeApi()
+    fake.messages_resource.inbox = [unread_stub("m1")]
+    fake.messages_resource.mail["m1"] = metadata_payload(
+        "m1", "please /ping", "human@example.com"
+    )
+    assert bot_gmail.poll_once(as_api(fake)) == 1
+    assert verbs_of(fake) == ["list", "get", "send", "modify"]
+    # The get fetched metadata only, naming the two headers it needs.
+    get = fake.messages_resource.calls[1][1]
+    assert get["format"] == "metadata"
+    assert get["metadataHeaders"] == ["Subject", "From"]
+    # The reply lands on the polled message's thread...
+    send = fake.messages_resource.calls[2][1]
+    body = cast("dict[str, object]", send["body"])
+    assert body["threadId"] == "thread-m1"
+    # ...and its raw bytes decode to the RFC 2822 pong the sender receives.
+    reply = message_from_bytes(base64.urlsafe_b64decode(str(body["raw"])))
+    assert reply["To"] == "human@example.com"
+    assert reply["Subject"] == "Re: please /ping"
+    assert reply.get_payload() == "pong\n"
+    # The message that was answered is the message that is marked read.
+    modify = fake.messages_resource.calls[3][1]
+    assert modify["id"] == "m1"
+    assert modify["body"] == {"removeLabelIds": ["UNREAD"]}
+
+
+def test_mail_without_the_trigger_is_left_alone() -> None:
+    """Do not reply to (or mark read) an unread message that never says `/ping`.
+
+    The bot never hides a human's mail: no `send`, no `modify`.
+    """
+    fake = FakeApi()
+    fake.messages_resource.inbox = [unread_stub("m2")]
+    fake.messages_resource.mail["m2"] = metadata_payload(
+        "m2", "quarterly report", "boss@example.com"
+    )
+    assert bot_gmail.poll_once(as_api(fake)) == 0
+    assert verbs_of(fake) == ["list", "get"]
+
+
+def test_an_empty_inbox_polls_to_nothing() -> None:
+    """No unread mail: one list call, no get, no reply, no error."""
+    fake = FakeApi()
+    assert bot_gmail.poll_once(as_api(fake)) == 0
+    assert verbs_of(fake) == ["list"]
+
+
+def test_main_refuses_to_start_without_the_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The startup env check: no polling without both paths (exit code 2)."""
+    monkeypatch.delenv("GMAIL_CREDENTIALS_JSON", raising=False)
+    monkeypatch.delenv("GMAIL_TOKEN_JSON", raising=False)
+    with pytest.raises(SystemExit) as excinfo:
+        bot_gmail.main([])
+    assert excinfo.value.code == 2
+    refusal = capsys.readouterr().err
+    assert "GMAIL_CREDENTIALS_JSON" in refusal
+    assert "GMAIL_TOKEN_JSON" in refusal
+
+
+def test_refusal_names_the_missing_credential(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """With the token path set, the refusal names only the credentials path.
+
+    That is the file a deployment forgets: the console hands you the
+    credentials file first, while the token only exists after the first
+    successful consent.
+    """
+    monkeypatch.setenv("GMAIL_TOKEN_JSON", "token.json")
+    monkeypatch.delenv("GMAIL_CREDENTIALS_JSON", raising=False)
+    with pytest.raises(SystemExit) as excinfo:
+        bot_gmail.main([])
+    assert excinfo.value.code == 2
+    refusal = capsys.readouterr().err
+    assert "GMAIL_CREDENTIALS_JSON" in refusal
+    assert "GMAIL_TOKEN_JSON" not in refusal

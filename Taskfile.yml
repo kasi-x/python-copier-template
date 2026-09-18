@@ -32,7 +32,7 @@ tasks:
     desc: 'Run the tests that neither build a venv nor touch the network (edit loop)'
     cmd: >-
       uv run --locked pytest -q
-      -m "not heavy and not slow and not meta"
+      -m "not heavy and not slow and not meta and not network"
       {{ .CLI_ARGS }}
 
   test-slow:
@@ -48,7 +48,7 @@ tasks:
       Run the edit-loop selection in a shuffled order (nightly seed job; the
       plugin is disabled everywhere else by addopts' -p no:randomly). The seed
       is random per run and printed in the pytest header for reproduction.
-    cmd: uv run --locked pytest -q -p randomly -m "not heavy and not slow and not meta" {{ .CLI_ARGS }}
+    cmd: uv run --locked pytest -q -p randomly -m "not heavy and not slow and not meta and not network" {{ .CLI_ARGS }}
 
   test-meta:
     desc: "Run the cost ledger's own guards (marker scan, tier membership, stale measurements)"

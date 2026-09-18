@@ -20,18 +20,25 @@ renders again. Layout::
       <namespace>/                # one namespace per questionnaire+path-set state
         <answers>/                # a rendered tree, copied per consumer
         <answers>.inputs.json     # the template files this render consumed
+        <answers>.answers.json    # the render's post-questionnaire answers
+                                  # (copier's resolved answer set, for the
+                                  # task replay in tests/support.py)
         <answers>.done            # completion marker: never serve a half-written tree
         <answers>.lock            # per-entry render mutex
 
 **Invalidation is per leaf, in two layers.** The namespace hashes what every
-leaf shares: `copier.yml`, `questions/*.yml`, and the set of template paths.
-The entry's ``inputs.json`` records the template files that render actually
-consumed (its rendered files' sources, plus their include closure) with their
-content hashes at render time. A lookup re-hashes exactly those files: a hit
-proves every byte the render read is unchanged. So editing one scaffold body
-re-renders only the leaves that render it -- the file's *path condition*
-lives in its name on disk, so a condition flip is a rename, and a rename is
-a namespace change that conservatively invalidates everything.
+leaf shares: `copier.yml`, `questions/*.yml`, and the set of template paths,
+plus the render toolchain itself (the installed `copier` and `jinja2`
+versions, and a scheme tag for the digest recipe itself) -- renovate bumping
+copier must not keep serving renders made by the previous version, and the
+tag makes every recipe change a clean break. The entry's ``inputs.json``
+records the template files that render actually consumed (its rendered
+files' sources, plus their include closure) with their content hashes at
+render time. A lookup re-hashes exactly those files: a hit proves every byte
+the render read is unchanged. So editing one scaffold body re-renders only
+the leaves that render it -- the file's *path condition* lives in its name
+on disk, so a condition flip is a rename, and a rename is a namespace change
+that conservatively invalidates everything.
 
 Housekeeping: opening the cache prunes stale entries (an entry whose recorded
 inputs no longer match the current files would miss anyway) and keeps the two
@@ -55,11 +62,13 @@ it), and a generated project has neither copier nor fcntl to import.
 
 from __future__ import annotations
 
+import atexit
 import fcntl
+import functools
 import hashlib
+import importlib.metadata
 import json
 import os
-import re
 import shutil
 import sys
 import tempfile
@@ -68,30 +77,55 @@ from collections.abc import Generator
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
 
 import pytest
 from copier import run_copy
+from copier._main import Worker
+from copier._user_data import DEFAULT_DATA
+from copier._user_data import AnswersMap
 
 TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
     sys.path.insert(0, str(TOP))
 
+from tools.render_inputs import include_graph  # noqa: E402
+from tools.render_inputs import output_name  # noqa: E402
 from tools.render_inputs import render_input_paths  # noqa: E402
+from tools.render_inputs import watched_relative_paths  # noqa: E402
 
 CACHE_ROOT = TOP / ".cache" / "renders"
 
 # Namespaces kept by the eviction rule (see the module docstring).
 _KEEP_NAMESPACES = 2
 
-INCLUDE_TAG = re.compile(r'\{%-?\s+(?:include|import)\s+"([^"]+)"')
+# The digest recipe's own version, hashed into every namespace: changing what
+# goes into the namespace state (or how) must change the namespace itself, so
+# namespaces made by an older recipe are simply evicted by the keep-2 rule.
+# v3: the watched-file set (and so the recorded consumed inputs) moved to
+# tools/render_inputs.py, which descends directory symlinks the old rglob
+# loop skipped -- entries recorded under v2 do not carry those files, so a
+# clean break re-renders them once under the complete watch.
+# v4: the consumed-input matching gained the suffix rule, so pkg-tree-owned
+# bodies ({{ pkg_dir }} paths) are recorded at last -- v3 entries lack them
+# and would keep serving stale bot renders after a _shared body edit.
+CACHE_SCHEME = "render-cache/4: pkg-tree inputs recorded"
 
-WATCHED_DIRS = ("template", "_shared")
-WATCHED_FILES = ("copier.yml", "_tasks.jinja")
-"""The trees a render expands (tools/render_inputs.py's own list)."""
+# The render toolchain whose behaviour the cached trees encode. A bump of any
+# of these changes every namespace (they are hashed into the state below).
+RENDER_TOOLCHAIN = ("copier", "jinja2")
 
 
 def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _dist_version(distribution: str) -> str:
+    """The installed version of one render-toolchain distribution."""
+    try:
+        return importlib.metadata.version(distribution)
+    except importlib.metadata.PackageNotFoundError:  # never seen in this repo; be kind to odd envs
+        return "missing"
 
 
 def _is_namespace(name: str) -> bool:
@@ -110,8 +144,11 @@ def _worker_label() -> str:
 
 
 def _questionnaire_state(template_root: Path) -> str:
-    """Hash of what every leaf shares: the questions, settings and path set."""
+    """Hash of what every leaf shares: the questions, settings, path set and toolchain."""
     digest = hashlib.sha256()
+    digest.update(f"scheme={CACHE_SCHEME}\0".encode())
+    for distribution in RENDER_TOOLCHAIN:
+        digest.update(f"{distribution}={_dist_version(distribution)}\0".encode())
     digest.update((template_root / "copier.yml").read_bytes())
     for path in sorted((template_root / "questions").glob("*.yml")):
         digest.update(b"\0")
@@ -120,61 +157,6 @@ def _questionnaire_state(template_root: Path) -> str:
         json.dumps(sorted(str(p.relative_to(template_root)) for p in render_input_paths(template_root))).encode()
     )
     return digest.hexdigest()
-
-
-def _output_name(template_rel: str) -> str:
-    """The destination name a template path renders to, tags and `.jinja` stripped.
-
-    The leading `template/` directory (copier's `_subdirectory`) strips out
-    too -- the same normalization tools/render_delta.py uses -- so the names
-    compare to rendered output paths by suffix: over-inclusive on collisions,
-    the safe direction here.
-    """
-    stripped = re.sub(r"{%.*?%}|{{.*?}}|{#.*?#}", "", template_rel)
-    stripped = stripped.removeprefix("template/")
-    return stripped.removesuffix(".jinja") if stripped.endswith(".jinja") else stripped
-
-
-def _watched_relative_paths(template_root: Path) -> list[str]:
-    """Every watched template input, as a path relative to `template_root`."""
-    paths: list[str] = []
-    for directory in WATCHED_DIRS:
-        base = template_root / directory
-        if base.is_dir():
-            paths += [str(path.relative_to(template_root)) for path in sorted(base.rglob("*")) if path.is_file()]
-    for name in WATCHED_FILES:
-        if (template_root / name).is_file():
-            paths.append(name)
-    return paths
-
-
-def _resolve_include_target(target: str, watched: set[str]) -> str | None:
-    """An include tag's target, resolved against the watched files.
-
-    Include tags are repo-root-relative ("_shared/x.jinja" from a file in
-    template/), so the raw target matches a watched file only when the file
-    lives at that level; the suffix fallback covers tags written relative to
-    the including file. None = the target names nothing we watch.
-    """
-    if target in watched:
-        return target
-    matches = [path for path in watched if path.endswith("/" + target)]
-    return matches[0] if len(matches) == 1 else None
-
-
-def _include_graph(root: Path) -> dict[str, set[str]]:
-    """template-side file -> the files it pulls in via literal include/import tags."""
-    graph: dict[str, set[str]] = {}
-    watched = set(_watched_relative_paths(root))
-    for rel in _watched_relative_paths(root):
-        if not rel.endswith((".jinja", ".yml")):
-            continue
-        text = (root / rel).read_text(encoding="utf-8")
-        for match in INCLUDE_TAG.finditer(text):
-            resolved = _resolve_include_target(match.group(1), watched)
-            if resolved is not None:
-                graph.setdefault(rel, set()).add(resolved)
-    return graph
 
 
 def _forward_closure(sources: set[str], graph: dict[str, set[str]]) -> set[str]:
@@ -188,6 +170,36 @@ def _forward_closure(sources: set[str], graph: dict[str, set[str]]) -> set[str]:
                 consumed.add(target)
                 frontier.append(target)
     return consumed
+
+
+def _answers_payload(answers_map: AnswersMap) -> dict[str, object]:
+    """The on-disk form of one questionnaire pass: `combined` answers + hidden names.
+
+    DEFAULT_DATA (`now`, `make_secret`) and the external-data slot are
+    dropped: they are live context singletons (callables, a lazy loader), and
+    an AnswersMap rebuilt by `answers_map_from_payload` re-supplies them from
+    copier itself, exactly as a direct run would.
+    """
+    combined = {
+        name: value
+        for name, value in dict(answers_map.combined).items()
+        if name not in DEFAULT_DATA and name != "_external_data"
+    }
+    return {"combined": combined, "hidden": sorted(answers_map.hidden)}
+
+
+def answers_map_from_payload(payload: dict[str, Any]) -> AnswersMap:
+    """Rebuild a `Worker._ask` result from `stored_answers`' payload.
+
+    The resolved answers go in as `init`, which `AnswersMap.combined` serves
+    back verbatim (the same priority chain a direct run produces, minus the
+    dropped live singletons, which copier re-adds); `hidden` -- the
+    `when: false` internals the pass suppressed from `.copier-answers.yml` --
+    is restored directly.
+    """
+    answers_map = AnswersMap(init=payload["combined"])
+    answers_map.hidden = set(payload["hidden"])
+    return answers_map
 
 
 class RenderCache:
@@ -210,6 +222,7 @@ class RenderCache:
             self._open()
         self.renders = 0
         self.reuses = 0
+        self.summary_reported = False
         self._consumer_counts: dict[str, tuple[int, int]] = {}
 
     @property
@@ -243,7 +256,7 @@ class RenderCache:
         with self._root_lock(fcntl.LOCK_EX | fcntl.LOCK_NB) as held:
             if not held:
                 return
-            watched = _watched_relative_paths(self.template_root)
+            watched = watched_relative_paths(self.template_root)
             current = {rel: _sha((self.template_root / rel).read_bytes()) for rel in watched}
             for marker in sorted(self.namespace.glob("*.inputs.json")):
                 entry = marker.name.removesuffix(".inputs.json")
@@ -257,6 +270,7 @@ class RenderCache:
                 if stale:
                     shutil.rmtree(self.namespace / entry, ignore_errors=True)
                     (self.namespace / f"{entry}.done").unlink(missing_ok=True)
+                    (self.namespace / f"{entry}.answers.json").unlink(missing_ok=True)
                     marker.unlink(missing_ok=True)
             self._evict()
 
@@ -328,15 +342,16 @@ class RenderCache:
             # A peer's housekeeping may have dropped the namespace since we
             # opened it; this lock is what keeps it alive while we read.
             namespace.mkdir(parents=True, exist_ok=True)
-            inputs = self._consumed_inputs(key)
-            hit = complete.is_file() and inputs is not None and self._inputs_current(inputs)
             with (namespace / f"{key}.lock").open("w") as lock:
                 fcntl.flock(lock, fcntl.LOCK_EX)
+                # Exactly one hit evaluation, under the key lock: on a warm
+                # hit it is a full re-hash of the entry's recorded inputs, so
+                # evaluating it again outside the lock would pay that twice.
                 inputs = self._consumed_inputs(key)
                 hit = complete.is_file() and inputs is not None and self._inputs_current(inputs)
                 if not hit:
                     shutil.rmtree(rendered, ignore_errors=True)
-                    run_copy(
+                    worker = run_copy(
                         src_path=str(self.template_root),
                         dst_path=rendered,
                         data=dict(data),
@@ -346,8 +361,9 @@ class RenderCache:
                         overwrite=True,
                         skip_tasks=True,
                     )
-                    complete.touch()
                     self._record_inputs(key, rendered)
+                    self._record_answers(key, worker)
+                    complete.touch()
             self._count(_current_test_module(), hit=hit)
             # Outside the key lock: the marker guarantees `rendered` is
             # complete and nothing writes it again, so consumers only read it.
@@ -363,9 +379,24 @@ class RenderCache:
         render consumed are deliberately absent: their edits must not
         invalidate this leaf.
         """
-        graph = _include_graph(self.template_root)
+        graph = include_graph(self.template_root)
         outputs = {path.relative_to(rendered).as_posix() for path in rendered.rglob("*") if path.is_file()}
-        matched = {rel for rel in _watched_relative_paths(self.template_root) if _output_name(rel) in outputs}
+        # Suffix match, not exact membership: a `{{ pkg_dir }}` interpolation
+        # strips out of the template path (`.../bot_discord.py`), while the
+        # rendered name carries the real directory (`src/<pkg>/bot_discord.py`)
+        # -- an exact `in outputs` never matches, and every pkg-tree-owned body
+        # (_shared/bot-*.py.jinja, ...) would silently drop out of the recorded
+        # inputs, so its edits stopped invalidating cached bot renders (found
+        # while landing the gmail slice). tools/render_delta.py matches the
+        # same way. Empty names (a path that strips to nothing) match nothing.
+        matched = set()
+        for rel in watched_relative_paths(self.template_root):
+            # The `template/` prefix and the stripped interpolation leave (and
+            # sometimes begin with) a `/`; normalize so the suffix rule sees
+            # `bot.py`, not `/bot.py`.
+            name = output_name(rel).strip("/")
+            if name and any(out == name or out.endswith("/" + name) for out in outputs):
+                matched.add(rel)
         consumed = _forward_closure(matched, graph)
         inputs = {
             rel: _sha((self.template_root / rel).read_bytes())
@@ -375,6 +406,42 @@ class RenderCache:
         (self.namespace / f"{key}.inputs.json").write_text(
             json.dumps(inputs, indent=1, sort_keys=True), encoding="utf-8"
         )
+
+    def _record_answers(self, key: str, worker: Worker) -> None:
+        """Record the render's post-questionnaire answers (see `stored_answers`)."""
+        self.store_answers_key(key, _answers_payload(worker.answers))
+
+    def store_answers(self, data: dict[str, object], answers_map: AnswersMap) -> None:
+        """Persist one entry's resolved answers, keyed like the render itself.
+
+        The complement of `stored_answers`, for a caller that resolved the
+        questionnaire pass itself (tests/support.py's replay fallback).
+        """
+        self.store_answers_key(self._answers_key(data), _answers_payload(answers_map))
+
+    def store_answers_key(self, key: str, payload: dict[str, object]) -> None:
+        (self.namespace / f"{key}.answers.json").write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+
+    def stored_answers(self, data: dict[str, object]) -> dict[str, Any] | None:
+        """One entry's persisted post-questionnaire answers, or None.
+
+        copier's `_tasks` render against the questionnaire pass's *resolved*
+        answer set -- the `when: false` internals (`reuse_effective`, ...) and
+        the defaults it filled in, which `.copier-answers.yml` deliberately
+        hides -- so tests/support.py's task replay loads it from here instead
+        of running the pass again (it is the expensive half of a replay). The
+        answers are a pure function of (questionnaire state, input answers),
+        exactly what the entry key identifies, and they ride the entry's
+        lifecycle: pruned with it when its template bytes move on.
+        """
+        marker = self.namespace / f"{self._answers_key(data)}.answers.json"
+        if not marker.is_file():
+            return None
+        try:
+            payload = json.loads(marker.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+        return payload if isinstance(payload, dict) else None
 
     def _count(self, consumer: str, *, hit: bool) -> None:
         """Track session-wide renders/reuses and per consumer, for the summary."""
@@ -398,11 +465,29 @@ class RenderCache:
         return lines
 
 
-@pytest.fixture(scope="session")
-def render_cache() -> Iterator[RenderCache]:
-    """Session-shared render cache; see RenderCache for keys and semantics."""
+@functools.cache
+def shared_cache() -> RenderCache:
+    """The process-wide cache, shared by the fixture and tests/support.py.
+
+    One instance per process so the render/reuse counts are one story, not
+    two: tests/support.py's helpers request it directly (they are plain
+    functions, not tests, and get no fixture injection), while fixture-based
+    consumers keep their session-scoped entry point.
+    """
     cache = RenderCache(CACHE_ROOT)
-    yield cache
+    # Support-routed runs may never request the fixture; the summary is what
+    # proves the reuse on a warm run, so fall back to reporting it at exit
+    # (a no-op once the fixture has reported).
+    atexit.register(_finish_session)
+    return cache
+
+
+def _finish_session() -> None:
+    """Report the summary once per process, then drop an ephemeral root."""
+    cache = shared_cache()
+    if cache.summary_reported:
+        return
+    cache.summary_reported = True
     # The summary leaves as a warning, not a print: xdist only forwards a
     # session fixture's stdout for failing tests, while the controller
     # aggregates every worker's warnings into the terminal's warnings summary.
@@ -415,3 +500,11 @@ def render_cache() -> Iterator[RenderCache]:
         warnings.warn(f"[{_worker_label()}] {line}", pytest.PytestWarning, stacklevel=2)
     if cache.ephemeral:
         shutil.rmtree(cache.root, ignore_errors=True)
+
+
+@pytest.fixture(scope="session")
+def render_cache() -> Iterator[RenderCache]:
+    """Session-shared render cache; see RenderCache for keys and semantics."""
+    cache = shared_cache()
+    yield cache
+    _finish_session()

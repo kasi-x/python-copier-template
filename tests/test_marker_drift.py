@@ -1,13 +1,13 @@
 """Guards against the test suite's cost tiers drifting away from their names.
 
-Three drifts cost the most time and none of them fails anything by itself:
+Four drifts cost the most time and none of them fails anything by itself:
 
 marker debt
     A test that builds a virtualenv or hits the network without ``heavy``
     (plus ``network``) leaks into the edit loop's ``-m "not heavy and not
-    slow and not meta"`` selection. Every such test is marked today; nothing
-    stops the next one from being unmarked, and the edit loop just gets
-    slower.
+    slow and not meta and not network"`` selection. Every such test is marked
+    today; nothing stops the next one from being unmarked, and the edit loop
+    just gets slower.
 tier membership
     tests/matrix/tiers.json records, per tier, the marker expression that
     tier passes to pytest and the node ids it collected when the record was
@@ -19,6 +19,17 @@ stale cost
     a tier, so a measurement that a growing suite has outgrown is invisible to
     every other check. An entry whose ``measured`` date is older than
     ``STALENESS_DAYS`` fails and names the command to re-measure with.
+over budget
+    A wall time can be fresh and still lose: pyproject.toml declares the edit
+    loop a 30s budget, and the ledger row that *is* the edit loop records it
+    as ``budget_seconds``. A row that measured over its declared budget fails,
+    naming the row, both numbers and the command to re-measure with -- the
+    same failure the staleness check has for dates, on the side that matters
+    for the contract. ``budget_seconds`` is optional per row and only
+    ``test-fast`` declares one: the 30s budget is the edit loop's contract,
+    the nightly/pre-push tiers have no loop to protect, and the witness row's
+    bound is its CI job timeout, which the witness check already compares
+    (a local cold wall is not the quantity a CI timeout bounds anyway).
 
 The task tiers come from Taskfile.yml and the witness tier from
 .github/workflows/witness.yml (its expression and job timeout are read back
@@ -38,9 +49,9 @@ re-record::
 That rewrites the collected sets *and* the Tests column of the tier table in
 docs/how-to/test-loop.md, so the documented counts are no longer the hand-edited
 half of a re-record (the step that was forgotten, and that merges kept
-conflicting on). ``wall_seconds`` and ``measured`` stay for whoever ran the tier
-to fill in, and the doc check below stays as the verifier of that rewrite: a
-count the ledger does not hold still fails, naming the row.
+conflicting on). ``wall_seconds``, ``measured`` and ``budget_seconds`` stay for
+whoever ran the tier to fill in, and the doc check below stays as the verifier
+of that rewrite: a count the ledger does not hold still fails, naming the row.
 """
 
 from __future__ import annotations
@@ -81,9 +92,9 @@ DOC = TOP / "docs" / "how-to" / "test-loop.md"
 
 # Everything here is `meta`: re-collecting every tier starts one pytest session
 # per tier, and the edit loop's 30s budget cannot afford its own guard. The
-# selection `-m "not heavy and not slow and not meta"` is what Taskfile.yml's
-# `test-fast` runs, and .github/workflows/ci.yml runs this module as its own
-# job.
+# selection `-m "not heavy and not slow and not meta and not network"` is what
+# Taskfile.yml's `test-fast` runs, and .github/workflows/ci.yml runs this
+# module as its own job.
 pytestmark = pytest.mark.meta
 
 # The tier tasks of Taskfile.yml. The marker expression each one runs is read
@@ -497,9 +508,9 @@ def test_venv_and_network_work_carries_the_markers_that_keep_it_out_of_the_edit_
     """A test that builds a venv / uses the network must say so with markers.
 
     ``heavy`` keeps it out of the edit loop's ``-m "not heavy and not slow and
-    not meta"``; ``network`` says it needs the wire. The scan is structural, so
-    the fix is to mark the test (or move the work to a helper the test does not
-    call).
+    not meta and not network"``; ``network`` says it needs the wire. The scan
+    is structural, so the fix is to mark the test (or move the work to a
+    helper the test does not call).
     """
     problems = _unmarked_work()
     assert not problems, (
@@ -734,10 +745,10 @@ def _changes(recorded: dict[str, object], live: dict[str, object]) -> list[str]:
 def _update_ledger(live: dict[str, tuple[list[str], dict[str, object]]]) -> list[str]:
     """Rewrite the collected sets and the doc's tier counts, keeping the human columns.
 
-    ``wall_seconds``, ``measured``, the timeout, the command and the note are
-    the human half of the record: a tier that has never been run keeps its null
-    time and empty note rather than looking measured. The count columns the
-    re-record used to leave for a hand edit -- the Tests cells of
+    ``wall_seconds``, ``measured``, the timeout, the budget, the command and
+    the note are the human half of the record: a tier that has never been run
+    keeps its null time and empty note rather than looking measured. The count
+    columns the re-record used to leave for a hand edit -- the Tests cells of
     docs/how-to/test-loop.md's tier table -- are rewritten here too, so the
     hand step cannot be the forgotten half. Returns one line per doc row whose
     stated count moved, for the skip message.
@@ -758,6 +769,13 @@ def _update_ledger(live: dict[str, tuple[list[str], dict[str, object]]]) -> list
             "wall_seconds": previous.get("wall_seconds"),
             "measured": previous.get("measured", ""),
             **({"timeout_seconds": previous.get("timeout_seconds")} if witness else {}),
+            # The budget is declared per row, so it survives like the timeout:
+            # carried over exactly when the row has one, absent otherwise --
+            # otherwise a re-record would silently un-declare the edit loop's
+            # 30s contract and the budget check would pass unchecked.
+            **(
+                {"budget_seconds": previous.get("budget_seconds")} if previous.get("budget_seconds") is not None else {}
+            ),
             "command": previous.get("command", ""),
             "note": previous.get("note", ""),
         }
@@ -964,6 +982,38 @@ def test_no_recorded_cost_is_stale() -> None:
         f"these costs were measured more than {STALENESS_DAYS} days ago (today {today.isoformat()}):\n"
         + "\n".join(stale)
     )
+
+
+def test_no_recorded_cost_exceeds_its_budget() -> None:
+    """A row that declares ``budget_seconds`` must have measured under it.
+
+    The check is a comparison over the ledger, not a run: cheap to the edit
+    loop, unlike the 30s it guards. Only rows that declare a budget are
+    checked, and only ``test-fast`` declares one -- the edit loop is the tier
+    whose slowness compounds (it runs on every edit), while the other tiers'
+    walls are observations (see the module docstring's "over budget"). The
+    failure names the row's own ``command``, so bringing the number back under
+    is a copy and paste; raising the budget is a decision, made where the
+    number and its measurement conditions live.
+    """
+    if os.environ.get("UPDATE_TIERS"):
+        pytest.skip("UPDATE_TIERS set: the ledger's collected sets are being rewritten, not its costs")
+    over = []
+    for section, entries in (("tiers", _load_ledger()), ("witness", _load_witness())):
+        for name, entry in entries.items():
+            budget, wall = entry.get("budget_seconds"), entry.get("wall_seconds")
+            if not isinstance(budget, (int, float)):
+                continue
+            if isinstance(wall, (int, float)) and float(wall) > float(budget):
+                over.append(
+                    f"  {name}: {wall}s measured against its {budget}s budget (measured {entry.get('measured')!r})"
+                    " -- re-measure with\n"
+                    f"      time {entry.get('command') or 'uv run --no-sync pytest -q -m <expression>'}\n"
+                    f"    then write that wall time into {LEDGER.relative_to(TOP)} -> "
+                    f'{section}."{name}".wall_seconds; if the tier itself changed, move it to a slower '
+                    'marker or raise "budget_seconds" there deliberately'
+                )
+    assert not over, "these tiers measured over their declared budget:\n" + "\n".join(over)
 
 
 def test_test_loop_doc_states_the_recorded_tier_sizes() -> None:

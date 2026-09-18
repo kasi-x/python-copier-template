@@ -12,6 +12,11 @@ This module resolves the includes in the same order copier merges them, so
 the returned list *is* the ask order, and keeps the raw field values (the
 defaults are templates; they are reported as written, not evaluated).
 
+It is the one parser for this questionnaire: tools/when_model.py layers the
+`when`-expression semantics on the raw view exposed here
+(`load_raw_questions`), and copier's own `load_template_config` stays only a
+differential oracle in tests (which pin that the two agree).
+
 Usage:
     python tools/questionnaire.py           # one line per question
     python tools/questionnaire.py --json    # full records
@@ -60,11 +65,15 @@ class QuestionnaireError(Exception):
     """The questionnaire cannot be read as data."""
 
 
-class _Loader(yaml.SafeLoader):
-    """SafeLoader that ignores copier's custom tags instead of failing."""
+class TolerantLoader(yaml.SafeLoader):
+    """SafeLoader that ignores copier's custom tags instead of failing.
+
+    The one tolerant loader for the questionnaire's YAML: tools/detect.py's
+    `_skip_if_exists` read uses it too.
+    """
 
 
-_Loader.add_multi_constructor("!", lambda _loader, _suffix, _node: None)
+TolerantLoader.add_multi_constructor("!", lambda _loader, _suffix, _node: None)
 
 
 @dataclass(frozen=True)
@@ -105,7 +114,7 @@ class Question:
 def _load_document(text: str, source: str) -> list[tuple[str, Any]]:
     """Top-level (key, value) pairs of one YAML document, in order."""
     try:
-        data = yaml.load(text, Loader=_Loader)  # noqa: S506  WHYNOT: _Loader subclasses SafeLoader; it only stops copier's tags from raising.
+        data = yaml.load(text, Loader=TolerantLoader)  # noqa: S506  WHYNOT: TolerantLoader subclasses SafeLoader; it only stops copier's tags from raising.
     except yaml.YAMLError as exc:
         msg = f"{source}: cannot parse: {exc}"
         raise QuestionnaireError(msg) from exc
@@ -150,13 +159,16 @@ def _choice_values(details: dict[str, Any]) -> tuple[list[Any], list[str] | None
     raise QuestionnaireError(msg)
 
 
-def load_questions(config: Path | None = None) -> tuple[list[Question], dict[str, Any]]:
-    """Return (questions in ask order, template settings).
+def _read_entries(config: Path) -> tuple[list[tuple[str, Any, str]], dict[str, Any]]:
+    """One parsing pass: ((name, raw value, source) triples in ask order, settings).
 
-    Settings are the underscore-prefixed keys (`_subdirectory`, `_tasks`,
-    `_migrations`, ...); they are not questions and are kept separate.
+    The shared pass both views project: `load_questions` builds its Question
+    records from it and `load_raw_questions` takes the raw values verbatim.
+    A source names the document a question came from (`a.yml` for an included
+    fragment, `copier.yml#3` for an inline one); settings are the
+    underscore-prefixed keys (`_subdirectory`, `_tasks`, `_migrations`, ...),
+    which are not questions.
     """
-    config = config or CONFIG
     entries: list[tuple[str, Any, str]] = []
     for index, chunk in enumerate(_split_documents(config.read_text(encoding="utf-8"))):
         included = _include_target(chunk)
@@ -173,12 +185,23 @@ def load_questions(config: Path | None = None) -> tuple[list[Question], dict[str
         source = f"{config.name}#{index + 1}"
         entries.extend((name, details, source) for name, details in _load_document(chunk, source))
 
+    settings: dict[str, Any] = {name: raw for name, raw, _source in entries if name.startswith("_")}
+    return entries, settings
+
+
+def load_questions(config: Path | None = None) -> tuple[list[Question], dict[str, Any]]:
+    """Return (questions in ask order, template settings).
+
+    Settings are the underscore-prefixed keys (`_subdirectory`, `_tasks`,
+    `_migrations`, ...); they are not questions and are kept separate.
+    """
+    config = config or CONFIG
+    entries, settings = _read_entries(config)
+
     questions: list[Question] = []
-    settings: dict[str, Any] = {}
     for name, raw, source in entries:
         if name.startswith("_"):
-            settings[name] = raw
-            continue
+            continue  # already collected into settings
         details: dict[str, Any] = raw if isinstance(raw, dict) else {}
         choices, labels, choices_template = _choice_values(details)
         questions.append(
@@ -198,6 +221,20 @@ def load_questions(config: Path | None = None) -> tuple[list[Question], dict[str
         msg = f"{config}: no questions found"
         raise QuestionnaireError(msg)
     return questions, settings
+
+
+def load_raw_questions(config: Path | None = None) -> tuple[dict[str, dict[str, Any]], list[str]]:
+    """Return ({question-name: raw-details}, question names in ask order).
+
+    The raw view of the same parse `load_questions` runs: non-underscore,
+    dict-valued top-level entries with their details exactly as written, in
+    ask order -- the resolved shape copier itself asks in. This is the view
+    tools/when_model.py serves to its callers (its `when` semantics are
+    layered on it), so the `!include` chain is resolved in exactly one place.
+    """
+    entries, _settings = _read_entries(config or CONFIG)
+    questions = {name: raw for name, raw, _source in entries if not name.startswith("_") and isinstance(raw, dict)}
+    return questions, list(questions)
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:

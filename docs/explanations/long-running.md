@@ -60,43 +60,50 @@ script, and starts the server with stdio (the default, driven by an MCP host
 or the console script) or `--transport streamable-http` for the HTTP
 transport. See the [MCP how-to](../how-to/mcp.md) for the concrete workflow.
 
-## The second implementation: the chat bot (Discord / Slack / LINE)
+## The second implementation: the chat bot (Discord / Slack / LINE / Gmail)
 
 `include_bot` (on the same `cli` / `web_api` bases) is the layer's second
 implementation, and the first with its own platform axis: a
 `use_recommended_bot` gate (design principle 5 — one recommendation,
 No for custom) reveals `bot_platform`, whose choices are **discord**
-(`discord.py`, the recommendation), **slack** (`slack-bolt`) and **line**
-(`line-bot-sdk`; Gmail is a planned choice, not a new question). The
-generated `bot_discord.py` / `bot_slack.py` / `bot_line.py` follows the same
-recipe as the MCP server, point by point:
+(`discord.py`, the recommendation), **slack** (`slack-bolt`), **line**
+(`line-bot-sdk`) and **gmail** (`google-api-python-client` + `google-auth`).
+The generated `bot_discord.py` / `bot_slack.py` / `bot_line.py` /
+`bot_gmail.py` follows the same recipe as the MCP server, point by point:
 
 1. an **opt-in layer question** (`include_bot`) adds the platform SDK
    (`discord.py` / `slack-bolt` / `line-bot-sdk`, plus the `fastapi` +
-   `uvicorn[standard]` the LINE webhook server runs on) and the module — one
-   module, the platform the answers selected;
+   `uvicorn[standard]` the LINE webhook server runs on, or the
+   `google-api-python-client` + `google-auth` + `google-auth-oauthlib` trio
+   the Gmail poller runs on) and the module — one module, the platform the
+   answers selected;
 2. the bot module keeps its **own `main()`** and is started directly through
    its own `[project.scripts]` entry (`bot-discord-<name>` /
-   `bot-slack-<name>` / `bot-line-<name>`, `python -m <pkg>.bot_<platform>`),
+   `bot-slack-<name>` / `bot-line-<name>` / `bot-gmail-<name>`,
+   `python -m <pkg>.bot_<platform>`),
    so the CLI / Docker `ENTRYPOINT` contract is untouched;
 3. the credential(s) are read from the **environment** (`DISCORD_BOT_TOKEN`;
    the Slack pair `SLACK_BOT_TOKEN` (xoxb-) + `SLACK_APP_TOKEN` (xapp-); the
-   LINE pair `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN` —
-   `.env.example` documents them, never committed) and a startup check
-   refuses to start without them, naming the missing variable — the same
-   refusal `mcp_server.py` makes for a public bind without
-   `MCP_ALLOWED_HOSTS`;
+   LINE pair `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN`; the Gmail
+   pair of paths to the OAuth JSON files, `GMAIL_CREDENTIALS_JSON` +
+   `GMAIL_TOKEN_JSON` — `.env.example` documents them, never committed) and
+   a startup check refuses to start without them, naming the missing
+   variable — the same refusal `mcp_server.py` makes for a public bind
+   without `MCP_ALLOWED_HOSTS`;
 4. logging goes through the generated `logging_setup.py`, so `structlog` /
    `loguru` / ... and `LOG_FORMAT=json` work unchanged inside the event loop;
 5. a **`build_bot()` / `build_app()` + `main()` split** extends the recipe
    with a testability seam the MCP layer gets for free from its in-process
    client: the generated tests call the `/ping` callback with a fake
    interaction (Discord), the `/app_mention` listener with a fake `say`
-   (Slack), or the signed `POST /callback` route with a recording reply over
-   httpx's `ASGITransport` (LINE) — the real object, no connection, no token.
+   (Slack), the signed `POST /callback` route with a recording reply over
+   httpx's `ASGITransport` (LINE), or the poll with a recording discovery
+   client whose recorded `send` kwargs are decoded RFC 2822 bytes (Gmail) —
+   the real object, no connection, no token.
 
-Two of the three platforms connect **outbound** — Discord's Gateway, Slack's
-Socket Mode WebSocket — so neither publishes an inbound port, the property
+Three of the four platforms connect **outbound** — Discord's Gateway,
+Slack's Socket Mode WebSocket, Gmail's INBOX poll — so none publishes an
+inbound port, the property
 that makes the layer runnable on a laptop and behind NAT. LINE is the
 structural exception, and the reason the platform axis is not cosmetic: the
 Messaging API has no socket transport and no long-polling, so it can only
@@ -116,7 +123,7 @@ entry point, credentials and — for LINE — port) and the variables in
 `.env.example` complete the mirror. See the
 [bot how-to](../how-to/bot.md) for the concrete workflow.
 
-Further platforms — Gmail bots — are expected to follow the same
+Further platforms are expected to follow the same
 recipe rather than grow the questionnaire:
 
 1. an **opt-in layer question**, which adds the platform SDK and the module;
