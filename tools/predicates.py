@@ -29,8 +29,11 @@ capabilities:
    tests/matrix/invariants.yml (each row's leaf count, top-down with numbers),
    per-internal reference and fire counts, equivalence classes over the leaf
    space, mechanically-detected unification candidates, and shortcut
-   suggestions (naming candidates above ``SHORTCUT_MIN_SITES`` sites;
-   flattening candidates = internals that never split the space).
+   suggestions (naming candidates above ``SHORTCUT_MIN_SITES`` sites, after
+   the structural exclusions for classes that only spell a declared name or
+   live entirely in question whens -- ``_spelling_name`` / ``_ask_time_gate``
+   keep those in the report, in their own buckets; flattening candidates =
+   internals that never split the space).
 4. **The free-space oracle** (``FreeSpace``): whether two condition texts can
    ever disagree over the whole questionnaire space, decided with
    ``when_model.when_expr_satisfiable`` after substituting boolean internals
@@ -724,20 +727,88 @@ def _unification_candidates(sites: list[Site], named: dict[str, tuple[bool, ...]
     return sorted(matched.values(), key=lambda entry: (-len(entry["internals"]), entry["site"]))
 
 
+def _spelled_name(entry: dict[str, Any]) -> str | None:
+    """The declared identifier some site of the class writes bare (or as `not X`), or None.
+
+    A class groups sites by leaf vector, so it is *named* as soon as one of its
+    sites spells a single identifier -- bare (`{% if pkg_scaffold %}`) or
+    negated (`{% if not no_pkg %}`): that identifier's value on every leaf is
+    the class's vector by construction, and naming the class would give one
+    boolean two names. The class's other sites are not lost here: a re-spelled
+    site that should reference the name is exactly what the unification
+    candidates report is for. Five of the six classes the classifier left after
+    the `api_docs_zensical` pass are of this shape -- `not ros2_pkg` /
+    `not no_pkg` / `not use_recommended_security` are complements of named
+    internals, and `pkg_scaffold` / `web_api` are the names themselves (their
+    classes also hold spelled-out sites, which stay unification candidates).
+
+    Negation counts as a name because it is the established spelling for a
+    complement (a `not_ros2_pkg` internal would be a second name for the same
+    bit). Sound because the caller only passes splitting classes: a
+    single-identifier condition that fires on some leaf needs its identifier
+    bound in copier's render context (every answer and internal is bound there),
+    and an unbound identifier renders falsy -- a constant vector, excluded
+    before this rule sees it. Conservative the other way too: a synonym written
+    with operators (`X == false`, `not (X)`) is not matched and stays a
+    candidate, for a human to judge.
+    """
+    for site in entry["sites"]:
+        expr = site.expr.strip()
+        if len(site.refs) != 1:
+            continue
+        (name,) = site.refs
+        if expr in (name, f"not {name}"):
+            return name
+    return None
+
+
+def _ask_time_gate(entry: dict[str, Any]) -> bool:
+    """Whether every site of the class is a question `when:`.
+
+    Question whens are the questionnaire's ask-time surface: the
+    forward-reference (include order) rule governs them, and the Z3
+    equivalence guard skips them for the same reason
+    (tests/test_predicate_classifier.py). A condition spelled in several
+    question whens is a shared ask-time gate of the questionnaire, and its
+    naming home is the questionnaire itself -- today's is
+    `has_web_api and not use_recommended_web_api`, the guard on web_api.yml's
+    prometheus / rate_limit / cors questions. The naming list exists for
+    conditions that re-spell a *template* predicate, so these are reported
+    but never suggested.
+    """
+    return all(site.kind == QUESTION for site in entry["sites"])
+
+
 def _shortcut_suggestions(
     sites: list[Site], classes: list[dict[str, Any]], leaves: Sequence[LeafLike]
 ) -> dict[str, list[Any]]:
-    """The naming and flattening candidates (thresholds are module constants, with reasons)."""
+    """The naming and flattening candidates (thresholds are module constants, with reasons).
+
+    `named_spellings` and `ask_time_gates` are the repeated classes the two
+    structural exclusions above keep out of `naming`; they stay in the payload
+    so the exclusions can be audited instead of a bare zero.
+    """
     total = len(leaves)
-    naming = [
-        {
+    naming: list[dict[str, Any]] = []
+    named_spellings: list[dict[str, Any]] = []
+    ask_time_gates: list[dict[str, Any]] = []
+    for entry in classes:
+        if entry["named_internal"] is not None or not 0 < entry["fires"] < total:
+            continue
+        if len(entry["sites"]) < SHORTCUT_MIN_SITES:
+            continue
+        row = {
             "fires": entry["fires"],
             "sites": [site.location for site in entry["sites"]],
             "expr": entry["sites"][0].expr,
         }
-        for entry in classes
-        if entry["named_internal"] is None and 0 < entry["fires"] < total and len(entry["sites"]) >= SHORTCUT_MIN_SITES
-    ]
+        spelled = _spelled_name(entry)
+        if spelled is not None:
+            named_spellings.append({**row, "name": spelled})
+        elif _ask_time_gate(entry):
+            ask_time_gates.append(row)
+        else:
+            naming.append(row)
     referenced: dict[str, int] = defaultdict(int)
     for site in sites:
         for name in site.refs:
@@ -748,7 +819,12 @@ def _shortcut_suggestions(
         for name, site in sorted(internal_sites.items())
         if site.vector is not None and not 0 < _fires(site.vector) < total
     ]
-    return {"naming": naming, "flattening": flattening}
+    return {
+        "naming": naming,
+        "named_spellings": named_spellings,
+        "ask_time_gates": ask_time_gates,
+        "flattening": flattening,
+    }
 
 
 def _unevaluable(sites: list[Site]) -> list[dict[str, str]]:
@@ -818,7 +894,7 @@ def _candidate_lines(candidates: list[dict[str, Any]]) -> list[str]:
 
 
 def _shortcut_lines(suggestions: dict[str, list[Any]], total: int) -> list[str]:
-    """The shortcut suggestions: naming candidates and flattening candidates."""
+    """The shortcut suggestions: naming candidates, the suppression buckets, and flattening."""
     naming, flattening = suggestions["naming"], suggestions["flattening"]
     lines = [
         (
@@ -834,6 +910,26 @@ def _shortcut_lines(suggestions: dict[str, list[Any]], total: int) -> list[str]:
         )
         for candidate in naming
     ]
+    for label, reason in (
+        (
+            "named_spellings",
+            "a site writes one declared identifier (or its negation) -- the class already has that name",
+        ),
+        ("ask_time_gates", "lives only in question whens -- the questionnaire's own vocabulary"),
+    ):
+        bucket = suggestions.get(label, [])
+        if not bucket:
+            continue
+        lines.append(f"  not a candidate -- {reason}: {len(bucket)}")
+        lines += [
+            (
+                f"        fires {candidate['fires']:>4}/{total}  "
+                f"{{% if {candidate['expr']} %}}  "
+                f"({'= `' + candidate['name'] + '`' if candidate.get('name') else 'all question whens'})  "
+                f"({len(candidate['sites'])} sites; first: {candidate['sites'][0]})"
+            )
+            for candidate in bucket
+        ]
     lines += [
         (
             f"  flatten?  `{candidate['internal']}` fires on {candidate['fires']}/{total} leaves "

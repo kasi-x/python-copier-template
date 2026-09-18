@@ -227,6 +227,13 @@ The naming rule it suggests with numbers:
 - **3 or more sites sharing one leaf-vector class that has no name** — name
   the shortcut (a new `when: false` internal) and reference it everywhere;
   that is the threshold where look-alike conditions start drifting apart.
+- **Two shapes are never suggested, and are reported under their own
+  buckets instead**: a class where one site writes a single declared
+  identifier, bare or negated (`{% if pkg_scaffold %}`, `{% if not no_pkg %}`)
+  already has that name — the rest of its sites are unification candidates,
+  not a new concept — and a class living entirely in question `when:`s is
+  the questionnaire's own ask-time vocabulary, governed by the
+  forward-reference rule below, not by render-side naming.
 - **A named internal that never splits the 234-leaf space** (fires on all
   or none) — a shortcut that cannot distinguish leaves is dead weight;
   consider flattening it or saying why the leaf space never exercises it.

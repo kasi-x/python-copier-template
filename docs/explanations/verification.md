@@ -96,9 +96,9 @@ check moves between tiers, the budget moves with it.
 |---|---|---|---|
 | Edit loop | `task test-fast` | `-m "not heavy and not slow and not meta and not network"` | L1 + L2 + everything that neither builds a venv nor touches the network |
 | Cost ledger guard | `task test-meta` | `-m meta` | the guards in `tests/test_marker_drift.py`: the venv/network marker scan, the tier-membership check, the cost-staleness check and the leaf-space budget |
-| Slow | `task test-slow` | `-m slow` | the serial 228-leaf batch runner (`tools/batch.py` over `tests/matrix/witnesses.jsonl`) |
+| Slow | `task test-slow` | `-m slow` | the serial 234-leaf batch runner (`tools/batch.py` over `tests/matrix/witnesses.jsonl`) |
 | Pre-push / nightly | `task test-heavy` | `-m heavy` | L3: `uv sync` + the generated project's pytest / type check / docs build (`network` follows where the case downloads) |
-| Witness render | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | `fast` | L2 over all 228 leaves |
+| Witness render | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | `fast` | L2 over all 234 leaves |
 | Witness execution | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m full` | `full` | L3 over the 8-leaf sample (those tests are also `heavy` / `network`) |
 | Full suite | `task test` | — | everything, with coverage |
 
