@@ -266,6 +266,16 @@ zensical:
     default: "{{ docs_type == 'zensical' or (micropython_pkg and docs_type == 'sphinx') }}"
     when: false
 
+# autodoc pages: the zensical API pages (modules.md, the mkdocstrings plugin,
+# the Modules nav entry) and the code imports the sphinx tree keeps (conf.py,
+# reference _api, pyproject's logging_setup per-file ignores) render only
+# when the docs site has something importable to document -- never in a bare
+# code-submission workspace (oj_code).
+api_docs_zensical:
+    type: bool
+    default: "{{ zensical and not oj_code }}"
+    when: false
+
 great_docs:
     type: bool
     default: "{{ docs_type == 'great-docs' }}"
