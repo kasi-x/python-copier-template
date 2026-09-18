@@ -10,7 +10,7 @@ import sys
 {% endif %}from pathlib import Path
 from subprocess import check_output
 
-{% if sphinx %}import {{ import_pkg }}
+{% if not oj_code %}import {{ import_pkg }}
 {% endif %}import requests
 
 # -- General configuration ------------------------------------------------

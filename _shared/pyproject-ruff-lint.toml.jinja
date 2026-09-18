@@ -69,6 +69,17 @@ lint.select = ["ALL"]
     # pattern that DTZ007 cannot see; drop this ignore once formats carry %z.
     "DTZ007",  # call-datetime-strptime-without-zone
     "FA",
+{% if allow_japanese %}    # Japanese docstrings: pydocstyle's D400/D403/D415 assume an ASCII
+    # sentence ends with `.` and starts with a capital letter. Japanese text
+    # ends with 。 and has no case, so these three rules are noise for a
+    # Japanese project — the same relief line-length already gets (the
+    # per-file blanket on logging_setup.py shows the same pattern). The
+    # template's own generated docstrings keep ASCII punctuation, so this
+    # only relaxes user-authored text.
+    "D400",   # missing-trailing-period
+    "D403",   # first-word-capitalized
+    "D415",   # missing-end-punctuation
+{% endif %}
 {% if oj_code %}    # Contest-code relaxations: single-file submissions are written for
     # speed and the judge, not a shared codebase. Shadowing `input`,
     # ALL-CAPS variables (N, M, INF), unused locals/helpers and in-function

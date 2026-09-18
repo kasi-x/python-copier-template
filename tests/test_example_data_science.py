@@ -110,6 +110,20 @@ def test_template_data_science_layout(tmp_path: Path):
     assert any(d.startswith("polars") for d in deps)
     # No competition artifacts
     assert not (tmp_path / "src" / "utils").exists()
+    # Bug #15 regression: a data_science GPU render (use_gpu_effective, not just
+    # kaggle) must ship the cu126 torch index, so a user adding torch gets the
+    # CUDA wheel instead of PyPI's CPU default under a GPU Dockerfile.
+    if package_manager := pyproject_toml.get("tool", {}).get("uv", {}):
+        index_urls = {i.get("url") for i in package_manager.get("index", [])}
+        assert any("download.pytorch.org/whl/cu126" in u for u in index_urls), (
+            "a data_science GPU render must declare the pytorch-cu126 index (bug #15)"
+        )
+    # Bug #17 regression: web_api-only names must NOT leak into data_science deptry ignores.
+    ignores = pyproject_toml["tool"]["deptry"]["per_rule_ignores"]
+    for web_api_name in ("alembic", "asgi-correlation-id", "asyncpg", "fastapi", "slowapi", "sqlalchemy", "uvicorn"):
+        assert web_api_name not in ignores, (
+            f"deptry DEP002 leaks {web_api_name} into a pure data_science render (bug #17)"
+        )
 
 
 def test_template_online_judge_no_solutions_for_kaggle(tmp_path: Path):

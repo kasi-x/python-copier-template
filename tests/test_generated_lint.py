@@ -216,6 +216,17 @@ def test_generated_project_is_ruff_format_clean_per_line_length(
     assert pyproject["tool"]["ruff"]["line-length"] == expected_length, (
         "the rendered ruff config must carry the allow_japanese line length"
     )
+    # Bug #13 regression: allow_japanese relaxes only the width knobs unless the
+    # pydocstyle sentence rules are ignored too — a Japanese docstring ends with
+    # 。 and has no case, so D400/D403/D415 fire on every one of them.
+    ignored = set(pyproject["tool"]["ruff"]["lint"]["extend-ignore"])
+    japanese_rules = {"D400", "D403", "D415"}
+    if answers["allow_japanese"]:
+        assert japanese_rules <= ignored, (
+            f"allow_japanese must ignore the ASCII sentence rules, missing: {sorted(japanese_rules - ignored)}"
+        )
+    else:
+        assert not (japanese_rules & ignored), "the sentence rules are ignored without allow_japanese"
     proc = _run_ruff_format_check(tmp_path)
     assert proc.returncode == 0, (
         f"generated project is not ruff-format-clean at line-length {expected_length}:\n{proc.stdout}{proc.stderr}"

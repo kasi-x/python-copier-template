@@ -145,7 +145,7 @@ wandb = ">=0.16.4"
 {{ _t.pixi_tasks() }}
 {% endif %}
 
-{% endif %}{% if package_manager == "uv" and kaggle and use_gpu_effective %}
+{% endif %}{% if package_manager == "uv" and use_gpu_effective %}
 [[tool.uv.index]]
 name = "pytorch-cu126"
 url = "https://download.pytorch.org/whl/cu126"
@@ -307,7 +307,7 @@ suppress-none-returning = false
 {% endif %}{% if web_api %}# app/main.py は直交オプション（cors/rate_limit/prometheus）の条件付き
 # import を含む app factory のため、isort の自動整列は無効化する。
 "{{ pkg_dir }}/main.py" = ["I001"]
-{% endif %}{% if api_docs_zensical %}# logging_setup.py の長い呼び出し（structlog の ConsoleRenderer /
+{% endif %}{% if not oj_code %}# logging_setup.py の長い呼び出し（structlog の ConsoleRenderer /
 # make_filtering_bound_logger、loguru の add() など）は line-length 設定により
 # ruff format が折り返しを変えるため、E501 は免除する。
 # 日本語 docstring の終端句読点（D415）とシングルトン設定の global（PLW0603）も免除。

@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 942,
+      "collected": 954,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -13,6 +13,7 @@
         "tests/test_batch.py": 19,
         "tests/test_bot_layer.py": 47,
         "tests/test_check_upstream.py": 5,
+        "tests/test_cli.py": 12,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 22,
         "tests/test_ethics_registry.py": 6,
@@ -57,12 +58,12 @@
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "fc52c6c64b2880e0d071b1b61fb337f99ff62c5956c62a174c1d07dfe72608cc",
-      "wall_seconds": 25.6,
-      "measured": "2026-09-18",
+      "ids_sha256": "180ded08074a2caed273201491be2bbeeefe18d80a564961676a225c0b91eea9",
+      "wall_seconds": 18.7,
+      "measured": "2026-09-19",
       "budget_seconds": 30,
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta and not network\"",
-      "note": "time uv run --locked pytest -q <the task's own selection> (942 tests; measured 2026-09-18 warm-cache on a 32-CPU box with light residual load, after the witness leaf space grew to 234 leaves with the bot-platform variants -- the six new fast-tier witness renders join this selection; 25.6s warm, 34.1s on a just-emptied render cache, inside the 30s budget the ledger check enforces. History: 2026-09-17 27.5s quiet at 904 tests, after the example modules started rendering through the render cache and the expression gained `and not network`; 2026-09-16 recorded 30.7s under concurrent sessions / 26.3s quiet, at 896 tests, before the cache routing; 2026-09-14 31.5s quiet / 43.0s under another session's load average ~59, at 835 tests)."
+      "note": "time uv run --locked pytest -q <the task's own selection> (954 tests; measured 2026-09-19 warm-cache on a 32-CPU box with light residual load, after the witness leaf space grew to 234 leaves with the bot-platform variants and the cli dispatch tests joined the selection; 18.7s warm, 32.5s on a just-emptied render cache, inside the 30s budget the ledger check enforces."
     },
     "test-slow": {
       "task": "test-slow",
@@ -120,7 +121,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1009,
+      "collected": 1021,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -129,6 +130,7 @@
         "tests/test_batch.py": 19,
         "tests/test_bot_layer.py": 51,
         "tests/test_check_upstream.py": 5,
+        "tests/test_cli.py": 12,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 22,
         "tests/test_ethics_registry.py": 6,
@@ -175,7 +177,7 @@
         "tests/test_witness_matrix.py": 249,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "0dc587896753ab793e0fe8d1429917ac987147b886fc78658a005f2903bef09f",
+      "ids_sha256": "4c2c32954eb7b86507ae08e516856b4c1e5bf0521adef902705f8d486fec9765",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -184,7 +186,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 942,
+      "collected": 954,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -193,6 +195,7 @@
         "tests/test_batch.py": 19,
         "tests/test_bot_layer.py": 47,
         "tests/test_check_upstream.py": 5,
+        "tests/test_cli.py": 12,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 22,
         "tests/test_ethics_registry.py": 6,
@@ -237,7 +240,7 @@
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "fc52c6c64b2880e0d071b1b61fb337f99ff62c5956c62a174c1d07dfe72608cc",
+      "ids_sha256": "180ded08074a2caed273201491be2bbeeefe18d80a564961676a225c0b91eea9",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",
