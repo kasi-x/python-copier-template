@@ -44,6 +44,9 @@
 
 ### A. §28 の残り（0 件。2026-09-18 に全項目着地。アーカイブ側 §B の 28 件のみが残る）
 
+- §28 完結後の追い込み（2026-09-18）: bot platform を witness 葉空間へ（228 → 234 葉）。
+  詳細は下の監査メモ (vii)。
+
 - §B（notes/archive/TODO-sections-01-27.md の 28 件）は将来拡張・公開手順・CI 教訓など
   着手条件（日付・リリース・ネットワーク）が未到来のもの。詳細は §B と archive。
 
@@ -86,6 +89,24 @@
 > (vi) §21 の upstream fork PR は原文が「投稿は手動で行う（エージェント投稿禁止）」と
 > 明示する人間タスク。これらの着手条件（CI 実走・detach・GitHub 操作・投稿）が
 > 到来するまで §B はアーカイブのまま残すのが正。
+> (vii) 追加改善（2026-09-18、§28 完結後の追い込み）: **bot platform を葉空間へ**
+> （228 → 234 葉）。predicates 分類器が `bot_slack_effective` / `bot_line_effective` /
+> `bot_gmail_effective` を「0/228 葉で不発 — 決して分割しない」と報告していた穴。
+> 投影軸は `use_recommended_bot` を gate として運ぶが `bot_platform` は運ばず、
+> gate オフ葉（cli / web_api の 2 葉）は既定 discord のままになる — a515149a が
+> docker + MCP を `DETAIL_VARIANTS` で足したのと同型のギャップ。`BOT_PLATFORM_VARIANTS`
+> （slack / line / gmail）を新設し、`use_recommended_bot` オフの各葉から 1 葉ずつ派生
+> （discord は基底葉自身が担う）。invariants スキーマに `bot_platform` select キーを
+> 追加（選択肢と既定は Vocabulary が質問票から読む。NAMED_SELECT_KEYS は
+> project_type / oj_kind / include / gate_off / bot_platform の 5 つ。既定を受ける葉は
+> 次元を主張しない = include/gate_off/oj_kind と同じ規則）、ベース 2 行に
+> `bot_platform: [discord]` を付けて新規 6 行（cli / web_api × slack / line / gmail、
+> 兄弟平台ファイルの absent 付き）を追加。witnesses.jsonl 再生成（234）+ 台帳再記録
+> （witness 240 / test-fast 942）+ 228 → 234 の参照を docs / コメントに同期。
+> 検証: witness fast 240 passed（`.cache/renders` を空にして cold 16.9s）/ predicates が
+> 3 つの `bot_*_effective` の分割（2/234 ずつ）を報告 / lint / type-check 5 種 / meta 10
+> passed / docs sync 10 blocks / test-fast 25.6s（予算 30s 内。cold cache で 34.1s は
+> 測定条件として台帳ノートに明記）。
 
 - 機能の将来拡張（6）: OJ 9 種＋その他（§2, archive L117）/ bot LINE・Gmail 残り（§4, L182）/ スタンドアロン MCP レシピ・MCP 本番運用（§5, L362–363）/ SQLAdmin・FastCRUD（§6, L440）/ library 空依存の維持・質問化（§17, L1058）
 - 公開・運用手順（14）: v1.0 fork 解除手順（§11, L544）/ renovate digest・example 再生成・Scorecard 確認・branch 保護（§12, L615–621）/ 改名・由来明記・Scorecard 初回・告知・hypermodern 乗換・Z3 記事・bus-factor（§16, L995–1028）/ fork 作成 F3 着手・手動投稿（§21, L1489–1497）

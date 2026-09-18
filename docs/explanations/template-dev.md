@@ -213,7 +213,7 @@ internals, `{% if %}` gates in template file names and bodies, `_tasks`
 guards — and §18's unification (the `oj_bare` / `no_pkg` inventory) was done
 by hand against a snapshot that could rot. `tools/predicates.py` keeps the
 inventory alive: it collects every boolean condition site, evaluates each
-against all 228 witness leaves with copier's own machinery, and reports the
+against all 234 witness leaves with copier's own machinery, and reports the
 classification tree (every `invariants.yml` row with its leaf count),
 per-internal reference and fire counts, the equivalence classes over the
 leaf space, mechanically-detected unification candidates (a site whose leaf
@@ -227,14 +227,14 @@ The naming rule it suggests with numbers:
 - **3 or more sites sharing one leaf-vector class that has no name** — name
   the shortcut (a new `when: false` internal) and reference it everywhere;
   that is the threshold where look-alike conditions start drifting apart.
-- **A named internal that never splits the 228-leaf space** (fires on all
+- **A named internal that never splits the 234-leaf space** (fires on all
   or none) — a shortcut that cannot distinguish leaves is dead weight;
   consider flattening it or saying why the leaf space never exercises it.
 
 The fast-tier guard `tests/test_predicate_classifier.py` holds the
 space-wide version of the same rule: no template condition may duplicate a
 named internal unconditionally (proven in Z3 over the whole questionnaire
-space, not just the 228 leaves) without referencing it — unless the pair is
+space, not just the 234 leaves) without referencing it — unless the pair is
 declared in its `DECLARED_EQUIVALENCES` registry with a reason, as the
 `has_*` / `web_api` / `data_science` alias family from §18 is.
 

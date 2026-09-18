@@ -613,7 +613,7 @@ def _witness_inventory() -> dict[str, Any]:
 def list_witnesses() -> dict[str, Any]:
     """List the questionnaire's Z3 witness leaves and what has executed them.
 
-    The 228 leaves are `tests/matrix/witnesses.jsonl` -- the request list
+    The 234 leaves are `tests/matrix/witnesses.jsonl` -- the request list
     `tools/z3_witnesses.py` enumerates, one answer combination each -- and
     `tier` / `result` are the deepest verdict `tests/matrix/witnesses.json`
     records for that leaf, so this is the "what is already verified" answer.
@@ -635,7 +635,7 @@ def recommend_answers(constraints: list[str], *, render: bool = False) -> dict[s
     "shown", "leaves", "diagnostic", "render"}: every matching witness leaf
     with its full `answers`, the same answers as a `--data-file`-ready YAML
     string (`answers_yaml`) and the artifacts its class ships (`ships`). The
-    match is exact over the declared 228-leaf space, so a combination no leaf
+    match is exact over the declared 234-leaf space, so a combination no leaf
     carries is reported as such, not guessed: with no match, `diagnostic`
     names the constraint that eliminated the most leaves and the nearest leaf
     with what it misses. `render=True` also renders the top match and proves
@@ -729,7 +729,7 @@ def run_witness(
     `tests/test_witness_matrix.py` executes the leaves; this runs it in a
     subprocess so a caller gets its verdict instead of pytest's text. `tier` is
     the marker expression: `fast` renders and lints every leaf (no venv; a few
-    seconds under the suite's `-n auto`), `slow` runs the serial 228-leaf batch
+    seconds under the suite's `-n auto`), `slow` runs the serial 234-leaf batch
     runner (~2 min), `full` adds the sampled leaves' venv builds and their
     network. `only` narrows the selection with pytest's `-k` expression -- a
     leaf keyword, for one case -- and `timeout` overrides the tier's budget
@@ -770,7 +770,7 @@ def run_tests(
     caller gets a structured verdict instead of pytest's text. `tier` names a
     Taskfile task: `fast` is the edit loop (no venv, no network), `heavy`
     builds virtualenvs and installs dependencies, `slow` is the serial
-    228-leaf batch runner (~2 min), `meta` runs the cost ledger's own guards,
+    234-leaf batch runner (~2 min), `meta` runs the cost ledger's own guards,
     `all` runs everything (~80 s warm, minutes cold). The marker expression is
     read from `tests/matrix/tiers.json`, the record the suite's own drift
     guard holds against `Taskfile.yml`. `only` narrows the selection with

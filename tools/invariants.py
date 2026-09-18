@@ -9,10 +9,10 @@ file, so the schema is enforced in one place and a typo cannot silently shrink
 a class's invariants:
 
 - every row key, ``select`` key and ``select`` value is checked against the
-  questionnaire (``project_type`` choices, ``oj_kind`` choices, the
-  ``include_*`` questions, the ``use_recommended_*`` gates) and against the
-  file's own predicate registry and tier vocabulary. An unknown key or value
-  raises ``InvariantError`` naming the row;
+  questionnaire (``project_type`` choices, ``oj_kind`` choices, ``bot_platform``
+  choices, the ``include_*`` questions, the ``use_recommended_*`` gates) and
+  against the file's own predicate registry and tier vocabulary. An unknown
+  key or value raises ``InvariantError`` naming the row;
 - every ``project_type`` the questionnaire offers must be selected by a row,
   and a row may not select an excluded one;
 - every ``excluded`` entry is held against the live questionnaire: an excluded
@@ -69,7 +69,7 @@ GATE_PREFIX = "use_recommended_"
 TIERS = ("full", "fast", "best_effort", "none")
 
 #: ``select`` keys that name questionnaire values, checked against it.
-NAMED_SELECT_KEYS = ("project_type", "oj_kind", "include", "gate_off")
+NAMED_SELECT_KEYS = ("project_type", "oj_kind", "include", "gate_off", "bot_platform")
 
 #: ``select`` keys that name a derived questionnaire trait (see ``Facts``).
 TRAITS = ("data_science", "kaggle", "src_layout", "web_api")
@@ -91,6 +91,8 @@ def _matches(key: str, expected: Any, facts: Facts) -> bool:
         return facts.project_type in expected
     if key == "oj_kind":
         return facts.oj_kind in expected
+    if key == "bot_platform":
+        return facts.bot_platform in expected
     if key == "include":
         return bool(set(expected) & set(facts.includes))
     return bool(set(expected) & set(facts.gates_off))
@@ -132,6 +134,11 @@ class Facts:
     the web_api and data_science layers move where the package lives
     (questions/_internal.yml's ``pkg_dir`` switch) and the kaggle judge brings
     its own workspace, so a row about a package directory has to select on them.
+    ``bot_platform`` is the effective platform (the question's copier default
+    when the answers omit it); ``bot_platform_asked`` remembers whether the
+    answers actually carried it, because that is what a row must claim -- a
+    leaf that never answered the question rides the default like the ``oj_kind``
+    leaves that are not online_judge, and needs no row of its own.
     """
 
     project_type: str
@@ -139,6 +146,8 @@ class Facts:
     includes: tuple[str, ...]
     gates_off: tuple[str, ...]
     traits: Mapping[str, bool]
+    bot_platform: str
+    bot_platform_asked: bool
 
     def trait(self, name: str) -> bool:
         """One derived trait of the questionnaire (a key of ``TRAITS``)."""
@@ -154,6 +163,8 @@ class Facts:
         dimensions = [("project_type", self.project_type)]
         if self.oj_kind:
             dimensions.append(("oj_kind", self.oj_kind))
+        if self.bot_platform_asked:
+            dimensions.append(("bot_platform", self.bot_platform))
         dimensions += [("include", name) for name in self.includes]
         dimensions += [("gate_off", name) for name in self.gates_off]
         return tuple(dimensions)
@@ -168,6 +179,8 @@ class Vocabulary:
     oj_kind_choices: dict[str, tuple[str, ...]]
     includes: tuple[str, ...]
     gates: tuple[str, ...]
+    bot_platforms: tuple[str, ...]
+    bot_platform_default: str
 
     @property
     def oj_kinds(self) -> tuple[str, ...]:
@@ -206,6 +219,7 @@ class Invariants:
         includes = tuple(name for name in self.vocabulary.includes if answers.get(name) is True)
         gates_off = tuple(name for name in self.vocabulary.gates if answers.get(name) is False)
         oj_kind = answers.get("oj_kind")
+        bot_platform_raw = answers.get("bot_platform")
         web_api = project_type == "web_api" or "include_web_api" in includes
         data_science = project_type == "data_science" or "include_data_science" in includes
         return Facts(
@@ -219,6 +233,10 @@ class Invariants:
                 "kaggle": project_type == "online_judge" and oj_kind == "kaggle",
                 "src_layout": project_type in ("library", "cli") and not web_api,
             },
+            bot_platform=(
+                bot_platform_raw if isinstance(bot_platform_raw, str) else self.vocabulary.bot_platform_default
+            ),
+            bot_platform_asked=isinstance(bot_platform_raw, str),
         )
 
     def rows_for(self, answers: Mapping[str, Any]) -> tuple[LeafClass, ...]:
@@ -318,6 +336,8 @@ def questionnaire_vocabulary(questions: dict[str, dict] | None = None) -> Vocabu
         oj_kind_choices={category: tuple(_oj_kind_choices(questions, category)) for category in categories},
         includes=tuple(name for name in questions if name.startswith("include_")),
         gates=tuple(name for name in questions if name.startswith(GATE_PREFIX)),
+        bot_platforms=tuple(_static_choices(questions, "bot_platform")),
+        bot_platform_default=str(questions["bot_platform"]["default"]),
     )
 
 
@@ -494,6 +514,7 @@ def _select(value: Any, vocabulary: Vocabulary, excluded: dict[str, str], where:
         "oj_kind": vocabulary.oj_kinds,
         "include": vocabulary.includes,
         "gate_off": vocabulary.gates,
+        "bot_platform": vocabulary.bot_platforms,
     }
     for key in NAMED_SELECT_KEYS:
         if key not in select:

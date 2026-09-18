@@ -399,11 +399,20 @@ leaf_classes:
     why: "the MCP server integration at the src/flat placement; a detail question behind use_recommended_integrations, so the web_api placement is claimed by gate_off=use_recommended_integrations/details-chosen and this row declares no tier"
 
   - id: include=include_bot
-    select: {include: [include_bot], project_type: [cli], web_api: false}
+    # The default (recommended) platform: bot_platform keeps its copier
+    # default on every leaf that does not answer it, and the derived
+    # bot-platform variants (the six rows below) claim the others.
+    select: {include: [include_bot], project_type: [cli], web_api: false, bot_platform: [discord]}
     ships:
       - src/smoke_example/bot_discord.py
       - tests/test_bot_discord.py
-    absent: []
+    absent:
+      - src/smoke_example/bot_slack.py
+      - src/smoke_example/bot_line.py
+      - src/smoke_example/bot_gmail.py
+      - tests/test_bot_slack.py
+      - tests/test_bot_line.py
+      - tests/test_bot_gmail.py
     predicates: []
     content:
       - [pyproject.toml, discord.py]
@@ -413,11 +422,17 @@ leaf_classes:
     why: "the Discord bot layer on a cli base: the module rides the src-layout package with its own bot-discord console script"
 
   - id: include=include_bot_web_api
-    select: {include: [include_bot], web_api: true}
+    select: {include: [include_bot], web_api: true, bot_platform: [discord]}
     ships:
       - app/bot_discord.py
       - tests/test_bot_discord.py
-    absent: []
+    absent:
+      - app/bot_slack.py
+      - app/bot_line.py
+      - app/bot_gmail.py
+      - tests/test_bot_slack.py
+      - tests/test_bot_line.py
+      - tests/test_bot_gmail.py
     predicates: []
     content:
       - [pyproject.toml, discord.py]
@@ -425,6 +440,131 @@ leaf_classes:
       name: fast
       why: "the layer renders and ruff-checks in the fast tier; the cli-base row above carries the execution story for the shared scaffold"
     why: "the Discord bot layer on a web_api base: the module lives in the top-level app/ package beside the MCP server"
+
+  # -- bot platforms chosen (the derived variants: gate off + platform) --- #
+  # One row per generated platform the base leaves do not carry. The leaf
+  # space derives them (tools/z3_witnesses.py BOT_PLATFORM_VARIANTS) so the
+  # nightly rehearsal and the render sweep cover every generated platform,
+  # not just the recommended one.
+  - id: include=include_bot/bot_platform=slack
+    select: {include: [include_bot], project_type: [cli], web_api: false, bot_platform: [slack]}
+    ships:
+      - src/smoke_example/bot_slack.py
+      - tests/test_bot_slack.py
+    absent:
+      - src/smoke_example/bot_discord.py
+      - src/smoke_example/bot_line.py
+      - src/smoke_example/bot_gmail.py
+      - tests/test_bot_discord.py
+      - tests/test_bot_line.py
+      - tests/test_bot_gmail.py
+    predicates: []
+    content:
+      - [pyproject.toml, slack-bolt]
+    tier:
+      name: fast
+      why: "the custom platform renders and ruff-checks in the fast tier; its real execution (a recording slack_bolt.App, /app_mention in-process) is tests/test_bot_layer.py's heavy case"
+    why: "No + bot_platform=slack on a cli base: the module rides the src-layout package with its own bot-slack console script and the slack-bolt dependency"
+
+  - id: include=include_bot/bot_platform=line
+    select: {include: [include_bot], project_type: [cli], web_api: false, bot_platform: [line]}
+    ships:
+      - src/smoke_example/bot_line.py
+      - tests/test_bot_line.py
+    absent:
+      - src/smoke_example/bot_discord.py
+      - src/smoke_example/bot_slack.py
+      - src/smoke_example/bot_gmail.py
+      - tests/test_bot_discord.py
+      - tests/test_bot_slack.py
+      - tests/test_bot_gmail.py
+    predicates: []
+    content:
+      - [pyproject.toml, line-bot-sdk]
+    tier:
+      name: fast
+      why: "the custom platform renders and ruff-checks in the fast tier; its real execution (a signed POST /callback over httpx's ASGITransport) is tests/test_bot_layer.py's heavy case"
+    why: "No + bot_platform=line on a cli base: the module rides the src-layout package with its own bot-line console script, the line-bot-sdk dependency and the ASGI stack its webhook server runs on"
+
+  - id: include=include_bot/bot_platform=gmail
+    select: {include: [include_bot], project_type: [cli], web_api: false, bot_platform: [gmail]}
+    ships:
+      - src/smoke_example/bot_gmail.py
+      - tests/test_bot_gmail.py
+    absent:
+      - src/smoke_example/bot_discord.py
+      - src/smoke_example/bot_slack.py
+      - src/smoke_example/bot_line.py
+      - tests/test_bot_discord.py
+      - tests/test_bot_slack.py
+      - tests/test_bot_line.py
+    predicates: []
+    content:
+      - [pyproject.toml, google-api-python-client]
+    tier:
+      name: fast
+      why: "the custom platform renders and ruff-checks in the fast tier; its real execution (a recording Gmail discovery client, /ping subject in-process) is tests/test_bot_layer.py's heavy case"
+    why: "No + bot_platform=gmail on a cli base: the module rides the src-layout package with its own bot-gmail console script and the google dependencies"
+
+  - id: include=include_bot_web_api/bot_platform=slack
+    select: {include: [include_bot], web_api: true, bot_platform: [slack]}
+    ships:
+      - app/bot_slack.py
+      - tests/test_bot_slack.py
+    absent:
+      - app/bot_discord.py
+      - app/bot_line.py
+      - app/bot_gmail.py
+      - tests/test_bot_discord.py
+      - tests/test_bot_line.py
+      - tests/test_bot_gmail.py
+    predicates: []
+    content:
+      - [pyproject.toml, slack-bolt]
+    tier:
+      name: fast
+      why: "the custom platform renders and ruff-checks in the fast tier; the cli-base row above carries the execution story for the shared scaffold"
+    why: "No + bot_platform=slack on a web_api base: the module lives in the top-level app/ package beside the MCP server"
+
+  - id: include=include_bot_web_api/bot_platform=line
+    select: {include: [include_bot], web_api: true, bot_platform: [line]}
+    ships:
+      - app/bot_line.py
+      - tests/test_bot_line.py
+    absent:
+      - app/bot_discord.py
+      - app/bot_slack.py
+      - app/bot_gmail.py
+      - tests/test_bot_discord.py
+      - tests/test_bot_slack.py
+      - tests/test_bot_gmail.py
+    predicates: []
+    content:
+      - [pyproject.toml, line-bot-sdk]
+    tier:
+      name: fast
+      why: "the custom platform renders and ruff-checks in the fast tier; the cli-base row above carries the execution story for the shared scaffold"
+    why: "No + bot_platform=line on a web_api base: the module lives in the top-level app/ package and still owns its uvicorn"
+
+  - id: include=include_bot_web_api/bot_platform=gmail
+    select: {include: [include_bot], web_api: true, bot_platform: [gmail]}
+    ships:
+      - app/bot_gmail.py
+      - tests/test_bot_gmail.py
+    absent:
+      - app/bot_discord.py
+      - app/bot_slack.py
+      - app/bot_line.py
+      - tests/test_bot_discord.py
+      - tests/test_bot_slack.py
+      - tests/test_bot_line.py
+    predicates: []
+    content:
+      - [pyproject.toml, google-api-python-client]
+    tier:
+      name: fast
+      why: "the custom platform renders and ruff-checks in the fast tier; the cli-base row above carries the execution story for the shared scaffold"
+    why: "No + bot_platform=gmail on a web_api base: the module lives in the top-level app/ package and stays a poller"
 
   # -- gates turned off --------------------------------------------------- #
   - id: gate_off=use_recommended_integrations/details-chosen

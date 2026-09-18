@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 936,
+      "collected": 942,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -54,15 +54,15 @@
         "tests/test_update_path.py": 1,
         "tests/test_update_rehearsal.py": 3,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 234,
+        "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "a0cc10e88c7b4daa1c035eb7e7c32480bcdc4260ada30904de3add9350e19599",
-      "wall_seconds": 22.7,
+      "ids_sha256": "fc52c6c64b2880e0d071b1b61fb337f99ff62c5956c62a174c1d07dfe72608cc",
+      "wall_seconds": 25.6,
       "measured": "2026-09-18",
       "budget_seconds": 30,
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta and not network\"",
-      "note": "time uv run --locked pytest -q <the task's own selection> (912 tests; measured 2026-09-18 on a 32-CPU box with light residual load, after the render matrix / data_science / micropython / typecheck / witness-leaf renders all moved behind the render cache (v3 namespace) and the D1 layer-matrix oracle passes were shared per project_type: 22.7s -- inside the 30s budget the ledger check enforces. History: 2026-09-17 27.5s quiet at 904 tests, after the example modules started rendering through the render cache and the expression gained `and not network`; 2026-09-16 recorded 30.7s under concurrent sessions / 26.3s quiet, at 896 tests, before the cache routing; 2026-09-14 31.5s quiet / 43.0s under another session's load average ~59, at 835 tests)."
+      "note": "time uv run --locked pytest -q <the task's own selection> (942 tests; measured 2026-09-18 warm-cache on a 32-CPU box with light residual load, after the witness leaf space grew to 234 leaves with the bot-platform variants -- the six new fast-tier witness renders join this selection; 25.6s warm, 34.1s on a just-emptied render cache, inside the 30s budget the ledger check enforces. History: 2026-09-17 27.5s quiet at 904 tests, after the example modules started rendering through the render cache and the expression gained `and not network`; 2026-09-16 recorded 30.7s under concurrent sessions / 26.3s quiet, at 896 tests, before the cache routing; 2026-09-14 31.5s quiet / 43.0s under another session's load average ~59, at 835 tests)."
     },
     "test-slow": {
       "task": "test-slow",
@@ -120,7 +120,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1003,
+      "collected": 1009,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -172,10 +172,10 @@
         "tests/test_update_path.py": 5,
         "tests/test_update_rehearsal.py": 4,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 243,
+        "tests/test_witness_matrix.py": 249,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "aaf9671e857a7163bc9bc3fb40deb30dd3990e2cbae06d0727ef152760f8c51e",
+      "ids_sha256": "0dc587896753ab793e0fe8d1429917ac987147b886fc78658a005f2903bef09f",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -184,7 +184,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 936,
+      "collected": 942,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -234,10 +234,10 @@
         "tests/test_update_path.py": 1,
         "tests/test_update_rehearsal.py": 3,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 234,
+        "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "a0cc10e88c7b4daa1c035eb7e7c32480bcdc4260ada30904de3add9350e19599",
+      "ids_sha256": "fc52c6c64b2880e0d071b1b61fb337f99ff62c5956c62a174c1d07dfe72608cc",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",
@@ -249,16 +249,16 @@
       "workflow": ".github/workflows/witness.yml",
       "job": "fast",
       "expression": "fast",
-      "collected": 234,
+      "collected": 240,
       "files": {
-        "tests/test_witness_matrix.py": 234
+        "tests/test_witness_matrix.py": 240
       },
-      "ids_sha256": "97de88a3aecc6eeae7dcb03b6cc8e12e3d85d9b5fb4c319b5b4d0bc7022a3796",
-      "wall_seconds": 11.2,
-      "measured": "2026-09-16",
+      "ids_sha256": "706a90dd27076f198dc664df4d7e98d0c39ffe80ee7b3e106d917140cd5b02a7",
+      "wall_seconds": 16.9,
+      "measured": "2026-09-18",
       "timeout_seconds": 1800,
       "command": "uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast",
-      "note": "time uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast (at the 228-leaf tree of the measurement: 234 tests = 228 leaf renders plus the six leaf-list checks; the render cache emptied first -- the PR job is always cold because a fresh runner has no .cache/renders; 3.3s warm, 11.2s cold, on a quiet 32-CPU box). The job's timeout in .github/workflows/witness.yml is 30 minutes, so the cold local wall is under 1% of it."
+      "note": "time uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast (at the 234-leaf tree of the measurement: 240 tests = 234 leaf renders plus the six leaf-list checks, the bot-platform variants included; the render cache emptied first -- the PR job is always cold because a fresh runner has no .cache/renders; 16.9s cold, on a quiet 32-CPU box. History: 2026-09-16 measured 11.2s cold / 3.3s warm at 228 leaves). The job's timeout in .github/workflows/witness.yml is 30 minutes, so the cold local wall is under 1% of it."
     }
   }
 }

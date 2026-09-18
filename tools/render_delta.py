@@ -124,7 +124,7 @@ def _context_hashes(root: Path, leaves: dict[str, dict[str, Any]]) -> dict[str, 
     differ between the baseline worktree and the working tree for reasons that
     are not the template's content: hashing them makes every leaf a candidate
     whenever the two sides do not share one cache entry (measured 2026-09-16:
-    a leaf-space change -- the witness list is itself an input -- made all 228
+    a leaf-space change -- the witness list is itself an input -- made all 234
     leaves candidates and the semantic diff stopped narrowing). What is left
     is exactly what the cache key already promises: template body edits never
     change the context, and the pass runs only when the questionnaire, the

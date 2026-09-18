@@ -35,12 +35,16 @@ are encoded as Z3 constraints:
 Everything else stays at its copier default (tools/batch.py renders with
 `defaults=True`): the detail questions an off gate reveals keep their
 defaults, so a leaf is one branch of the questionnaire, not a second full
-question matrix. The one derived exception is the integrations-details
-variant: for each web_api leaf whose integrations gate is off, one extra leaf
-answers that gate's details (``DETAIL_VARIANTS``: docker and the MCP
-scaffold), because no leaf on the projection's own axes carries them and
-"docker + MCP" is a configuration the inverse template is asked for
-(TODO §18.8). `project_type` is its static choices minus the excluded project
+question matrix. Two derived exceptions, both configurations no leaf on the
+projection's own axes carries: the integrations-details variant answers an
+off integrations gate's details for each web_api leaf (``DETAIL_VARIANTS``:
+docker and the MCP scaffold), because "docker + MCP" is a configuration the
+inverse template is asked for (TODO §18.8); and the bot-platform variant
+answers ``bot_platform`` for each leaf whose bot gate is off
+(``BOT_PLATFORM_VARIANTS``: the generated platforms other than the discord
+default), so every generated bot platform joins the nightly rehearsal and
+the render sweep instead of only the recommended one. `project_type` is its
+static choices minus the excluded project
 types, and the include dimension is INCLUDE_LAYERS minus nothing: every name
 the leaf space keeps out -- web_django, which aborts generation by design
 (`_tasks.jinja` exits 1 for it) and so cannot render, and the integration
@@ -53,7 +57,7 @@ the derivation nor declared excluded is an error, and every exclusion must
 still describe the live questionnaire. The one-line accounting is printed on
 every run, so "enumerated" and "excluded" are both numbers a reader can trust:
 
-    leaves: 228 enumerated, 2 excluded (project_type=web_django, ...)
+    leaves: 234 enumerated, 2 excluded (project_type=web_django, ...)
 
 Usage:
 
@@ -117,6 +121,17 @@ INCLUDE_LAYERS: tuple[str, ...] = (
 # use_recommended_integrations, so the Z3 projection keeps it at its default
 # and the derivation is what turns it on.
 DETAIL_VARIANTS: tuple[str, ...] = ("docker", "include_mcp")
+
+# The bot platforms the derived leaf variants answer (``build()``): the
+# generated platforms no leaf on the projection's own axes carries. The
+# projection mirrors ``use_recommended_bot`` per gate, and those gate-off
+# leaves keep ``bot_platform`` at its copier default (discord), so without the
+# derivation a leaf never answers "slack"/"line"/"gmail" -- the same gap
+# DETAIL_VARIANTS closes for docker and the MCP scaffold (a515149a), and the
+# reason ``predicates`` reports bot_slack_effective and friends as never
+# splitting the space. discord is absent on purpose: it is the gate-off leaf's
+# own default, so that base leaf already claims it.
+BOT_PLATFORM_VARIANTS: tuple[str, ...] = ("slack", "line", "gmail")
 
 GATE_PREFIX = "use_recommended_"
 
@@ -425,6 +440,26 @@ def build() -> tuple[dict[str, Any], list[Leaf]]:
                     expect=INVARIANTS.expect_for(chosen),
                 )
             )
+
+    # The bot-platform details variant: for each leaf whose answers turn the
+    # bot gate off -- the only leaves where bot_platform is asked -- one
+    # derived leaf per generated platform the base leaf does not carry (the
+    # base leaf itself answers the default, discord). Without these, the
+    # slack / line / gmail scaffolds are rendered by dedicated tests only and
+    # never join the nightly rehearsal or the render sweep.
+    for leaf in leaves:
+        if leaf.answers.get("use_recommended_bot") is not False:
+            continue
+        for platform in BOT_PLATFORM_VARIANTS:
+            chosen = {**leaf.answers, "bot_platform": platform}
+            variant_leaves.append(
+                Leaf(
+                    id=f"{leaf.id}/bot={platform}",
+                    note=f"{leaf.note}; bot platform {platform} chosen",
+                    answers=chosen,
+                    expect=INVARIANTS.expect_for(chosen),
+                )
+            )
     leaves.extend(variant_leaves)
 
     leaves.sort(key=lambda leaf: leaf.id)
@@ -447,6 +482,10 @@ def build() -> tuple[dict[str, Any], list[Leaf]]:
             (
                 f"the web_api leaves with the integrations gate off also get a variant leaf answering "
                 f"that gate's details ({', '.join(DETAIL_VARIANTS)})"
+            ),
+            (
+                f"the use_recommended_bot gate-off leaves also get a variant leaf per generated "
+                f"bot platform ({', '.join(BOT_PLATFORM_VARIANTS)}; discord is the gate-off leaf's own default)"
             ),
         ],
         "enumerated": len(leaves),

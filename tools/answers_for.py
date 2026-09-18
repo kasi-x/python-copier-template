@@ -2,7 +2,7 @@
 """The inverse template: name the features you want, get the answers that produce them.
 
 Templates make users answer 60+ questions. This repo already *verifies* the
-answer->artifact correspondence mechanically -- the 228 witness leaves in
+answer->artifact correspondence mechanically -- the 234 witness leaves in
 tests/matrix/witnesses.jsonl (each a full answer set), the per-leaf render
 contexts (copier's own questionnaire pass, the tools/predicates.py oracle) and
 tests/matrix/invariants.yml claiming which artifacts each configuration ships.
@@ -216,7 +216,7 @@ def _observed(context: dict[str, Any], name: str) -> str:
 
 
 def load_witnesses(root: Path = TOP) -> list[batch.Request]:
-    """The 228 leaves, as the validated batch requests the render proof reuses."""
+    """The 234 leaves, as the validated batch requests the render proof reuses."""
     return batch.load_requests([root / "tests" / "matrix" / "witnesses.jsonl"])
 
 
@@ -234,7 +234,7 @@ def context_key(root: Path) -> str:
 def load_contexts(root: Path = TOP) -> dict[str, dict[str, Any]]:
     """Leaf id -> the full render context, copier's pass run once and cached.
 
-    The pass costs ~25s over the 228 leaves (a real `Worker._ask` per leaf),
+    The pass costs ~25s over the 234 leaves (a real `Worker._ask` per leaf),
     so the contexts live under `.cache/answers-for/contexts/` keyed by
     ``context_key``; a hit is served from disk, a miss (questionnaire or
     witnesses moved) runs the oracle pass once and rewrites the cache.

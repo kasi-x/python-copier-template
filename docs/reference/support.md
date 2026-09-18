@@ -23,7 +23,7 @@ Measured at ~3 minutes per leaf, so only these 8 run it.
 
 Declared so the questionnaire's existing answers keep rendering, but
 never executed by CI. The witness fast tier renders and ruff-checks
-these leaves (228 renders at ~1.3 s each, 10-20 s in parallel); a
+these leaves (234 renders at ~1.3 s each, 10-20 s in parallel); a
 regression that only breaks install or run is not caught there.
 
 | combination | tier | why |

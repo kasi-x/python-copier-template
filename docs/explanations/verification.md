@@ -20,7 +20,7 @@ different jobs — no layer replaces another.
 | Layer | Proves | Cannot prove | Input | Measured unit cost |
 |---|---|---|---|---|
 | **L1 — input space** | every `when` is satisfiable, no contradictory or unreachable combination exists, and the leaves can be enumerated | anything about what the answers *render* | `copier.yml` + `questions/*.yml` | milliseconds, no render |
-| **L2 — output invariants** | every leaf's render satisfies its declared file-set and content predicates | install, run, network, docs build — anything needing a venv or an external tool | all **228** leaves | **≈0.6 s/leaf** serial; 228 leaves ≈ **20 s** with 16 xdist workers and the session render cache |
+| **L2 — output invariants** | every leaf's render satisfies its declared file-set and content predicates | install, run, network, docs build — anything needing a venv or an external tool | all **234** leaves | **≈0.6 s/leaf** serial; 234 leaves ≈ **20 s** with 16 xdist workers and the session render cache |
 | **L3 — execution** | the generated project actually syncs, tests, type-checks and builds its docs | enumeration — it runs a sample, so it is evidence for those leaves only | a bounded sample of **8** leaves | **13–24 s/case**; the whole 8-leaf sample 132–195 s |
 
 ### L1 — the input space (Z3)
@@ -32,7 +32,7 @@ questionnaire: is every `when` satisfiable, and does the sweep detect typo'd
 gates, self-contradictions and impossible genre combinations (the detectors
 have meta-tests that break them on purpose to prove they still detect).
 `tools/z3_witnesses.py` turns the same model into the leaf list
-(`tests/matrix/witnesses.jsonl`, 228 leaves), and
+(`tests/matrix/witnesses.jsonl`, 234 leaves), and
 `tests/test_witness_matrix.py::test_witness_leaves_match_the_generator` keeps
 the committed list equal to what the generator enumerates.
 
@@ -139,13 +139,13 @@ leave behind — after a deliberate tier change.
 <!-- BEGIN GENERATED: tier-ledger (tools/gen_docs.py --write) -->
 | Ledger row | Selector | Tests | Budget | Measured |
 |---|---|---|---|---|
-| `test-fast` | `-m "not heavy and not slow and not meta and not network"` | 936 | 30s (measured 22.7s) | 2026-09-18 |
+| `test-fast` | `-m "not heavy and not slow and not meta and not network"` | 942 | 30s (measured 25.6s) | 2026-09-18 |
 | `test-slow` | `-m "slow"` | 7 | measured 89.6s | 2026-09-17 |
 | `test-heavy` | `-m "heavy"` | 50 | measured 25.7s | 2026-09-17 |
 | `test-meta` | `-m "meta"` | 10 | measured 6.6s | 2026-09-17 |
-| `test` | `—` | 1003 | measured 178.6s | 2026-09-17 |
-| `test-randomly` | `-m "not heavy and not slow and not meta and not network"` | 936 | measured 22.3s | 2026-09-17 |
-| `witness-fast` | `-m "fast"` | 234 | measured 11.2s | 2026-09-16 |
+| `test` | `—` | 1009 | measured 178.6s | 2026-09-17 |
+| `test-randomly` | `-m "not heavy and not slow and not meta and not network"` | 942 | measured 22.3s | 2026-09-17 |
+| `witness-fast` | `-m "fast"` | 240 | measured 16.9s | 2026-09-18 |
 <!-- END GENERATED: tier-ledger -->
 
 The edit-loop budget is **30 s**; anything that pushes `task test-fast` past it
@@ -179,10 +179,10 @@ Adding a capability is not free, and the cost is predictable:
 
 !!! warning "Include layers are exclusive today"
     A leaf carries **at most one** include *layer* (measured on today's
-    228-leaf space: 108 leaves with none, 118 with exactly one, 2 with one
-    layer plus the integrations detail `include_mcp` — a gate-off detail the
-    derived variant leaf answers, not a layer, so it does not join the
-    product). The layer multiplier is ~2.7×
+    234-leaf space: 109 leaves with none, 125 with exactly one, and of those 9
+    carry a derived detail the variant leaves answer — 3 the integrations
+    detail `include_mcp` and 6 a bot platform — details, not layers, so they do
+    not join the product). The layer multiplier is ~2.7×
     rather than the product of four layers because of that exclusivity. Lifting
     it — allowing two layers on one leaf — turns the multiplier into a
     combinatorial product and the leaf count becomes exponential. Any change
@@ -192,7 +192,7 @@ Adding a capability is not free, and the cost is predictable:
 
 The growth table is not the whole contract: the leaf space also has a declared
 ceiling. `LEAF_BUDGET` in `tests/test_marker_drift.py` — currently **450**
-(it landed at twice the then-225-leaf space; the space is 228 today) — fails
+(it landed at twice the then-225-leaf space; the space is 234 today) — fails
 the meta guard when
 `tools/z3_witnesses.py` enumerates more leaves than that. The additive
 increments in the table fit several times over; what the budget turns away is
@@ -304,16 +304,16 @@ from it, and `--check` fails CI when those drift.
 
 | Measurement | Source command | Recorded |
 |---|---|---|
-| 228 leaves, 108 with no include layer, 118 with exactly one, 2 with a layer plus the MCP detail (max 2) | `tests/matrix/witnesses.jsonl` (count of `include=` per leaf) | 2026-09-16, current tree (integrations-details variants) |
+| 234 leaves, 109 with no include layer, 125 with exactly one (of those 9 carry a derived detail: 3 the MCP integrations detail, 6 a bot platform) | `tests/matrix/witnesses.jsonl` (count of `include=` per leaf) | 2026-09-18, current tree (integrations-details and bot-platform variants) |
 | L1 model vs real Jinja: 10,128 comparisons (9,840 leaf verdicts + 6 probes × 48 expressions), both polarities asserted per expression | `uv run --no-sync pytest -q tests/test_when_model.py`; with the structure sweeps, `uv run --no-sync pytest -q tests/test_when_model.py tests/test_copier_structure.py` → 16 passed, 1 xfailed | 2026-09-14, this tree |
-| L2 ≈ 0.58 s/leaf at the 205-leaf tree of the 2026-09-13 audit (119 s ÷ 205; 228 leaves ≈ 10 s at 16 workers + cache) | the serial batch runner's `--durations` entry (119 s) in the 2026-09-13 audit | TODO §23.0 / §24.0 P4 / §24.1 |
+| L2 ≈ 0.58 s/leaf at the 205-leaf tree of the 2026-09-13 audit (119 s ÷ 205; 234 leaves ≈ 11 s at 16 workers + cache) | the serial batch runner's `--durations` entry (119 s) in the 2026-09-13 audit | TODO §23.0 / §24.0 P4 / §24.1 |
 | L3 13–24 s/case; the 8-leaf sample 132–195 s | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m full` | TODO §24.0 P6 (PLAN §W9 top-5) |
 | L3 found 3 defects L2 missed, with L2 green on every leaf | same 8-leaf sample; `-m fast` for the render layer | TODO §24.0 P6 |
 | Edit loop 731 (of today's 732) tests in 47 s, load average 64; the same tree with the guard still in the selection, then 738 tests, took 46 s at load 85 | `uv run --no-sync pytest -q -m "not heavy and not slow and not meta"` | 2026-09-14, this tree — a dated observation; the current per-tier counts are the ledger row below |
 | Ledger guard: 7 tests, 10.5 s (six pytest startups: the membership check re-collects every tier) | `uv run --no-sync pytest -q -m meta` | 2026-09-14, this tree — the ledger row, measured with unrelated work on the machine |
-| Witness fast job: 234 tests (228 renders + six leaf-list checks), 11.2 s with `.cache/renders` emptied and 3.3 s warm, against the job's 30-minute timeout | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | 2026-09-16, this tree — the ledger's `witness` row; a PR runner is always cold |
+| Witness fast job: 240 tests (234 renders + six leaf-list checks), 16.9 s with `.cache/renders` emptied and 5.1 s warm, against the job's 30-minute timeout | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | 2026-09-18, this tree — the ledger's `witness` row; a PR runner is always cold |
 | Per-tier counts, marker expressions, re-measure commands and wall times (task tiers and the witness fast job) | `tests/matrix/tiers.json`; re-collect with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, fill `wall_seconds`/`measured` by hand from a `time` run of the row's own `command` | 2026-09-14, this tree |
 | Growth table's +76 / +22 leaf increments and their second costs | derived in the 2026-09-13 audit from the ledger's leaf counts and the 0.58 s/leaf unit | TODO §24.1 |
 | Leaf-space ceiling: `LEAF_BUDGET` = 450 (landed at twice the then-225-leaf space) | `LEAF_BUDGET` in `tests/test_marker_drift.py`, checked against `tools/z3_witnesses.py`'s enumeration on every meta run | declared, citing §24.1 — the enforcement is the record |
 | Edit-loop budget of 30 s (a contract, not a measurement) | declared for the tiers in the 2026-09-13 audit | TODO §24.2 |
-| "all 228 leaves executed would be ~10 hours" | the `FULL_SAMPLE` rationale comment: 228 × (venv build + docs) at ~3 min | `tests/test_witness_matrix.py` |
+| "all 234 leaves executed would be ~10 hours" | the `FULL_SAMPLE` rationale comment: 234 × (venv build + docs) at ~3 min | `tests/test_witness_matrix.py` |

@@ -119,6 +119,60 @@
       "source": "fast"
     },
     {
+      "id": "project_type=cli/gate=off:use_recommended_bot/include=include_bot/bot=gmail",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "cli",
+        "include_bot": true,
+        "use_recommended_bot": false,
+        "bot_platform": "gmail"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_bot/include=include_bot/bot=line",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "cli",
+        "include_bot": true,
+        "use_recommended_bot": false,
+        "bot_platform": "line"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=off:use_recommended_bot/include=include_bot/bot=slack",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "cli",
+        "include_bot": true,
+        "use_recommended_bot": false,
+        "bot_platform": "slack"
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=cli/gate=off:use_recommended_data_science/include=include_data_science",
       "tier": "fast",
       "result": "pass",
@@ -3343,6 +3397,60 @@
       "source": "fast"
     },
     {
+      "id": "project_type=web_api/gate=off:use_recommended_bot/include=include_bot/bot=gmail",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "web_api",
+        "include_bot": true,
+        "use_recommended_bot": false,
+        "bot_platform": "gmail"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_bot/include=include_bot/bot=line",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "web_api",
+        "include_bot": true,
+        "use_recommended_bot": false,
+        "bot_platform": "line"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=web_api/gate=off:use_recommended_bot/include=include_bot/bot=slack",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "web_api",
+        "include_bot": true,
+        "use_recommended_bot": false,
+        "bot_platform": "slack"
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=web_api/gate=off:use_recommended_data_science/include=include_data_science",
       "tier": "fast",
       "result": "pass",
@@ -3864,8 +3972,8 @@
     }
   ],
   "coverage": {
-    "total": 228,
-    "executed_fast": 228,
+    "total": 234,
+    "executed_fast": 234,
     "executed_full": 8,
     "none": 0,
     "unexecuted": []
