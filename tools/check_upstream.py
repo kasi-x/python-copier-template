@@ -285,12 +285,12 @@ def extract_pins() -> list[Pin]:
         pins.append(Pin(name="copier ceiling (root pyproject.toml)", current=f">={floor},<{ceiling}", checkable=True))
 
     # just CLI version pinned for setup-just (zizmor unpinned-tools): the
-    # shared reusable workflows install it without renovate coverage, so
-    # the weekly drift report is the only update signal.
-    workflows_src = "\n".join(
-        (TOP / ".github" / "workflows" / name).read_text() for name in ["_tasks.yml", "_test.yml", "_docs.yml"]
-    )
-    just_versions = set(re.findall(r'just-version: "(\d+\.\d+\.\d+)"', workflows_src))
+    # setup-runner composite installs it without renovate coverage, so the
+    # weekly drift report is the only update signal. The composite is the
+    # only home of that pin since the §19 composite-action extraction
+    # (callers _tasks / _test / _docs / _dist hold no just-version).
+    composite_src = (TOP / ".github" / "actions" / "setup-runner" / "action.yml").read_text()
+    just_versions = set(re.findall(r'just-version: "(\d+\.\d+\.\d+)"', composite_src))
     pins.append(Pin(name="just version (setup-just)", current=",".join(sorted(just_versions)) or "?", checkable=True))
 
     # Hygiene workflow pins (added with the pre-commit removal): the gitleaks
