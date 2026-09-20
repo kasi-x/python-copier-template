@@ -389,3 +389,41 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
 - **教訓**: 「L2 = 実ゲート」と主張するなら、そのゲートが**発火しうる**ことを
   テストで固定する必要がある。存在assert（タスクがある）は発火可能性を含意しない —
   本件はまさにその差だった。
+
+## 19. Update rehearsal の夜間 CI が初回から赤 — checkout がタグを取っておらず、release tag が解決できなかった
+
+- **現象**: `.github/workflows/update-rehearsal.yml` のスケジュール実行
+  （2026-09-20 09:42Z、head 3945fa9a）が 22 秒で exit 2。ログは
+  `No git tags found in template; using HEAD as ref` の直後に
+  `no release tag in this repository: copier update has no released questionnaire to start from`。
+  リポジトリには tag 6.0.0 があるので、メッセージは事実と食い違って見える。
+- **原因**: このワークフローの `actions/checkout` に `fetch-depth: 0` が無い。
+  checkout の既定は depth 1 + `--no-tags` なので、作業ツリーには tag ref が 1 つも入らない。
+  `tools/check_questionnaire_diff.release_tag` は copier の `get_latest_tag` に委譲しており、
+  これは `git ls-remote --tags <repo>`（= そのチェックアウト自身の tag ref）を読み、
+  空なら `HEAD` を返す。`tools/update_rehearsal.py:358` は `HEAD` を「タグ無し」として
+  exit 2 にする。**同じタグ解決を使う姉妹ワークフロー `update-path.yml` は
+  `fetch-depth: 0` を持っており、こちらだけ抜けていた**（667c5521 で追加、
+  初の schedule 実行が本件）。手元では `git fetch --no-tags --depth=1` の
+  チェックアウトで `release_tag → None`、`fetch-depth: 0` 相当で `6.0.0` を再現。
+- **✅ 対応 (2026-09-20)**:
+  - ワークフローに `fetch-depth: 0` を追加（理由コメント付き）。
+  - 同じ穴を *他の* ワークフローが開けないよう、
+    `tests/test_workflow_security.py` に静的ガードを追加
+    （`test_workflows_resolving_the_release_tag_check_out_the_tags`）:
+    タグ解決する entry point（`tools/update_rehearsal.py` /
+    `tools/check_questionnaire_diff.py` / `tests/test_update_path.py` /
+    `tests/test_update_rehearsal.py`。`task update-rehearsal` の別名も解決）を
+    run する job は、tag を取る checkout（`fetch-depth: 0` または
+    `fetch-tags: true`）を持つこと、checkout 自体を持つことを要求。
+    逆方向（レジストリの陳腐化）も同テスト群で検査する
+    （`test_the_tag_resolving_registry_names_real_entry_points`）。
+    変異テストで確認: fetch-depth 削除 / 別名形 / checkout 削除 の 3 つで fail、
+    `fetch-tags: true` は pass、存在しない entry point を載せると逆方向が fail。
+  - `tools/update_rehearsal.py` の exit 2 メッセージに
+    「CI ならチェックアウトがタグを取っていない可能性」を明記
+    （次に同じ赤を踏む人が `release tag が無い` という誤った手がかりを追わないため）。
+- **教訓**: checkout 既定（depth 1・`--no-tags`）は「ローカルでは必ず通る」種類の
+  依存を作る — 手元の clone はタグを持つため、この失敗は CI でしか出ない。
+  タグや履歴を git で読むゲートは、**それを読む側のワークフロー設定まで含めて**
+  ピンしないと、初回実行まで緑に見える。

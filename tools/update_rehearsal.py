@@ -357,7 +357,10 @@ def main(argv: list[str] | None = None) -> int:
     base_ref = args.base or release_tag(TOP) or ""
     if not base_ref:
         print(
-            "no release tag in this repository: copier update has no released questionnaire to start from",
+            "no release tag in this repository: copier update has no released questionnaire to start from.\n"
+            "If this is CI, the checkout most likely did not fetch the tags -- actions/checkout defaults to "
+            "depth 1 with --no-tags, so `fetch-depth: 0` is what release_tag needs (see "
+            ".github/workflows/update-rehearsal.yml).",
             file=sys.stderr,
         )
         return 2

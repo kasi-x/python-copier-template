@@ -31,6 +31,13 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The rehearsal's default --base is the newest release tag, and
+          # release_tag reads it from this checkout's own tag refs (copier's
+          # get_latest_tag). checkout's defaults are depth 1 + --no-tags, which
+          # left the tool with no tag to resolve and exited 2 -- the first
+          # scheduled run, 2026-09-20. tests/test_workflow_security.py pins
+          # this requirement for every tag-resolving entry point.
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1

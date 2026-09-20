@@ -187,6 +187,123 @@ def test_uses_are_pinned_to_full_sha():
                 )
 
 
+# Entry points that resolve this repository's newest release tag with git --
+# `check_questionnaire_diff.release_tag` delegates to copier's own
+# `get_latest_tag`, which reads the checkout's own tag refs via
+# `git ls-remote --tags` and falls back to HEAD (or None) when it finds none.
+# `actions/checkout` defaults are depth 1 and `--no-tags`, so a job running one
+# of these must ask for the tags explicitly; without them the fallback is a
+# silent HEAD, or a hard exit. The 2026-09-20 nightly Update rehearsal failed
+# exactly there (exit 2, "no release tag in this repository") on the workflow
+# that forgot it, while its sibling update-path.yml carried `fetch-depth: 0`.
+TAG_RESOLVING_ENTRY_POINTS = {
+    "tools/check_questionnaire_diff.py": "the guard's default --base is the newest release tag",
+    "tools/update_rehearsal.py": "the rehearsal's default --base is the newest release tag",
+    "tests/test_update_path.py": "the matrix renders at the released ref",
+    "tests/test_update_rehearsal.py": "the rehearsal tests resolve the release tag",
+}
+"""Entry point (a file this repo owns) -> why its job needs the tags."""
+
+TAG_RESOLVING_ALIASES = {
+    "task update-rehearsal": "tools/update_rehearsal.py",
+}
+"""How a workflow invokes one of those entry points without naming its path.
+
+The Taskfile spells the rehearsal as a task, so a run step may say
+`task update-rehearsal`; the alias maps it onto the file whose requirement it
+inherits. Kept out of the registry above so the staleness check there stays a
+statement about files.
+
+A job that reaches one of these through a reusable workflow (the `task:`
+input of `_test.yml`) is tag-capable by construction: that path runs
+`./.github/actions/setup-runner`, whose checkout already sets
+`fetch-depth: 0`. This guard therefore only has to cover the jobs that invoke
+an entry point directly, which is the shape that failed.
+"""
+
+
+def _invoked_entry_points(steps: list[dict]) -> list[str]:
+    """The registered entry points these steps run, paths and aliases alike.
+
+    Matched against the steps' `run` commands -- prose (`name`) is ignored, so
+    a step that merely mentions a tool creates no requirement.
+    """
+    commands = " ".join(str(step.get("run", "")) for step in steps)
+    found = [entry for entry in TAG_RESOLVING_ENTRY_POINTS if entry in commands]
+    found.extend(entry for alias, entry in TAG_RESOLVING_ALIASES.items() if alias in commands)
+    return sorted(set(found))
+
+
+def _is_tag_capable(with_: dict) -> bool:
+    """Whether a checkout fetches the tags `release_tag` reads.
+
+    `fetch-depth: 0` is this repository's spelling everywhere it is needed
+    (update-path.yml, the setup-runner composite); `fetch-tags: true` is the
+    other way to get the same refs, so both are accepted.
+    """
+    return with_.get("fetch-depth") == 0 or with_.get("fetch-tags") is True
+
+
+def _jobs_running_tag_resolvers() -> list[tuple[str, str, list[str], list[dict]]]:
+    """(workflow, job, entry points invoked, its checkout steps) for every job
+    that runs a tag-resolving entry point."""
+    return [
+        (name, job_name, resolvers, checkouts)
+        for name, wf in _workflows().items()
+        for job_name, job in _jobs(wf).items()
+        if (resolvers := _invoked_entry_points(job.get("steps") or []))
+        for checkouts in [
+            [s for s in (job.get("steps") or []) if str(s.get("uses", "")).startswith("actions/checkout")]
+        ]
+    ]
+
+
+def test_workflows_resolving_the_release_tag_check_out_the_tags():
+    """A job that reads the release tag must check the tags out.
+
+    The guard is driven by the workflows themselves: any step running a
+    tag-resolving entry point requires that job's `actions/checkout` to be
+    tag-capable. Static and offline -- the failure it prevents is a scheduled
+    run discovering the omission on GitHub, which is where it last happened.
+    """
+    jobs = _jobs_running_tag_resolvers()
+    assert jobs, "no workflow runs a tag-resolving entry point: the registry below is stale"
+    unchecked = [
+        f"{name}:{job_name} runs {', '.join(resolvers)} but never checks the repo out"
+        for name, job_name, resolvers, checkouts in jobs
+        if not checkouts
+    ]
+    offenders = [
+        f"{name}:{job_name}: checkout needs `fetch-depth: 0` for "
+        f"{', '.join(resolvers)} ({TAG_RESOLVING_ENTRY_POINTS[resolvers[0]]}), but declares {step.get('with') or {}}"
+        for name, job_name, resolvers, checkouts in jobs
+        for step in checkouts
+        if not _is_tag_capable(step.get("with") or {})
+    ]
+    assert not unchecked + offenders, "\n  ".join(
+        ["a workflow reads the release tag without fetching it:", *unchecked, *offenders]
+    )
+
+
+def test_the_tag_resolving_registry_names_real_entry_points():
+    """The registry's other direction: every entry point still resolves tags.
+
+    Same idiom as test_tool_layers' ALLOWED_UPWARD_IMPORTS and
+    test_render_convention's SANCTIONED: a list that only grows stale is a
+    list that lies. Each named file must exist and must reach `release_tag`
+    itself (define, import or call it) -- a tool that stopped resolving the
+    tag would keep its workflow requirement alive forever otherwise.
+    """
+    missing = [entry for entry in TAG_RESOLVING_ENTRY_POINTS if not (TOP / entry).is_file()]
+    assert not missing, f"the registry names files that do not exist: {missing}"
+    without = [
+        entry for entry in TAG_RESOLVING_ENTRY_POINTS if "release_tag" not in (TOP / entry).read_text(encoding="utf-8")
+    ]
+    assert not without, (
+        f"these entry points no longer name `release_tag`, so their workflow requirement is stale: {without}"
+    )
+
+
 COMPOSITE = TOP / ".github" / "actions" / "setup-runner" / "action.yml"
 """The shared setup the four reusable workflows call (TODO archive §19)."""
 
