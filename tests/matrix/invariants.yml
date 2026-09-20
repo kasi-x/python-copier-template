@@ -75,7 +75,7 @@ predicates:
   - id: docs-nav
     why: "every zensical.toml / mkdocs.yml nav target exists in the render"
   - id: ethics-appendix
-    why: "the AGENTS.md ethics appendix ships exactly the sections the render's project kind selects (license drift everywhere the guide ships; PQC on library/cli/web_api; AI-and-copyright on cli and the data-science layout), per _shared/ethics/REGISTRY.yml's active rows"
+    why: "the AGENTS.md ethics appendix ships exactly the sections the render's project kind selects (license drift everywhere the guide ships; PQC on library/cli/web_api; AI-and-copyright on cli and the data-science layout; LLM/MCP security where mcp_effective holds; ML fairness on the data-science layout and kaggle), per _shared/ethics/REGISTRY.yml's active rows"
 
 # Names the witness leaf space deliberately keeps out, one line of reason
 # each (TODO.md §23.4: "enumerated" and "excluded" are both numbers). A
@@ -150,6 +150,7 @@ leaf_classes:
       - [pyproject.toml, polars]
       - [AGENTS.md, "ライセンス変動"]
       - [AGENTS.md, "AIと著作権"]
+      - [AGENTS.md, "MLバイアス"]
     why: "the data-science layout (notebooks/ data/ models/ reports/), from project_type=data_science or the include_data_science layer; it changes questions/_internal.yml's pkg_dir"
 
   - id: layout=web_api
@@ -296,6 +297,7 @@ leaf_classes:
     content:
       - [pyproject.toml, torch]
       - [AGENTS.md, "ライセンス変動"]
+      - [AGENTS.md, "MLバイアス"]
     tier:
       name: fast
       why: "AtCoder carries the execution sample; kaggle is render-only"
@@ -396,6 +398,7 @@ leaf_classes:
     predicates: []
     content:
       - [pyproject.toml, mcp]
+      - [AGENTS.md, "MCP安全設計"]
     why: "the MCP server integration at the src/flat placement; a detail question behind use_recommended_integrations, so the web_api placement is claimed by gate_off=use_recommended_integrations/details-chosen and this row declares no tier"
 
   - id: include=include_bot

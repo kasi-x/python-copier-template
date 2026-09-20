@@ -12,7 +12,7 @@ use_recommended_security:
         a SECURITY.md vulnerability-reporting policy, a test_qa.py that
         verifies dependency integrity and the public API at runtime, and a
         license-check task (pip-licenses --fail-on with the project's
-        copyleft policy) that runs inside type-check.
+        copyleft policy) that CI runs alongside type-check.
         Answer No to drop SECURITY.md, drop the license check, or add an
         OpenSSF Scorecard workflow (GitHub projects; public repos only for
         the badge).

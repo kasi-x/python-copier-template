@@ -47,6 +47,7 @@ BASE_ANSWERS = {**answers.BASE, "package_name": "mcp_example"}
 
 TOOL_NAMES = {
     "adopt_project",
+    "check_ethics",
     "inspect_project",
     "lint_render",
     "list_batch_requests",
@@ -459,6 +460,49 @@ async def test_support_resource_serves_the_declared_contract(client: Client):
     second = await client.read_resource("template://support")
     assert isinstance(second.contents[0], TextResourceContents)
     assert second.contents[0].text == result.contents[0].text, "the payload is deterministic"
+
+
+@pytest.mark.anyio
+async def test_ethics_resource_serves_the_registry(client: Client):
+    """The rule registry on the MCP surface, deterministic, every row armed.
+
+    A row without its documented presence trigger would silently vanish from
+    `check_ethics` matches, so the resource payload is held to carry one per
+    row (the same contract tests/test_ethics_registry.py pins on the files).
+    """
+    result = await client.read_resource("template://ethics")
+    assert isinstance(result.contents[0], TextResourceContents)
+    payload = json.loads(result.contents[0].text)
+    assert payload["count"] == len(payload["sections"]) >= 10
+    for row in payload["sections"]:
+        assert row["trigger"].startswith("(?i)"), f"{row['id']}: missing presence trigger"
+        assert {"id", "status", "enforcement", "scale", "audience", "review_by"} <= set(row)
+
+    second = await client.read_resource("template://ethics")
+    assert isinstance(second.contents[0], TextResourceContents)
+    assert second.contents[0].text == result.contents[0].text, "the payload is deterministic"
+
+
+@pytest.mark.anyio
+async def test_check_ethics_matches_triggers_and_ranks_gates_first(client: Client):
+    """Denylist identifiers warn even while draft; the L2 gate sorts first."""
+    report = await call(
+        client, "check_ethics", {"text": "server 133.100.9.2  # NTP, then: pip install terraform  # BUSL"}
+    )
+    ids = [entry["id"] for entry in report["matched"]]
+    assert "region-kyushu-ntp" in ids, "a retired NTP identifier must trip its section"
+    assert "baseline-license-drift" in ids, "a BUSL mention must trip the license rule"
+    ranked = [entry for entry in report["matched"] if entry["id"] in ("region-kyushu-ntp", "baseline-license-drift")]
+    assert [entry["id"] for entry in ranked] == [
+        "baseline-license-drift",
+        "region-kyushu-ntp",
+    ], "the L2 gate sorts before the L0 draft"
+    gate = ranked[0]
+    assert gate["enforcement"] == "L2"
+    assert "ライセンス変動" in gate["body"], "the match carries the section body an agent can read"
+
+    quiet = await call(client, "check_ethics", {"text": "a plain module with no rule triggers"})
+    assert quiet == {"count": 0, "matched": []}
 
 
 @pytest.mark.anyio

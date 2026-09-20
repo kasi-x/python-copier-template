@@ -53,7 +53,6 @@ def _adoption(**overrides: Any) -> adopt.Adoption:
 # cli.py imports these modules at module level and reads their attributes as
 # `cli.<module>.<name>`, so patching the imported module's attribute here
 # (the same object cli.py holds) patches what the dispatcher calls.
-Patch = Any
 
 
 def test_new_fresh_renders_and_reports_zero(

@@ -39,6 +39,9 @@
 原文の置き場所:
 
 - §28 の残り 0 件（全 41 項目を 2026-09-18 に着地）→ 下の §28（このファイル）
+- §29 ethics昇格ロードマップ（2026-09-19 検討）→ 下の §29（このファイル）。残りは
+  着手条件つき保留（B: pki-chain / samd / region 2件、C: L1 引き上げ、D: ウォッチ）。
+  C の L2（license-check ゲート）は 2026-09-19 着地済み。
 - §1–27 の残り 28 件 → `notes/archive/TODO-sections-01-27.md`（27 トップレベル＋ 1 ネスト。行番号は旧 TODO.md と同一）
 - コード・docs の `TODO.md §1–27` / `TODO §xx` 参照も archive を指す。§番号は変えていないので参照は番号で追える
 
@@ -412,4 +415,74 @@
    → **2026-09-18（続き）**: 手順 4 の残り（R4/R5 + 3d/3e）と R6/R8、payload の 4f/4g/4h/4j、D4 の台帳駆動 docs を一括着地。新規 foundations モジュール tools/support_ledger.py と派生 2 本（prompts_scaffold / ds_stack）、ピンテスト複数（merge summary / render 回数 / test 側 render 規約）。
      検証は各項目ごとに lint / type-check 5種 / 関連 pytest（R6: adopt 系 106 passed、4f-4h: 228 葉バイト同一 2 回 + test-fast 907 passed、R8: basedpyright 0、D4: docs sync 14 passed）。
    → **2026-09-18（最終）**: D1 / D2 を着地し §28 は完結。新規レジストリ tests/matrix/layers.yml（D1）と tests/test_layer_matrix.py、questionnaire 一本化の等価ピン（D2）。監査 §28 はこれで全 41 項目（1a-1d / 2a-2f / 3a-3f / 4a-4j / R1-R9 / D1-D6）が決着。
+
+## 29. ethicsセクションの昇格ロードマップ（2026-09-19 検討）
+
+`_shared/ethics/` の draft → active/kind 昇格の現状と残り論点。機構の説明は
+`docs/explanations/template-dev.md` の「Accumulate ethics/regional/operational
+rules as sections first」、レジストリは `_shared/ethics/REGISTRY.yml`。
+
+### A. 済（2026-09-18〜19 着地）
+
+- 初回昇格: AGENTS.md ethics 付録に 5 セクション。ゲートは既存派生変数のみ
+  （質問追加ゼロ・葉空間不変 228）:
+  `license-drift`(全ガイド) / `pqc-fips`(library, cli, web_api) /
+  `copyright-ai`(cli, data-science レイアウト) / `llm-appsec`(`mcp_effective`) /
+  `ml-bias`(data-science レイアウト, kaggle)。
+  検査は invariants.yml の `ethics-appendix` 述語（過剰配布も検知）＋
+  リーフクラス行のコンテンツペア。レジストリ逆方向ピン
+  （test_distributed_sections_are_included_by_their_parents）追加済み。
+- 生成側 typos への固有名詞無視ミラー（`HashiCorp` 等がスペルチェックに
+  誤検知されるため。`_shared/pyproject-test-coverage.toml.jinja`）。
+
+### B. 残り draft の扱い（着手条件つきで保留）
+
+- **`baseline-pki-chain`**（PKIチェーン再編）: audience に IoT(micropython) を
+  含むが AGENTS.md は micropython/ros2 に生成されない＝チャネルが届かない。
+  「既存の何の上に載るか」への答えが未確定。候補: (i) firmware/README 相当への
+  付録（kind昇格）, (ii) micropython/ros2 にも AGENTS.md を出す方針変更（質問票の
+  既存合意と衝突するため却下方向）。AGENTS.md チャネルだけで足りるなら cli/web
+  に絞った部分昇格も可能だが、最小配布の軸と矛盾するので保留。
+- **`sector-samd-regulatory`**: data-science 全種に医療規制を配るのは過剰配布
+  （ほとんどの DS プロジェクトは医療でない）。「医療/ヘルスケアに触れるか」の
+  ドメイン信号が質問票に存在しない。`data_ethics`(CARE) 質問の拡張か、
+  新しい sector 質問か — 質問票を太らせる判断なのでユーザー合意待ち。
+- **`region-jp-external-transmission` / `region-eu-eaa`**: 展開地域を知る質問
+  （例: `target_markets`: any-of jp/eu/us…）がチャネルになる。ただし新質問は
+  葉次元を増やす（witness 再記録が必須）。2 セクションではバンドル条件
+  （3 セクション共有）に届かないため、米国等の 3 件目が集まってから質問化を
+  再検討する。`region-kyushu-ntp` は地域ではなく audience ゲート型なので
+  このバンドルには載らない（IoT/cli 向けチャネル課題は pki-chain と共通）。
+- **`baseline-copyright-ai` の法域拡張**: 保護期間の法域差はセクション内に
+  留めてあり、国別テーブル化（lang/ 辞書的な構造化データ）は未着手。
+
+### C. enforcement の引き上げ候補（L0 → L1/L2）
+
+- **L1（存在assert）**: **機械消費者は 2026-09-19 着地**。セクションの
+  「設定側トリガー」正規表現は tools/ethics.py が全行パースし、MCP の
+  `check_ethics` ツール（テキストを食わせるとヒットした節を enforcement 順で
+  返す。draft も警告付きで提示）と `template://ethics` リソースとして公開。
+  契約は test_ethics_registry.py（全行パース可能・大文字小文字非依存・
+  一意）と test_mcp_server.py がピン。レンダ側の存在assert は従来通り
+  invariants.yml の `ethics-appendix` 述語が担う（active 5 セクション）。
+  draft セクションのトリガーは昇格まで警告専用。
+- **L2（実ゲート）**: **着地（2026-09-19）**。`license-drift` の copyleft ゲートが
+  生成プロジェクトに同梱された — `license-check` タスク
+  （`pip-licenses --from=mixed --partial-match --fail-on=<導出ポリシー>`。
+  permissive→GPL系、GPL/LGPL→AGPL。AGPL-3.0 は fail-on なし）。
+  質問は security ゲート配下の `license_check`、内部は
+  `license_check_effective`、dev 依存 `pip-licenses>=5,<6`（rec + effective 時）、
+  CI は ci.yml の lint ジョブが type-check と並行で呼ぶ。
+  ネットワーク依存のため `type-check`/`check` には入れていない（offline 契約）。
+  レジストリ側も同期済み: `baseline-license-drift` を enforcement L2 に
+  引き上げ（version 2026-09-19.1）、セクション本文が同梱タスクを参照。
+
+### D. ウォッチ（確度つき。各セクションの制度変更ウォッチと review_by が一次）
+
+- OWASP 次版（2026・インシデントデータ基準への転換）: 確度 未確認。
+  review_by 2026-12-18。公表されたら `llm-appsec` の番号参照（名称参照に
+  統一済み）と marks を更新。
+- Let's Encrypt チェーン / ISRG ルート儀式: review_by 2026-12-18。
+- FIPS 206 (FN-DSA) 草案 / IR 8547 final: review_by 2027-03-31。
+
 

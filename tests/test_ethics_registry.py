@@ -9,6 +9,7 @@ section exists for.
 """
 
 import re
+import sys
 from datetime import date
 from datetime import datetime
 from pathlib import Path
@@ -160,6 +161,28 @@ def test_distributed_sections_are_included_by_their_parents():
             assert str(row["file"]) in _read(path), (
                 f"{row['id']}: parent {parent!r} does not reference the section file"
             )
+
+
+def test_every_row_documents_a_parseable_presence_trigger():
+    """The 設定側トリガー span is the row's machine-readable half.
+
+    tools/ethics.py's `match()` (the MCP `check_ethics` tool) scans text with
+    exactly this span; a row that stops documenting it in the parseable shape
+    would silently vanish from every match result, so the loader's parse is
+    pinned here for all rows, drafts included. The trigger detects English
+    code vocabulary (a Japanese title cannot carry it), so the only honest
+    pins are: it compiles, it is case-insensitive, and no two rows share one.
+    """
+    sys.path.insert(0, str(TOP))
+    from tools import ethics  # noqa: PLC0415
+
+    triggers = [ethics.presence_trigger(row) for row in _load_registry()]
+    for row, trigger in zip(_load_registry(), triggers, strict=True):
+        re.compile(trigger)
+        assert trigger.startswith("(?i)"), f"{row['id']}: the presence trigger must be case-insensitive"
+    assert len(set(triggers)) == len(triggers), (
+        "two rows sharing one presence trigger would be indistinguishable to check_ethics"
+    )
 
 
 def test_kyushu_ntp_denylist_and_detector():

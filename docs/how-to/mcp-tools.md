@@ -56,6 +56,7 @@ witness tiers run into minutes.
 | `run_batch` | a batch file's verdict (`tools/batch.py` semantics, structured) | one render per line; `prepare=True` adds installs |
 | `run_witness` | a witness tier's verdict, one entry per executed test | `fast` a few seconds (234 renders, no venv), `slow` ~2 min, `full` adds venvs and network (tens of minutes) |
 | `run_tests` | the same verdict shape for the suite's own tiers: `fast` / `heavy` / `slow` / `meta` / `all` | the tier you name; the marker expression comes from the cost ledger |
+| `check_ethics` | which ethics/regional rules (`_shared/ethics/REGISTRY.yml`) the given text trips: each match carries the section's full markdown, its lifecycle (draft rules warn but ship nowhere) and its enforcement — the `license-drift` rule's L2 is the generated `license-check` gate | filesystem |
 
 Two calls cover most of the loop:
 
@@ -82,6 +83,7 @@ nothing about the answers. Every other byte is compared as it is.
 | `template://questionnaire` | the full questionnaire as JSON, internal variables included |
 | `template://witnesses` | each witness leaf with its recorded tier and result, plus the ledger's coverage counters -- sorted and declaration-ordered, so it diffs between runs |
 | `template://support` | the declared support contract (`support.yml`): what CI promises to execute per combination and per leaf class, each entry with the measured `why` |
+| `template://ethics` | the ethics/regional rule registry: one row per section with its lifecycle, enforcement, audience and documented presence trigger — the active rows are what the generated AGENTS.md ethics appendix ships |
 
 ## The HTTP transport and its allowlist
 

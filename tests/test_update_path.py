@@ -308,12 +308,18 @@ def test_update_from_the_released_ref_to_head(
 
 
 # A throwaway questionnaire for the guard: one question inline in copier.yml,
-# one behind an `!include` (so the guard has to resolve includes to see it),
+# one `when: false` internal beside it (the kind copier never records), one
+# behind an `!include` (so the guard has to resolve includes to see it),
 # and nothing else -- the guard never renders, so no template is needed.
 SCRATCH_CONFIG = """---
 base_question:
     type: str
     default: base
+
+internal_question:
+    type: str
+    default: internal
+    when: false
 ---
 !include questions/extra.yml
 """
@@ -423,3 +429,53 @@ def test_guard_fails_a_rename_or_default_change_without_a_migration(tmp_path: Pa
     added = run()
     assert added.returncode == 0, added.stdout
     assert "added_question" not in added.stdout
+
+
+def test_guard_ignores_the_internals_copier_never_records(tmp_path: Path):
+    """A `when: false` internal's default is recomputed, never replayed.
+
+    Copier hides any question whose `when` is false and drops hidden names
+    from `.copier-answers.yml` (`Worker._answers_to_remember`), so an internal
+    like `repo_url` has no recorded answer for a `_migrations` entry to carry
+    over: changing its default cannot re-interpret anything, and copier
+    re-derives it on every render. Demanding a migration for one would force
+    `_migrations` entries that migrate nothing -- true of this repository's own
+    history, where refactoring `security_policy_effective` / `repo_url` onto
+    the `is_github` internal is invisible to the update path (that refactor
+    turned the guard red without a real break, which is what this pins).
+
+    The rule is deliberately narrow: it takes *both* sides being unrecorded. A
+    question that only stops being recorded still has an answer in projects
+    generated from the older version, so its changes stay on the record.
+    """
+    repo, run = _scratch_questionnaire(tmp_path)
+    config = repo / "copier.yml"
+    fragment = repo / "questions" / "extra.yml"
+
+    # Both sides internal (the scratch tag's `internal_question` is
+    # `when: false`, and so is the working tree's): the default moved, yet no
+    # migration is required, because no answers file ever held the answer.
+    config.write_text(SCRATCH_CONFIG.replace("default: internal", "default: internal_moved"))
+    internal = run()
+    assert internal.returncode == 0, internal.stdout
+    assert "[MISSING MIGRATION]" not in internal.stdout, "a never-recorded internal's default needs no migration"
+
+    # A recorded question's default move is still a real break: projects
+    # generated at 1.0.0 hold `extra_question: extra` and would replay it
+    # against the new default.
+    fragment.write_text(SCRATCH_FRAGMENT.replace("default: extra", "default: other"))
+    recorded = run()
+    assert recorded.returncode == 1, recorded.stdout
+    assert "[MISSING MIGRATION] extra_question (default: 'extra' -> 'other')" in recorded.stdout
+
+    # The asymmetry that keeps the rule honest: a question that only *stops*
+    # being recorded is not exempt, because the older projects recorded it.
+    fragment.write_text(
+        SCRATCH_FRAGMENT.replace("default: extra", "default: other").replace(
+            "    type: str\n", "    type: str\n    when: false\n", 1
+        )
+    )
+    demoted = run()
+    assert demoted.returncode == 1, demoted.stdout
+    assert "extra_question" in demoted.stdout, "the base side recorded it, so the change stays on the record"
+    assert "[CHANGED WHEN] extra_question (None -> False)" in demoted.stdout

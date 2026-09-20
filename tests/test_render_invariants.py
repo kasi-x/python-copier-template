@@ -244,7 +244,8 @@ def counters() -> Iterator[Counters]:
         f"\nrender content predicates: {reported.renders} renders, {reported.dependency_sets} dependency sets, "
         f"{reported.third_party_imports} third-party imports, {reported.agent_tables} AGENTS.md command tables, "
         f"{reported.readme_links} README links ({reported.readme_relative} relative), "
-        f"{reported.nav_files} docs navs with {reported.nav_entries} entries"
+        f"{reported.nav_files} docs navs with {reported.nav_entries} entries, "
+        f"{reported.ethics_appendices} ethics appendices"
     )
 
 
@@ -572,8 +573,20 @@ def _nav_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
 # The ethics appendix's section markers (each section's h1 title) and the
 # answers that select them. The conditions mirror AGENTS.md.jinja's gates,
 # which mirror _shared/ethics/REGISTRY.yml's active rows' audiences: license
-# drift ships with the guide itself, PQC on library/cli/web_api, and
-# AI-and-copyright on cli and the data-science layout.
+# drift ships with the guide itself, PQC on library/cli/web_api,
+# AI-and-copyright on cli and the data-science layout, LLM/MCP security where
+# the MCP scaffold ships (mcp_effective), and ML fairness on the ds_stack
+# internal (the data-science layout or the kaggle workspace).
+def _web_api_trait(answers: dict[str, object]) -> bool:
+    """The web_api trait: the base project type or the combo opt-in."""
+    return answers.get("project_type") == "web_api" or bool(answers.get("include_web_api", False))
+
+
+def _data_science_trait(answers: dict[str, object]) -> bool:
+    """The data_science trait: the base project type or the combo opt-in."""
+    return answers.get("project_type") == "data_science" or bool(answers.get("include_data_science", False))
+
+
 ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
     "license-drift": ("ライセンス変動", lambda answers: True),
     "pqc-fips": (
@@ -590,6 +603,20 @@ ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
             answers.get("project_type") == "cli"
             or answers.get("project_type") == "data_science"
             or bool(answers.get("include_data_science", False))
+        ),
+    ),
+    "llm-appsec": (
+        "MCP安全設計",
+        lambda answers: (
+            bool(answers.get("include_mcp", False))
+            and (answers.get("project_type") == "cli" or _web_api_trait(answers))
+        ),
+    ),
+    "ml-bias": (
+        "MLバイアス",
+        lambda answers: (
+            _data_science_trait(answers)
+            or (answers.get("project_type") == "online_judge" and answers.get("oj_kind") == "kaggle")
         ),
     ),
 }

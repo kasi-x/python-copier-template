@@ -494,10 +494,11 @@ forms:
   audience in its distribution condition (so the section keeps shipping
   only where it applies). The promotion PR wires the questionnaire,
   the witness leaves, `invariants.yml`, and the registry row together.
-  The first promotion (2026-09) is the baseline trio
-  `pqc-fips` / `license-drift` / `copyright-ai` as the AGENTS.md ethics
-  appendix: no new question — the appendix gates on the existing
-  `project_type` / `web_api` / `data_science_layout` answers, and the
+  The first promotion (2026-09) is the AGENTS.md ethics appendix, five
+  sections gated on existing answers — no new question:
+  `license-drift` (every guide), `pqc-fips` (library/cli/web_api),
+  `copyright-ai` (cli, the data-science layout), `llm-appsec`
+  (`mcp_effective`), `ml-bias` (the data-science layout, kaggle). The
   `ethics-appendix` content predicate in `tests/test_render_invariants.py`
   holds the rendered guide to exactly those conditions. A section whose
   audience outruns its channel stays draft — `pki-chain` needs a channel
@@ -505,5 +506,30 @@ forms:
 
 Enforced by `tests/test_ethics_registry.py` (row shape incl. scale /
 audience, header agreement, body scale line, draft isolation, the
-parents a distributed row names actually including its file, and the
-retired-identifier denylist the first section exists for).
+parents a distributed row names actually including its file, the
+presence-trigger span every row documents, and the retired-identifier
+denylist the first section exists for).
+
+The enforcement column is a ladder, and each rung has a consumer:
+
+- **L0 (doc)** — the section reaches a reader, nothing executes. The
+  draft rows sit here.
+- **L1 (presence assert)** — the trigger is machine-readable. Every
+  section's 運用チェック documents its `設定側トリガー` span (a backticked
+  `(?i)` regex); `tools/ethics.py` parses that span for every row, and
+  the MCP surface exposes it two ways: `check_ethics(text)` returns the
+  sections a piece of text trips, ranked gate-first (L2 → L1 → L0), each
+  match carrying the section's full markdown, and the `template://ethics`
+  resource serves the whole registry. Draft rows are matched too — a
+  retired identifier must warn even while its section ships nowhere —
+  and the entry's `status` says so. On the render side the L1 assert is
+  the `ethics-appendix` predicate: it fails a leaf whose guide is missing
+  a selected section *and* one that ships an unselected section.
+- **L2 (real gate)** — something fails the build. `license-drift` is the
+  first: the generated project ships a `license-check` task
+  (`pip-licenses --from=mixed --partial-match --fail-on=<derived>`),
+  gated on `license_check_effective`, wired into CI's lint job beside
+  type-check and kept out of `type-check`/`check` because it needs the
+  network. The fail-on policy is derived from the project's own license:
+  permissive → the GPL family, GPL/LGPL → AGPL, and AGPL itself gates
+  nothing further up.

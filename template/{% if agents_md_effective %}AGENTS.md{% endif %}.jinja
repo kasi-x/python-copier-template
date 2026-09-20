@@ -97,7 +97,8 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
 ## Field rules (ethics appendix)
 
 Field rules the generator matched to this project kind (crypto choices,
-dependency license drift, data-collection copyright). Each section opens
-with a scope blockquote: if its triggers do not apply to the code you are
-editing, skip that section. Sections are written in Japanese.
-{% include "_shared/ethics/baseline/license-drift.md.jinja" %}{% if project_type in ['library', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pqc-fips.md.jinja" %}{% endif %}{% if project_type == 'cli' or data_science_layout %}{% include "_shared/ethics/baseline/copyright-ai.md.jinja" %}{% endif -%}
+dependency license drift, data-collection copyright, LLM/MCP tool
+security, model-evaluation fairness). Each section opens with a scope
+blockquote: if its triggers do not apply to the code you are editing,
+skip that section. Sections are written in Japanese.
+{% include "_shared/ethics/baseline/license-drift.md.jinja" %}{% if project_type in ['library', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pqc-fips.md.jinja" %}{% endif %}{% if project_type == 'cli' or data_science_layout %}{% include "_shared/ethics/baseline/copyright-ai.md.jinja" %}{% endif %}{% if mcp_effective %}{% include "_shared/ethics/domain/llm-appsec.md.jinja" %}{% endif %}{% if ds_stack %}{% include "_shared/ethics/domain/ml-bias.md.jinja" %}{% endif -%}

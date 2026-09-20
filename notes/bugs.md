@@ -206,6 +206,25 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
   未コミット変更（当時 `template/pyproject.toml.jinja` と `tests/test_example.py`）も
   自動取り込みされる点は挙動として把握しておく必要があった（意図的仕様だが、
   生成物がワークツリーの途中状態を含み得ることを警告文言だけから読み取るのは難しい）。
+- **✅ 対応 (2026-09-20)**: 提案の 1 点目（タグ vs HEAD の乖離を CI で検出）は
+  既に `tools/check_questionnaire_diff.py` + `.github/workflows/update-path.yml`
+  として着地しており、**その guard 自体が本項と同じ誤検知を起こしていた**のを修正した。
+  `is_github` 内部変数へのリファクタ（`security_policy_effective` / `scorecard_effective`
+  の default が `git_platform == 'github.com'` から `is_github` へ、`repo_url` /
+  `docs_url` が GitLab 分岐を取る形へ）で guard が 4 件の `[MISSING MIGRATION]` を
+  出して赤くなっていたが、これは**実害のない指摘**だった。
+  根拠: copier は `when: false` の質問を hide し（`Worker._answers_to_remember` が
+  hidden 名を除外）、その回答は `.copier-answers.yml` に**一切書かれない** —
+  実測で確認（本リポジトリの 809 レンダ中 0 件がこれら 4 キーを持つ。加えて
+  `--data` で明示上書きしても記録されない）。記録が無い以上 `_migrations` で
+  引き継ぐ対象も無く、default 変更は update を壊し得ない（毎レンダで再導出される）。
+  修正は `compare()` に「両側とも非記録（`when: false`）の質問は対象外」の規則を
+  入れる形（片側でも記録される場合は従来どおり不合格 — 旧版で生成された
+  プロジェクトには回答が残っているため）。`when` 変化の review 出力は不変。
+  回帰ピン: `tests/test_update_path.py::test_guard_ignores_the_internals_copier_never_records`
+  （両側 internal は合格 / 記録側が絡む default 変更は不合格、の非対称を固定）。
+  なお「タグ既定の copier で HEAD 時代の回答が通らない」という当初の現象自体は
+  `--vcs-ref` の解決（fork のタグ運用）で解消済みで、本項の残りは guard の精度だった。
 
 ## 12. unsafe feature による無言終了が Jinja 拡張不足より先に起き、切り分けが 2 段階になる
 
@@ -228,6 +247,19 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
     （#10 の修正が非インタラクティブ節に留まっているため、素通りする利用者がいる）
   - FAQ / トラブルシューティングに「dest が空で終わる場合、
     unsafe features (--trust) と Jinja 拡張の 2 点を順に確認」の項を足す
+- **✅ 対応 (2026-09-10, eba70aee) — 前提が消滅**: 本項の 2 段目の原因だった
+  「`copier-template-extensions` 不足」は、拡張そのものが不要になったことで解消した。
+  拡張は `!include` タグ（copier がネイティブ解決するようになっていた）と
+  テンプレート固有のグローバル（git config 由来の既定値・`current_year`）のためだけに
+  存在しており、後者は静的な既定値と copier ネイティブの `now()` に置き換えた。
+  `copier.yml` は `_jinja_extensions` を宣言せず、`extensions.py` も削除済み —
+  bare `uvx copier copy --trust` がそのまま動く。回帰ピンは
+  `tests/test_qa.py::test_no_custom_jinja_extensions_needed`（`_jinja_extensions` が
+  空であることと、削除済みグローバルを質問票の expression が参照しないことを固定）。
+  1 段目（trust 未指定の無言 exit 4）は copier 本体の挙動であり、README の
+  クイックスタートが最初の 1 コマンドから `--trust` を含める形で #10 として対応済み。
+  残る注意点は docs の「Jinja 拡張削除前のバージョンから update する場合の 1 回だけの
+  `uvx --with copier-template-extensions`」で、これは移行手順として現役。
 
 さらに、生成が通った後でも気になった仕様を 3 〜 5 件。いずれも fake_detector
 (data_science + allow_japanese + torch/f_vec 系依存) での実測に基づく。
@@ -244,6 +276,11 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
 - **提案**: `allow_japanese: true` のときは extend-ignore に D400/D403/D415 を
   加えて生成する（line-length 緩和と同じ文脈で適用）。現状は「文字幅は緩めるが
   文末スタイルは ASCII 前提」という半端な仕様に見える。
+- **✅ 対応 (2026-09-19)**: 提案どおり `allow_japanese` の extend-ignore に
+  D400/D403/D415 を追加（`_shared/pyproject-ruff-lint.toml.jinja`。理由コメント付きで
+  「日本語の文末は 。で、大文字小文字の区別が無い」を明記）。回帰ピンは
+  `tests/test_generated_lint.py` の JAPANESE_VARIANTS — `allow_japanese` の真偽で
+  3 ルールが ignore に入る/入らないの両方向を assert する。
 - **fake_detector 側で暫定対応済み**: extend-ignore に 3 ルールを理由コメント付きで追加。
 
 ## 14. setuptools-scm 生成物 `_version.py` が ruff 対象で、生成直後から ruff が失敗する
@@ -253,6 +290,14 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
   `uv sync` のたびに再生成されるため手直ししても消えない。
 - **提案**: テンプレート既定の ruff extend-exclude に
   `src/{{ package_name }}/_version.py` を追加（生成物は lint 対象外が自然）。
+- **✅ 対応 (2026-09-13, da984b2b)**: 生成 pyproject の `extend-exclude` に `"**/_version.py"`
+  を追加（`pkg_dir` に依存しない形 — setuptools_scm は layout 次第で
+  `<pkg_dir>/_version.py` に置くため、`src/{{ package_name }}/` 決め打ちより広い）。
+  同じ生成物の `.gitignore` も `**/_version.py` を持ち、両者が揃う。
+  なお直接の回帰ピンは無い: 生成直後のレンダには `_version.py` が存在しない
+  （setuptools_scm が build 時に作る）ため、`tests/test_generated_lint.py` の
+  ruff 実行はこの除外を観測しない。観測するのは実際に `uv sync` した
+  heavy tier（`test_template_works_outside_git` 系）。
 - **fake_detector 側で暫定対応済み**: extend-exclude に追加。
 
 ## 15. data_science / GPU を謳いながら torch wheel (CPU vs CUDA) の選択をテンプレートが面倒見ない
@@ -266,6 +311,17 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
 - **提案**: data_science 詳細質問に「torch: 使わない / CPU wheel / CUDA (cu126 など)」
   を追加し、index/sources ブロックと Dockerfile.gpu の整合をテンプレート側で担保する。
   torch はデータ系プロジェクトでほぼ必ず絡むので、罠を質問に事前吸收する価値が高い。
+- **✅ 対応 (2026-09-19)**: 新質問は足さず、**GPU 軸に載せ替え**で解決。
+  `[[tool.uv.index]]` (pytorch-cu126) + `[tool.uv.sources]` のゲートを
+  `kaggle` から `use_gpu_effective` へ移した（kaggle は既に `online_judge` の
+  `oj_category`/`oj_kind` の内側にあり、CUDA を選ぶ軸ではなかった）。
+  これで `data_science + use_gpu` の素のレンダも CUDA index を同梱し、
+  ユーザが後から torch を足したとき PyPI 既定の CPU wheel ではなく
+  `Dockerfile.gpu` と整合する CUDA wheel が解決される。
+  回帰ピンは `tests/test_example_data_science.py`（`use_gpu` の data_science
+  レンダが pytorch-cu126 index を宣言することを assert）。
+  質問追加を見送った理由: 「推奨1本 + No でカスタム」の設計原則に対し、
+  torch wheel の選択は質問票を太らせる割に既存の GPU 軸と重複する。
 - **fake_detector 側で暫定対応済み**: CPU index 固定 + README に CUDA への差し替え手順を注記。
 
 ## 16. data_science の `src/{data,features,models,visualization}` スケルトンが src/<pkg> パッケージ構成と並存する
@@ -288,3 +344,11 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
   並ぶ。機能への影響はないが、設定の意図が読み取りにくく diff も太る。
 - **提案**: 機能ゲート（web_api / mcp / scraping / sentry / experiment）に応じて
   ignore リストを組み立て、選択していない機能の名前は生成しない。
+- **✅ 対応 (2026-09-19)**: `_shared/pyproject-deptry.toml.jinja` の `per_rule_ignores`
+  を機能ゲートで組み立てる形に変更。基底リストから web_api 専用名
+  (alembic / asgi-correlation-id / asyncpg / fastapi / prometheus-client /
+  slowapi / sqlalchemy / uvicorn) を外し、`{% if web_api or include_web_api %}`
+  （および bot_line 等の該当軸）で足す。logging trio は選択式、pydantic系 / rich /
+  typer は kaggle か宣言する機能に紐付け。回帰ピンは
+  `tests/test_example_data_science.py` — 純 data_science レンダに web_api 名が
+  漏れないことを assert する（bug #17 のコメント付き）。

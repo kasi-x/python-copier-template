@@ -1,11 +1,11 @@
-{# ethics: id=domain-llm-appsec version=2026-09-18.1 status=draft
+{# ethics: id=domain-llm-appsec version=2026-09-18.1 status=active
    triggers=["llm","prompt","agent","mcp","tool-call","openai"] #}
 # LLMアプリ/MCP安全設計 — 最小権限・人間承認・出力検証を既定にする
 
 > **適用条件**: LLM API呼び出し、ツール呼び出し、MCPサーバ/クライアント、
 > エージェントループを含むコードを生成・設計する場面。
 > 規模: 世界問題(OWASP基準は国際共通で、実インシデントも国境を跨ぐ)。
-> 配布: MCP / web / cli(LLM・ツール呼び出しコードを生成するもの)。
+> 配布: MCP(MCPサーバ・ツール呼び出しコードを生成するもの)。
 > 要約: (1)ツール権限はallowlistの最小CRUDに絞る (2)破壊的・不可逆な
 > 操作の前に必ず人間承認ステップを入れる (3)LLM出力は構造化検証してから
 > 実行し、shell直渡しをしない。詳細は本文。

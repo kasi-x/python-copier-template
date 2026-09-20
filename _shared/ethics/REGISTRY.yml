@@ -73,7 +73,7 @@ sections:
 
   - id: baseline-license-drift
     file: _shared/ethics/baseline/license-drift.md.jinja
-    version: 2026-09-18.1
+    version: 2026-09-19.1
     effective: 2023-08-10
     review_by: 2027-03-31
     sources:
@@ -82,11 +82,11 @@ sections:
     scope: {jurisdiction: [], sector: [], category: [licensing]}
     scale: global
     audience: [library, cli, script, web, data-science]
-    enforcement: L0
+    enforcement: L2
     status: active
     rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
     superseded_by: null
-    why: "Terraform MPL-2.0 to BUSL 1.1 plus the OpenTofu cease-and-desist, and the reverse Elastic/Redis AGPL returns: a dependency's license is a moving value that must be re-checked, never remembered."
+    why: "Terraform MPL-2.0 to BUSL 1.1 plus the OpenTofu cease-and-desist, and the reverse Elastic/Redis AGPL returns: a dependency's license is a moving value that must be re-checked, never remembered. L2 since 2026-09-19: the generated project ships a license-check gate (pip-licenses --partial-match --fail-on, policy derived from the project license) wired into CI."
 
   - id: baseline-copyright-ai
     file: _shared/ethics/baseline/copyright-ai.md.jinja
@@ -113,10 +113,10 @@ sections:
       - https://genai.owasp.org/llm-top-10/
     scope: {jurisdiction: [], sector: [], category: [ai-security]}
     scale: global
-    audience: [mcp, web, cli]
+    audience: [mcp]
     enforcement: L0
-    status: draft
-    rendered_from: []
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
     superseded_by: null
     why: "OWASP LLM Top 10 entry numbers move per edition (excessive agency was a different slot in 2023-24); reference by name, and gate destructive tool actions behind human approval."
 
@@ -132,8 +132,8 @@ sections:
     scale: global
     audience: [data-science, kaggle]
     enforcement: L0
-    status: draft
-    rendered_from: []
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
     superseded_by: null
     why: "Pulse-oximetry occult-hypoxemia disparity and EU AI Act art. 10 data-governance duties: subgroup metrics, documented fairness-metric choice, and human review are the minimum evaluation surface."
 

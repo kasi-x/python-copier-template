@@ -67,7 +67,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
     ),
     "foundations": (
         "the questionnaire model and shared primitives: data and meaning, no behavior on real trees",
-        frozenset({"answers", "questionnaire", "render_inputs", "support_ledger", "when_model"}),
+        frozenset({"answers", "ethics", "questionnaire", "render_inputs", "support_ledger", "when_model"}),
     ),
     "machinery": (
         "pure transformations and verifiers over template/adoption artifacts",

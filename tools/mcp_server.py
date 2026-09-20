@@ -92,6 +92,7 @@ from tools import adopt  # noqa: E402
 from tools import answers_for  # noqa: E402
 from tools import batch  # noqa: E402
 from tools import detect  # noqa: E402
+from tools import ethics  # noqa: E402
 from tools import questionnaire  # noqa: E402
 from tools import support_ledger  # noqa: E402
 from tools.render_inputs import RENDER_INPUT_DIRS  # noqa: E402
@@ -175,6 +176,29 @@ def template_status() -> dict[str, Any]:
         "commits_behind_latest_tag": int(behind) if behind.isdigit() else None,
         "dirty": bool(batch.git(TOP, "status", "--porcelain").stdout.strip()),
     }
+
+
+@server.tool()
+def check_ethics(text: str) -> dict[str, Any]:
+    """Match text against the ethics/regional rules and return the sections it trips.
+
+    Returns `{"count", "matched"}`; each match carries `id`, `title`, `status`
+    (draft / active / kind), `enforcement` (L0 doc, L1 presence assert, L2
+    gate), `scale`, `audience`, `version`, `review_by` and the section's full
+    markdown `body`. Matches sort gate-first (L2 before L1 before L0). A
+    `draft` hit still matters -- the kyushu denylist identifiers must warn
+    even while the section ships nowhere -- but it is not distributed, unlike
+    the active sections, which the generated AGENTS.md ethics appendix
+    carries (and whose gate, `license-check`, is the license rule's L2).
+
+    Filesystem only -- reads the registry and section files, no render, no
+    network (~ms). Feed it the code or config you are about to write: NTP
+    endpoints, TLS/crypto choices, dependency licenses, scraping/RAG,
+    LLM/MCP tool plumbing, model evaluation, cookie/analytics tags,
+    accessibility, medical claims.
+    """
+    matched = ethics.match(text)
+    return {"count": len(matched), "matched": matched}
 
 
 @server.tool()
@@ -862,6 +886,20 @@ def support_resource() -> str:
     the live declaration rather than a second reading of it.
     """
     return json.dumps(support_ledger.load_support(), indent=2, sort_keys=True)
+
+
+@server.resource("template://ethics")
+def ethics_resource() -> str:
+    """The ethics/regional rule registry (_shared/ethics/REGISTRY.yml) as JSON.
+
+    One row per accumulated rule section -- id, lifecycle (draft / active /
+    kind), enforcement (L0 doc, L1 presence assert, L2 gate), scale,
+    audience, scope, primary sources, review dates and the documented
+    presence trigger. The active rows are what the generated AGENTS.md
+    ethics appendix ships; `check_ethics` matches text against these same
+    triggers.
+    """
+    return json.dumps(ethics.inventory(), indent=2, sort_keys=True)
 
 
 @server.custom_route("/health", methods=["GET"])

@@ -134,15 +134,40 @@ def questions(config: dict[str, Any]) -> dict[str, Any]:
     return filter_config(config)[1]
 
 
+def _recorded(body: dict[str, Any]) -> bool:
+    """Whether copier can put this question's answer in `.copier-answers.yml`.
+
+    A question whose `when` is literally false is never asked, and copier
+    hides a skipped question unconditionally (`Worker._answers_to_remember`
+    drops hidden names), so its answer is never written and is recomputed
+    from the default on every render — a `--data` override of one is not
+    recorded either. Changing such a question's `default` therefore cannot
+    break an update: there is no recorded answer to carry over, and copier
+    re-derives it by construction. The `when: false` internals
+    (`repo_url`, `docs_url`, `security_policy_effective`, ...) are all of
+    this kind, which is why a refactor of their defaults needs no migration.
+    """
+    return body.get("when") is not False
+
+
 def compare(base: dict[str, Any], head: dict[str, Any]) -> list[Finding]:
     """Removals, renames and default changes between two question sets.
 
     A rename is a removal whose body survived under a new name; it is reported
     as such because the recorded answer needs the same migration either way.
+
+    A question copier never records on either side is skipped: it is absent
+    from every `.copier-answers.yml`, so there is no answer for a migration to
+    carry over and a default change cannot re-interpret one. Only when both
+    sides are unrecorded (`_recorded`) is that certain — a question that
+    *stops* being recorded still has a recorded answer in projects generated
+    from the older version, so its changes stay on the record.
     """
     added = [name for name in head if name not in base]
     findings: list[Finding] = []
     for name, body in base.items():
+        if not (_recorded(body) or (name in head and _recorded(head[name]))):
+            continue
         if name not in head:
             renamed = [candidate for candidate in added if head[candidate] == body]
             if len(renamed) == 1:
