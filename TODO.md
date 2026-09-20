@@ -480,6 +480,16 @@ rules as sections first」、レジストリは `_shared/ethics/REGISTRY.yml`。
 
 ### C. enforcement の引き上げ候補（L0 → L1/L2）
 
+- **基盤強化（2026-09-21、複数人でのセクション執筆に備えて）**:
+  - **review_by 期限ピン**: 期限切れの `review_by` は
+    `test_ethics_registry.py::test_no_review_date_has_passed` が fast tier
+    で毎回検査し、CI を赤くして再調査を促す（それまでは誰も表面化しなかった）。
+  - **権限分割の明文化**: GOVERNANCE.md に「既定規約・昇格判断はメンテナ、
+    draft 執筆・一次ソース調査・review_by 再確認は寄稿者」の節を新設。
+  - **runbook**: `docs/how-to/ethics-section.md`（draft 追加→昇格チェックリスト→
+    enforcement→lang/ 辞書→メンテナンス）。extending.md が質問票拡張の
+    runbook であるのに対し、倫理セクション側の道筋はこれが初。
+
 - **L1（存在assert）**: **機械消費者は 2026-09-19 着地**。セクションの
   「設定側トリガー」正規表現は tools/ethics.py が全行パースし、MCP の
   `check_ethics` ツール（テキストを食わせるとヒットした節を enforcement 順で

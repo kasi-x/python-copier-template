@@ -10,6 +10,7 @@ section exists for.
 
 import re
 import sys
+from datetime import UTC
 from datetime import date
 from datetime import datetime
 from pathlib import Path
@@ -226,6 +227,32 @@ def test_copyright_terms_table_matches_its_section():
     section_text = (TOP / str(rows[0]["file"])).read_text(encoding="utf-8")
     assert "lang/copyright-terms.yml" in section_text, (
         "the section must point at the table so the two cannot drift apart silently"
+    )
+
+
+def test_no_review_date_has_passed():
+    """A section whose review_by is in the past is overdue, loudly.
+
+    Every row's 制度変更ウォッチ names the date its primary sources must be
+    re-checked by (the watch items are the section's half-life: OWASP
+    editions rotate, CA chains rotate, statutes move). Nothing else in the
+    repo surfaces a passed date -- the MCP inventory carries review_by but
+    nobody is required to read it -- so this pin is the reminder: the fast
+    tier runs on every push and the scheduled test run, so an overdue
+    section reddens CI until someone re-checks the sources and bumps
+    review_by (or supersedes the row). Reviewers other than the maintainer
+    can do the re-check; the bump itself is a versioned registry edit.
+    """
+    today = datetime.now(tz=UTC).date()
+    overdue = []
+    for row in _load_registry():
+        review_by = _datestr(row["review_by"])
+        if review_by is not None and review_by < today.isoformat():
+            overdue.append(f"{row['id']}: review_by {review_by}")
+    assert not overdue, (
+        "the following sections' review_by dates have passed -- re-check each "
+        "section's primary sources, update the body, and bump the row's version "
+        "and review_by (or supersede the row):\n  " + "\n  ".join(overdue)
     )
 
 

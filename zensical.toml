@@ -37,6 +37,7 @@ nav = [
       { "MCP Server" = "how-to/mcp.md" },
       { "Chat Bots" = "how-to/bot.md" },
       { "Web Fetching" = "how-to/scraping.md" },
+      { "Ethics Sections" = "how-to/ethics-section.md" },
   ]},
   { "Explanations" = [
       { "Overview" = "explanations.md" },

@@ -49,6 +49,38 @@ The invitation is made by the current maintainer, publicly in an issue.
   and, where a value is hardcoded, the upstream-check tooling
   (`tools/check_upstream.py`).
 
+## Ethics, regional, and operational rules
+
+The rules under `_shared/ethics/` (`docs/explanations/template-dev.md`,
+"Accumulate ethics/regional/operational rules as sections first") follow
+the same BDFL split as everything else, stated explicitly because the
+research is meant to be collaborative:
+
+- **The maintainer owns the default rules.** What a generated project's
+  baseline says (the `baseline/*` sections' substance, every section's
+  promotion to `active`/`kind`, its enforcement level, and its
+  distribution gate) is the maintainer's decision. This is the same
+  authority as the roadmap bullet above, applied to the registry.
+- **Contributors own the legwork.** Researching a rule with primary
+  sources, drafting a new section (copy
+  [_shared/ethics/_template.md.jinja](_shared/ethics/_template.md.jinja),
+  register it, stay `draft` — the runbook is
+  [docs/how-to/ethics-section.md](docs/how-to/ethics-section.md)),
+  proposing a text change or an enforcement lift (L0 → L1/L2), and
+  re-checking a section whose `review_by` has come due are all welcome
+  without prior agreement. A draft ships nowhere and moves nothing: no
+  questionnaire, no leaf, no render changes.
+- **Promotion is the maintainer's merge.** The bundle condition (three
+  sections sharing one distribution condition, or one section needing a
+  distinct code/test gate) and the wiring a promotion must carry are the
+  checklist in the runbook above.
+- **Sections age on purpose.** Every row names a `review_by`; a passed
+  date fails `tests/test_ethics_registry.py` (so CI reddens) until the
+  sources are re-checked and the row is bumped or superseded. Sections
+  are one-line summaries plus links, never pasted statutes, and keep the
+  not-legal-advice disclaimer: the template states rules of thumb, it
+  does not give legal advice.
+
 ## Relationship to upstream
 
 This repository started as a fork of
