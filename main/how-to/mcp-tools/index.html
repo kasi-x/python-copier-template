@@ -1424,6 +1424,8 @@
       
         
       
+        
+      
     
     
     
@@ -1531,6 +1533,33 @@
     
   
   Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
 
     
   </span>
@@ -1837,7 +1866,7 @@ witness tiers run into minutes.</p>
 </tr>
 <tr>
 <td><code>list_witnesses</code></td>
-<td>the 228 Z3 witness leaves with the tier and result the ledger records</td>
+<td>the 234 Z3 witness leaves with the tier and result the ledger records</td>
 <td>filesystem</td>
 </tr>
 <tr>
@@ -1852,7 +1881,7 @@ witness tiers run into minutes.</p>
 </tr>
 <tr>
 <td><code>render_project</code></td>
-<td>render a set of answers, and report the files it produced</td>
+<td>render a set of answers, and report the files it produced (<code>{path, sha256}</code> per file; <code>diff_against</code> a previous render for a manifest diff)</td>
 <td>one render; <code>prepare=True</code> adds an install (network on a cold cache)</td>
 </tr>
 <tr>
@@ -1873,12 +1902,17 @@ witness tiers run into minutes.</p>
 <tr>
 <td><code>run_witness</code></td>
 <td>a witness tier's verdict, one entry per executed test</td>
-<td><code>fast</code> a few seconds (228 renders, no venv), <code>slow</code> ~2 min, <code>full</code> adds venvs and network (tens of minutes)</td>
+<td><code>fast</code> a few seconds (234 renders, no venv), <code>slow</code> ~2 min, <code>full</code> adds venvs and network (tens of minutes)</td>
 </tr>
 <tr>
 <td><code>run_tests</code></td>
 <td>the same verdict shape for the suite's own tiers: <code>fast</code> / <code>heavy</code> / <code>slow</code> / <code>meta</code> / <code>all</code></td>
 <td>the tier you name; the marker expression comes from the cost ledger</td>
+</tr>
+<tr>
+<td><code>check_ethics</code></td>
+<td>which ethics/regional rules (<code>_shared/ethics/REGISTRY.yml</code>) the given text trips: each match carries the section's full markdown, its lifecycle (draft rules warn but ship nowhere) and its enforcement — the <code>license-drift</code> rule's L2 is the generated <code>license-check</code> gate</td>
+<td>filesystem</td>
 </tr>
 </tbody>
 </table>
@@ -1919,6 +1953,10 @@ nothing about the answers. Every other byte is compared as it is.</p>
 <tr>
 <td><code>template://support</code></td>
 <td>the declared support contract (<code>support.yml</code>): what CI promises to execute per combination and per leaf class, each entry with the measured <code>why</code></td>
+</tr>
+<tr>
+<td><code>template://ethics</code></td>
+<td>the ethics/regional rule registry: one row per section with its lifecycle, enforcement, audience and documented presence trigger — the active rows are what the generated AGENTS.md ethics appendix ships</td>
 </tr>
 </tbody>
 </table>
@@ -1994,7 +2032,7 @@ repository declares <code>starlette</code> in its dev group and imports it direc
   capabilities from the shell (<code>task batch</code>, <code>pytest -m</code>), and the tier model
   <code>run_witness</code> follows.</li>
 <li><a href="../../explanations/verification/">Verification Architecture</a> -- what the
-  <code>fast</code>, <code>full</code> and <code>slow</code> tiers observe, and what the 228 leaves are.</li>
+  <code>fast</code>, <code>full</code> and <code>slow</code> tiers observe, and what the 234 leaves are.</li>
 </ul>
 
 

@@ -16,7 +16,7 @@
         <link rel="prev" href="../features/">
       
       
-        <link rel="next" href="../non-interactive/">
+        <link rel="next" href="../answers-file/">
       
       
         
@@ -1430,6 +1430,8 @@
       
         
       
+        
+      
     
     
     
@@ -1795,6 +1797,33 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2328,7 +2357,7 @@ their build or execution shape cannot be combined.</p>
 <tr>
 <td><code>use_recommended_toolchain</code></td>
 <td>uv (package manager) + just (task runner).</td>
-<td>not ros2 + pixi</td>
+<td>not ros2 + <code>ros2_package_manager</code> = pixi</td>
 </tr>
 <tr>
 <td><code>use_recommended_data_science</code></td>
@@ -2367,7 +2396,7 @@ their build or execution shape cannot be combined.</p>
 </tr>
 <tr>
 <td><code>use_recommended_security</code></td>
-<td>minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that runs inside type-check.</td>
+<td>minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that CI runs alongside type-check.</td>
 <td>all</td>
 </tr>
 </tbody>
@@ -2383,8 +2412,9 @@ their build or execution shape cannot be combined.</p>
   (challenges/<category>/<problem>/ with a solve.py exploit starter, plus pwntools and z3-solver)?</li>
 <li><strong><code>include_scraping</code></strong> (asked when cli; default no) — Add a polite web-fetching layer (robots.txt</li>
 <li>rate limit + cache)?</li>
-<li><strong><code>include_bot</code></strong> (asked when cli / web_api; default no) — Add a long-running chat bot on top of
-  this project (the long-running layer's second platform after the MCP server)?</li>
+<li><strong><code>include_bot</code></strong> (asked when cli / web_api / library + the web_api layer; default no) — Add a
+  long-running chat bot on top of this project (the long-running layer's second platform after the
+  MCP server)?</li>
 </ul>
 <p>An opt-in layer asks its own gate on top:</p>
 <ul>
@@ -2447,7 +2477,7 @@ their build or execution shape cannot be combined.</p>
 </ul>
 <h3 id="use_recommended_bot"><code>use_recommended_bot</code><a class="headerlink" href="#use_recommended_bot" title="Permanent link">&para;</a></h3>
 <p>Use the recommended bot platform? Recommended: discord = discord.py — the de-facto Discord library (async, typed, slash commands via app_commands, actively maintained, unlike the py-cord / nextcord forks).</p>
-<p>Answer <strong>No</strong> to pick a platform instead (discord, slack and line are the choices today; Gmail is planned).</p>
+<p>Answer <strong>No</strong> to pick a platform instead (discord, slack, line and gmail).</p>
 <ul>
 <li><strong><code>bot_platform</code></strong> (str; default <code>discord</code>) — Which chat platform should the bot layer prepare?</li>
 <li><strong><code>discord</code></strong> — a discord.py bot (Gateway intents declared explicitly, a /ping app command,
@@ -2461,6 +2491,13 @@ their build or execution shape cannot be combined.</p>
     LINE_CHANNEL_ACCESS_TOKEN from the environment with a startup check that refuses to start
     without either). LINE listens on BOT_PORT (default 8000), unlike discord and slack, which only
     dial out.</li>
+<li><strong><code>gmail</code></strong> — a Gmail bot on google-api-python-client + google-auth (OAuth installed-app flow:
+    the OAuth client downloaded from Google Cloud Console and the granted token are FILES, so
+    GMAIL_CREDENTIALS_JSON + GMAIL_TOKEN_JSON name their paths in the environment with a startup
+    check that refuses to start without either; the poll answers an unread INBOX message whose
+    subject contains /ping with a pong reply on the same thread and marks it read — an outbound poll
+    on GMAIL_POLL_SECONDS, so there is no Pub/Sub push endpoint to host and nothing listens, like
+    discord and slack).</li>
 </ul>
 <h3 id="use_recommended_data_science"><code>use_recommended_data_science</code><a class="headerlink" href="#use_recommended_data_science" title="Permanent link">&para;</a></h3>
 <p>Use the recommended data_science options? Recommended: GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer).</p>
@@ -2569,7 +2606,7 @@ their build or execution shape cannot be combined.</p>
 <li><strong><code>cors</code></strong> (bool; default yes) — Enable CORS for browser clients?</li>
 </ul>
 <h3 id="use_recommended_security"><code>use_recommended_security</code><a class="headerlink" href="#use_recommended_security" title="Permanent link">&para;</a></h3>
-<p>Use the recommended security &amp; compliance settings? Recommended: minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that runs inside type-check.</p>
+<p>Use the recommended security &amp; compliance settings? Recommended: minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that CI runs alongside type-check.</p>
 <p>Answer <strong>No</strong> to drop SECURITY.md, drop the license check, or add an OpenSSF Scorecard workflow (GitHub projects; public repos only for the badge).</p>
 <ul>
 <li><strong><code>license_check</code></strong> (bool; default yes) — Keep the license-compliance check (pip-licenses
@@ -2647,6 +2684,18 @@ their build or execution shape cannot be combined.</p>
 <td>all</td>
 <td>Your email address</td>
 </tr>
+<tr>
+<td><code>dependencies</code></td>
+<td><code>derived_dependencies</code></td>
+<td>all</td>
+<td>Runtime dependencies, as a YAML list.</td>
+</tr>
+<tr>
+<td><code>src_dirs</code></td>
+<td><code>derived_src_dirs</code></td>
+<td>all</td>
+<td>Directories to create under <code>src/</code>, as a YAML list.</td>
+</tr>
 </tbody>
 </table>
 <!-- END GENERATED: project-details -->
@@ -2654,6 +2703,11 @@ their build or execution shape cannot be combined.</p>
 <p>The author name/email and the GitHub org have plain placeholder defaults —
 answer each prompt with your own values (or pass them via <code>--data-file</code> for
 non-interactive generation).</p>
+<p><code>dependencies</code> and <code>src_dirs</code> are <em>lists</em> whose defaults are derived from your
+other answers; they are recorded in <code>.copier-answers.yml</code>, so you can edit
+either one after generation instead of re-answering the questionnaire. See
+<a href="../answers-file/#structured-answers">the answers file</a> for the workflow and
+for which copier command picks an edit up.</p>
 
 
 
@@ -2710,13 +2764,13 @@ non-interactive generation).</p>
         
         
           
-          <a href="../non-interactive/" class="md-footer__link md-footer__link--next" aria-label="Next: Non-interactive Generation">
+          <a href="../answers-file/" class="md-footer__link md-footer__link--next" aria-label="Next: Answers File">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Non-interactive Generation
+                Answers File
               </div>
             </div>
             <div class="md-footer__button md-icon">

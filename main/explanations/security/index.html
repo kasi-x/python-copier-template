@@ -1510,6 +1510,8 @@
       
         
       
+        
+      
     
     
     
@@ -1617,6 +1619,33 @@
     
   
   Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
 
     
   </span>
@@ -1867,7 +1896,7 @@ each Scorecard check to the mechanism that satisfies it.</p>
 <tr>
 <td>SAST</td>
 <td>Medium</td>
-<td>zizmor (<code>.github/workflows/security.yml</code>) audits the workflow files on every push/PR; pip-audit scans dependencies via the on-demand <code>audit</code> task</td>
+<td>zizmor (<code>.github/workflows/security.yml</code>) audits the workflow files on every push/PR; pip-audit scans dependencies via the on-demand <code>audit</code> task, run on a schedule by the weekly <code>Dependency audit</code> workflow (<code>dependency-audit.yml</code>, Thursdays 07:00 UTC + manual dispatch, which opens a deduplicated issue on findings)</td>
 </tr>
 <tr>
 <td>Security-Policy</td>

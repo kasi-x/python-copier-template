@@ -1430,6 +1430,8 @@
       
         
       
+        
+      
     
     
     
@@ -1749,6 +1751,33 @@
     
   
   Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
 
     
   </span>
@@ -2131,7 +2160,7 @@ are asked — <a href="../questionnaire/">the questionnaire reference</a> lists 
 <tr>
 <td><code>use_recommended_toolchain</code></td>
 <td>uv (package manager) + just (task runner).</td>
-<td>not ros2 + pixi</td>
+<td>not ros2 + <code>ros2_package_manager</code> = pixi</td>
 </tr>
 <tr>
 <td><code>use_recommended_data_science</code></td>
@@ -2170,7 +2199,7 @@ are asked — <a href="../questionnaire/">the questionnaire reference</a> lists 
 </tr>
 <tr>
 <td><code>use_recommended_security</code></td>
-<td>minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that runs inside type-check.</td>
+<td>minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that CI runs alongside type-check.</td>
 <td>all</td>
 </tr>
 </tbody>
@@ -2186,7 +2215,7 @@ are asked — <a href="../questionnaire/">the questionnaire reference</a> lists 
     PT --&gt;|ros2| Q0["ask: pkg_language (python / cpp), ros_distro (humble / jazzy),&lt;br/&gt;ros2_package_manager (apt / pixi)"]
     PT --&gt;|micropython| Q1["ask: micropython_port (esp32 / esp8266 / rp2 / stm32 / samd / unix /&lt;br/&gt;windows / mimxrt)"]
     PT --&gt;|library / cli| G_agent{"use_recommended_agent?&lt;br/&gt;(library / cli)"}
-    PT --&gt;|other| G_toolchain{"use_recommended_toolchain?&lt;br/&gt;(not ros2 + pixi)"}
+    PT --&gt;|other| G_toolchain{"use_recommended_toolchain?&lt;br/&gt;(not ros2 + ros2_package_manager = pixi)"}
     Q0 --&gt; G_toolchain
     Q1 --&gt; G_toolchain
     G_agent --&gt;|Yes| G_agent_yes["a plain library / CLI without agent tooling."]
@@ -2260,7 +2289,7 @@ are asked — <a href="../questionnaire/">the questionnaire reference</a> lists 
     G_security --&gt;|No| G_security_no["ask: license_check, security_policy, scorecard"]
     G_security_yes --&gt; PD
     G_security_no --&gt; PD
-    PD["Project details: package_name, description, git_platform, github_org,&lt;br/&gt;gitlab_group, repo_name, distribution_name, author_name,&lt;br/&gt;author_email"]
+    PD["Project details: package_name, description, git_platform, github_org,&lt;br/&gt;gitlab_group, repo_name, distribution_name, author_name,&lt;br/&gt;author_email, dependencies, src_dirs"]
     PD --&gt; End([Generate project])
 </code></pre></div>
 <!-- END GENERATED: features-mermaid -->

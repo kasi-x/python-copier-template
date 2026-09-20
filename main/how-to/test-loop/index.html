@@ -1424,6 +1424,8 @@
       
         
       
+        
+      
     
     
     
@@ -1531,6 +1533,33 @@
     
   
   Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
 
     
   </span>
@@ -1799,7 +1828,7 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td>896</td>
+<td>974</td>
 <td>~31s</td>
 </tr>
 <tr>
@@ -1811,25 +1840,25 @@ but the cost ledger's own guard, and it stays outside the loop.</p>
 <tr>
 <td>Pre-push / nightly</td>
 <td><code>task test-heavy</code></td>
-<td>49</td>
+<td>50</td>
 <td>~20s</td>
 </tr>
 <tr>
 <td>Nightly, shuffled</td>
 <td><code>task test-randomly</code></td>
-<td>896</td>
+<td>974</td>
 <td>~27s</td>
 </tr>
 <tr>
 <td>Everything</td>
 <td><code>task test</code></td>
-<td>961</td>
+<td>1041</td>
 <td>~171s</td>
 </tr>
 <tr>
 <td>Cost ledger guard</td>
 <td><code>task test-meta</code></td>
-<td>9</td>
+<td>10</td>
 <td>~18s</td>
 </tr>
 </tbody>
@@ -1853,7 +1882,8 @@ does. <a href="../../explanations/verification/">Verification</a> states the thr
 (L1 input space, L2 render invariants, L3 execution), the edit-loop budget
 (<strong>30s</strong>) and where a new check belongs; this page is the practical side.</p>
 <ul>
-<li><code>task test-fast</code> runs <code>-m "not heavy and not slow and not meta"</code>: everything
+<li><code>task test-fast</code> runs <code>-m "not heavy and not slow and not meta and not
+  network"</code>: everything
   that neither builds a virtualenv nor touches the network, minus the serial
   batch runner and minus the cost ledger's own guards (<code>tests/test_marker_drift.py</code>,
   see <code>task test-meta</code> below). That is the whole edit loop and what CI runs on
@@ -1879,7 +1909,7 @@ does. <a href="../../explanations/verification/">Verification</a> states the thr
   only command line that re-enables it — so no other tier pays for the
   reshuffle (TODO §24.3 / §27.4: conditional adopt, nightly seed job only).
   Each run's seed is random and printed in the pytest header for reproduction.</li>
-<li><code>task test-slow</code> runs <code>-m slow</code>: the serial 228-leaf witness batch runner
+<li><code>task test-slow</code> runs <code>-m slow</code>: the serial 234-leaf witness batch runner
   (<code>tests/test_witness_matrix.py::test_witness_batch_runner_executes_every_leaf</code>,
   the one test the edit loop cannot afford) and the four <code>copier update</code> cases.
   Neither builds a venv; both are far too slow for the edit loop.</li>
@@ -1908,7 +1938,10 @@ venv or touches the network without <code>heavy</code> / <code>network</code>, w
 otherwise leak a 20-second case into the edit loop unnoticed. It also fails
 when a row's <code>measured</code> date is more than 30 days old: a wall time is the one
 column nothing recomputes, so the failure names the row's own <code>command</code> to
-re-measure with rather than letting a stale number be quoted.</p>
+re-measure with rather than letting a stale number be quoted. And a row that
+declares <code>budget_seconds</code> (only the edit loop does) fails when its
+<code>wall_seconds</code> measures over it — the 30s budget is enforced, not just
+declared.</p>
 <p>After a deliberate tier change, re-record the ledger and the counts in the
 table above in one step:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">UPDATE_TIERS</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--no-sync<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>tests/test_marker_drift.py
@@ -1918,7 +1951,7 @@ the hand-edited counts that used to be forgotten, and that merges kept
 conflicting on. It leaves <code>wall_seconds</code> / <code>measured</code> / <code>command</code> alone,
 because a wall time is a measurement, not a projection: fill those in from a
 <code>time</code> run of the row's own <code>command</code>, e.g.</p>
-<div class="highlight"><pre><span></span><code><span class="nb">time</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--no-sync<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not heavy and not slow and not meta"</span>
+<div class="highlight"><pre><span></span><code><span class="nb">time</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>--no-sync<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>-m<span class="w"> </span><span class="s2">"not heavy and not slow and not meta and not network"</span>
 </code></pre></div>
 <p>on an otherwise idle machine. Adding a whole tier is a matter of adding its
 task (or witness job) and its name to the check's own lists; a row that has
@@ -1958,7 +1991,7 @@ disagree); the times are the measurements recorded with them.</p>
 <tr>
 <td><code>witness.yml</code> (fast)</td>
 <td>PR (except docs-only)</td>
-<td><code>pytest -q tests/test_witness_matrix.py -m fast</code> — renders every leaf, no venv: 234 tests (228 renders plus six leaf-list checks), 11 s locally cold and 3 s warm, against the job's 30-minute timeout</td>
+<td><code>pytest -q tests/test_witness_matrix.py -m fast</code> — renders every leaf, no venv: 240 tests (234 renders plus six leaf-list checks), 17 s locally cold and 5 s warm, against the job's 30-minute timeout</td>
 </tr>
 <tr>
 <td><code>witness.yml</code> (full)</td>

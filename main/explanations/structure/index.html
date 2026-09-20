@@ -1277,6 +1277,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-template-repository-root-files-are-shared-by-symlinking" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The template repository: root files are shared by symlinking
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generated-project-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Generated project layout
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#src" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1560,6 +1582,8 @@
       
         
       
+        
+      
     
     
     
@@ -1667,6 +1691,33 @@
     
   
   Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
 
     
   </span>
@@ -1835,6 +1886,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#the-template-repository-root-files-are-shared-by-symlinking" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The template repository: root files are shared by symlinking
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generated-project-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Generated project layout
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#src" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1936,6 +2009,102 @@
 
 
 <h1 id="template-project-structure">Template Project Structure<a class="headerlink" href="#template-project-structure" title="Permanent link">&para;</a></h1>
+<p>This page covers two trees: the folders a <strong>generated project</strong> gets (below),
+and the <strong>template repository's</strong> own layout -- in particular the symlink
+convention that keeps the two in sync.</p>
+<h2 id="the-template-repository-root-files-are-shared-by-symlinking">The template repository: root files are shared by symlinking<a class="headerlink" href="#the-template-repository-root-files-are-shared-by-symlinking" title="Permanent link">&para;</a></h2>
+<p>Several files must exist both in this repository (where the template's own CI,
+editor configuration and secret scanning use them) and in every generated
+project (where they do the same job). The convention is to keep <strong>one real
+file at the repository root</strong> and make <code>template/</code> <strong>link to it</strong>, so the
+repository dogfoods exactly what it ships: the workflows that test this repo
+are byte-for-byte the workflows a generated project receives, and editing one
+side edits both.</p>
+<p>The 14 links under <code>template/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>link (under <code>template/</code>)</th>
+<th>real file (repository root)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.devcontainer</code></td>
+<td><code>.devcontainer/</code></td>
+</tr>
+<tr>
+<td><code>.vscode</code></td>
+<td><code>.vscode/</code></td>
+</tr>
+<tr>
+<td><code>.gitleaks.toml</code></td>
+<td><code>.gitleaks.toml</code></td>
+</tr>
+<tr>
+<td><code>.github/pages</code></td>
+<td><code>.github/pages/</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/actions/setup-runner/action.yml</code></td>
+<td><code>.github/actions/setup-runner/action.yml</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/workflows/_tasks.yml</code></td>
+<td><code>.github/workflows/_tasks.yml</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/workflows/_test.yml</code></td>
+<td><code>.github/workflows/_test.yml</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/workflows/_docs.yml</code></td>
+<td><code>.github/workflows/_docs.yml</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/workflows/_hygiene.yml</code></td>
+<td><code>.github/workflows/_hygiene.yml</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/workflows/_dist.yml</code></td>
+<td><code>.github/workflows/_dist.yml</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/workflows/_release.yml</code></td>
+<td><code>.github/workflows/_release.yml</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/workflows/_container.yml</code></td>
+<td><code>.github/workflows/_container.yml</code></td>
+</tr>
+<tr>
+<td><code>.github/{...}/workflows/_pypi.yml</code></td>
+<td><code>.github/workflows/_pypi.yml</code></td>
+</tr>
+<tr>
+<td><code>{...}tests/conftest.py</code></td>
+<td><code>tests/conftest.py</code></td>
+</tr>
+</tbody>
+</table>
+<p>(The <code>{...}</code> stands for the Jinja filename conditions that gate each path.)</p>
+<p>Two consequences follow from the convention:</p>
+<ul>
+<li><strong>Editing a root file silently edits every generated project.</strong> The
+  <code>.github/workflows/_*.yml</code> reusable workflows, <code>.gitleaks.toml</code> and
+  <code>tests/conftest.py</code> are render inputs: copier follows the links and writes
+  the linked bytes into each render. This is the point of the convention, but
+  it means a "repo-only" change to those files is a template change and should
+  be verified like one (the render-twin tooling and the suite both treat them
+  as template bytes; <code>tools/render_inputs.py</code> hashes through the links).</li>
+<li><strong>Only content-identical files may be linked.</strong> A file the template must
+  render differently per answer cannot be a symlink. The cautionary example is
+  <code>.python-version</code>: it was linked once, which broke the ros2 distro pins
+  (the repository needs a fixed interpreter while the template renders a
+  per-answer value), so it is now a real <code>.jinja</code> file in <code>template/</code> and a
+  separate fixed file at the root.</li>
+</ul>
+<h2 id="generated-project-layout">Generated project layout<a class="headerlink" href="#generated-project-layout" title="Permanent link">&para;</a></h2>
 <p>The template generates projects with the following folders at the root level.</p>
 <h2 id="src">src<a class="headerlink" href="#src" title="Permanent link">&para;</a></h2>
 <p>This folder contains the source code for the project. Typically this contains a single folder with the package name for the project and the folder contains python modules files. A <code>src/</code> layout is the default because it prevents accidental imports of an uninstalled package.</p>

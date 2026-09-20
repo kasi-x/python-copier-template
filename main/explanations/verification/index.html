@@ -1610,6 +1610,8 @@
       
         
       
+        
+      
     
     
     
@@ -1717,6 +1719,33 @@
     
   
   Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
 
     
   </span>
@@ -2071,8 +2100,8 @@ different jobs — no layer replaces another.</p>
 <td><strong>L2 — output invariants</strong></td>
 <td>every leaf's render satisfies its declared file-set and content predicates</td>
 <td>install, run, network, docs build — anything needing a venv or an external tool</td>
-<td>all <strong>228</strong> leaves</td>
-<td><strong>≈0.6 s/leaf</strong> serial; 228 leaves ≈ <strong>20 s</strong> with 16 xdist workers and the session render cache</td>
+<td>all <strong>234</strong> leaves</td>
+<td><strong>≈0.6 s/leaf</strong> serial; 234 leaves ≈ <strong>20 s</strong> with 16 xdist workers and the session render cache</td>
 </tr>
 <tr>
 <td><strong>L3 — execution</strong></td>
@@ -2091,7 +2120,7 @@ questionnaire: is every <code>when</code> satisfiable, and does the sweep detect
 gates, self-contradictions and impossible genre combinations (the detectors
 have meta-tests that break them on purpose to prove they still detect).
 <code>tools/z3_witnesses.py</code> turns the same model into the leaf list
-(<code>tests/matrix/witnesses.jsonl</code>, 228 leaves), and
+(<code>tests/matrix/witnesses.jsonl</code>, 234 leaves), and
 <code>tests/test_witness_matrix.py::test_witness_leaves_match_the_generator</code> keeps
 the committed list equal to what the generator enumerates.</p>
 <p>L1 <strong>cannot</strong> say anything about rendered content, cross-file consistency, the
@@ -2153,7 +2182,7 @@ check moves between tiers, the budget moves with it.</p>
 <tr>
 <td>Edit loop</td>
 <td><code>task test-fast</code></td>
-<td><code>-m "not heavy and not slow and not meta"</code></td>
+<td><code>-m "not heavy and not slow and not meta and not network"</code></td>
 <td>L1 + L2 + everything that neither builds a venv nor touches the network</td>
 </tr>
 <tr>
@@ -2166,7 +2195,7 @@ check moves between tiers, the budget moves with it.</p>
 <td>Slow</td>
 <td><code>task test-slow</code></td>
 <td><code>-m slow</code></td>
-<td>the serial 228-leaf batch runner (<code>tools/batch.py</code> over <code>tests/matrix/witnesses.jsonl</code>)</td>
+<td>the serial 234-leaf batch runner (<code>tools/batch.py</code> over <code>tests/matrix/witnesses.jsonl</code>)</td>
 </tr>
 <tr>
 <td>Pre-push / nightly</td>
@@ -2178,7 +2207,7 @@ check moves between tiers, the budget moves with it.</p>
 <td>Witness render</td>
 <td><code>uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast</code></td>
 <td><code>fast</code></td>
-<td>L2 over all 228 leaves</td>
+<td>L2 over all 234 leaves</td>
 </tr>
 <tr>
 <td>Witness execution</td>
@@ -2199,20 +2228,104 @@ re-collects every tier in a pytest session of its own (six startups): it is a
 check on the cost contract, not a cost the edit loop can carry. <code>ci.yml</code> runs
 <code>task test-meta</code> as its own job on every push and PR, and <code>task test</code> includes
 it.</p>
-<p>When a number in this table disagrees with the suite, the ledger wins:
-<code>tests/matrix/tiers.json</code> records each tier's marker expression, the node ids
-it collects, a measured wall time and the command that time came from, plus —
-for the witness fast job — the CI timeout the time has to fit inside.
+<p>One measured hole remains in that nightly type-check coverage:
+<code>tests/test_generated_typecheck.py</code> (the heavy tier's <code>uv sync</code> + basedpyright
++ pyrefly module) does not render the kaggle answers — the only render whose
+dependencies pull the torch cu126 wheels. The weight reason (minutes of
+download into a multi-GB venv) is why the module is heavy+network and
+nightly-only to begin with; the blocking reason (measured 2026-09-18) is
+that a render must reach zero findings to pass — basedpyright enables
+<code>failOnWarnings</code> by default — and the kaggle scaffold carries 31
+reportAny-family warnings (structlog logger typing, DictConfig attribute
+access, the hydra decorator). The one error-level defect that measurement
+surfaced (a <code>FixedTrial</code> passed into an <code>optuna.Trial</code>-annotated objective
+in the generated <code>src/utils/modeling/train.py</code>) is fixed; the decision
+record, with the unblocking steps, lives at that module's <code>TYPECHECK_PATHS</code>.
+The torch-free <code>data_science</code> leaf is already executed nightly by the
+witness <code>full</code> tier.</p>
+<p>The numbers themselves are not hand-copied into this page: the table below is
+a generated block (tools/gen_docs.py, the same generator that owns the
+questionnaire and support tables), rendered from <code>tests/matrix/tiers.json</code>.
+When a number in it disagrees with the suite, the ledger wins:
 <code>tests/test_marker_drift.py</code> re-collects every tier and fails on drift, fails
-when a row's <code>measured</code> date is more than 30 days old, and
+when a row's <code>measured</code> date is more than 30 days old, and fails when a row
+with a declared <code>budget_seconds</code> measures over it.
 <code>UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py</code>
 re-records the collected sets — and the Tests column of the tier table in
 <a href="../../how-to/test-loop/">test-loop.md</a>, the hand-edited counts this used to
 leave behind — after a deliberate tier change.</p>
+<!-- BEGIN GENERATED: tier-ledger (tools/gen_docs.py --write) -->
+<table>
+<thead>
+<tr>
+<th>Ledger row</th>
+<th>Selector</th>
+<th>Tests</th>
+<th>Budget</th>
+<th>Measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test-fast</code></td>
+<td><code>-m "not heavy and not slow and not meta and not network"</code></td>
+<td>974</td>
+<td>30s (measured 18.6s)</td>
+<td>2026-09-20</td>
+</tr>
+<tr>
+<td><code>test-slow</code></td>
+<td><code>-m "slow"</code></td>
+<td>7</td>
+<td>measured 89.6s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>test-heavy</code></td>
+<td><code>-m "heavy"</code></td>
+<td>50</td>
+<td>measured 25.7s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>test-meta</code></td>
+<td><code>-m "meta"</code></td>
+<td>10</td>
+<td>measured 6.6s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td><code>—</code></td>
+<td>1041</td>
+<td>measured 178.6s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>test-randomly</code></td>
+<td><code>-m "not heavy and not slow and not meta and not network"</code></td>
+<td>974</td>
+<td>measured 22.3s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>witness-fast</code></td>
+<td><code>-m "fast"</code></td>
+<td>240</td>
+<td>measured 16.9s</td>
+<td>2026-09-18</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED: tier-ledger -->
+
 <p>The edit-loop budget is <strong>30 s</strong>; anything that pushes <code>task test-fast</code> past it
 is either marked <code>slow</code> / <code>heavy</code> / <code>meta</code> or is a regression — for venv and
-network work the marker-drift guard enforces that structurally, and the ledger's
-own guards are out of the loop by the <code>meta</code> marker. The run taken for this page
+network work the marker-drift guard enforces that structurally, and the
+ledger's <code>test-fast</code> row carries the budget as <code>budget_seconds</code>, which the
+same guard compares against the measured wall: the budget is a checked
+statement, not prose. The ledger's own guards are out of the loop by the
+<code>meta</code> marker. The run taken for this page
 on 2026-09-14 was <strong>731 tests in 47 s</strong>
 (<code>uv run --no-sync pytest -q -m "not heavy and not slow and not meta"</code>), on a
 machine whose 32 logical CPUs were also carrying unrelated work at load average
@@ -2255,10 +2368,10 @@ moving suite and take the current numbers from the ledger above.</p>
 <div class="admonition warning">
 <p class="admonition-title">Include layers are exclusive today</p>
 <p>A leaf carries <strong>at most one</strong> include <em>layer</em> (measured on today's
-228-leaf space: 108 leaves with none, 118 with exactly one, 2 with one
-layer plus the integrations detail <code>include_mcp</code> — a gate-off detail the
-derived variant leaf answers, not a layer, so it does not join the
-product). The layer multiplier is ~2.7×
+234-leaf space: 109 leaves with none, 125 with exactly one, and of those 9
+carry a derived detail the variant leaves answer — 3 the integrations
+detail <code>include_mcp</code> and 6 a bot platform — details, not layers, so they do
+not join the product). The layer multiplier is ~2.7×
 rather than the product of four layers because of that exclusivity. Lifting
 it — allowing two layers on one leaf — turns the multiplier into a
 combinatorial product and the leaf count becomes exponential. Any change
@@ -2268,7 +2381,7 @@ stops applying if it accepts the product.</p>
 </div>
 <p>The growth table is not the whole contract: the leaf space also has a declared
 ceiling. <code>LEAF_BUDGET</code> in <code>tests/test_marker_drift.py</code> — currently <strong>450</strong>
-(it landed at twice the then-225-leaf space; the space is 228 today) — fails
+(it landed at twice the then-225-leaf space; the space is 234 today) — fails
 the meta guard when
 <code>tools/z3_witnesses.py</code> enumerates more leaves than that. The additive
 increments in the table fit several times over; what the budget turns away is
@@ -2378,9 +2491,9 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 </thead>
 <tbody>
 <tr>
-<td>228 leaves, 108 with no include layer, 118 with exactly one, 2 with a layer plus the MCP detail (max 2)</td>
+<td>234 leaves, 109 with no include layer, 125 with exactly one (of those 9 carry a derived detail: 3 the MCP integrations detail, 6 a bot platform)</td>
 <td><code>tests/matrix/witnesses.jsonl</code> (count of <code>include=</code> per leaf)</td>
-<td>2026-09-16, current tree (integrations-details variants)</td>
+<td>2026-09-18, current tree (integrations-details and bot-platform variants)</td>
 </tr>
 <tr>
 <td>L1 model vs real Jinja: 10,128 comparisons (9,840 leaf verdicts + 6 probes × 48 expressions), both polarities asserted per expression</td>
@@ -2388,7 +2501,7 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 <td>2026-09-14, this tree</td>
 </tr>
 <tr>
-<td>L2 ≈ 0.58 s/leaf at the 205-leaf tree of the 2026-09-13 audit (119 s ÷ 205; 228 leaves ≈ 10 s at 16 workers + cache)</td>
+<td>L2 ≈ 0.58 s/leaf at the 205-leaf tree of the 2026-09-13 audit (119 s ÷ 205; 234 leaves ≈ 11 s at 16 workers + cache)</td>
 <td>the serial batch runner's <code>--durations</code> entry (119 s) in the 2026-09-13 audit</td>
 <td>TODO §23.0 / §24.0 P4 / §24.1</td>
 </tr>
@@ -2413,9 +2526,9 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 <td>2026-09-14, this tree — the ledger row, measured with unrelated work on the machine</td>
 </tr>
 <tr>
-<td>Witness fast job: 234 tests (228 renders + six leaf-list checks), 11.2 s with <code>.cache/renders</code> emptied and 3.3 s warm, against the job's 30-minute timeout</td>
+<td>Witness fast job: 240 tests (234 renders + six leaf-list checks), 16.9 s with <code>.cache/renders</code> emptied and 5.1 s warm, against the job's 30-minute timeout</td>
 <td><code>uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast</code></td>
-<td>2026-09-16, this tree — the ledger's <code>witness</code> row; a PR runner is always cold</td>
+<td>2026-09-18, this tree — the ledger's <code>witness</code> row; a PR runner is always cold</td>
 </tr>
 <tr>
 <td>Per-tier counts, marker expressions, re-measure commands and wall times (task tiers and the witness fast job)</td>
@@ -2438,8 +2551,8 @@ from it, and <code>--check</code> fails CI when those drift.</p>
 <td>TODO §24.2</td>
 </tr>
 <tr>
-<td>"all 228 leaves executed would be ~10 hours"</td>
-<td>the <code>FULL_SAMPLE</code> rationale comment: 228 × (venv build + docs) at ~3 min</td>
+<td>"all 234 leaves executed would be ~10 hours"</td>
+<td>the <code>FULL_SAMPLE</code> rationale comment: 234 × (venv build + docs) at ~3 min</td>
 <td><code>tests/test_witness_matrix.py</code></td>
 </tr>
 </tbody>

@@ -1418,10 +1418,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-second-implementation-the-chat-bot-discord-slack-line" class="md-nav__link">
+  <a href="#the-second-implementation-the-chat-bot-discord-slack-line-gmail" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The second implementation: the chat bot (Discord / Slack / LINE)
+        The second implementation: the chat bot (Discord / Slack / LINE / Gmail)
       </span>
     </span>
   </a>
@@ -1506,6 +1506,8 @@
   
     
     
+      
+        
       
         
       
@@ -1628,6 +1630,33 @@
     
   
   Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
 
     
   </span>
@@ -1829,10 +1858,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-second-implementation-the-chat-bot-discord-slack-line" class="md-nav__link">
+  <a href="#the-second-implementation-the-chat-bot-discord-slack-line-gmail" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The second implementation: the chat bot (Discord / Slack / LINE)
+        The second implementation: the chat bot (Discord / Slack / LINE / Gmail)
       </span>
     </span>
   </a>
@@ -1928,42 +1957,49 @@ project, adds the <code>mcp</code> SDK dependency plus a <code>mcp-server-&lt;na
 script, and starts the server with stdio (the default, driven by an MCP host
 or the console script) or <code>--transport streamable-http</code> for the HTTP
 transport. See the <a href="../../how-to/mcp/">MCP how-to</a> for the concrete workflow.</p>
-<h2 id="the-second-implementation-the-chat-bot-discord-slack-line">The second implementation: the chat bot (Discord / Slack / LINE)<a class="headerlink" href="#the-second-implementation-the-chat-bot-discord-slack-line" title="Permanent link">&para;</a></h2>
+<h2 id="the-second-implementation-the-chat-bot-discord-slack-line-gmail">The second implementation: the chat bot (Discord / Slack / LINE / Gmail)<a class="headerlink" href="#the-second-implementation-the-chat-bot-discord-slack-line-gmail" title="Permanent link">&para;</a></h2>
 <p><code>include_bot</code> (on the same <code>cli</code> / <code>web_api</code> bases) is the layer's second
 implementation, and the first with its own platform axis: a
 <code>use_recommended_bot</code> gate (design principle 5 — one recommendation,
 No for custom) reveals <code>bot_platform</code>, whose choices are <strong>discord</strong>
-(<code>discord.py</code>, the recommendation), <strong>slack</strong> (<code>slack-bolt</code>) and <strong>line</strong>
-(<code>line-bot-sdk</code>; Gmail is a planned choice, not a new question). The
-generated <code>bot_discord.py</code> / <code>bot_slack.py</code> / <code>bot_line.py</code> follows the same
-recipe as the MCP server, point by point:</p>
+(<code>discord.py</code>, the recommendation), <strong>slack</strong> (<code>slack-bolt</code>), <strong>line</strong>
+(<code>line-bot-sdk</code>) and <strong>gmail</strong> (<code>google-api-python-client</code> + <code>google-auth</code>).
+The generated <code>bot_discord.py</code> / <code>bot_slack.py</code> / <code>bot_line.py</code> /
+<code>bot_gmail.py</code> follows the same recipe as the MCP server, point by point:</p>
 <ol>
 <li>an <strong>opt-in layer question</strong> (<code>include_bot</code>) adds the platform SDK
    (<code>discord.py</code> / <code>slack-bolt</code> / <code>line-bot-sdk</code>, plus the <code>fastapi</code> +
-   <code>uvicorn[standard]</code> the LINE webhook server runs on) and the module — one
-   module, the platform the answers selected;</li>
+   <code>uvicorn[standard]</code> the LINE webhook server runs on, or the
+   <code>google-api-python-client</code> + <code>google-auth</code> + <code>google-auth-oauthlib</code> trio
+   the Gmail poller runs on) and the module — one module, the platform the
+   answers selected;</li>
 <li>the bot module keeps its <strong>own <code>main()</code></strong> and is started directly through
    its own <code>[project.scripts]</code> entry (<code>bot-discord-&lt;name&gt;</code> /
-   <code>bot-slack-&lt;name&gt;</code> / <code>bot-line-&lt;name&gt;</code>, <code>python -m &lt;pkg&gt;.bot_&lt;platform&gt;</code>),
+   <code>bot-slack-&lt;name&gt;</code> / <code>bot-line-&lt;name&gt;</code> / <code>bot-gmail-&lt;name&gt;</code>,
+   <code>python -m &lt;pkg&gt;.bot_&lt;platform&gt;</code>),
    so the CLI / Docker <code>ENTRYPOINT</code> contract is untouched;</li>
 <li>the credential(s) are read from the <strong>environment</strong> (<code>DISCORD_BOT_TOKEN</code>;
    the Slack pair <code>SLACK_BOT_TOKEN</code> (xoxb-) + <code>SLACK_APP_TOKEN</code> (xapp-); the
-   LINE pair <code>LINE_CHANNEL_SECRET</code> + <code>LINE_CHANNEL_ACCESS_TOKEN</code> —
-   <code>.env.example</code> documents them, never committed) and a startup check
-   refuses to start without them, naming the missing variable — the same
-   refusal <code>mcp_server.py</code> makes for a public bind without
-   <code>MCP_ALLOWED_HOSTS</code>;</li>
+   LINE pair <code>LINE_CHANNEL_SECRET</code> + <code>LINE_CHANNEL_ACCESS_TOKEN</code>; the Gmail
+   pair of paths to the OAuth JSON files, <code>GMAIL_CREDENTIALS_JSON</code> +
+   <code>GMAIL_TOKEN_JSON</code> — <code>.env.example</code> documents them, never committed) and
+   a startup check refuses to start without them, naming the missing
+   variable — the same refusal <code>mcp_server.py</code> makes for a public bind
+   without <code>MCP_ALLOWED_HOSTS</code>;</li>
 <li>logging goes through the generated <code>logging_setup.py</code>, so <code>structlog</code> /
    <code>loguru</code> / ... and <code>LOG_FORMAT=json</code> work unchanged inside the event loop;</li>
 <li>a <strong><code>build_bot()</code> / <code>build_app()</code> + <code>main()</code> split</strong> extends the recipe
    with a testability seam the MCP layer gets for free from its in-process
    client: the generated tests call the <code>/ping</code> callback with a fake
    interaction (Discord), the <code>/app_mention</code> listener with a fake <code>say</code>
-   (Slack), or the signed <code>POST /callback</code> route with a recording reply over
-   httpx's <code>ASGITransport</code> (LINE) — the real object, no connection, no token.</li>
+   (Slack), the signed <code>POST /callback</code> route with a recording reply over
+   httpx's <code>ASGITransport</code> (LINE), or the poll with a recording discovery
+   client whose recorded <code>send</code> kwargs are decoded RFC 2822 bytes (Gmail) —
+   the real object, no connection, no token.</li>
 </ol>
-<p>Two of the three platforms connect <strong>outbound</strong> — Discord's Gateway, Slack's
-Socket Mode WebSocket — so neither publishes an inbound port, the property
+<p>Three of the four platforms connect <strong>outbound</strong> — Discord's Gateway,
+Slack's Socket Mode WebSocket, Gmail's INBOX poll — so none publishes an
+inbound port, the property
 that makes the layer runnable on a laptop and behind NAT. LINE is the
 structural exception, and the reason the platform axis is not cosmetic: the
 Messaging API has no socket transport and no long-polling, so it can only
@@ -1981,7 +2017,7 @@ unsigned or forged request is rejected before a single event is read.</p>
 entry point, credentials and — for LINE — port) and the variables in
 <code>.env.example</code> complete the mirror. See the
 <a href="../../how-to/bot/">bot how-to</a> for the concrete workflow.</p>
-<p>Further platforms — Gmail bots — are expected to follow the same
+<p>Further platforms are expected to follow the same
 recipe rather than grow the questionnaire:</p>
 <ol>
 <li>an <strong>opt-in layer question</strong>, which adds the platform SDK and the module;</li>
