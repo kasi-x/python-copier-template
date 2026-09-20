@@ -47,14 +47,14 @@ witness tiers run into minutes.
 | --- | --- | --- |
 | `template_status` | this checkout: question count, latest tag, commits behind it, dirty or not | git + questionnaire (~50 ms) |
 | `list_questions` | the questionnaire in ask order, with defaults, help and choices | filesystem |
-| `list_witnesses` | the 234 Z3 witness leaves with the tier and result the ledger records | filesystem |
+| `list_witnesses` | the 248 Z3 witness leaves with the tier and result the ledger records | filesystem |
 | `template_fingerprint` | sha256 of the render inputs: what a render is a function of | hashes ~0.8 MB (~5 ms) |
 | `inspect_project` | what a target already has, which mode fits it, which files would be overwritten | filesystem |
 | `render_project` | render a set of answers, and report the files it produced (`{path, sha256}` per file; `diff_against` a previous render for a manifest diff) | one render; `prepare=True` adds an install (network on a cold cache) |
 | `render_diff` | two answer sets rendered and compared file by file | two renders, no install |
 | `lint_render` | render, then `ruff format --check` + `ruff check` under the generated config | one render + two ruff runs, no venv |
 | `run_batch` | a batch file's verdict (`tools/batch.py` semantics, structured) | one render per line; `prepare=True` adds installs |
-| `run_witness` | a witness tier's verdict, one entry per executed test | `fast` a few seconds (234 renders, no venv), `slow` ~2 min, `full` adds venvs and network (tens of minutes) |
+| `run_witness` | a witness tier's verdict, one entry per executed test | `fast` a few seconds (248 renders, no venv), `slow` ~2 min, `full` adds venvs and network (tens of minutes) |
 | `run_tests` | the same verdict shape for the suite's own tiers: `fast` / `heavy` / `slow` / `meta` / `all` | the tier you name; the marker expression comes from the cost ledger |
 | `check_ethics` | which ethics/regional rules (`_shared/ethics/REGISTRY.yml`) the given text trips: each match carries the section's full markdown, its lifecycle (draft rules warn but ship nowhere) and its enforcement — the `license-drift` rule's L2 is the generated `license-check` gate | filesystem |
 
@@ -139,4 +139,4 @@ Fix a generated project's server in `_shared/mcp_server.py.jinja` (and
   capabilities from the shell (`task batch`, `pytest -m`), and the tier model
   `run_witness` follows.
 - [Verification Architecture](../explanations/verification.md) -- what the
-  `fast`, `full` and `slow` tiers observe, and what the 234 leaves are.
+  `fast`, `full` and `slow` tiers observe, and what the 248 leaves are.

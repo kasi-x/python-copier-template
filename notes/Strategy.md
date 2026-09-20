@@ -538,13 +538,20 @@ OSVベースのpip-auditとは情報源が異なるため、生成物向けと�
 4. ✅ ①（新規ワークフロー1つ。publish挙動は `_docs.yml` への `publish` 入力追加で解決）
 5. ✅ ④-b（deps込みで6経路、warm 4.3秒。torch同期の data_science/kaggle は除外）
 
-## スコープ外（別セッションで扱う）
+## スコープ外（別セッションで扱う）→ 2026-09-21 現状注記
 
 - ⑤ Z3充足可能性 × テストカバレッジの突き合わせ（`test_copier_structure.py`のZ3ソルバーが
   「充足可能」と証明した葉が、実際に`RENDERED_PATHS`等で最低1回テストされているかを機械的に
   検証する仕組み）
+  → **実質実装済み（witness台帳）**。W3 の Z3 witness 葉空間（234 葉、`z3_witnesses.py`）＋
+  §C4 coverage ledger（`tests/matrix/witnesses.json`、`tests/test_witness_matrix.py`）が
+  「Z3 が列挙した葉が実際に検証済みか」を機械突合わせする形になり、元構想を包含した。
+  コード追加は不要。本ファイルの更新のみで完了扱い。
 - ⑥ pre-commitフックの事故再発防止の一般化（`pre-commit run --all-files`実行後に
   `git diff --exit-code`で無変更をassertする回帰テスト。今回end-of-file-fixerが
   `.jinja`を壊した事故の教訓の一般化。なお2026-09-05時点で、check-yaml×copier.yml の
   既存赤がローカルでもCIでも数日気づかれないままだった — 「赤を放置しない運用」の
   観点で TODO.md セクション15 も参照）
+  → **前提が消滅（2026-09-07 pre-commit廃止）**。リポジトリ衛生チェックは CI の
+  `_hygiene.yml` に移り、ローカルフックは無いため誤爆経路が消えた。教訓自体は
+  発生源 E の緩和（autofixer の `.jinja`/`copier.yml` 除外）として残存。

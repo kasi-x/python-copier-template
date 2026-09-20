@@ -40,7 +40,7 @@ Notes:
 ## Tell the template what you want
 
 The inverse question comes up just as often: for the features you want, which
-answers produce them? The 234 witness leaves in `tests/matrix/witnesses.jsonl`
+answers produce them? The 248 witness leaves in `tests/matrix/witnesses.jsonl`
 each carry a full answer set whose render context copier has already computed,
 so "features -> answers" is an exact filter over verified configurations, not
 a guess — `tools/answers_for.py` is that filter:

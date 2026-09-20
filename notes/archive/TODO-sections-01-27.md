@@ -1016,10 +1016,16 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       fork のまま告知すると "0 star のフォーク" という第一印象になり逆効果)
 - [ ] cookiecutter-hypermodern-python(2024-05 以降更新停止、1900+ stars)
       からの乗り換え層を明示的なターゲットにする——比較記事 or 移行ガイドを書く
-- [ ] Strategy.md の MECE ドリフト検知フレームワーク(発生源5分類×検知タイミング
+- [x] Strategy.md の MECE ドリフト検知フレームワーク(発生源5分類×検知タイミング
       4分類 + Z3 充足検査)を技術記事として英語で書き起こし、docs か外部ブログに
       公開する。他の copier/cookiecutter 系テンプレートに同種の説明が見当たらない
       技術的差別化の核心なのに、現状 Strategy.md 止まりで対外発信されていない
+      → **2026-09-21 docs版着地**: `docs/explanations/drift-detection.md` として
+      転記(5発生源×4タイミングの行列を本リポジトリの実機構で埋め、教訓5項目を
+      文章化。verification.md から相互リンク、nav 登録済み)。外部ブログへの
+      転載は detach 後の手順のまま(§16 の掲載タイミング規律)。あわせて
+      Strategy.md のスコープ外⑤(witness台帳で実質実装済み)⑥(pre-commit廃止で
+      前提消滅)に現状注記を追記
 
 ### フェーズ3: 信頼・ガバナンス(長期)
 
