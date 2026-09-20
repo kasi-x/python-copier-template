@@ -1350,11 +1350,30 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
         windows-macos / pixi・poetry venv 経路は render のみ
       - `torch` 系 render（data_science / kaggle）を typecheck 除外のままにしない
         （重いなりの nightly 化等）。`ros2-cpp`（pyproject 無し）の lint/typecheck/fmt 除外も整理
+        → torch は **解決（witness full tier）**: data_science 葉が full tier の
+        実行サンプルに入り、torch 依存 sync 込みで type-check まで実走する
+        （invariants.yml `project_type=data_science` 行の tier why 参照）。
+        ros2-cpp は **2026-09-21 部分解決**: pyproject 無しで孤立していた
+        `uv.lock` / `pyproject-fmt.toml` を `not ros2_cpp` ゲートで除外
+        （test_example_ros2.py がピン）。lint タスクは ruff の Python のみ
+        選択で自ずと no-op、CI tier スキップは test_generated_lint
+        EXTRA_PATHS の宣言どおり
       - `tools/check_upstream.py` の network モード、`generate_license_template.py`、
         `_dist` / `_container` / `_pypi` / `_release` / `_example` workflow 群の未実行を
         いずれかの CI で叩く。`example-answers.yml` に `use_recommended_agent` 経路が無い点も補う
+        → 2026-09-21 ローカル実走: check_upstream network モードは「Template
+        pins are up to date」、generate_license_template は zero drift。
+        `use_recommended_agent` は **解決**: example は data_science で質問が
+        出ないため key を入れると派生 fixture の `agent_scaffold` を誤反転
+        させる — 意図的な不在として test_answer_fixtures.py の
+        test_agent_gate_stays_absent_from_the_example_fixture がピン済み
+        （経路自体は cli witness 葉 + test_example_layers で担保）。残りは
+        workflow 群の CI 実走（着手条件: push 後の run 観察）
       - `audit` タスク（network のため `check` 外し）は木曜 root audit 以外の検証が無い。
         schedule 検証の有無を明記する
+        → **解決**: dependency-audit.yml 冒頭コメントが「週次 schedule +
+        workflow_dispatch のみが検証経路」を明記済み。Taskfile の audit
+        desc にも 2026-09-21 同旨を追記
 
 ## 20. Docs・導入UX の改善（2026-09-08 監査）
 

@@ -75,6 +75,12 @@ def test_template_ros2_cpp_apt(tmp_path: Path):
     # (the standard toolchain files stay, but the ament build is authoritative).
     assert not (tmp_path / "pyproject.toml").exists()
     assert not (tmp_path / "setup.py").exists()
+    # And the pyproject-adjacent files go with it: a lockfile for a project
+    # that does not exist (uv warns `--locked` has no effect on every task
+    # invocation) and a pyproject-fmt policy with nothing to format were the
+    # 2026-09-21 ros2-cpp sweep's orphans.
+    assert not (tmp_path / "uv.lock").exists()
+    assert not (tmp_path / "pyproject-fmt.toml").exists()
     # That pyproject absence is also why the generated lint/typecheck tiers
     # skip this flavour (no [tool.ruff] to judge, nothing to type-check):
     # declared at test_generated_lint.py's EXTRA_PATHS and in

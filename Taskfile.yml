@@ -83,7 +83,10 @@ tasks:
     cmd: act {{ .EVENT }} -W .github/workflows/{{ .WORKFLOW }} {{ if .JOB }}--job {{ .JOB }}{{ end }} {{ .CLI_ARGS }}
 
   audit:
-    desc: Audit dependencies for known vulnerabilities (network; not part of check)
+    desc: >-
+      Audit dependencies for known vulnerabilities (network; not part of check).
+      Weekly verified by the Thursday dependency-audit.yml schedule (issue filed
+      on failure); PR CI never runs it because check must stay offline.
     cmd: uv run --locked pip-audit
 
   batch:
