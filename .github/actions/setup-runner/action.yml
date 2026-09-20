@@ -1,11 +1,15 @@
 name: setup-runner
 description: >-
-  The shared environment setup of this template's reusable workflows: a full
-  checkout (setuptools-scm reads the tags), the package manager the lockfile
-  selects (uv / pixi / poetry), and the task runner the caller drives
-  (Task / Just). One definition, four callers (_tasks / _test / _docs /
-  _dist), shipped to generated projects by symlink — the same
-  content-identical-link rule as the workflows themselves.
+  The shared environment setup of this template's reusable workflows: the
+  package manager the lockfile selects (uv / pixi / poetry), and the task
+  runner the caller drives (Task / Just). One definition, four callers
+  (_tasks / _test / _docs / _dist), shipped to generated projects by symlink
+  — the same content-identical-link rule as the workflows themselves.
+  The checkout deliberately stays in each caller, not here: a local action's
+  files must exist on disk before it can be invoked, so a composite that
+  checks the repository out can never run (the caller fails resolving this
+  file, with "Can't find 'action.yml' ... Did you forget to run
+  actions/checkout before running your local action?").
 inputs:
   task_runner:
     description: Which task runner to install (task, just). Empty installs neither.
@@ -21,13 +25,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Checkout
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        persist-credentials: false
-        # Need this to get version number from last tag
-        fetch-depth: 0
-
     - name: Install uv
       if: hashFiles('pixi.lock', 'poetry.lock') == ''
       uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1

@@ -427,3 +427,63 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
   依存を作る — 手元の clone はタグを持つため、この失敗は CI でしか出ない。
   タグや履歴を git で読むゲートは、**それを読む側のワークフロー設定まで含めて**
   ピンしないと、初回実行まで緑に見える。
+
+## 20. `setup-runner` composite が自分を載せているリポジトリを checkout していて、4 つの reusable workflow が全部即死した
+
+- **現象**: `_tasks.yml` / `_test.yml` / `_docs.yml` / `_dist.yml` を使う CI ジョブが
+  すべて最初のステップ「Set up the runner」で fail。エラーは
+  `Can't find 'action.yml', 'action.yaml' or 'Dockerfile' under
+  '.../.github/actions/setup-runner'. Did you forget to run actions/checkout
+  before running your local action?`。lint / test / test-meta / docs が全滅し、
+  `required-checks-passed` も落ちる。
+- **原因**: §19 の composite action 抽出（7dfc56d9）で、各 workflow にあった
+  `actions/checkout` を composite の中へ移した。しかし **local action は実行前に
+  ファイルがディスク上に存在していなければならない**（runner が `action.yml` を
+  解決するのは step を実行する前）。composite 自身がリポジトリを取ってくる設計は
+  原理的に不可能で、呼び出し側は composite の解決に失敗する。
+  ローカルの pytest は workflow YAML を静的検証するだけでこの順序を実行しないため
+  （`test_setup_runner_composite_is_pinned_and_used` は pin しか見ていなかった）、
+  9 コミット分が未 push だったこともあり、push するまで誰も踏まなかった。
+- **✅ 対応 (2026-09-20)**: checkout を 4 つの呼び出し側へ戻し（composite の直前に
+  配置、理由コメント付き）、composite から checkout を撤去。composite の description
+  に「自分を含むリポジトリは取れない」理由を明記。
+  回帰ピン: `tests/test_workflow_security.py::test_the_composite_does_not_check_the_repository_out`
+  （composite が checkout を持たないこと＋全呼び出し側で checkout が composite より
+  前にあることを双方向で検査）。変異テストで確認: composite に checkout を戻す／
+  呼び出し側から checkout を消す、の両方で fail。
+  生成物側は別レンダで実測確認（`_tasks` / `_test` / `_docs` / `_dist` すべて
+  checkout@0 → composite@1）。
+- **教訓**: 「重複を composite に抽出する」リファクタで、**その composite 自身が
+  依存する前提条件（checkout）まで一緒に移してはいけない**。composite は
+  「呼び出し側が既に用意した環境の上で動くもの」であり、checkout はその環境を
+  作る側に属する。静的テストは pin を見ていたが順序を見ていなかった —
+  「ファイルが存在する前提のステップ」は順序まで assert する必要がある。
+
+## 21. zizmor の cli ピン 1.30.1 が action v0.6.3 の allowlist より新しく、Security が常に赤
+
+- **現象**: push ごとの Security が 4 秒で fail。ログは
+  `##[error]Unknown version: 1.30.1`。
+- **原因**: `zizmorcore/zizmor-action` は action 本体に **対応 cli バージョンの
+  digest allowlist**（`support/versions`）を同梱し、`action.sh` は載っていない
+  バージョンに対して `die "Unknown version: ${GHA_ZIZMOR_VERSION}"` する。
+  ピンは action v0.6.3（`70fb788`）＋ cli 1.30.1 だが、v0.6.3 の allowlist は
+  **1.30.0 まで**（実測: `support/versions` に `1.30.0` はあるが `1.30.1` は無い）。
+  1.30.1 を載せたのは v0.6.4（`cc914d7`、同日 2026-09-09 リリース）。
+  `latest` 運用だった頃は「action が知っている最新」を選ぶので壊れず、
+  ピンした瞬間に初めて顕在化した。なお cli 1.30.1 自体は正常
+  （Docker で `ghcr.io/zizmorcore/zizmor:1.30.1` を実走 → exit 0、
+  "No findings to report"）。
+- **✅ 対応 (2026-09-20)**: action を v0.6.4（`cc914d7f3750a2d13d75c7f184a1060aa0e9d482`）
+  へ更新。root の `.github/workflows/security.yml` と
+  生成物側 `template/.../security.yml.jinja` の両方を同時に更新
+  （後者は symlink ではなく別ファイルなので片側だけ直すと生成物が赤のまま）。
+  コメントに「action と cli ピンは同時に動かす（action が allowlist を持ち、
+  古いと Unknown version で落ちる）」を明記。
+  回帰ピン: `tests/test_workflow_security.py::test_zizmor_cli_pin_is_inside_the_actions_allowlist`
+  （cli → それを最初に載せた action リリースの対応表で照合し、
+  root と .jinja の両方が同じピンであることも検査）。変異テストで確認:
+  action を v0.6.3 に戻すと fail。
+- **教訓**: 「action のバージョン」と「action が内部で使うツールのバージョン」は
+  独立に上げられない。片方をピンするなら対応表をテストで固定する。
+  `latest` は「動くが再現しない」、ピンは「再現するが対応表が要る」— 後者を選ぶなら
+  対応表をコードに持つ必要がある。

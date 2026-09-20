@@ -350,6 +350,99 @@ def test_setup_runner_composite_is_pinned_and_used():
         )
 
 
+def test_the_composite_does_not_check_the_repository_out():
+    """The composite must not fetch the repository it lives in.
+
+    A local action's files have to be on disk before the runner can resolve
+    it, so `uses: actions/checkout` *inside* this composite can never run:
+    the caller fails first with "Can't find 'action.yml' ... Did you forget
+    to run actions/checkout before running your local action?" -- which is
+    exactly how the §19 extraction broke every reusable workflow on the
+    first push that ran it (lint, test, test-meta and docs all died in
+    "Set up the runner" before a single task ran).
+
+    Both directions: the composite holds no checkout, and every caller that
+    invokes it checks out *before* that step.
+    """
+    action = yaml.safe_load(COMPOSITE.read_text(encoding="utf-8"))
+    steps = action["runs"].get("steps") or []
+    assert not any(str(s.get("uses", "")).startswith("actions/checkout") for s in steps), (
+        "the setup-runner composite must not call actions/checkout: a local action "
+        "cannot fetch the repository that has to contain it"
+    )
+    for name in COMPOSITE_USERS:
+        wf = _workflows()[name]
+        for job_name, job in _jobs(wf).items():
+            steps = job.get("steps") or []
+            order = [str(step.get("uses", "")) for step in steps]
+            if not any(u.startswith("./.github/actions/setup-runner") for u in order):
+                continue
+            composite_at = next(i for i, u in enumerate(order) if u.startswith("./.github/actions/setup-runner"))
+            checkout_at = next((i for i, u in enumerate(order) if u.startswith("actions/checkout")), None)
+            assert checkout_at is not None, f"{name}:{job_name} calls the composite without checking the repository out"
+            assert checkout_at < composite_at, (
+                f"{name}:{job_name} calls the composite before its checkout -- the local action "
+                f"cannot resolve until the repository is on disk"
+            )
+
+
+def _version3(text: str) -> tuple[int, int, int]:
+    """Parse an `X.Y.Z` (optionally `v`-prefixed) version into comparable ints."""
+    parts = [int(part) for part in text.lstrip("v").split(".")]
+    assert len(parts) == 3, f"expected an X.Y.Z version, got {text!r}"
+    return parts[0], parts[1], parts[2]
+
+
+def test_zizmor_cli_pin_is_inside_the_actions_allowlist():
+    """The zizmor action and its cli pin must be a released pair.
+
+    `zizmorcore/zizmor-action` ships `support/versions`, a digest allowlist
+    of the cli releases that action can run, and `action.sh` dies with
+    "Unknown version" for anything else -- so a cli pin newer than the
+    action's allowlist turns the Security job red before it scans. The
+    static half needs no network: the action's *minor* release that first
+    carried a cli version is recorded below, and the pin is checked against
+    it. (The 2026-09-20 break: cli 1.30.1 pinned against action v0.6.3,
+    whose allowlist ends at 1.30.0.)
+    """
+    security = (TOP / ".github" / "workflows" / "security.yml").read_text(encoding="utf-8")
+    action_m = re.search(r"zizmorcore/zizmor-action@[0-9a-f]{40} # (v\d+\.\d+\.\d+)", security)
+    cli_m = re.search(r'version: "(\d+\.\d+\.\d+)"', security)
+    assert action_m and cli_m, "security.yml must pin both the action and its cli"
+    action_version = _version3(action_m.group(1))
+    cli_version = _version3(cli_m.group(1))
+    # action release that first shipped each cli version in its allowlist
+    first_action_for_cli: dict[tuple[int, int, int], tuple[int, int, int]] = {
+        (1, 30, 0): (0, 6, 3),
+        (1, 30, 1): (0, 6, 4),
+    }
+    minimum = first_action_for_cli.get(cli_version)
+    assert minimum is not None, (
+        f"cli {cli_m.group(1)} is not in MINIMUM_ACTION_FOR_CLI -- add the action release whose "
+        f"support/versions first listed it (check the action's support/versions on GitHub), or "
+        f"drop the cli pin back to a version the pinned action carries"
+    )
+    assert action_version >= minimum, (
+        f"security.yml pins zizmor cli {cli_m.group(1)} against action {action_m.group(1)}, but that "
+        f"cli version needs action v{'.'.join(map(str, minimum))} or newer: the action's allowlist "
+        f"ends lower and it exits with 'Unknown version'"
+    )
+    # The shipped copy is what generated projects actually run, and it is a
+    # separate file (a .jinja, not a symlink): a fix applied to one side only
+    # would leave every generated project red. Compare the pin lines.
+    jinja = (
+        TOP
+        / "template"
+        / "{% if is_github %}.github{% endif %}"
+        / "{% if ci_provider == 'github_actions' %}workflows{% endif %}"
+        / "security.yml.jinja"
+    ).read_text(encoding="utf-8")
+    assert action_m.group(0) in jinja, (
+        "template security.yml.jinja pins a different zizmor action than the root workflow"
+    )
+    assert cli_m.group(0) in jinja, "template security.yml.jinja pins a different zizmor cli than the root workflow"
+
+
 def test_setup_runner_ships_to_generated_projects(render_cache: RenderCache, tmp_path: Path):
     """Generated projects calling the workflows must have the action too.
 

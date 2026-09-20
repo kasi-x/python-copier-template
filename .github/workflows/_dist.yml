@@ -18,6 +18,16 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      # The checkout stays here, not in the composite: a local action's files
+      # must exist before it can be invoked, so the composite cannot fetch the
+      # repository it lives in (see setup-runner's description).
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # Need this to get version number from last tag
+          fetch-depth: 0
+
       - name: Set up the runner
         uses: ./.github/actions/setup-runner
         with:
