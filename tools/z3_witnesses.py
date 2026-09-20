@@ -165,13 +165,16 @@ DOMAIN_TRAIT_HOSTS: frozenset[str] = frozenset(
 
 # The variant labels: each choice alone, then all of them together -- the
 # co-occurrence answer the multiselect exists for, and the leaf the additivity
-# check compares against the solo ones (build()). Built as a list so a
-# comprehension and an appended entry do not fight over the tuple's type.
-DOMAIN_TRAIT_VARIANTS: tuple[tuple[str, list[str]], ...] = tuple(
-    [
-        *((choice, [choice]) for choice in DOMAIN_TRAIT_CHOICES),
-        *((("all", list(DOMAIN_TRAIT_CHOICES)),) if len(DOMAIN_TRAIT_CHOICES) > 1 else ()),
-    ]
+# check compares against the solo ones (build()). `all` is appended only when
+# there is more than one choice to combine, so a single-trait questionnaire
+# does not mint a leaf that says nothing. Each list is `list[str]` (not the
+# literal choices' own type) so the optional `all` entry does not narrow the
+# tuple's element type.
+DOMAIN_TRAIT_SOLO_VARIANTS: tuple[tuple[str, list[str]], ...] = tuple(
+    (str(choice), [str(choice)]) for choice in DOMAIN_TRAIT_CHOICES
+)
+DOMAIN_TRAIT_VARIANTS: tuple[tuple[str, list[str]], ...] = DOMAIN_TRAIT_SOLO_VARIANTS + (
+    (("all", [str(choice) for choice in DOMAIN_TRAIT_CHOICES]),) if len(DOMAIN_TRAIT_CHOICES) > 1 else ()
 )
 
 GATE_PREFIX = "use_recommended_"
