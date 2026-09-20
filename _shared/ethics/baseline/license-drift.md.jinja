@@ -45,8 +45,13 @@ BSL適用後コードの不正利用を主張する書簡を送付し、OpenTofu
 - 依存ライセンスの列挙と照合は、生成物に同梱の `license-check` タスクが
   行う(`pip-licenses --from=mixed --partial-match`。security推奨で有効、
   CIのlintジョブから呼ばれる。fail-on はプロジェクトのライセンスから
-  自動導出: permissive→GPL系、GPL/LGPL→AGPL)。タスクを落とした構成では
-  同型の照合(`pip-licenses`相当でlicense欄を出力しallowlistと照合)を
+  自動導出: permissive/Proprietary等→GPL系(LGPL/AGPL含む)、
+  GPL/LGPL→AGPL、AGPL→なし=最強なので打ち止め)。質問票が提示する
+  全ライセンスがポリシーに解決される(取りこぼすと「絶対に落ちない
+  license-check」が同梱され、本節の L2 主張が嘘になる)。`--partial-match` は
+  部分一致なので、`GPL` は `GNU General Public License (GPLv3)` /
+  `...(LGPL)` / `...(AGPLv3)` のいずれにも当たる。タスクを落とした
+  構成では同型の照合(`pip-licenses`相当でlicense欄を出力しallowlistと照合)を
   自前で組む。
 - renovate等の自動更新でメジャー更新・ライセンス欄変化を通知対象にする。
 - 競合サービスを作る予定がある場合、SSPL/BSL類は「自分が提供する形」で

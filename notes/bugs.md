@@ -352,3 +352,40 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
   typer は kaggle か宣言する機能に紐付け。回帰ピンは
   `tests/test_example_data_science.py` — 純 data_science レンダに web_api 名が
   漏れないことを assert する（bug #17 のコメント付き）。
+
+## 18. `license-check` の fail-on が質問票の 49 ライセンス中 36 で空になり、ゲートが不発だった
+
+- **現象**: §29 C の L2 として `license-check` タスクとレジストリの `enforcement: L2` を
+  着地させた直後に発見（`_tasks.jinja` の `license_fail_on` をレビュー中）。
+  fail-on は membership list で書かれており、載っていない ライセンス
+  （Proprietary / Confidential / MPL-2.0 / Zlib / EPL-2.0 / EUPL / CC-BY-SA /
+  OFL / OSL / MS-RL / CECILL / ODbL / Artistic / AFL / MIT-0 / MS-PL / …）では
+  `--fail-on` が**丸ごと落ちて** `pip-licenses --from=mixed --partial-match` だけが
+  残る。実測: 49 ライセンス中 36 で fail-on が空。つまり「絶対に落ちない
+  license-check タスク」が同梱され、CI は緑のまま、レジストリだけが L2（実ゲート）
+  と主張していた。特に Proprietary / Confidential が該当するのが最悪で、
+  クローズドソース製品に copyleft が混入するのを止めるのがこのゲートの存在理由。
+- **原因**: ポリシーが「permissive の集合」を列挙し、それ以外を else で
+  `'AGPL' if GPL/LGPL else ''` に流す形だった。'' は後段の
+  `~ (' --fail-on=' ~ license_fail_on if license_fail_on else '')` で
+  フラグごと消えるため、**綴り忘れが「静かに無効なゲート」に化ける**構造。
+- **✅ 対応 (2026-09-20)**: if/else 連鎖を全域（total）にした —
+  `'' if AGPL-3.0 else ('AGPL' if GPL/LGPL 系 else 'GPL')`。AGPL-3.0 だけが空なのは
+  これ以上強い copyleft が存在しない（打ち止め）ため。`--partial-match` は
+  case-insensitive な**部分文字列**一致なので、`GPL` が
+  `GNU General Public License (GPLv3)` / `...(LGPL)` / `...(AGPLv3)` の
+  いずれにも当たる（`pip-licenses 5.5.5` の実装 `case_insensitive_partial_match_set_intersect`
+  を読んで確認、さらに GPL/LGPL/AGPL/MPL/MIT の dist-info を実際に作って
+  exit code を測定: fail-on=GPL は GPL/LGPL/AGPL の 3 件で exit 1、MIT/MPL で 0。
+  fail-on=AGPL は AGPL のみ 1）。副次的に判明した罠: `GPL` は
+  **`"GNU General Public License v3"` の綴りには部分一致しない**（`(GPLv3)` の
+  タグ側に当たっている）。この依存は測定値で固定した。
+  回帰ピン: `tests/test_example_docs_ci.py::test_license_check_gate_is_armed_for_every_offered_license`
+  （実 Jinja 式を評価して全 49 ライセンスが武装することを確認し、AGPL-3.0 のみ空。
+  旧ポリシーに戻すと 36 ライセンスの inert を検出して fail することを実証済み）。
+  併せて `_shared/ethics/baseline/license-drift.md.jinja` の運用節に
+  「質問票が提示する全ライセンスがポリシーに解決される」ことを明記
+  （取りこぼすと L2 主張が嘘になる、という理由付き）。
+- **教訓**: 「L2 = 実ゲート」と主張するなら、そのゲートが**発火しうる**ことを
+  テストで固定する必要がある。存在assert（タスクがある）は発火可能性を含意しない —
+  本件はまさにその差だった。

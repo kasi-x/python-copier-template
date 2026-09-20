@@ -5,10 +5,12 @@ projects are checked with."""
 
 import json
 import re
+import sys
 import tomllib
 from pathlib import Path
 from typing import Any
 
+import jinja2
 import pytest
 import yaml
 from copier import run_copy
@@ -18,6 +20,10 @@ from support import ci_requested_tasks
 from support import copy_project
 from support import copy_project_recommended
 from support import make_venv
+
+sys.path.insert(0, str(TOP))
+
+from tools import questionnaire  # noqa: E402
 
 
 def _renovate_rules(path: Path) -> list[dict]:
@@ -199,6 +205,83 @@ def test_template_license_check_task(tmp_path: Path):
     off_pyproject = tomllib.loads((off_path / "pyproject.toml").read_text())
     assert not any(d.startswith("pip-licenses") for d in off_pyproject["dependency-groups"]["dev"])
     assert "license-check" not in (off_path / "Taskfile.yml").read_text()
+
+
+def test_license_check_gate_is_armed_for_every_offered_license():
+    """The copyleft gate ships a policy for every license the questionnaire offers.
+
+    `test_template_license_check_task` proves the task exists; this proves it
+    can *fail*. The policy is derived from the project license, and it used to
+    be a membership list -- every license outside it (Proprietary,
+    Confidential, MPL-2.0, Zlib, EPL-2.0, ...) silently rendered
+    `pip-licenses --partial-match` with **no** `--fail-on`, i.e. a gate that
+    can never fail, while _shared/ethics/REGISTRY.yml reported the license
+    rule's enforcement as L2 (a real gate) for all of them. Proprietary and
+    Confidential are the worst of the set: absorbing copyleft into a
+    closed-source product is precisely what that gate is for.
+
+    The policy expression is evaluated as the Jinja the renderer evaluates,
+    against every choice the questionnaire offers -- not a Python restatement
+    of its branches, which would agree with any rewrite of the template.
+    """
+    source = (TOP / "_tasks.jinja").read_text(encoding="utf-8")
+    match = re.search(r"\{% set license_fail_on = (.+?)%\}", source)
+    assert match, "the license fail-on policy moved or was renamed"
+
+    licenses = next(q for q in questionnaire.load_questions()[0] if q.name == "license").choices
+    assert len(licenses) >= 40, f"the license question shrank to {len(licenses)} choices"
+
+    # The same Jinja the template parses under; the expression is a plain
+    # conditional over one variable, so no copier-specific global is needed.
+    # Jinja renders bare text literally, so the expression needs its `{{ }}`.
+    env = jinja2.Environment()
+    template = env.from_string("{{ " + match.group(1).strip() + " }}")
+    resolved = {spdx: template.render(license_effective=spdx).strip() for spdx in licenses}
+
+    unarmed = sorted(spdx for spdx, policy in resolved.items() if not policy)
+    assert unarmed == ["AGPL-3.0"], (
+        "every offered license except AGPL-3.0 (nothing stronger exists to fail on)"
+        f" must arm the gate; these would ship an inert license-check: {unarmed}"
+    )
+    # What each policy actually trips, under --partial-match: a
+    # case-insensitive *substring* test against the license string
+    # `pip-licenses` reports. These strings are the ones it really emits
+    # (measured: the dist-info metadata for GPL/LGPL/AGPL/MPL/MIT packages),
+    # and the exit codes below were measured against `pip-licenses 5.5.5`.
+    # Note the substring subtlety the strings carry: "GPL" is *not* a
+    # substring of "GNU General Public License v3" spelled out, but it is of
+    # the "(GPLv3)" pip-licenses actually appends -- so the policy works
+    # because of the parenthesised tag, which is worth pinning here.
+    emitted = {
+        "gpl": "GNU General Public License v3 (GPLv3)",
+        "lgpl": "GNU Library or Lesser General Public License (LGPL)",
+        "agpl": "GNU Affero General Public License v3.0 (AGPLv3)",
+        "mit": "MIT License",
+        "mpl": "Mozilla Public License 2.0 (MPL 2.0)",
+    }
+
+    def trips(policy: str, dependency_license: str) -> bool:
+        # An empty policy means `--fail-on` is omitted entirely (the template
+        # drops the flag rather than passing an empty value), so nothing trips.
+        return bool(policy) and policy.lower() in dependency_license.lower()
+
+    for spdx in licenses:
+        policy = resolved[spdx]
+        family = {
+            "GPL": ("gpl", "lgpl", "agpl"),
+            "AGPL": ("agpl",),
+            "": (),
+        }[policy]
+        for key, text in emitted.items():
+            assert trips(policy, text) == (key in family), (
+                f"{spdx} (fail-on={policy!r}) against {key!r} ({text!r}): expected"
+                f" {'a trip' if key in family else 'no trip'}"
+            )
+    assert resolved["MIT"] == "GPL" and resolved["Proprietary"] == "GPL", (
+        "permissive/closed projects fail on all copyleft"
+    )
+    assert resolved["GPL-3.0"] == "AGPL", "a GPL project tolerates its own family and fails only on AGPL"
+    assert resolved["AGPL-3.0"] == "", "nothing is stronger than AGPL to fail on"
 
 
 def test_template_ci_runs_license_check(tmp_path: Path):
