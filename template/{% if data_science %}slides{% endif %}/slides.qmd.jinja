@@ -1,9 +1,13 @@
 ---
 title: "{{ repo_name }}"
 subtitle: "A subtitle"
+# clean-revealjs is the vendored extension in _extensions/clean/ (the
+# "clean" revealjs theme by Grant McDermott, MIT —
+# github.com/grantmcdermott/quarto-revealjs-clean), so this renders with
+# no `quarto add` step.
 format:
   clean-revealjs:
-    self-contained: true
+    embed-resources: true
     incremental: true
     slide-number: false
     output-file: "{{ repo_name }}_slides.html"

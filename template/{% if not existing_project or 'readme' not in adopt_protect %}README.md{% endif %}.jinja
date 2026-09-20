@@ -633,9 +633,12 @@ permission.
 ## 📄 Paper and slides
 
 The research-writing scaffold ships alongside the analysis tree:
-`paper/paper.qmd` renders to an arXiv-style PDF and HTML (via the vendored
-[arxiv extension](https://github.com/mikemahoney218/arxiv)), `slides/slides.qmd`
-to a reveal.js deck, and `quartodoc` generates the API reference in
+`paper/paper.qmd` renders to an arXiv-style PDF and HTML and
+`slides/slides.qmd` to a reveal.js deck (both format themes are vendored —
+[arxiv](https://github.com/mikemahoney218/arxiv) and
+[clean](https://github.com/grantmcdermott/quarto-revealjs-clean), MIT — so
+there is no `quarto add` step for them), and `quartodoc` generates the API
+reference in
 `docs/reference/` from the package docstrings. The paper **executes** in this
 environment (`jupyter: python3`), reads tables and figures from `outputs/`
 (`src/` writes them, the paper includes them — never paste a number by hand)

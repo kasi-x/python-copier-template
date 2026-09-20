@@ -18,6 +18,7 @@ package the analysis uses.
 | `references/references.bib` + `references/chicago-author-date.csl` | starter bibliography and citation style |
 | `outputs/` | tables and figures the paper reads in (git-ignored like `data/`) |
 | `paper/_extensions/arxiv/` | the [arxiv Quarto extension](https://github.com/mikemahoney218/arxiv) by Mike Mahoney (vendored, MIT) |
+| `slides/_extensions/clean/` | the [clean revealjs theme](https://github.com/grantmcdermott/quarto-revealjs-clean) by Grant McDermott (vendored, MIT) |
 
 The `paper`, `slides` and `paper-api` tasks exist only where the scaffold
 ships — check `task paper --list`
@@ -88,8 +89,10 @@ blocks show the figure include and the LaTeX table pattern, and the
 
 ## Slides
 
-`slides/slides.qmd` targets `clean-revealjs`, renders self-contained
-(MathJax from CDN, so it also opens offline-minus-MathJax), and writes
+`slides/slides.qmd` targets `clean-revealjs` — the minimalist reveal.js
+theme, vendored under `slides/_extensions/clean/` so the deck renders
+with no `quarto add` step. It embeds its resources into a single file
+(`embed-resources: true`, MathJax from CDN) and writes
 `<repo>_slides.html` at the repo root. Slide content follows the same
 execute-as-you-go model — a `{python}` cell renders its output into the
 slide.

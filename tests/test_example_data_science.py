@@ -100,6 +100,15 @@ def test_template_data_science_layout(tmp_path: Path):
     assert (tmp_path / "Dockerfile.gpu").exists()
     assert (tmp_path / "paper" / "paper.qmd").exists()
     assert (tmp_path / "slides" / "slides.qmd").exists()
+    # the vendored format themes ride along (no `quarto add` for the user)
+    assert (tmp_path / "paper" / "_extensions" / "mikemahoney218" / "arxiv" / "_extension.yml").exists()
+    assert (tmp_path / "slides" / "_extensions" / "clean" / "_extension.yml").exists()
+    # the CSL must render, not be copied raw: copier only renders files with
+    # the .jinja suffix, so the raw-wrapped .csl shipped a literal `{% raw %}`
+    # line and every citeproc render failed (found by the first real
+    # `quarto render` this scaffold ever got, 2026-09-21)
+    csl = (tmp_path / "references" / "chicago-author-date.csl").read_text()
+    assert csl.startswith("<?xml"), "the CSL was copied raw — is the .jinja suffix gone?"
     # the README says so too: the paper section and the What's-included row
     # ship exactly where the scaffold ships (data_science, not the layer
     # alone — that polarity lives in test_example_layers.py's web_api combo)
