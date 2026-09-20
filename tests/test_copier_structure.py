@@ -94,6 +94,8 @@ ALLOWED_NON_KEYS = {
     "striptags",
     "split",
     "truncate",
+    "trim",
+    "first",
 }
 
 
@@ -212,9 +214,26 @@ def test_every_asked_question_has_a_default():
         )
 
 
+def _question_local_vars() -> set[str]:
+    """Names questions/*.yml and copier.yml bind with `{% set %}`.
+
+    A question's `default` may be a small Jinja program that builds its value
+    with `{% set %}` (the structured answers in questions/_structured.yml
+    accumulate a list that way). Those names are local to the expression, not
+    copier.yml keys, so the undefined-reference check below must not flag
+    them -- the same allowance `_template_local_vars` makes for template
+    bodies.
+    """
+    local: set[str] = set()
+    for src in (COPIER_YML, *QUESTIONS_DIR.rglob("*.yml")):
+        with suppress(UnicodeDecodeError, OSError):
+            local |= set(re.findall(r"\{%-?\s*set\s+([A-Za-z_][A-Za-z0-9_]*)", src.read_text(encoding="utf-8")))
+    return local
+
+
 def test_when_and_default_reference_defined_variables():
     questions, _ = when_model.load_questions()
-    keys = set(questions)
+    keys = set(questions) | _question_local_vars()
     for key, q in questions.items():
         for field in ("when", "default", "validator"):
             value = q.get(field)

@@ -400,8 +400,16 @@ Answer **No** to drop SECURITY.md, drop the license check, or add an OpenSSF Sco
 | `distribution_name` | `repo_name` | all | Name of the python distribution package that will be created. This is what people will `pip install`. |
 | `author_name` | `Your Name` | all | Your full name |
 | `author_email` | `you@example.com` | all | Your email address |
+| `dependencies` | `derived_dependencies` | all | Runtime dependencies, as a YAML list. |
+| `src_dirs` | `derived_src_dirs` | all | Directories to create under `src/`, as a YAML list. |
 <!-- END GENERATED: project-details -->
 
 The author name/email and the GitHub org have plain placeholder defaults —
 answer each prompt with your own values (or pass them via `--data-file` for
 non-interactive generation).
+
+`dependencies` and `src_dirs` are *lists* whose defaults are derived from your
+other answers; they are recorded in `.copier-answers.yml`, so you can edit
+either one after generation instead of re-answering the questionnaire. See
+[the answers file](answers-file.md#structured-answers) for the workflow and
+for which copier command picks an edit up.

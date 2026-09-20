@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 959,
+      "collected": 970,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -49,6 +49,7 @@
         "tests/test_render_convention.py": 2,
         "tests/test_render_delta.py": 9,
         "tests/test_render_invariants.py": 31,
+        "tests/test_structured_answers.py": 11,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 10,
         "tests/test_tool_layers.py": 3,
@@ -58,12 +59,12 @@
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "a691c883e6ee51f81c01dfd1bedcf2b38a94d3d5a9bfb8e21ee208d9f5a7799d",
-      "wall_seconds": 17.2,
+      "ids_sha256": "723f5a7f78d418830904531cdc369e741bceca5931a94b9b15e0290098dc521f",
+      "wall_seconds": 18.6,
       "measured": "2026-09-20",
       "budget_seconds": 30,
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta and not network\"",
-      "note": "time uv run --locked pytest -q <the task's own selection> (959 tests; measured 2026-09-20 warm-cache on a 32-CPU box with light residual load, after the ethics registry gained its presence-trigger contract and the MCP ethics tool/resource and the questionnaire guard gained its unrecorded-internal rule, and the license gate's fail-on policy became total (954 -> 959) on top of the 234-leaf bot-platform tree; 17.2s warm, inside the 30s budget the ledger check enforces. History: 2026-09-19 measured 18.7s warm at 954 tests, 32.5s on a just-emptied render cache)."
+      "note": "time uv run --locked pytest -q <the task's own selection> (970 tests; measured 2026-09-20 warm-cache on a 32-CPU box with light residual load, after the structured answers (dependencies / src_dirs) landed with their 11-test module (959 -> 970); 18.6s warm, inside the 30s budget the ledger check enforces. History: 2026-09-19 measured 18.7s warm at 954 tests, 32.5s on a just-emptied render cache."
     },
     "test-slow": {
       "task": "test-slow",
@@ -121,7 +122,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1026,
+      "collected": 1037,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -168,6 +169,7 @@
         "tests/test_render_convention.py": 2,
         "tests/test_render_delta.py": 10,
         "tests/test_render_invariants.py": 31,
+        "tests/test_structured_answers.py": 11,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 18,
         "tests/test_tool_layers.py": 3,
@@ -177,7 +179,7 @@
         "tests/test_witness_matrix.py": 249,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "2544d955f71d42e20e9f671ebc2ce944912be41bc2de00e3cb91b7d6fd341a31",
+      "ids_sha256": "dd5efedc8a379d76f110bc9d2b0537ce956238ecc7bd36d53d4d9b6c5b9ab00b",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -186,7 +188,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 959,
+      "collected": 970,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -231,6 +233,7 @@
         "tests/test_render_convention.py": 2,
         "tests/test_render_delta.py": 9,
         "tests/test_render_invariants.py": 31,
+        "tests/test_structured_answers.py": 11,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 10,
         "tests/test_tool_layers.py": 3,
@@ -240,7 +243,7 @@
         "tests/test_witness_matrix.py": 240,
         "tests/test_workflow_security.py": 10
       },
-      "ids_sha256": "a691c883e6ee51f81c01dfd1bedcf2b38a94d3d5a9bfb8e21ee208d9f5a7799d",
+      "ids_sha256": "723f5a7f78d418830904531cdc369e741bceca5931a94b9b15e0290098dc521f",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",

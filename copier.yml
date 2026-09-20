@@ -87,6 +87,12 @@ project_type:
 # feed template rendering.
 !include questions/_internal.yml
 ---
+# Structured answers (TODO.md §30): the dependency and src/ directory lists,
+# as asked questions with derived defaults. LAST: their defaults read the
+# internals above, and the forward-only rule (test_copier_structure.py) makes
+# that ordering mandatory.
+!include questions/_structured.yml
+---
 # Template settings (underscore keys). Copier merges these across fragments;
 # they are kept here in one place so the template's runtime behaviour is
 # documented in a single spot. `questions/` holds the include fragments, so
@@ -138,6 +144,20 @@ _tasks:
         {% if reuse_effective %}
         python -c "import pathlib, shutil; pathlib.Path('LICENSES').mkdir(exist_ok=True); shutil.copy('LICENSE', 'LICENSES/{{ license_effective }}.txt')"
         {% endif %}
+    # `src_dirs` entries the template tree does not already carry (the tree
+    # materializes the known vocabulary -- data/features/models/visualization
+    # and kaggle's input/logs/output/scripts -- each gated on being in the
+    # list). A *file tree* cannot express "a directory with an arbitrary
+    # name", so a user who adds `experiments` to the list gets it from here.
+    # `mkdir -p` + `touch` is idempotent; an existing .gitkeep is left alone.
+    # No shell-quoting of the Python source: the values travel as argv.
+    - command: |
+        python -c 'import pathlib, sys
+        for d in sys.argv[1:]:
+            p = pathlib.Path("src") / d
+            p.mkdir(parents=True, exist_ok=True)
+            (p / ".gitkeep").touch()' {{ src_dirs | map('quote') | join(' ') }}
+      when: "{{ src_dirs }}"
 
 _migrations:
     - version: 2.0.0

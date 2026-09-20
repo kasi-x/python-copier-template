@@ -5,6 +5,13 @@ What `pyproject.toml` a generated project starts with, per `project_type`
 — "recommended + No for custom" — never a catalogue, so this page lists the
 fixed sets rather than choices.
 
+!!! tip "These sets are editable after generation"
+    The runtime list is recorded in `.copier-answers.yml` as the
+    `dependencies` answer. Edit that list and re-render rather than
+    hand-editing `pyproject.toml` (which the next `copier update` would
+    reconcile against anyway): see
+    [the answers file](answers-file.md#structured-answers).
+
 All types share the same dev toolchain at `strictness` recommended/full:
 basedpyright + pyrefly (or ty) + ruff (`ALL`) + vulture + deptry + typos +
 pytest-cov, driven by `task type-check`, plus an on-demand `task audit`

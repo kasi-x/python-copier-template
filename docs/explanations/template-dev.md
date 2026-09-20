@@ -456,6 +456,57 @@ unaffected leaves as a continuous soundness probe of Layer A; a mismatch
 means the semantic diff missed a flow, and that is a bug in this tool, not
 in your change.
 
+## Structured answers: lists the user can edit
+
+`questions/_structured.yml` holds two answers whose value is a list rather
+than a scalar: `dependencies` (rendered into `[project] dependencies`) and
+`src_dirs` (the `src/` sub-directories). Both are **asked questions with a
+derived default**, and that shape is forced by copier, not chosen for style:
+
+- A question whose `when` is false is *hidden*, and copier drops hidden names
+  from `.copier-answers.yml` (`Worker._answers_to_remember` filters
+  `self.answers.hidden`). A `when: false` list therefore cannot be recorded —
+  it is recomputed on every render and can never be edited in the answers
+  file. It also cannot be injected from there: a value placed in the file for
+  a hidden question is ignored, while `--data` does reach it. So the lists are
+  ordinary questions: copier writes them, and a copy of the file is what the
+  user edits.
+- The questionnaire's own **forward-only rules** decide where the fragment
+  goes. `test_question_references_are_forward_only` requires an asked
+  question's `default` to reference only earlier variables, so
+  `questions/_structured.yml` is the **last `!include`** — after
+  `questions/_internal.yml`, whose `*_effective` internals and `ds_stack` /
+  `pkg_scaffold` the derived defaults read.
+- A `_`-prefixed name is a copier *setting*, not a question: `_derived_*`
+  keys are silently swallowed by the loader and never become questions (the
+  default then renders as `None`). Hence `derived_dependencies` /
+  `derived_src_dirs`.
+- `{% set %}` locals inside a `default:` expression are legitimate, but
+  `test_when_and_default_reference_defined_variables` needs to know about
+  them: `_question_local_vars()` collects the names questions bind, the same
+  allowance templates already had. Jinja filter/test names used in a
+  validator (`trim`, `first`) belong in `ALLOWED_NON_KEYS`.
+
+The `src_dirs` list drives **two** mechanisms, because neither alone is
+sufficient:
+
+- The template tree materializes the known vocabulary as conditionally-named
+  directories — `{% if src_dirs %}src{% endif %}/{% if 'data' in src_dirs %}data{% endif %}/.gitkeep`.
+  A directory whose name renders empty is dropped by copier, so the tree
+  renders exactly the selected sentinels and no `src/` at all for an empty
+  list. This keeps `skip_tasks=True` renders (every test and the witness sweep)
+  faithful.
+- A **file tree cannot name an arbitrary directory**, so a `_tasks` entry
+  creates the rest (`mkdir -p` + `.gitkeep`, idempotent, skipped when the list
+  is empty). Values travel as argv rather than interpolated into Python source
+  — quoting a list into a `python -c` string is the trap that broke the first
+  implementation.
+
+The render must stay byte-identical to the pre-refactor template for every
+existing answer set: the dependency list is pinned by
+`tests/test_structured_answers.py`, and the data-science sentinels by
+`tests/test_example_data_science.py`.
+
 ## Accumulate ethics/regional/operational rules as sections first
 
 Field rules (a retired public NTP, a telecom secrecy duty, a regional

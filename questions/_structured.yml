@@ -1,0 +1,125 @@
+# The structured-data pair (TODO.md §30): the dependency list and the src/
+# directory list, as *questions* whose defaults are derived from the rest of
+# the questionnaire.
+#
+# Why questions and not `when: false` internals, even though the value is
+# derived and the user is not expected to type it: copier hides a skipped
+# question and drops hidden names from `.copier-answers.yml`
+# (`Worker._answers_to_remember`), so a computed answer can neither be
+# recorded nor edited. Making them asked questions is what puts both lists
+# in the answers file, which is the point -- a user edits the file and
+# re-runs, no questionnaire round-trip. The mechanism, its measurements and
+# the workflow are documented in docs/reference/answers-file.md and
+# docs/explanations/template-dev.md ("Structured answers").
+#
+# Include order: this fragment is the LAST `!include`, so every variable the
+# derived defaults read (no_pkg / kaggle / web_api / the *_effective flags /
+# ds_stack / pkg_scaffold) is already defined. Copier resolves a question's
+# `default` when it is reached in ask order, and
+# tests/test_copier_structure.py::test_question_references_are_forward_only
+# enforces exactly that.
+
+# The derived dependency list, as a YAML list of PEP 508 strings. NOT
+# underscore-prefixed: copier reads `_`-prefixed keys as template settings,
+# not questions, so `_derived_dependencies` would be dropped from the
+# questionnaire entirely (the default then renders as None). Built with
+# `{% set %}` + append so the branches read as data rather than as one
+# concatenated expression: the previous form was a single ~1800-character
+# Jinja line in _shared/pyproject-deps.toml.jinja, which is what made "what
+# does this project actually depend on" unanswerable without rendering it.
+# The rendered result must stay byte-identical (values, order, and the
+# trailing comma the template's one-line list format carries), which
+# tests/test_structured_answers.py pins.
+derived_dependencies:
+    type: yaml
+    default: |-
+        {%- set d = [] -%}
+        {%- if not no_pkg -%}
+        {%- if kaggle or log_library == 'structlog' %}{% set _ = d.append("structlog") %}{% elif log_library == 'loguru' %}{% set _ = d.append("loguru") %}{% elif log_library == 'picologging' %}{% set _ = d.append("picologging") %}{% endif -%}
+        {%- endif -%}
+        {%- if sphinx %}{% set _ = d.append("requests") %}{% endif -%}
+        {%- if web_api -%}
+        {%- set _ = d.extend(["alembic>=1.13,<2", "asgi-correlation-id>=4.3,<6", "asyncpg>=0.29,<1", "fastapi>=0.115,<1", "pydantic-settings>=2.2.1", "sqlalchemy[asyncio]>=2.0,<3", "uvicorn[standard]>=0.30,<1"]) -%}
+        {%- endif -%}
+        {%- if prometheus_effective %}{% set _ = d.append("prometheus-client>=0.20,<1") %}{% endif -%}
+        {%- if rate_limit_effective %}{% set _ = d.append("slowapi>=0.1.9,<1") %}{% endif -%}
+        {%- if kaggle -%}
+        {%- set _ = d.extend(["hydra-core>=1.3.2", "lightgbm>=4.3", "omegaconf>=2.3", "optuna>=4.0", "pandas>=2.2,<3", "pydantic>=2.6", "pydantic-settings>=2.2.1", "pyyaml>=6.0", "rich>=13.0", "torch>=2.12", "torchvision>=0.27", "typer", "xgboost"]) -%}
+        {%- endif -%}
+        {%- if scraping_httpx_effective and pkg_scaffold %}{% set _ = d.append("httpx>=0.27,<1") %}{% endif -%}
+        {%- if scraping_scrapy_effective %}{% set _ = d.append("scrapy>=2.11,<3") %}{% endif -%}
+        {%- if scraping_memorious_effective %}{% set _ = d.append("memorious4>=4.0,<5") %}{% endif -%}
+        {%- if scraping_playwright_effective %}{% set _ = d.append("playwright>=1.49,<2") %}{% endif -%}
+        {%- if cloud_provider == 'aws' %}{% set _ = d.extend(["boto3>=1.34", "botocore>=1.34"]) %}{% endif -%}
+        {%- if cloud_provider == 'gcp' %}{% set _ = d.append("google-cloud-storage>=2.14") %}{% endif -%}
+        {%- if cloud_provider == 'azure' %}{% set _ = d.append("azure-identity>=1.15") %}{% endif -%}
+        {%- if include_sentry %}{% set _ = d.append("sentry-sdk") %}{% endif -%}
+        {%- if mcp_effective %}{% set _ = d.append("mcp[cli]>=2.0,<3") %}{% endif -%}
+        {%- if bot_discord_effective %}{% set _ = d.append("discord.py>=2,<3") %}{% endif -%}
+        {%- if bot_slack_effective %}{% set _ = d.append("slack-bolt>=1.21,<2") %}{% endif -%}
+        {%- if bot_line_effective -%}
+        {%- set _ = d.append("line-bot-sdk>=3,<4") -%}
+        {%- if pkg_scaffold %}{% set _ = d.extend(["fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1"]) %}{% endif -%}
+        {%- endif -%}
+        {%- if bot_gmail_effective %}{% set _ = d.extend(["google-api-python-client>=2,<3", "google-auth>=2,<3", "google-auth-oauthlib>=1,<2"]) %}{% endif -%}
+        {%- if agent_scaffold %}{% set _ = d.extend(["pydantic-ai", "pydantic-settings>=2.2.1"]) %}{% endif -%}
+        {%- if ds_stack %}{% set _ = d.extend(["duckdb", "pyarrow", "polars>=0.20.15"]) %}{% endif -%}
+        {{ d }}
+    when: false
+
+# The derived src/ directory list: every src/ sub-directory the template
+# materializes as a *bare* sentinel (an empty dir holding only .gitkeep).
+# Those are exactly the ones a user may want to add or drop without editing
+# a template, so they are listed and list-driven. Directories that carry real
+# content are NOT here: kaggle's configs/ (train.yaml), notebook/
+# (explore.py) and utils/ (the pipeline modules), and pkg_scaffold's package
+# tree, each keep their own gates in the template -- a list cannot express
+# "this directory but with these files".
+derived_src_dirs:
+    type: yaml
+    default: |-
+        {%- set d = [] -%}
+        {%- if ds_stack %}{% set _ = d.extend(["data", "features", "models"]) %}{% endif -%}
+        {%- if data_science_layout %}{% set _ = d.append("visualization") %}{% endif -%}
+        {%- if kaggle %}{% set _ = d.extend(["input", "logs", "output", "scripts"]) %}{% endif -%}
+        {{ d }}
+    when: false
+
+dependencies:
+    type: yaml
+    default: "{{ derived_dependencies }}"
+    help: |
+        Runtime dependencies, as a YAML list.
+
+        The list shown is *derived* from your other answers (project type,
+        web_api, logging library, MCP, scraping, bots, cloud, data-science
+        stack). It is editable: add your own entries as PEP 508 strings
+        (`"httpx>=0.27"`, `"pandas"`), or delete a derived one you do not
+        want. Entries render into `[project] dependencies` verbatim, and
+        `.copier-answers.yml` records the result, so later edits to the
+        answers file are picked up by `copier recopy` without re-answering
+        the questionnaire.
+
+        Accept the shown list to keep the derived set.
+    validator: >-
+        {% if dependencies | trim | first not in '[{' %}
+        Expected a YAML list, e.g. ["structlog", "httpx>=0.27"]. Got: {{ dependencies }}
+        {% endif %}
+
+src_dirs:
+    type: yaml
+    default: "{{ derived_src_dirs }}"
+    help: |
+        Directories to create under `src/`, as a YAML list.
+
+        The list shown is *derived* from your project type (the data-science
+        layout's `data` / `features` / `models` / `visualization`, the Kaggle
+        workspace's `input` / `logs` / `output` / `scripts`). Add your own, e.g.
+        `experiments` or `pipelines`; each is created with a `.gitkeep` so git
+        tracks it. Edits to the answers file are picked up by `copier recopy`.
+
+        Accept the shown list to keep the derived set.
+    validator: >-
+        {% if src_dirs | trim | first not in '[{' %}
+        Expected a YAML list, e.g. ["data", "features"]. Got: {{ src_dirs }}
+        {% endif %}

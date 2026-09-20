@@ -117,7 +117,7 @@ flowchart TD
     G_security -->|No| G_security_no["ask: license_check, security_policy, scorecard"]
     G_security_yes --> PD
     G_security_no --> PD
-    PD["Project details: package_name, description, git_platform, github_org,<br/>gitlab_group, repo_name, distribution_name, author_name,<br/>author_email"]
+    PD["Project details: package_name, description, git_platform, github_org,<br/>gitlab_group, repo_name, distribution_name, author_name,<br/>author_email, dependencies, src_dirs"]
     PD --> End([Generate project])
 ```
 <!-- END GENERATED: features-mermaid -->
