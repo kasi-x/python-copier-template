@@ -1888,6 +1888,11 @@ regression that only breaks install or run is not caught there.</p>
 <td><code>best_effort</code></td>
 <td>only cli/gate=off:use_recommended_agent is in the sample; the remaining gate-off branches are fast-tier renders, not executions</td>
 </tr>
+<tr>
+<td><code>any domain-trait variant (domain_traits selects face-recognition and/or medtech)</code></td>
+<td><code>best_effort</code></td>
+<td>the domain traits route ethics sections and one dependency; the derived variants render and ruff-check in the fast tier, and the sections' presence is asserted by the ethics-appendix predicate there rather than by executing a project</td>
+</tr>
 </tbody>
 </table>
 <h2 id="tier-policy">Tier policy<a class="headerlink" href="#tier-policy" title="Permanent link">&para;</a></h2>
@@ -1933,6 +1938,11 @@ today because every declared leaf has a recorded fast-tier run.</p>
 <td><code>project_type=online_judge/.../oj=*</code></td>
 <td><code>fast</code></td>
 <td>AtCoder carries the execution sample; leetcode / yukicoder / aoj / ctf / kaggle are render-only</td>
+</tr>
+<tr>
+<td><code>project_type=*/.../domain=* (domain_traits variants)</code></td>
+<td><code>fast</code></td>
+<td>a domain trait adds an ethics section (and for face-recognition a dependency) and no artifact: its presence is the ethics-appendix predicate's business, which render + ruff-check already exercises. The co-occurrence leaf is what the additivity check compares against the solo ones</td>
 </tr>
 <tr>
 <td><code>(reserved) no class today</code></td>
