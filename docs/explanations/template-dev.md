@@ -552,8 +552,13 @@ forms:
   (`mcp_effective`), `ml-bias` (the data-science layout, kaggle). The
   `ethics-appendix` content predicate in `tests/test_render_invariants.py`
   holds the rendered guide to exactly those conditions. A section whose
-  audience outruns its channel stays draft — `pki-chain` needs a channel
-  that reaches micropython, which AGENTS.md does not render for.
+  audience outruns its channel stays draft. The first such case resolved
+  (2026-09-21) by growing the channel instead of the questionnaire:
+  `pki-chain` needed one that reaches micropython, so AGENTS.md now renders
+  for every project type (ros2 / micropython / online_judge included — there
+  the guide's AI wording defers to the contest rules, with `oj_allow_ai`
+  picking the sentence where the judge asks), and the section promotes onto
+  that channel.
 
 Enforced by `tests/test_ethics_registry.py` (row shape incl. scale /
 audience, header agreement, body scale line, draft isolation, the

@@ -152,10 +152,12 @@ DOMAIN_TRAIT_CHOICES: tuple[str, ...] = ("personal-data", "face-recognition", "m
 
 # The leaves the domain variants are hosted on: the two ids whose answers put
 # them on either side of the pair a domain trait can interact with (does the
-# render carry AGENTS.md at all, and does the data-science layout hold -- the
-# second decides whether the medtech trait also lands the CARE sheet in
-# data/). Every other leaf renders the same domain appendix as one of these,
-# so hosting more would cost leaves without covering a new case.
+# project kind carry an src/ package or not, and does the data-science layout
+# hold -- the second decides whether the medtech trait also lands the CARE
+# sheet in data/. AGENTS.md itself stopped being the discriminator when it
+# became a constant true on 2026-09-21). Every other leaf renders the same
+# domain appendix as one of these, so hosting more would cost leaves without
+# covering a new case.
 DOMAIN_TRAIT_HOSTS: frozenset[str] = frozenset(
     {
         "project_type=data_science/gate=recommended",
@@ -516,10 +518,9 @@ def _answer_axis_variants(base_leaves: list[Leaf]) -> list[Leaf]:
     duties, and no test could see two selections interact.
 
     Hosted on DOMAIN_TRAIT_HOSTS rather than on every leaf: what they can
-    differ by is the project type carrying AGENTS.md and whether the
-    data-science layout holds, and the two hosts cover both sides of that
-    pair (data_science: the layout side, where CARE also lands; cli: no
-    layout). Hosting every leaf would add ~700 leaves for no new coverage.
+    differ by is whether the data-science layout holds (data_science: the
+    layout side, where CARE also lands; cli: no layout). Hosting every leaf
+    would add ~700 leaves for no new coverage.
 
     `base_leaves` is never appended to -- the variants are returned, so a
     variant cannot be re-hosted on itself (the duplicate ids this replaced).

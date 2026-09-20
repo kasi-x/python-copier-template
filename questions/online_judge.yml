@@ -38,9 +38,10 @@ oj_kind:
           submit).
         - ctf: CTF competitions. A participant workspace (challenges/ with a
           solve.py starter, pwntools / z3-solver via the ctf extra).
-        (Kaggle projects always allow AI coding agents; AtCoder / LeetCode
-        ask `oj_allow_ai` next, which decides whether AGENTS.md is generated;
-        yukicoder / AOJ omit it.)
+        (Kaggle projects always allow AI coding agents; every judge's
+        AGENTS.md defers to the contest rules — AtCoder / LeetCode ask
+        `oj_allow_ai` next to pick the guide's AI wording, the other judges
+        get the check-the-rules wording.)
     choices: |
         {%- if oj_category == 'competitive_coding' %}
         - atcoder
@@ -111,7 +112,10 @@ oj_allow_ai:
     default: false
     help: |
         Is AI assistance (coding agents, code completion) allowed for this judge?
-        Answer Yes only if the judge's rules allow it: an AGENTS.md agent guide
-        is generated. Answer No (or leave it) and AGENTS.md is omitted to keep
-        the workspace rules-compliant.
-        (Kaggle always ships AGENTS.md; yukicoder / AOJ never ask this and omit it.)
+        Answer Yes only if the judge's rules allow it. AGENTS.md is always
+        generated; this answer picks its wording — Yes states the judge permits
+        AI assistance, No states submissions must stay hand-written and the
+        agent must not produce them. Either way, check the contest's current
+        rules before submitting; they override this answer.
+        (Kaggle always allows AI; yukicoder / AOJ never ask this and get the
+        check-the-rules wording.)

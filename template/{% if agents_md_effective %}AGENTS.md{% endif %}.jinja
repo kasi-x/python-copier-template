@@ -12,6 +12,14 @@ guide is [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 > Code-submission workspace ({{ oj_kind }}): write solutions as single files
 > (e.g. `main.py`). Per-problem folders and `test/` sample cases are created
 > by the judge CLI at runtime — do not commit downloaded cases.
+{% if oj_allow_ai %}
+> The judge's rules permit AI assistance, so agents may help build and
+> debug here. Rules override this statement: re-check them before submitting.
+{% else %}
+> Contest rules govern AI use, and they vary per contest — some ban
+> AI-generated answers outright. Do not produce submissions before the
+> current rules for {{ oj_kind }} have been checked and allow it.
+{% endif %}
 {% elif oj_ctf %}
 > CTF participant workspace: per-problem starters live in
 > `challenges/<category>/<problem>/solve.py`. Run one directly
@@ -39,9 +47,12 @@ The `{{ task_runner_effective }}` task runner drives the common commands:
 {% for task_name in _t.agent_cmd_specs if task_name in (_t.tasks | map(attribute='name')) and (task_runner_effective == 'task' or task_name != 'type-check') %}{{ _t.agent_prefix }} {% if task_name in _t.agent_commented %}{{ task_name }}{{ (15 - (task_name | length)) * ' ' }}# {{ _t.agent_cmd_specs[task_name] }}{% else %}{{ task_name }}{% endif %}
 {% endfor %}```
 
-Run `{{ task_runner_effective }} fix` before committing to apply formatting
+{% if 'fix' in (_t.tasks | map(attribute='name')) %}Run `{{ task_runner_effective }} fix` before committing to apply formatting
 and lint fixes, then `{{ task_runner_effective }} check` (or `lint` + `test`
 {% if 'type-check' in (_t.tasks | map(attribute='name')) %}+ `type-check` {% endif %}individually) before finishing a change.
+{% else %}Run `{{ task_runner_effective }} check` (or its steps — `lint`, `build`, `test` —
+individually) before finishing a change.
+{% endif %}
 The repo-hygiene checks (secrets, workflow linting, YAML validity,
 conventional commit messages) run in CI, not as local hooks — the lint and
 fix tasks work anywhere, including outside a git repository.
@@ -97,11 +108,12 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
 ## Field rules (ethics appendix)
 
 Field rules the generator matched to this project kind (crypto choices,
-dependency license drift, data-collection copyright, LLM/MCP tool
-security, model-evaluation fairness), plus the rules your `domain_traits`
+dependency license drift, data-collection copyright, PKI trust-chain
+hygiene, LLM/MCP tool security, model-evaluation fairness), plus the
+rules your `domain_traits`
 answer selected (personal data, biometric identification, medical device
 software), and the EU Cyber Resilience Act's duties where the project is
 sold or packaged as a product. Each section opens with a scope blockquote: if its triggers do
 not apply to the code you are editing, skip that section. Sections are
 written in Japanese.
-{% include "_shared/ethics/baseline/license-drift.md.jinja" %}{% if 'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits %}{% include "_shared/ethics/baseline/personal-data.md.jinja" %}{% endif %}{% if project_type in ['library', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pqc-fips.md.jinja" %}{% endif %}{% if project_type == 'cli' or data_science_layout %}{% include "_shared/ethics/baseline/copyright-ai.md.jinja" %}{% endif %}{% if mcp_effective %}{% include "_shared/ethics/domain/llm-appsec.md.jinja" %}{% endif %}{% if ds_stack %}{% include "_shared/ethics/domain/ml-bias.md.jinja" %}{% endif %}{% if 'face-recognition' in domain_traits %}{% include "_shared/ethics/domain/face-recognition.md.jinja" %}{% endif %}{% if 'medtech' in domain_traits %}{% include "_shared/ethics/sector/samd-regulatory.md.jinja" %}{% endif %}{% if 'commercial' in distribution %}{% include "_shared/ethics/region/eu-cra.md.jinja" %}{% endif -%}
+{% include "_shared/ethics/baseline/license-drift.md.jinja" %}{% if project_type in ['micropython', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pki-chain.md.jinja" %}{% endif %}{% if 'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits %}{% include "_shared/ethics/baseline/personal-data.md.jinja" %}{% endif %}{% if project_type in ['library', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pqc-fips.md.jinja" %}{% endif %}{% if project_type == 'cli' or data_science_layout %}{% include "_shared/ethics/baseline/copyright-ai.md.jinja" %}{% endif %}{% if mcp_effective %}{% include "_shared/ethics/domain/llm-appsec.md.jinja" %}{% endif %}{% if ds_stack %}{% include "_shared/ethics/domain/ml-bias.md.jinja" %}{% endif %}{% if 'face-recognition' in domain_traits %}{% include "_shared/ethics/domain/face-recognition.md.jinja" %}{% endif %}{% if 'medtech' in domain_traits %}{% include "_shared/ethics/sector/samd-regulatory.md.jinja" %}{% endif %}{% if 'commercial' in distribution %}{% include "_shared/ethics/region/eu-cra.md.jinja" %}{% endif -%}

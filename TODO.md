@@ -18,13 +18,26 @@
   - online_judge は実行環境としては script/cli と同じだが、大会ごとに
     「AI コーディングエージェントの利用可否」が異なり、生成物に AGENTS.md を
     置く/置かないが変わる。これは実行環境軸とは独立した第一級の違い。
+    - 2026-09-21 更新: AGENTS.md は全判定で常時生成に変更（本 bullet の
+      「置く/置かない」は本文の**文言**が変わることを指すようになった）。
+      ファイルの有無を軸にしなくなっても、規約の軸は project_type /
+      oj_kind / oj_allow_ai に残るため project_type の設計は変わらない。
   - 逆に、実行環境も AI 規約も同じなら project_type を増やさない。
     CTF、botter（discord / slack / LINE / Gmail）、data_science の拡充、SRE、FastHTML 等は
     「既存 project_type の上に載るレイヤー / 亜種」として扱う。増やしたい要求は
     必ず「既存の何の上に載るか」を答えてから設計する。
 - **AI コーディングエージェント向けの指示（AGENTS.md）は、デフォルトで全プロジェクトに置く**
   - library / cli / web_api / data_science / script / kaggle には常時生成。
-  - AI 利用 NG の online_judge タイプには置かない（規約遵守のため）。
+  - 2026-09-21 方針変更: **ros2 / micropython / online_judge にも常時生成**
+    （`agents_md_effective` は定数 true）。旧合意「AI 利用 NG の online_judge
+    には置かない / ros2・micropython は build がスコープ外」は廃止。
+    - online_judge: `oj_allow_ai`（atcoder/leetcode のみ提示）は生成の有無
+      ではなく**本文の文言を選ぶフラグ**に転用。Yes は「AI 利用可、ただし
+      規約が上位」、No は「提出は手書きで行え」を記載し、共通で「提出前に
+      大会の現行規約を確認せよ」を置く。yukicoder/AOJ は質問なしで
+      check-the-rules 文言。
+    - ros2 / micropython: PKIチェーン ethics セクションのチャネル確保が
+      動機（§29.B `baseline-pki-chain` の解消）。
   - 個別の ON/OFF 質問は作らない（内蔵の初期構成とする）。
 - **対象外の領域は web_django 方式で明示的に拒否する**
   - このテンプレートの守備範囲外（Ansible の IaC、Terraform/K8s、Django 等）は
@@ -437,24 +450,33 @@ rules as sections first」、レジストリは `_shared/ethics/REGISTRY.yml`。
 
 ### B. 残り draft の扱い（着手条件つきで保留）
 
-- **`baseline-pki-chain`**（PKIチェーン再編）: audience に IoT(micropython) を
-  含むが AGENTS.md は micropython/ros2 に生成されない＝チャネルが届かない。
-  「既存の何の上に載るか」への答えが未確定。候補: (i) firmware/README 相当への
-  付録（kind昇格）, (ii) micropython/ros2 にも AGENTS.md を出す方針変更（質問票の
-  既存合意と衝突するため却下方向）。AGENTS.md チャネルだけで足りるなら cli/web
-  に絞った部分昇格も可能だが、最小配布の軸と矛盾するので保留。
-- **`sector-samd-regulatory`**: data-science 全種に医療規制を配るのは過剰配布
-  （ほとんどの DS プロジェクトは医療でない）。「医療/ヘルスケアに触れるか」の
-  ドメイン信号が質問票に存在しない。`data_ethics`(CARE) 質問の拡張か、
-  新しい sector 質問か — 質問票を太らせる判断なのでユーザー合意待ち。
-- **`region-jp-external-transmission` / `region-eu-eaa`**: 展開地域を知る質問
-  （例: `target_markets`: any-of jp/eu/us…）がチャネルになる。ただし新質問は
-  葉次元を増やす（witness 再記録が必須）。2 セクションではバンドル条件
-  （3 セクション共有）に届かないため、米国等の 3 件目が集まってから質問化を
-  再検討する。`region-kyushu-ntp` は地域ではなく audience ゲート型なので
-  このバンドルには載らない（IoT/cli 向けチャネル課題は pki-chain と共通）。
-- **`baseline-copyright-ai` の法域拡張**: 保護期間の法域差はセクション内に
-  留めてあり、国別テーブル化（lang/ 辞書的な構造化データ）は未着手。
+- **`baseline-pki-chain`**: **2026-09-21 着地（active 昇格）**。候補 (ii) の
+  方針変更を採用 — ros2 / micropython / online_judge にも AGENTS.md を常時
+  生成するようになり（上の設計原則 bullet）、AGENTS.md 自身が旧 draft が
+  待っていたチャネルになった。gate は `project_type in ['micropython', 'cli']
+  or web_api`（registry audience `[iot, cli, web]`。iot→micropython の写像は
+  gate と ETHICS_SECTIONS selector の両側に同じ綴りで置き、registry 側は
+  人間語のまま）。ros2 は audience 外（own 行の content ペアでネガティブ
+  ピン）。検査は ethics-appendix 述語 + invariants.yml の micropython/cli/
+  web_api 行の `PKIチェーン` コンテンツペア + レジストリ親ピン。
+- **`sector-samd-regulatory`**: **2026-09-20 着地（active 昇格済み）**。
+  domain_traits の `medtech` 選択がゲート（ETHICS_SECTIONS の
+  samd-regulatory 行）。ここには記録として残す。
+- **`region-jp-external-transmission` / `region-eu-eaa`**: 保留継続。
+  - 元案: 展開地域を知る質問（`target_markets`: any-of jp/eu/us…）を新設。
+    ただし新質問は葉次元を増やす（witness 再記録が必須）。
+  - 2026-09-21 の次候補（質問化しないチャネル）: **各国ルールの参照ファイル
+    を生成物に同梱し、AGENTS.md から随時参照させる**方式。lang/ 辞書
+    （copyright-terms.yml と同型の構造化データ）をレンダしてプロジェクトに
+    置き、ガイドは「対象地域の節を読め」と案内するだけ。質問追加ゼロで
+    葉空間は動かない。3 件目の地域セクション（米国州法系など）が集まったら
+    この方式で昇格を再検討する。`region-kyushu-ntp` は地域ではなく
+    audience ゲート型なのでこのバンドルには載らない。
+- **`baseline-copyright-ai` の法域拡張**: **2026-09-21 着地**。保護期間の
+  法域差を `_shared/ethics/lang/copyright-terms.yml`（8 法域・戦時加算を
+  データ化・1次出典付き・review_by を registry 行と同期）に構造化。
+  ガードは test_ethics_registry.py の copyright-terms テスト、セクション
+  本文からテーブルへ逆参照し drift を防ぐ。
 
 ### C. enforcement の引き上げ候補（L0 → L1/L2）
 

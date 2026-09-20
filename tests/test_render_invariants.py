@@ -620,8 +620,8 @@ def _task_runner(root: Path) -> TaskRunner | None:
 def _agents_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
     """Predicate 2: the AGENTS.md command table vs the render's task model."""
     path = root / "AGENTS.md"
-    if not path.exists():
-        return []  # no agent guide is rendered for online_judge, ros2 and micropython
+    if not path.exists():  # defensive: agents_md_effective is a constant true today
+        return []
     block = re.search(r"```sh\n(.*?)```", path.read_text(), re.DOTALL)
     if block is None:
         return [f"{leaf.id}: AGENTS.md ships no sh command table"]
@@ -772,6 +772,14 @@ def _copyright_trait(answers: dict[str, object]) -> bool:
     return answers.get("project_type") == "cli" or _data_science_layout_trait(answers)
 
 
+def _pki_trait(answers: dict[str, object]) -> bool:
+    """The PKI-chain audience: micropython (the registry's `iot`), cli, or the
+    web_api scaffold. The iot→micropython mapping lives here and in
+    AGENTS.md.jinja's gate, spelled the same way on both sides; the registry
+    keeps `iot` as the human-readable word (long-lived clients pinning certs)."""
+    return answers.get("project_type") in ("micropython", "cli") or _web_api_trait(answers)
+
+
 def _domain_traits(answers: dict[str, object]) -> set[str]:
     """The `domain_traits` multiselect's answer, as a set.
 
@@ -846,6 +854,7 @@ def _commercial_selector(answers: dict[str, object]) -> bool:
 
 ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
     "license-drift": ("ライセンス変動", lambda answers: True),
+    "pki-chain": ("PKIチェーン", _pki_trait),
     "personal-data": ("個人データ", _personal_data_selector),
     "pqc-fips": ("PQC標準", _crypto_trait),
     "copyright-ai": ("AIと著作権", _copyright_trait),
@@ -860,8 +869,8 @@ ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
 def _ethics_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
     """Predicate 5: the AGENTS.md ethics appendix vs the kind's selected sections."""
     path = root / "AGENTS.md"
-    if not path.exists():
-        return []  # no agent guide is rendered for online_judge, ros2 and micropython
+    if not path.exists():  # defensive: agents_md_effective is a constant true today
+        return []
     counters.ethics_appendices += 1
     text = path.read_text(encoding="utf-8")
     problems: list[str] = []

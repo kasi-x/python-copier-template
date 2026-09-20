@@ -50,6 +50,9 @@
   checks, conventional commits, REUSE/CFF) runs in CI via the `_hygiene.yml`
   workflow instead of local git hooks.
 #}
+{% set agent_prefix = {
+    'task': 'task', 'just': 'just', 'make': 'make',
+    'poe': 'poe', 'invoke': 'invoke', 'duty': 'duty'}.get(task_runner_effective, 'pixi run -e dev') %}
 {% if ros2_pkg %}{% if ros2_package_manager == 'pixi' %}{% set run = '' %}
 {% set ros_source = '' %}
 {% else %}{% set run = m.run_prefix() %}
@@ -65,6 +68,13 @@
              ~ ' && ' ~ ros_source ~ 'colcon test-result --verbose']},
     {'name': 'check', 'desc': 'Run all quality checks', 'deps': ['lint', 'build', 'test']},
 ] %}
+{# The ros2 AGENTS.md presentation: no `fix` task (lint is check-only, edits
+   are human work) and no `type-check`, so the spec table is this branch's
+   own — the guide ships since 2026-09-21. #}
+{% set agent_cmd_specs = {'lint': 'ruff format --check + ruff check (check-only)',
+                          'test': 'the ament test suite with colcon',
+                          'check': 'lint + build + test'} %}
+{% set agent_commented = ['lint', 'test', 'check'] if task_runner_effective == 'task' else [] %}
 {% else %}{% set run = '' if task_runner_effective == 'pixi' else m.run_prefix() %}
 {% set run_x = '' if task_runner_effective == 'pixi' else (
     'uv run --extra experiment --locked ' if package_manager == 'uv' else (
@@ -218,9 +228,6 @@
                           'test': 'pytest',
                           'type-check': 'type checker + static analysis',
                           'check': 'everything above'} %}
-{% set agent_prefix = {
-    'task': 'task', 'just': 'just', 'make': 'make',
-    'poe': 'poe', 'invoke': 'invoke', 'duty': 'duty'}.get(task_runner_effective, 'pixi run -e dev') %}
 {% set agent_commented = ['fix', 'lint', 'test', 'type-check', 'check'] if task_runner_effective == 'task' else (['fix'] if task_runner_effective == 'just' else []) %}
 {% endif %}
 

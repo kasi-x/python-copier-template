@@ -88,7 +88,7 @@ sections:
 
   - id: baseline-pki-chain
     file: _shared/ethics/baseline/pki-chain.md.jinja
-    version: 2026-09-18.1
+    version: 2026-09-21.1
     effective: 2024-06-06
     review_by: 2026-12-18
     sources:
@@ -101,10 +101,10 @@ sections:
     scale: global
     audience: [iot, cli, web]
     enforcement: L0
-    status: draft
-    rendered_from: []
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
     superseded_by: null
-    why: "Chain-of-trust rewrites (DST Root CA X3 gone 2024-09, ISRG Root X2 cross-sign gone 2025-09, CDNs rotating issuers) break hardcoded intermediates and single-key pins."
+    why: "Chain-of-trust rewrites (DST Root CA X3 gone 2024-09, ISRG Root X2 cross-sign gone 2025-09, CDNs rotating issuers) break hardcoded intermediates and single-key pins. Active since 2026-09-21: AGENTS.md now renders for micropython/ros2/online_judge too, so the guide itself is the channel the former draft was waiting for (iot maps to micropython by the AGENTS.md gate; ros2 stays outside the audience by its own condition)."
 
   - id: baseline-license-drift
     file: _shared/ethics/baseline/license-drift.md.jinja

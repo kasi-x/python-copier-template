@@ -423,17 +423,17 @@ import_pkg:
     default: "{{ 'app' if web_api else package_name }}"
     when: false
 
-# AGENTS.md effective setting. The library / cli / script bases and the
-# web_api / data_science layers (including combo opt-ins) always ship the
-# agent guide; kaggle competitions always allow AI; bare code-submission
-# workspaces (oj_code) ship it only when oj_allow_ai was answered Yes
-# (asked for atcoder / leetcode; yukicoder / AOJ keep its default false).
-# ros2 / micropython never ship it: their build (colcon / firmware) is
-# outside this guide's scope. Placed LAST: it references web_api /
-# data_science above plus the genre internals from
-# questions/online_judge.yml (copier evaluates when:false in definition
-# order, so every referenced internal must be earlier).
+# AGENTS.md effective setting. Every project ships the agent guide: the
+# library / cli / script bases, the web_api / data_science layers (including
+# combo opt-ins), ros2 / micropython (the 2026-09-21 policy change that gave
+# the PKI-chain ethics section its channel), and online_judge too — there the
+# guide's AI wording defers to the contest: oj_allow_ai (asked for atcoder /
+# leetcode) picks the sentence, and judges that never asked it get the
+# check-the-rules wording (kaggle and oj_ctf always allowed AI anyway).
+# Placed LAST so every internal it referenced must be earlier — the constant
+# keeps the position (copier evaluates when:false in definition order, and
+# future gating should go back through the genre internals).
 agents_md_effective:
     type: bool
-    default: "{{ project_type in ['library', 'cli', 'script'] or web_api or data_science or kaggle or oj_ctf or (oj_code and oj_allow_ai) }}"
+    default: true
     when: false

@@ -141,13 +141,13 @@ FLAG_TABLE: tuple[FlagRow, ...] = (
     ),
     _row(
         "online_judge",
-        frozenset({"license_check_effective"}),
-        note="(competitive_coding/atcoder, AI not allowed: no agent guide)",
+        frozenset({"agents_md_effective", "license_check_effective"}),
+        note="(competitive_coding/atcoder, AI not allowed: the guide still ships, oj_allow_ai now picks its wording)",
         oj_category="competitive_coding",
         oj_kind="atcoder",
     ),
-    _row("ros2", frozenset({"license_check_effective"})),
-    _row("micropython", frozenset({"license_check_effective"})),
+    _row("ros2", frozenset({"agents_md_effective", "license_check_effective"})),
+    _row("micropython", frozenset({"agents_md_effective", "license_check_effective"})),
 )
 
 

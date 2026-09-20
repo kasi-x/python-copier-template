@@ -1,5 +1,5 @@
 """online_judge: the bare judge workspaces (atcoder / leetcode / yukicoder /
-aoj / ctf) and the AGENTS.md presence rules that follow oj_allow_ai."""
+aoj / ctf) and the AGENTS.md wording rules that follow oj_allow_ai."""
 
 import tomllib
 from pathlib import Path
@@ -148,31 +148,38 @@ def test_template_agents_md_present_for_kaggle_and_opt_in_judges(tmp_path: Path)
     assert (leetcode_path / "AGENTS.md").exists()
 
 
-def test_template_agents_md_absent_for_ai_ng_judges(tmp_path: Path):
-    """AI-NG workspaces omit AGENTS.md and its README mention (byte-identical
-    renders apart from the pre-existing oj_kind branches)."""
+def test_template_agents_md_wording_follows_oj_allow_ai(tmp_path: Path):
+    """Every judge ships AGENTS.md since 2026-09-21; oj_allow_ai picks the
+    AI wording and the AI-NG judges get the check-the-rules sentence."""
     cases = [
-        ("atcoder", {}),
-        ("atcoder", {"oj_allow_ai": False}),
-        ("leetcode", {}),
-        ("yukicoder", {}),
-        ("aoj", {}),
+        ("atcoder", {"oj_allow_ai": True}, "The judge's rules permit AI assistance"),
+        ("atcoder", {}, "Contest rules govern AI use"),
+        ("atcoder", {"oj_allow_ai": False}, "Contest rules govern AI use"),
+        ("leetcode", {}, "Contest rules govern AI use"),
+        ("yukicoder", {}, "Contest rules govern AI use"),
+        ("aoj", {}, "Contest rules govern AI use"),
     ]
-    for index, (oj_kind, extra) in enumerate(cases):
+    for index, (oj_kind, extra, expected) in enumerate(cases):
         project_path = tmp_path / f"case_{index}"
         copy_project(
             project_path, project_type="online_judge", oj_category="competitive_coding", oj_kind=oj_kind, **extra
         )
-        assert not (project_path / "AGENTS.md").exists()
+        guide = (project_path / "AGENTS.md").read_text()
+        assert expected in guide, f"{oj_kind} {extra}: AGENTS.md lacks the {expected!r} wording"
+        assert "ライセンス変動" in guide, "the ethics appendix ships with the guide"
         readme = (project_path / "README.md").read_text()
-        assert "AGENTS.md" not in readme
+        assert "AGENTS.md" in readme
 
 
-def test_template_agents_md_absent_for_ros2_and_micropython(tmp_path: Path):
-    """ros2 / micropython never ship the agent guide."""
+def test_template_agents_md_ships_for_ros2_and_micropython(tmp_path: Path):
+    """ros2 / micropython ship the agent guide since 2026-09-21; micropython
+    is the registry's `iot` audience for PKI-chain, ros2 is not."""
     ros2_path = tmp_path / "ros2"
     copy_project(ros2_path, project_type="ros2", pkg_language="python", ros_distro="humble", ros2_package_manager="apt")
-    assert not (ros2_path / "AGENTS.md").exists()
+    ros2_guide = (ros2_path / "AGENTS.md").read_text()
+    assert "PKIチェーン" not in ros2_guide
+    assert "ライセンス変動" in ros2_guide
     micro_path = tmp_path / "micro"
     copy_project(micro_path, project_type="micropython", micropython_port="esp32")
-    assert not (micro_path / "AGENTS.md").exists()
+    micro_guide = (micro_path / "AGENTS.md").read_text()
+    assert "PKIチェーン" in micro_guide

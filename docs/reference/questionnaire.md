@@ -28,7 +28,7 @@ questions depend on it.
 - **data_science** — a data science project with notebooks, data/, models/, reports/ and experiment
   extras. GPU Dockerfile and Quarto paper are included.
 - **online_judge** — a competitive-programming / Kaggle project. The rules for AI coding agents
-  differ per judge, which decides whether an AGENTS.md file is generated.
+  differ per judge, and the agent guide's wording defers to them.
   Questions asked when this is the base type:
   - **`oj_category`** (str; default `data_science`) — Which competition category is this project
     for?

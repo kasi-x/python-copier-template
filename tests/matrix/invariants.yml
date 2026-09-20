@@ -163,6 +163,7 @@ leaf_classes:
       - [.github/workflows/ci.yml, postgres]
       - [pyproject.toml, fastapi]
       - [AGENTS.md, "PQC標準"]
+      - [AGENTS.md, "PKIチェーン"]
       - [AGENTS.md, "ライセンス変動"]
     why: "the FastAPI scaffold: the app lives in a top-level app/ package, so this row (not the project type's) owns the package directory"
 
@@ -201,6 +202,7 @@ leaf_classes:
     predicates: [agents-md, docs-nav]
     content:
       - [AGENTS.md, "PQC標準"]
+      - [AGENTS.md, "PKIチェーン"]
       - [AGENTS.md, "ライセンス変動"]
       - [AGENTS.md, "AIと著作権"]
     tier:
@@ -254,11 +256,11 @@ leaf_classes:
     select: {project_type: [online_judge]}
     ships: []
     absent: []
-    predicates: [docs-nav]
+    predicates: [agents-md, docs-nav]
     tier:
       name: full
       why: "one online-judge leaf (competitive_coding/atcoder) is in the full-tier sample; the other judges render only (see the oj_kind rows)"
-    why: "the judge-specific workspace is supplied by the oj_kind rows below; on its own the project type adds nothing"
+    why: "the judge-specific workspace is supplied by the oj_kind rows below; every judge now ships the agent guide, whose AI wording defers to the contest"
 
   - id: project_type=ros2
     select: {project_type: [ros2]}
@@ -266,22 +268,27 @@ leaf_classes:
       - package.xml
       - smoke_example/__init__.py
     absent: []
-    predicates: [docs-nav]
+    predicates: [agents-md, docs-nav]
+    content:
+      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: fast
       why: "render + ruff only: executing a ros2 leaf needs /opt/ros/$ROS_DISTRO on the runner"
-    why: "an ament_python package: package.xml plus the node module, never a src/ layout"
+    why: "an ament_python package: package.xml plus the node module, never a src/ layout. The agent guide ships since 2026-09-21 (all types do); PKI-chain's audience is iot/cli/web, not ros2"
 
   - id: project_type=micropython
     select: {project_type: [micropython]}
     ships:
       - firmware/main.py
     absent: []
-    predicates: [docs-nav]
+    predicates: [agents-md, docs-nav]
+    content:
+      - [AGENTS.md, "PKIチェーン"]
+      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: full
       why: "recommended MicroPython path, executed end to end (~3 min): generated type checks pass against the micropython-*-stubs"
-    why: "the firmware layout: firmware/ instead of a Python package"
+    why: "the firmware layout: firmware/ instead of a Python package. The agent guide ships since 2026-09-21, and micropython is the registry's `iot` audience for PKI-chain"
 
   # -- online judges ------------------------------------------------------ #
   - id: oj_kind=kaggle
@@ -322,23 +329,24 @@ leaf_classes:
 
   - id: oj_kind=code
     select: {project_type: [online_judge], oj_kind: [atcoder, leetcode, yukicoder, aoj]}
-    ships: []
+    ships:
+      - AGENTS.md
     absent:
       - src
       - challenges
-      - AGENTS.md
     markers:
-      # The bare workspace: README.md is all a code-submission leaf ships
-      # beyond the common layout.
-      ships: [README.md]
-      absent: [src, challenges, AGENTS.md]
-    predicates: []
+      # The bare workspace: README.md and the agent guide are all a
+      # code-submission leaf ships beyond the common layout.
+      ships: [README.md, AGENTS.md]
+      absent: [src, challenges]
+    predicates: [agents-md]
     content:
       - [pyproject.toml, "dependencies = []"]
+      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: fast
       why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj are render-only"
-    why: "competitive-programming judges ship a bare workspace: no package, no challenges, and no agent guide (oj_allow_ai defaults to no)"
+    why: "competitive-programming judges ship a bare workspace: no package and no challenges. The agent guide ships since 2026-09-21; its AI wording defers to the contest (oj_allow_ai picks the sentence where it was asked, the check-the-rules wording where it was not)"
 
   # -- opt-in layers ------------------------------------------------------ #
   - id: include=include_data_science

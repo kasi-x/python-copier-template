@@ -31,8 +31,8 @@ project_type:
           models/, reports/ and experiment extras. GPU Dockerfile and
           Quarto paper are included.
         - online_judge: a competitive-programming / Kaggle project. The
-          rules for AI coding agents differ per judge, which decides
-          whether an AGENTS.md file is generated.
+          rules for AI coding agents differ per judge, and the agent
+          guide's wording defers to them.
         - script: a minimal script, no package layout.
         - ros2: a ROS 2 package (ament_python or ament_cmake). Built with
           colcon + rosdep; not a uv/pixi/poetry project.
