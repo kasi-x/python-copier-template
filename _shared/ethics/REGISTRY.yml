@@ -120,6 +120,25 @@ sections:
     superseded_by: null
     why: "OWASP LLM Top 10 entry numbers move per edition (excessive agency was a different slot in 2023-24); reference by name, and gate destructive tool actions behind human approval."
 
+  - id: domain-face-recognition
+    file: _shared/ethics/domain/face-recognition.md.jinja
+    version: 2026-09-20.1
+    effective: 2025-02-02
+    review_by: 2027-03-31
+    sources:
+      - https://nvlpubs.nist.gov/nistpubs/ir/2019/NIST.IR.8280.pdf
+      - https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+      - https://www.ilga.gov/legislation/ilcs/ilcs3.asp?ActID=3004
+      - https://eur-lex.europa.eu/eli/reg/2016/679/oj
+    scope: {jurisdiction: [], sector: [], category: [biometrics]}
+    scale: global
+    audience: [data-science, web, cli, mcp]
+    enforcement: L1
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    superseded_by: null
+    why: "NIST FRVT Part 3 found false-positive rates differing by orders of magnitude across demographic groups, so a single matching threshold converts a measurement gap into an operational one; EU AI Act art. 5 bans several face-recognition uses outright (untargeted scraping, workplace/education emotion recognition, real-time public biometric ID), and BIPA/GDPR make the template store and consent terms legal duties rather than design taste. L1: tools/ethics.py's presence trigger fires on the code vocabulary, and invariants.yml's ethics-appendix predicate asserts the section appears exactly where the audience matches."
+
   - id: domain-ml-bias
     file: _shared/ethics/domain/ml-bias.md.jinja
     version: 2026-09-18.1
@@ -139,7 +158,7 @@ sections:
 
   - id: sector-samd-regulatory
     file: _shared/ethics/sector/samd-regulatory.md.jinja
-    version: 2026-09-18.1
+    version: 2026-09-20.1
     effective: 2024-12-04
     review_by: 2026-12-18
     sources:
@@ -148,12 +167,12 @@ sections:
       - https://eur-lex.europa.eu/eli/reg/2024/1689/oj
     scope: {jurisdiction: [], sector: [medtech], category: [regulatory]}
     scale: global
-    audience: [data-science, web]
-    enforcement: L0
-    status: draft
-    rendered_from: []
+    audience: [data-science, web, cli, mcp]
+    enforcement: L1
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
     superseded_by: null
-    why: "FDA's PCCP final guidance (2024-12), Japan's IDATEN and the EU MDR + AI Act stack all converge on one rule: continuous learning is allowed only inside a pre-approved change envelope, with humans deciding."
+    why: "FDA's PCCP final guidance (2024-12), Japan's IDATEN and the EU MDR + AI Act stack all converge on one rule: continuous learning is allowed only inside a pre-approved change envelope, with humans deciding. Promoted from draft when the domain_traits multiselect landed: the section was previously unroutable because 'medical' is a purpose, not a layout -- a health-data CLI or an MCP server exposing a clinical tool was in scope by the section's own 適用条件 while no gate could reach it. L1: tools/ethics.py's presence trigger fires on the clinical vocabulary, and invariants.yml's ethics-appendix predicate asserts the section appears exactly where the answer selects it."
 
   - id: region-jp-external-transmission
     file: _shared/ethics/region/jp-external-transmission.md.jinja

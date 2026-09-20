@@ -72,6 +72,9 @@ best_effort:
   - combination: "any detailed-question branch (gate=off:use_recommended_*)"
     tier: best_effort
     why: "only cli/gate=off:use_recommended_agent is in the sample; the remaining gate-off branches are fast-tier renders, not executions"
+  - combination: "any domain-trait variant (domain_traits selects face-recognition and/or medtech)"
+    tier: best_effort
+    why: "the domain traits route ethics sections and one dependency; the derived variants render and ruff-check in the fast tier, and the sections' presence is asserted by the ethics-appendix predicate there rather than by executing a project"
 
 tier_policy:
   - leaf_class: "project_type=*/gate=recommended (library, web_api, cli, data_science, script, micropython, online_judge)"
@@ -92,6 +95,9 @@ tier_policy:
   - leaf_class: "project_type=online_judge/.../oj=*"
     tier: fast
     why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj / ctf / kaggle are render-only"
+  - leaf_class: "project_type=*/.../domain=* (domain_traits variants)"
+    tier: fast
+    why: "a domain trait adds an ethics section (and for face-recognition a dependency) and no artifact: its presence is the ethics-appendix predicate's business, which render + ruff-check already exercises. The co-occurrence leaf is what the additivity check compares against the solo ones"
   - leaf_class: "(reserved) no class today"
     tier: none
     why: "every declared witness leaf has a recorded fast-tier run; tests/matrix/witnesses.json keeps the tier:none + reason hook as the future exclusion mechanism"

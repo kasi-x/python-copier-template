@@ -36,6 +36,7 @@ regression that only breaks install or run is not caught there.
 | `project_type=online_judge/.../oj=* except atcoder` | `best_effort` | the non-AtCoder judges (leetcode / yukicoder / aoj / ctf / kaggle) render and ruff-check in the fast tier but never get a venv; only atcoder is in the full sample |
 | `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api \| include_bot)` | `best_effort` | the layer leaves render and ruff-check in the fast tier; only the eight sampled leaves get the execution tier |
 | `any detailed-question branch (gate=off:use_recommended_*)` | `best_effort` | only cli/gate=off:use_recommended_agent is in the sample; the remaining gate-off branches are fast-tier renders, not executions |
+| `any domain-trait variant (domain_traits selects face-recognition and/or medtech)` | `best_effort` | the domain traits route ethics sections and one dependency; the derived variants render and ruff-check in the fast tier, and the sections' presence is asserted by the ethics-appendix predicate there rather than by executing a project |
 
 ## Tier policy
 
@@ -52,5 +53,6 @@ today because every declared leaf has a recorded fast-tier run.
 | `project_type=*/gate=off:use_recommended_* (detailed branches)` | `fast` | rendered and ruff-checked; the 3 m/leaf execution cost limits the full tier to the sample above |
 | `project_type=*/.../include=include_*` | `fast` | the opt-in layers (ctf / data_science / scraping / web_api / bot) are coverable by rendering: their artifacts are file-set invariants; the bot layer's real execution is tests/test_bot_layer.py's heavy case |
 | `project_type=online_judge/.../oj=*` | `fast` | AtCoder carries the execution sample; leetcode / yukicoder / aoj / ctf / kaggle are render-only |
+| `project_type=*/.../domain=* (domain_traits variants)` | `fast` | a domain trait adds an ethics section (and for face-recognition a dependency) and no artifact: its presence is the ethics-appendix predicate's business, which render + ruff-check already exercises. The co-occurrence leaf is what the additivity check compares against the solo ones |
 | `(reserved) no class today` | `none` | every declared witness leaf has a recorded fast-tier run; tests/matrix/witnesses.json keeps the tier:none + reason hook as the future exclusion mechanism |
 <!-- END GENERATED: support-matrix -->

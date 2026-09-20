@@ -169,10 +169,16 @@ def _template_local_vars(files: list[Path]) -> set[str]:
         for name, params in re.findall(r"\{%-?\s*macro\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)", text):
             local.add(name)
             local |= {p.split("=", 1)[0].strip() for p in params.split(",") if p.strip()}
-        # A loop may bind several names: {% for a, b in ... %}.
-        local |= set(
-            re.findall(r"\{%-?\s*for\s+([A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*)*)\s+in\b", text)
-        )
+        # A loop may bind several names: {% for a, b in ... %} binds `a` AND
+        # `b`, so the captured list is split rather than added whole. (It was
+        # added whole until a multi-name loop landed in _shared/macros.jinja
+        # and the undefined-variable check reported `name`; cliff.toml.jinja's
+        # `{% for group, commits in ... %}` had the same latent hole, its
+        # names simply never being referenced where the check looks.)
+        for bound in re.findall(
+            r"\{%-?\s*for\s+([A-Za-z_][A-Za-z0-9_]*(?:\s*,\s*[A-Za-z_][A-Za-z0-9_]*)*)\s+in\b", text
+        ):
+            local |= {part.strip() for part in bound.split(",") if part.strip()}
     return local
 
 

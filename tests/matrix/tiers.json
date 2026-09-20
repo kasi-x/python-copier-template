@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 974,
+      "collected": 985,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -48,7 +48,7 @@
         "tests/test_render_cache.py": 12,
         "tests/test_render_convention.py": 2,
         "tests/test_render_delta.py": 9,
-        "tests/test_render_invariants.py": 31,
+        "tests/test_render_invariants.py": 36,
         "tests/test_structured_answers.py": 11,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 10,
@@ -56,15 +56,15 @@
         "tests/test_update_path.py": 2,
         "tests/test_update_rehearsal.py": 3,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 240,
+        "tests/test_witness_matrix.py": 246,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "3daae8da6160832ff9b5bad38a04b28bcaf3c016629e992f2c0a77b1c86c8b76",
+      "ids_sha256": "f7e37ba6d6e41ed2e8aa8f786359768a8e9ee0305356d190267900970a915925",
       "wall_seconds": 18.6,
       "measured": "2026-09-20",
       "budget_seconds": 30,
       "command": "uv run --no-sync pytest -q -m \"not heavy and not slow and not meta and not network\"",
-      "note": "time uv run --locked pytest -q <the task's own selection> (974 tests; measured 2026-09-20 warm-cache on a 32-CPU box with light residual load. Growth this day: the structured answers (dependencies / src_dirs) with their 11-test module (959 -> 970), the tag-checkout guard (+2: 970 -> 972), and the composite-ordering / zizmor-allowlist guards (+2: 972 -> 974). 17.0s warm, 30.9s on a just-emptied render cache, inside the 30s budget the ledger check enforces on the warm number it records. History: 2026-09-20 measured 18.6s warm at 970 tests, 2026-09-19 measured 18.7s warm at 954 tests, 32.5s on a just-emptied render cache."
+      "note": "time uv run --locked pytest -q <the task's own selection> (985 tests; measured 2026-09-20 warm-cache on a 32-CPU box with light residual load. Growth this day: the structured answers (dependencies / src_dirs) with their 11-test module (959 -> 970), the tag-checkout guard (+2: 970 -> 972), the composite-ordering / zizmor-allowlist guards (+2: 972 -> 974), and the domain_traits work -- dependency identity checks, the unified ethics mapping, the face-recognition / medtech sections and the additivity check (+11: 974 -> 985). 18.0s warm, inside the 30s budget the ledger check enforces on the warm number it records. History: 2026-09-20 measured 18.6s warm at 970 tests, 2026-09-19 measured 18.7s warm at 954 tests, 32.5s on a just-emptied render cache."
     },
     "test-slow": {
       "task": "test-slow",
@@ -122,7 +122,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1041,
+      "collected": 1052,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -168,7 +168,7 @@
         "tests/test_render_cache.py": 12,
         "tests/test_render_convention.py": 2,
         "tests/test_render_delta.py": 10,
-        "tests/test_render_invariants.py": 31,
+        "tests/test_render_invariants.py": 36,
         "tests/test_structured_answers.py": 11,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 18,
@@ -176,10 +176,10 @@
         "tests/test_update_path.py": 6,
         "tests/test_update_rehearsal.py": 4,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 249,
+        "tests/test_witness_matrix.py": 255,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "6481c76074a3c6ba320cdf995cb0d423f208f50a41b6628eec6fe19c59e89c90",
+      "ids_sha256": "3e2dfaa63ce6051ace275fbff83e613aef215203e4260f440617b54871991781",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -188,7 +188,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 974,
+      "collected": 985,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -232,7 +232,7 @@
         "tests/test_render_cache.py": 12,
         "tests/test_render_convention.py": 2,
         "tests/test_render_delta.py": 9,
-        "tests/test_render_invariants.py": 31,
+        "tests/test_render_invariants.py": 36,
         "tests/test_structured_answers.py": 11,
         "tests/test_support_matrix.py": 5,
         "tests/test_task_runners.py": 10,
@@ -240,10 +240,10 @@
         "tests/test_update_path.py": 2,
         "tests/test_update_rehearsal.py": 3,
         "tests/test_when_model.py": 3,
-        "tests/test_witness_matrix.py": 240,
+        "tests/test_witness_matrix.py": 246,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "3daae8da6160832ff9b5bad38a04b28bcaf3c016629e992f2c0a77b1c86c8b76",
+      "ids_sha256": "f7e37ba6d6e41ed2e8aa8f786359768a8e9ee0305356d190267900970a915925",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",
@@ -255,11 +255,11 @@
       "workflow": ".github/workflows/witness.yml",
       "job": "fast",
       "expression": "fast",
-      "collected": 240,
+      "collected": 246,
       "files": {
-        "tests/test_witness_matrix.py": 240
+        "tests/test_witness_matrix.py": 246
       },
-      "ids_sha256": "706a90dd27076f198dc664df4d7e98d0c39ffe80ee7b3e106d917140cd5b02a7",
+      "ids_sha256": "b0728d795390ab977d3011e548e1a31bc28d66a1b9f3d61379661c71b53b915e",
       "wall_seconds": 16.9,
       "measured": "2026-09-18",
       "timeout_seconds": 1800,

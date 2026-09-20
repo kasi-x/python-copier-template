@@ -390,7 +390,17 @@ duo:
 
 care:
     type: bool
-    default: "{{ data_ethics and data_science_layout }}"
+    # CARE is the data-governance sheet that lives in data/, so it needs a
+    # data-science layout to have a home -- and it is reached two ways:
+    # `data_ethics` (the question asked under has_data_science) or the
+    # `medtech` domain trait. The trait alone is not enough: a medical web
+    # service or a clinical MCP tool has no data/ tree and no CARE sheet --
+    # the ethical substance it needs (human-in-the-loop, change envelopes,
+    # post-market monitoring) is the AGENTS.md SaMD section, which is selected
+    # by the same trait and needs no layout. That is why this is `or` on the
+    # trigger and `and` on the layout, rather than routing medtech into CARE
+    # itself.
+    default: "{{ (data_ethics or 'medtech' in domain_traits) and data_science_layout }}"
     when: false
 
 license_year:

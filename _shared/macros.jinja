@@ -3,7 +3,8 @@
 
        {% import "_shared/macros.jinja" as m with context %}
 
-   and call `m.run_prefix()` / `m.python_version()` / `m.classifiers()`.
+   and call `m.run_prefix()` / `m.python_version()` / `m.classifiers()` /
+   `m.experiment_pep508()` / `m.experiment_pixi()`.
    Never paste the literal values back into a consumer: each fact is written
    exactly once, here.
 
@@ -21,7 +22,39 @@
    (`else '>=3.11')`), while the value itself now lives in python_version()
    below — when tools/check_upstream.py is next touched (adding that pin was
    deferred from TODO §18 item 6, which this extraction implements), point
-   its floor regex at this file. #}
+   its floor regex at this file.
+
+   The experiment extra's dependencies live here for the same reason: they
+   were written twice — `experiment = [...]` (PEP 508) and
+   `[tool.pixi.feature.experiment.pypi-dependencies]` (pixi's `name = "spec"`
+   form) — so a bump meant editing both and nothing caught a miss. The two
+   consumers below derive from EXPERIMENT_PAIRS. `""` means "no version
+   floor": PEP 508 wants a bare `"name"`, pixi wants `"*"`, and each
+   formatter spells it as its own syntax wants.
+   test_render_invariants.py's dependency-identity check is the backstop: it
+   compares the rendered groups and fails when one distribution is pinned two
+   different ways, which is what a one-sided edit here would produce. #}
+{% set EXPERIMENT_PAIRS = [
+    ("httpx", ">=0.27,<1"),
+    ("ipykernel", ""),
+    ("marimo", ""),
+    ("matplotlib", ">=3.8"),
+    ("nbclient", ""),
+    ("nbstripout", ""),
+    ("openai", ">=2.53.0,<3"),
+    ("pendulum", ">=3.2.0,<4"),
+    ("plotly", ">=5.20"),
+    ("seaborn", ">=0.13.2"),
+    ("wandb", ">=0.16.4"),
+] %}
+{% macro experiment_pep508() -%}
+{% for name, spec in EXPERIMENT_PAIRS %}    "{{ name }}{{ spec }}",
+{% endfor %}
+{%- endmacro %}
+{% macro experiment_pixi() -%}
+{% for name, spec in EXPERIMENT_PAIRS %}{{ name }} = "{{ spec if spec else '*' }}"
+{% endfor %}
+{%- endmacro %}
 {% macro run_prefix() -%}{{ 'uv run --locked ' if package_manager == 'uv' else ('pixi run -e dev --locked ' if package_manager == 'pixi' else 'poetry run ') }}{%- endmacro %}
 {% macro python_version() -%}{{ '3.10' if ros2_pkg and ros_distro == 'humble' else ('3.12' if ros2_pkg and ros_distro == 'jazzy' else '3.11') }}{%- endmacro %}
 {% macro classifiers() -%}

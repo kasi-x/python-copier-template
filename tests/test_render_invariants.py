@@ -66,6 +66,7 @@ if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.p
 
 from tools import batch  # noqa: E402
 from tools import invariants  # noqa: E402
+from tools import z3_witnesses  # noqa: E402
 from tools.answers import BASE  # noqa: E402
 
 # The one source for which content predicates a leaf class must satisfy.
@@ -105,6 +106,12 @@ LEDGER_LEAVES: tuple[str, ...] = (
     "project_type=micropython/gate=recommended",
     # a second online judge: the same project_type, a different workspace
     "project_type=online_judge/gate=recommended/oj=competitive_coding/yukicoder",
+    # the domain traits: the co-occurrence answer (both sections, one each,
+    # no duplication) and each trait alone on a leaf with a data/ tree, where
+    # medtech also lands the CARE sheet
+    "project_type=data_science/gate=recommended/domain=all",
+    "project_type=data_science/gate=recommended/domain=medtech",
+    "project_type=data_science/gate=recommended/domain=face-recognition",
 )
 
 # Third-party imports the platform provides, never a PyPI distribution: ROS
@@ -339,6 +346,123 @@ def _provided(pyproject: dict[str, Any]) -> set[str]:
     return provided
 
 
+def _requirement_groups(pyproject: dict[str, Any]) -> dict[str, list[str]]:
+    """Every dependency list the render declares, keyed by group name.
+
+    The groups a template edit can reach: runtime dependencies, the dev
+    dependency group, each optional-dependencies extra (ctf / experiment),
+    build-system requires, and the pixi pypi-dependencies tables (workspace
+    editable install, per-feature). `_declared` reads the first three by name;
+    this returns all of them so the identity checks see every place a
+    requirement can be written.
+    """
+    groups: dict[str, list[str]] = {"dependencies": list(_table(pyproject, ("project", "dependencies")) or [])}
+    groups["dev"] = list(_table(pyproject, ("dependency-groups", "dev")) or [])
+    for extra in _table(pyproject, ("project", "optional-dependencies")) or {}:
+        groups[f"extras:{extra}"] = list(_table(pyproject, ("project", "optional-dependencies", extra)) or [])
+    groups["build-system"] = list(_table(pyproject, ("build-system", "requires")) or [])
+    for name in ("pypi-dependencies", "feature"):
+        table = _table(pyproject, ("tool", "pixi", name))
+        if isinstance(table, dict):
+            for key, value in table.items():
+                if name == "pypi-dependencies":
+                    groups[f"pixi:{key}"] = _pixi_requirements(value)
+                else:
+                    feature_deps = _table(pyproject, ("tool", "pixi", name, key, "pypi-dependencies"))
+                    if feature_deps is not None:
+                        groups[f"pixi:{key}"] = _pixi_requirements(feature_deps)
+    return groups
+
+
+def _pixi_requirements(table: Any) -> list[str]:
+    """A pixi pypi-dependencies table as PEP 508-ish strings.
+
+    pixi writes the same requirement as `name = ">=1,<2"` (or a table with a
+    `version`) instead of PEP 508's `"name>=1,<2"`, so the identity checks
+    have to read both spellings or a pixi-only drift would be invisible.
+    """
+    if not isinstance(table, dict):
+        return []
+    out: list[str] = []
+    for name, value in table.items():
+        if isinstance(value, str):
+            out.append(f"{name}{value}")
+        elif isinstance(value, dict) and isinstance(value.get("version"), str):
+            out.append(f"{name}{value['version']}")
+    return out
+
+
+def _requirement_name(requirement: str) -> str:
+    """A requirement's distribution name, with extras: `uvicorn[standard]>=0.30` -> `uvicorn`."""
+    return _normalise(requirement)
+
+
+def _specifier(requirement: str) -> str:
+    """A requirement's version specifier, normalised; '' when it pins nothing.
+
+    Parsed off the *name* rather than by searching for the first operator: a
+    name may contain `-` and `.`, and searching for `[<>=!~]` finds the `=` of
+    `>=` and reports the specifier as `=2.2,<3`. The specifier is the text
+    after the optional extras bracket, up to any environment marker, with each
+    comma-separated clause whitespace-stripped and the clauses sorted -- so
+    `>=0.27, <1` and `<1,>=0.27` are the same claim, while `>=0.27` and
+    `>=0.27,<1` are different ones.
+    """
+    body = requirement.split(";", 1)[0].strip()
+    match = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*\s*(?:\[[^\]]*\])?\s*(.*)$", body)
+    if not match:
+        return ""
+    clauses = [clause.strip().replace(" ", "") for clause in match.group(1).split(",")]
+    return ",".join(sorted(clause for clause in clauses if clause))
+
+
+def _dependency_identity_problems(leaf_id: str, pyproject: dict[str, Any]) -> list[str]:
+    """The same requirement must not be written twice, or written two ways.
+
+    Two failure modes a template edit introduces silently, both measured on
+    the rendered pyproject rather than on the template source:
+
+    - **duplicate**: one group lists the same distribution twice (two branches
+      that both fire append it). uv/pip accept it, but it is a template bug:
+      the derivation has no dedup and nothing else would notice.
+    - **conflict**: two groups pin the same distribution to *different*
+      versions (`httpx>=0.27` in one, `httpx>=0.27,<1` in another). This is
+      how a shared dependency drifts apart as features are added -- and it is
+      what a multi-domain render makes possible, since domains are selected
+      independently.
+
+    A group that names a distribution *without* a specifier alongside one that
+    pins it is not a conflict: the bare entry defers to the pin, so only two
+    distinct non-empty specifiers disagree. That is the intended shape of
+    `pandas` (pinned for the kaggle runtime, bare in the dev group).
+    """
+    problems: list[str] = []
+    groups = _requirement_groups(pyproject)
+    # Every (distribution, group, specifier) triple, then grouped by name: a
+    # list of triples rather than a dict built in the loop, so two groups
+    # naming the same distribution both survive to the conflict check.
+    sites: list[tuple[str, str, str]] = [
+        (_requirement_name(requirement), group, _specifier(requirement))
+        for group, requirements in groups.items()
+        for requirement in requirements
+    ]
+    for group, requirements in groups.items():
+        names = [_requirement_name(requirement) for requirement in requirements]
+        duplicates = sorted({name for name in names if names.count(name) > 1})
+        problems += [
+            f"{leaf_id}: {name!r} is declared twice in {group} (the derivation does not deduplicate)"
+            for name in duplicates
+        ]
+    for name in sorted({name for name, _, _ in sites}):
+        pinned = {spec for site_name, _, spec in sites if site_name == name and spec}
+        if len(pinned) > 1:
+            spelled = "; ".join(
+                f"{group} says {spec or '(unpinned)'}" for site_name, group, spec in sites if site_name == name
+            )
+            problems.append(f"{leaf_id}: {name!r} is pinned differently across groups: {spelled}")
+    return problems
+
+
 def _feature_present(feature: Feature, root: Path, pyproject: dict[str, Any]) -> bool:
     """Whether the render ships the feature's artifact."""
     if any((root / path).exists() for path in feature.paths):
@@ -424,6 +548,7 @@ def _dependency_problems(leaf_id: str, root: Path, pyproject: dict[str, Any], co
         problems.append(f"{leaf_id}: pixi.lock and [tool.pixi.workspace] disagree about the package manager")
     if (root / "pixi.lock").exists() and (root / "uv.lock").exists():
         problems.append(f"{leaf_id}: both pixi.lock and uv.lock are rendered")
+    problems.extend(_dependency_identity_problems(leaf_id, pyproject))
     return problems
 
 
@@ -572,53 +697,117 @@ def _nav_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
 
 # The ethics appendix's section markers (each section's h1 title) and the
 # answers that select them. The conditions mirror AGENTS.md.jinja's gates,
-# which mirror _shared/ethics/REGISTRY.yml's active rows' audiences: license
-# drift ships with the guide itself, PQC on library/cli/web_api,
-# AI-and-copyright on cli and the data-science layout, LLM/MCP security where
-# the MCP scaffold ships (mcp_effective), and ML fairness on the ds_stack
-# internal (the data-science layout or the kaggle workspace).
+# which mirror _shared/ethics/REGISTRY.yml's active rows' audiences.
+#
+# Every condition goes through a named trait helper, never an inline
+# `project_type == ... or include_...` disjunction. The sections used to spell
+# the same idea three different ways (a bare `project_type == 'web_api'`, an
+# inline `or bool(include_web_api)`, and a helper), so adding a section meant
+# deciding which spelling to copy -- the drift this file's own docstring calls
+# out (TODO.md §28.3, "単一源の『コメント同期』の再発"). One spelling per trait.
+#
+# The derived internals are computed here rather than read, because copier
+# records no name whose `when` is false: `.copier-answers.yml` (and so every
+# witness leaf) carries the *asked* answers only. The definitions below
+# mirror questions/_internal.yml and questions/_combo.yml -- `combinable` is
+# the layer-forcing guard, so a `--data-file` that forces include_web_api onto
+# a non-combinable base must not make this predicate expect the section.
+def _combinable(answers: dict[str, object]) -> bool:
+    """questions/_combo.yml's `combinable`: the bases a layer may ride on."""
+    project_type = answers.get("project_type")
+    is_kaggle = project_type == "online_judge" and answers.get("oj_kind") == "kaggle"
+    return project_type in ("library", "cli", "web_api", "data_science") or is_kaggle
+
+
 def _web_api_trait(answers: dict[str, object]) -> bool:
-    """The web_api trait: the base project type or the combo opt-in."""
-    return answers.get("project_type") == "web_api" or bool(answers.get("include_web_api", False))
+    """questions/_internal.yml's `web_api` (has_web_api): base or layer opt-in."""
+    return answers.get("project_type") == "web_api" or (
+        bool(answers.get("include_web_api", False)) and _combinable(answers)
+    )
 
 
 def _data_science_trait(answers: dict[str, object]) -> bool:
-    """The data_science trait: the base project type or the combo opt-in."""
-    return answers.get("project_type") == "data_science" or bool(answers.get("include_data_science", False))
+    """questions/_internal.yml's `data_science` (has_data_science)."""
+    return answers.get("project_type") == "data_science" or (
+        bool(answers.get("include_data_science", False)) and _combinable(answers)
+    )
+
+
+def _data_science_layout_trait(answers: dict[str, object]) -> bool:
+    """questions/_internal.yml's `data_science_layout` (defaults to data_science)."""
+    return _data_science_trait(answers)
+
+
+def _ds_stack_trait(answers: dict[str, object]) -> bool:
+    """questions/_internal.yml's `ds_stack`: the analysis layout or the kaggle workspace."""
+    return _data_science_layout_trait(answers) or _kaggle_trait(answers)
+
+
+def _mcp_trait(answers: dict[str, object]) -> bool:
+    """questions/_internal.yml's `mcp_effective`: the scaffold ships only on an executable host."""
+    return bool(answers.get("include_mcp", False)) and (answers.get("project_type") == "cli" or _web_api_trait(answers))
+
+
+def _kaggle_trait(answers: dict[str, object]) -> bool:
+    """The kaggle workspace: online_judge with the kaggle judge."""
+    return answers.get("project_type") == "online_judge" and answers.get("oj_kind") == "kaggle"
+
+
+# The cryptographically-interesting guides: the two code-producing bases plus
+# whatever opted into the web_api scaffold (the layer is what matters, not the
+# base word).
+def _crypto_trait(answers: dict[str, object]) -> bool:
+    """The PQC audience: library, cli, or anything carrying the web_api scaffold."""
+    return answers.get("project_type") in ("library", "cli") or _web_api_trait(answers)
+
+
+def _copyright_trait(answers: dict[str, object]) -> bool:
+    """The AI-and-copyright audience: cli, or the data-science layout."""
+    return answers.get("project_type") == "cli" or _data_science_layout_trait(answers)
+
+
+def _domain_traits(answers: dict[str, object]) -> set[str]:
+    """The `domain_traits` multiselect's answer, as a set.
+
+    Copier records a multiselect as a list of the chosen labels (an empty list
+    when the user selects nothing), but a forced data-file answer or a
+    hand-edited answers file can carry a bare string, so both shapes are
+    accepted -- a section must never be dropped because the answer arrived in
+    the other spelling.
+    """
+    recorded = answers.get("domain_traits", [])
+    if isinstance(recorded, str):
+        return {recorded}
+    if isinstance(recorded, (list, tuple, set)):
+        return {str(entry) for entry in recorded}
+    return set()
+
+
+def _domain_trait(name: str) -> Callable[[dict[str, object]], bool]:
+    """A selector for one `domain_traits` choice.
+
+    The sections are chosen by *purpose*, not by layout: the answer is what
+    says whether the project touches face recognition or patient data, so the
+    selector reads the answer and nothing else. That is what lets a health-data
+    CLI, a clinical MCP tool and a data-science pipeline all reach the same
+    section -- the routing the draft rows could not express while they hung off
+    `project_type`.
+    """
+
+    def selects(answers: dict[str, object]) -> bool:
+        return name in _domain_traits(answers)
+
+    return selects
 
 
 ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
     "license-drift": ("ライセンス変動", lambda answers: True),
-    "pqc-fips": (
-        "PQC標準",
-        lambda answers: (
-            answers.get("project_type") in ("library", "cli")
-            or answers.get("project_type") == "web_api"
-            or bool(answers.get("include_web_api", False))
-        ),
-    ),
-    "copyright-ai": (
-        "AIと著作権",
-        lambda answers: (
-            answers.get("project_type") == "cli"
-            or answers.get("project_type") == "data_science"
-            or bool(answers.get("include_data_science", False))
-        ),
-    ),
-    "llm-appsec": (
-        "MCP安全設計",
-        lambda answers: (
-            bool(answers.get("include_mcp", False))
-            and (answers.get("project_type") == "cli" or _web_api_trait(answers))
-        ),
-    ),
-    "ml-bias": (
-        "MLバイアス",
-        lambda answers: (
-            _data_science_trait(answers)
-            or (answers.get("project_type") == "online_judge" and answers.get("oj_kind") == "kaggle")
-        ),
-    ),
+    "pqc-fips": ("PQC標準", _crypto_trait),
+    "copyright-ai": ("AIと著作権", _copyright_trait),
+    "llm-appsec": ("MCP安全設計", _mcp_trait),
+    "ml-bias": ("MLバイアス", _ds_stack_trait),
+    "face-recognition": ("顔認識", _domain_trait("face-recognition")),
+    "samd-regulatory": ("医療SaMD", _domain_trait("medtech")),
 }
 
 
@@ -712,3 +901,146 @@ def test_predicates_fire_on_injected_drift(tmp_path: Path, render_cache: RenderC
         drift for drift in expected_drift if not any(leaf.id in problem and drift in problem for problem in problems)
     ]
     assert silent == [], f"the predicates stayed silent on: {silent}\nreported instead:\n  " + "\n  ".join(problems)
+
+
+# --------------------------------------------------------------------------- #
+# additivity: selecting two domains must be the sum of selecting each
+# --------------------------------------------------------------------------- #
+#
+# The `domain_traits` multiselect made co-occurrence a real configuration (a
+# face-recognition model over patient data selects both), and the failure it
+# invites is not "the wrong section" but "the right section twice, or one of
+# them dropped": two independent gates can both fire for the same section, and
+# two domains can both declare a dependency. Rather than enumerate every
+# combination -- which is N! for an open-ended list of domains -- this pins the
+# property that makes the enumeration unnecessary:
+#
+#     contribution(A) ∪ contribution(B) == contribution(A and B)
+#
+# If a domain's contribution is independent of the others', then any larger
+# selection follows by induction, and a domain added later only has to hold
+# this one property. `domain_traits=` is the axis; the derived leaf set
+# (tools/z3_witnesses.py's DOMAIN_TRAIT_VARIANTS) supplies the solo and
+# combined leaves so the check reads the same answers the witness sweep
+# renders.
+#
+# The two contributions compared:
+#   sections     the ethics section titles present in AGENTS.md
+#   requirements every declared distribution, by name
+# A section or requirement that appears twice under `all` shows up as a
+# *duplicate* in the combined side and fails; one that vanishes shows up as
+# missing.
+
+
+def _domain_leaf_answers() -> dict[str, dict[str, object]]:
+    """The domain-trait leaves from the ledger, keyed by their trait label."""
+    declared = _declared_answers()
+    found: dict[str, dict[str, object]] = {}
+    for leaf_id, answers in declared.items():
+        if "/domain=" not in leaf_id:
+            continue
+        label = leaf_id.rsplit("/domain=", 1)[1]
+        found[label] = dict(answers)
+    return found
+
+
+def _section_titles(root: Path) -> list[str]:
+    """Every ethics section title in the render's AGENTS.md, in document order."""
+    path = root / "AGENTS.md"
+    if not path.exists():
+        return []
+    return [marker for marker in ETHICS_SECTIONS.values() for marker in [marker[0]] if marker in path.read_text()]
+
+
+def _declared_distributions(root: Path) -> list[str]:
+    """Every distribution the render declares, across all dependency groups."""
+    path = root / "pyproject.toml"
+    if not path.exists():
+        return []
+    pyproject = tomllib.loads(path.read_text())
+    return [name for group in _requirement_groups(pyproject).values() for name in group]
+
+
+def test_the_domain_trait_leaves_cover_each_choice_and_the_combination():
+    """The leaves the additivity check compares must all exist.
+
+    A missing solo leaf would make the union side silently smaller than the
+    combined side (reporting a false "missing section"), and a missing
+    combined leaf would make the check vacuous -- so the axis, its labels and
+    the ledger have to agree before any comparison runs.
+    """
+    leaves = _domain_leaf_answers()
+    expected = {"all", *z3_witnesses.DOMAIN_TRAIT_CHOICES}
+    assert set(leaves) == expected, (
+        f"the witness ledger's domain leaves are {sorted(leaves)}, expected {sorted(expected)}; "
+        f"regenerate tests/matrix/witnesses.jsonl (task witness)"
+    )
+    for label, answers in leaves.items():
+        recorded = answers.get("domain_traits")
+        assert isinstance(recorded, list) and recorded, f"the {label} leaf recorded domain_traits={recorded!r}"
+
+
+@pytest.mark.parametrize("label", sorted({"all"}))
+def test_domain_contributions_are_additive(
+    label: str, tmp_path: Path, render_cache: RenderCache, counters: Counters
+) -> None:
+    """Sections and requirements add up, with nothing doubled or dropped.
+
+    The combined leaf's contribution must equal the union of the solo leaves'
+    contributions, and no section may appear twice in it. This is the
+    multi-select property stated once: a domain that silently re-declares
+    another's dependency, or whose gate overlaps another's section, fails
+    here rather than in a user's render.
+    """
+    leaves = _domain_leaf_answers()
+    recorded = leaves[label]["domain_traits"]
+    assert isinstance(recorded, list), f"the {label!r} leaf recorded domain_traits={recorded!r}"
+    traits = [str(trait) for trait in recorded]
+    assert len(traits) > 1, f"the {label!r} leaf selects {traits}, so it cannot test a combination"
+
+    rendered: dict[str, Path] = {}
+    for name, answers in leaves.items():
+        rendered[name] = tmp_path / name
+        render_cache.render(rendered[name], answers)
+        counters.renders += 1
+
+    combined = rendered[label]
+    combined_sections = _section_titles(combined)
+    combined_requirements = _declared_distributions(combined)
+
+    problems: list[str] = []
+    duplicated = sorted({title for title in combined_sections if combined_sections.count(title) > 1})
+    if duplicated:
+        problems.append(f"selecting {traits} renders these ethics sections more than once: {duplicated}")
+
+    # Direction 1: nothing a solo trait contributes may vanish. The solo
+    # contributions are collected first (rather than checked inside the loop)
+    # so direction 2 can reuse them as the "who selected this" set.
+    solo_sections: list[str] = []
+    problems += [
+        f"selecting {trait} ships the {section!r} section, but selecting {traits} drops it"
+        for trait in traits
+        for section in _section_titles(rendered[trait])
+        if section not in combined_sections
+    ]
+    for trait in traits:
+        solo_sections += _section_titles(rendered[trait])
+    problems += [
+        f"selecting {trait} declares {requirement!r}, but selecting {traits} drops it"
+        for trait in traits
+        for requirement in _declared_distributions(rendered[trait])
+        if requirement not in combined_requirements
+    ]
+
+    # Direction 2: nothing the combination ships may be unaccounted for -- a
+    # section has to be selected by one of the chosen traits or by the
+    # unconditional row (license-drift), otherwise the combination is
+    # over-distributing.
+    unconditional = {marker for marker, selects in ETHICS_SECTIONS.values() if selects({})}
+    problems += [
+        f"selecting {traits} ships the {section!r} section, which none of {traits} selects alone"
+        for section in combined_sections
+        if section not in solo_sections and section not in unconditional
+    ]
+
+    assert problems == [], "the domain contributions are not additive:\n  " + "\n  ".join(problems)

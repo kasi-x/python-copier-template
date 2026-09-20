@@ -91,18 +91,7 @@ dev = [
     # 実験・探索・デバッグ用の依存 (marimo / 可視化 / LLM API)。
     # uv: `uv sync --extra experiment` で追加インストール。
     # pixi: `[tool.pixi.feature.experiment]` として分離。
-    "httpx>=0.27,<1",
-    "ipykernel",
-    "marimo",
-    "matplotlib>=3.8",
-    "nbclient",
-    "nbstripout",
-    "openai>=2.53.0,<3",
-    "pendulum>=3.2.0,<4",
-    "plotly>=5.20",
-    "seaborn>=0.13.2",
-    "wandb>=0.16.4",
-]
+{{ m.experiment_pep508() }}]
 {% endif %}
 {# CTF extra body is shared (see _shared/pyproject-ctf-extra.toml.jinja). #}{% include "_shared/pyproject-ctf-extra.toml.jinja" %}
 
@@ -123,18 +112,7 @@ dev = { features = ["dev"], solve-group = "default" }
 {% if ds_stack %}experiment = { features = ["experiment"], solve-group = "default" }
 {% endif %}
 {% if ds_stack %}[tool.pixi.feature.experiment.pypi-dependencies]
-httpx = ">=0.27,<1"
-ipykernel = "*"
-marimo = "*"
-matplotlib = ">=3.8"
-nbclient = "*"
-nbstripout = "*"
-openai = ">=2.53.0,<3"
-pendulum = ">=3.2.0,<4"
-plotly = ">=5.20"
-seaborn = ">=0.13.2"
-wandb = ">=0.16.4"
-{% endif %}
+{{ m.experiment_pixi() }}{% endif %}
 {# lint/type-check/test/docs tasks live in the chosen task_runner's file
    instead (Taskfile.yml / justfile / Makefile / [tool.poe.tasks] / the
    [tool.pixi.feature.dev.tasks] below) — one definition regardless of

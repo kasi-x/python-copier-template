@@ -69,7 +69,7 @@ GATE_PREFIX = "use_recommended_"
 TIERS = ("full", "fast", "best_effort", "none")
 
 #: ``select`` keys that name questionnaire values, checked against it.
-NAMED_SELECT_KEYS = ("project_type", "oj_kind", "include", "gate_off", "bot_platform")
+NAMED_SELECT_KEYS = ("project_type", "oj_kind", "include", "gate_off", "bot_platform", "domain")
 
 #: ``select`` keys that name a derived questionnaire trait (see ``Facts``).
 TRAITS = ("data_science", "kaggle", "src_layout", "web_api")
@@ -84,18 +84,27 @@ class InvariantError(ValueError):
 
 
 def _matches(key: str, expected: Any, facts: Facts) -> bool:
-    """Whether one ``select`` entry holds for a leaf."""
+    """Whether one ``select`` entry holds for a leaf.
+
+    A dispatch table rather than a branch per key: every named key compares
+    the leaf's values with the row's by intersection (``bot_platform`` and
+    ``oj_kind`` included -- their value is a single item, so the intersection
+    is simply "is it one of these"), and the two keys whose shape differs
+    (the boolean traits, and ``project_type``, whose membership is checked the
+    same way) are handled before it. Adding a select key means adding one
+    entry here and one to the vocabulary in ``_select``.
+    """
     if key in TRAITS:
         return facts.trait(key) is expected
-    if key == "project_type":
-        return facts.project_type in expected
-    if key == "oj_kind":
-        return facts.oj_kind in expected
-    if key == "bot_platform":
-        return facts.bot_platform in expected
-    if key == "include":
-        return bool(set(expected) & set(facts.includes))
-    return bool(set(expected) & set(facts.gates_off))
+    intersection = {
+        "project_type": (facts.project_type,),
+        "oj_kind": (facts.oj_kind,),
+        "bot_platform": (facts.bot_platform,),
+        "domain": facts.domains,
+        "include": facts.includes,
+        "gate_off": facts.gates_off,
+    }
+    return bool(set(expected) & set(intersection[key]))
 
 
 @dataclass(frozen=True)
@@ -148,6 +157,7 @@ class Facts:
     traits: Mapping[str, bool]
     bot_platform: str
     bot_platform_asked: bool
+    domains: tuple[str, ...]
 
     def trait(self, name: str) -> bool:
         """One derived trait of the questionnaire (a key of ``TRAITS``)."""
@@ -167,6 +177,10 @@ class Facts:
             dimensions.append(("bot_platform", self.bot_platform))
         dimensions += [("include", name) for name in self.includes]
         dimensions += [("gate_off", name) for name in self.gates_off]
+        # The domain traits are a multiselect, so a leaf answers several at
+        # once: each value gets its own dimension pair, and a row may select
+        # any of them (or, with several listed, any one).
+        dimensions += [("domain", name) for name in self.domains]
         return tuple(dimensions)
 
 
@@ -181,6 +195,7 @@ class Vocabulary:
     gates: tuple[str, ...]
     bot_platforms: tuple[str, ...]
     bot_platform_default: str
+    domains: tuple[str, ...]
 
     @property
     def oj_kinds(self) -> tuple[str, ...]:
@@ -222,6 +237,13 @@ class Invariants:
         bot_platform_raw = answers.get("bot_platform")
         web_api = project_type == "web_api" or "include_web_api" in includes
         data_science = project_type == "data_science" or "include_data_science" in includes
+        # The multiselect is recorded as a list of chosen labels; a bare
+        # string is accepted too (a forced data-file answer or a hand-edited
+        # answers file can carry either spelling), and an unknown label is
+        # dropped rather than invented -- the vocabulary's own list defines
+        # what a domain can be, so a typo cannot make a leaf unclassifiable.
+        domain_raw = answers.get("domain_traits", [])
+        chosen = {domain_raw} if isinstance(domain_raw, str) else set(domain_raw or [])
         return Facts(
             project_type=project_type,
             oj_kind=oj_kind if isinstance(oj_kind, str) else "",
@@ -237,6 +259,7 @@ class Invariants:
                 bot_platform_raw if isinstance(bot_platform_raw, str) else self.vocabulary.bot_platform_default
             ),
             bot_platform_asked=isinstance(bot_platform_raw, str),
+            domains=tuple(name for name in self.vocabulary.domains if name in chosen),
         )
 
     def rows_for(self, answers: Mapping[str, Any]) -> tuple[LeafClass, ...]:
@@ -338,6 +361,7 @@ def questionnaire_vocabulary(questions: dict[str, dict] | None = None) -> Vocabu
         gates=tuple(name for name in questions if name.startswith(GATE_PREFIX)),
         bot_platforms=tuple(_static_choices(questions, "bot_platform")),
         bot_platform_default=str(questions["bot_platform"]["default"]),
+        domains=tuple(_static_choices(questions, "domain_traits")),
     )
 
 
@@ -509,12 +533,13 @@ def _select(value: Any, vocabulary: Vocabulary, excluded: dict[str, str], where:
         if key in select and not isinstance(select[key], bool):
             msg = f"{where}: select.{key} must be true or false, got {select[key]!r}"
             raise InvariantError(msg)
-    domains = {
+    offered = {
         "project_type": vocabulary.project_types,
         "oj_kind": vocabulary.oj_kinds,
         "include": vocabulary.includes,
         "gate_off": vocabulary.gates,
         "bot_platform": vocabulary.bot_platforms,
+        "domain": vocabulary.domains,
     }
     for key in NAMED_SELECT_KEYS:
         if key not in select:
@@ -527,8 +552,8 @@ def _select(value: Any, vocabulary: Vocabulary, excluded: dict[str, str], where:
             if key == "project_type" and name in excluded:
                 msg = f"{where}: selects the excluded project_type {name!r} ({excluded[name]})"
                 raise InvariantError(msg)
-            if name not in domains[key]:
-                msg = f"{where}: unknown {key} {name!r}; the questionnaire offers {list(domains[key])}"
+            if name not in offered[key]:
+                msg = f"{where}: unknown {key} {name!r}; the questionnaire offers {list(offered[key])}"
                 raise InvariantError(msg)
     return select
 

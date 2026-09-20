@@ -163,6 +163,45 @@ combinable:
     type: bool
     default: "{{ project_type in ['library', 'cli', 'web_api', 'data_science'] or kaggle }}"
     when: false
+
+# The domain traits: what the project is ABOUT, as opposed to which layout it
+# builds. A multiselect rather than one question per domain, because the
+# domains genuinely co-occur -- a face-recognition model that also touches
+# patient data selects both, and the ethics appendix must then carry both
+# sections. Each choice maps to an ethics/REGISTRY.yml audience (see the
+# `ethics-domain-traits` mapping below) and, where it applies, to packages.
+#
+# Asked on every base rather than under data-science: the section that fires
+# is chosen by *purpose*, not by layout -- a FastAPI service that verifies
+# faces is in scope, and so is an MCP server that exposes a recognition tool.
+# The gates that distribute each section live in AGENTS.md.jinja; the
+# predicate that holds them to this answer lives in
+# tests/test_render_invariants.py (`_domain_traits`).
+domain_traits:
+    type: str
+    multiselect: true
+    default: []
+    choices:
+        - face-recognition
+        - medtech
+    help: |
+        Which of these does the project actually touch (select all that
+        apply, or none)?
+        - face-recognition: identifying or verifying people from face
+          imagery (detection, embeddings, matching, liveness, attribute
+          estimation). Adds the biometric-identification rules to
+          AGENTS.md: confirm the use is lawful before implementing, store
+          templates irreversibly with a deletion path, and measure error
+          rates per demographic group instead of shipping one threshold.
+        - medtech: anything reaching diagnosis, treatment support or
+          patient screening. Adds the medical-SaMD rules: continuous
+          learning only inside an approved change envelope, a human making
+          the final call, and post-market performance monitoring.
+        Both are about purpose, not about project type — a health-data
+        CLI, an MCP server exposing a clinical tool, and a data-science
+        pipeline are all in scope, and answering none is correct when the
+        project only resembles one of these domains.
+
 # The include question's `when` / `combinable` / `has_*` trio is THREE
 # deliberate layers, not one — do not collapse it:
 # 1. each include_*.when (above) keeps the layer question from being ASKED

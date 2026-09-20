@@ -133,6 +133,47 @@ DETAIL_VARIANTS: tuple[str, ...] = ("docker", "include_mcp")
 # own default, so that base leaf already claims it.
 BOT_PLATFORM_VARIANTS: tuple[str, ...] = ("slack", "line", "gmail")
 
+# The domain-trait variants: the `domain_traits` multiselect's choices, each
+# answered alone and all of them answered together.
+#
+# This is the axis the leaf space never had. Every leaf before it kept
+# `domain_traits` at its copier default (empty), so nothing rendered a domain
+# section -- and nothing could test that two domains *co-occurring* behave:
+# one section each, no duplication, both ethics sections present, and no
+# dependency double-declared. The multiselect is exactly the shape that makes
+# "select both" a real configuration, so the space has to carry it.
+#
+# `together` is the additivity probe (TODO §30): the union of the solo leaves'
+# contributions must equal the combined leaf's. A single derived leaf is
+# enough for that check because the sections and dependencies are independent
+# per domain -- if the union of {face} and {medtech} equals {face, medtech},
+# any larger selection follows by induction.
+DOMAIN_TRAIT_CHOICES: tuple[str, ...] = ("face-recognition", "medtech")
+
+# The leaves the domain variants are hosted on: the two ids whose answers put
+# them on either side of the pair a domain trait can interact with (does the
+# render carry AGENTS.md at all, and does the data-science layout hold -- the
+# second decides whether the medtech trait also lands the CARE sheet in
+# data/). Every other leaf renders the same domain appendix as one of these,
+# so hosting more would cost leaves without covering a new case.
+DOMAIN_TRAIT_HOSTS: frozenset[str] = frozenset(
+    {
+        "project_type=data_science/gate=recommended",
+        "project_type=cli/gate=recommended",
+    }
+)
+
+# The variant labels: each choice alone, then all of them together -- the
+# co-occurrence answer the multiselect exists for, and the leaf the additivity
+# check compares against the solo ones (build()). Built as a list so a
+# comprehension and an appended entry do not fight over the tuple's type.
+DOMAIN_TRAIT_VARIANTS: tuple[tuple[str, list[str]], ...] = tuple(
+    [
+        *((choice, [choice]) for choice in DOMAIN_TRAIT_CHOICES),
+        *((("all", list(DOMAIN_TRAIT_CHOICES)),) if len(DOMAIN_TRAIT_CHOICES) > 1 else ()),
+    ]
+)
+
 GATE_PREFIX = "use_recommended_"
 
 # gates whose `when` the projection below keeps at "always asked".
@@ -461,6 +502,48 @@ def build() -> tuple[dict[str, Any], list[Leaf]]:
                 )
             )
     leaves.extend(variant_leaves)
+
+    # The domain-trait variants: the `domain_traits` multiselect's choices.
+    #
+    # One leaf per choice answered alone, plus one answering all of them --
+    # the co-occurrence the multiselect exists for, and the leaf the
+    # additivity check compares against the solo ones. The projection keeps
+    # `domain_traits` at its default (empty) for every leaf, so without this
+    # derivation no render carries a domain section and no test could see a
+    # duplication between two domains that are both selected.
+    #
+    # Derived rather than projected into the space on purpose: a domain trait
+    # adds no artifact and no layout, only an ethics section (and, for
+    # face-recognition, a dependency), so making it a product axis would
+    # multiply the leaf space for an axis that cannot interact with the rest.
+    #
+    # Hosted on a declared subset of leaves, not on all of them: the domain
+    # sections' gates read `domain_traits` and the guide's own presence
+    # (AGENTS.md), so what a domain variant can differ by is the project type
+    # that carries the guide and whether the data-science layout holds. Two
+    # hosts cover both sides of that pair -- data_science (the layout side,
+    # where CARE also lands) and cli (no layout, the AGENTS.md + no-CARE
+    # side) -- and every other leaf would render an identical domain
+    # appendix. Hosting all 234 would add ~700 leaves for no new coverage and
+    # blow LEAF_BUDGET.
+    # `leaves` is iterated over a snapshot: appending while iterating it would
+    # re-host every variant leaf on itself (the double ids this replaced).
+    hosts = [leaf for leaf in leaves if leaf.id in DOMAIN_TRAIT_HOSTS]
+    missing_hosts = sorted(DOMAIN_TRAIT_HOSTS - {leaf.id for leaf in hosts})
+    if missing_hosts:
+        msg = f"DOMAIN_TRAIT_HOSTS names leaves the space no longer enumerates: {missing_hosts}"
+        raise SystemExit(msg)
+    for leaf in hosts:
+        for label, choices in DOMAIN_TRAIT_VARIANTS:
+            chosen = {**leaf.answers, "domain_traits": choices}
+            leaves.append(
+                Leaf(
+                    id=f"{leaf.id}/domain={label}",
+                    note=f"{leaf.note}; domain traits selected ({', '.join(choices)})",
+                    answers=chosen,
+                    expect=INVARIANTS.expect_for(chosen),
+                )
+            )
 
     leaves.sort(key=lambda leaf: leaf.id)
     ids = [leaf.id for leaf in leaves]
