@@ -25,6 +25,7 @@ Practical step-by-step guides for the more experienced user.
 - [MCP Server Scaffolding](how-to/mcp.md)
 - [Chat Bot Scaffolding (Discord / Slack / LINE)](how-to/bot.md)
 - [Polite Web Fetching](how-to/scraping.md)
+- [The Quarto Paper and Slides](how-to/quarto-paper.md)
 - [Code Coverage](how-to/coverage.md)
 - [Check Docs Style](how-to/check-docs-style.md)
 - [Renovate Dependency Updates](how-to/renovate.md)

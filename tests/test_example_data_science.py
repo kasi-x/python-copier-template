@@ -100,6 +100,12 @@ def test_template_data_science_layout(tmp_path: Path):
     assert (tmp_path / "Dockerfile.gpu").exists()
     assert (tmp_path / "paper" / "paper.qmd").exists()
     assert (tmp_path / "slides" / "slides.qmd").exists()
+    # the README says so too: the paper section and the What's-included row
+    # ship exactly where the scaffold ships (data_science, not the layer
+    # alone — that polarity lives in test_example_layers.py's web_api combo)
+    readme = (tmp_path / "README.md").read_text()
+    assert "## 📄 Paper and slides" in readme
+    assert "Paper + slides" in readme
     # experiment extras + the duckdb/polars base deps
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     experiment = pyproject_toml["project"]["optional-dependencies"]["experiment"]

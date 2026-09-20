@@ -162,7 +162,8 @@ runner every recipe goes through:
 - **cli** — a command-line tool
 - **data_science**: `data/`, `models/`, `reports/`, `notebooks/` and a `src/`
   pipeline (`src/data`, `src/features`, ...) layout. GPU Dockerfile and a
-  Quarto paper are always included. Ships polars / duckdb / pyarrow as base
+  Quarto paper are always included (see the
+  [quarto-paper how-to](../how-to/quarto-paper.md)). Ships polars / duckdb / pyarrow as base
   deps and a `data/queries/` SQL workspace readable via
   `duckdb.sql(open("data/queries/example.sql").read())`.
 - **online_judge**: a competitive-programming / Kaggle project. The follow-up

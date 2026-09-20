@@ -37,6 +37,7 @@ nav = [
       { "MCP Server" = "how-to/mcp.md" },
       { "Chat Bots" = "how-to/bot.md" },
       { "Web Fetching" = "how-to/scraping.md" },
+      { "Quarto Paper" = "how-to/quarto-paper.md" },
       { "Ethics Sections" = "how-to/ethics-section.md" },
   ]},
   { "Explanations" = [
@@ -50,6 +51,7 @@ nav = [
       { "Long-Running Executables" = "explanations/long-running.md" },
       { "Security & Compliance" = "explanations/security.md" },
       { "Verification Architecture" = "explanations/verification.md" },
+      { "Drift Detection" = "explanations/drift-detection.md" },
   ]},
   { "Reference" = [
       { "Overview" = "reference.md" },

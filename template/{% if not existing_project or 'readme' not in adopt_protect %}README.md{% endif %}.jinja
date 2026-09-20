@@ -629,6 +629,33 @@ permission.
 > See the [documentation]({{docs_url}}) for tutorials, how-to guides and the API reference.
 {% endif %}
 
+{% if data_science %}
+## 📄 Paper and slides
+
+The research-writing scaffold ships alongside the analysis tree:
+`paper/paper.qmd` renders to an arXiv-style PDF and HTML (via the vendored
+[arxiv extension](https://github.com/mikemahoney218/arxiv)), `slides/slides.qmd`
+to a reveal.js deck, and `quartodoc` generates the API reference in
+`docs/reference/` from the package docstrings. The paper **executes** in this
+environment (`jupyter: python3`), reads tables and figures from `outputs/`
+(`src/` writes them, the paper includes them — never paste a number by hand)
+and cites from `references/references.bib`.
+
+```sh
+# one-time setup: Quarto (https://quarto.org) plus, for the PDF, its TinyTeX
+quarto install tinytex
+quarto add machow/quartodoc
+
+# render (paper → paper/paper.pdf + .html, slides → the deck, docs → API pages)
+{{ task_runner_effective }} paper
+{{ task_runner_effective }} slides
+{{ task_runner_effective }} paper-api
+```
+
+There is no CI job for the paper on purpose: renders are heavy and
+font-sensitive, so they run when *you* need them, not on every push.
+{% endif %}
+
 ## 🧰 What's included
 
 {#                      #}What            | Where
@@ -641,6 +668,7 @@ permission.
 {% if fair              %}Citation        | [CITATION.cff](CITATION.cff)
 {% endif %}{% if security_policy_effective %}Security        | [SECURITY.md](SECURITY.md) — how to report a vulnerability
 {% endif %}{% if agents_md_effective %}Agent guide     | [AGENTS.md](AGENTS.md) — instructions for AI coding agents
+{% endif %}{% if data_science %}Paper + slides  | [paper/paper.qmd](paper/paper.qmd) — Quarto manuscript and deck (`paper` / `slides` / `paper-api` tasks)
 {% endif %}
 
 ## 🛠️ Development setup
