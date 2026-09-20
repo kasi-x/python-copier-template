@@ -177,6 +177,18 @@ DOMAIN_TRAIT_VARIANTS: tuple[tuple[str, list[str]], ...] = DOMAIN_TRAIT_SOLO_VAR
     (("all", [str(choice) for choice in DOMAIN_TRAIT_CHOICES]),) if len(DOMAIN_TRAIT_CHOICES) > 1 else ()
 )
 
+# The `distribution` answers that change what the ethics appendix carries. The
+# default (`in-house`) ships no distribution-dependent section, so only the
+# two that do need a leaf: `commercial` (the CRA obligations) and `oss` (the
+# open-release case, where a project is published but not sold -- the
+# distinction EU 2024/2847's art. 24 exemption turns on). A leaf answering
+# both covers the overlap.
+DISTRIBUTION_VARIANTS: tuple[tuple[str, list[str]], ...] = (
+    ("commercial", ["commercial"]),
+    ("oss", ["oss"]),
+    ("commercial+oss", ["commercial", "oss"]),
+)
+
 GATE_PREFIX = "use_recommended_"
 
 # gates whose `when` the projection below keeps at "always asked".
@@ -456,6 +468,100 @@ def completeness(leaf_space: dict[str, Any], leaves: list[Leaf]) -> str:
     return f"leaves: {len(leaves)} enumerated, {len(excluded)} excluded ({names})"
 
 
+def _detail_variants(base_leaves: list[Leaf]) -> list[Leaf]:
+    """The integrations-details and bot-platform variants.
+
+    Both vary *detail* questions the projection keeps at their copier
+    defaults, on the leaves where the owning gate is off:
+
+    - docker + the MCP scaffold on the web_api leaf whose integrations gate is
+      off -- the configuration the inverse template's flagship query matches
+      (TODO §18.8);
+    - one leaf per generated bot platform (slack / line / gmail) on each leaf
+      whose bot gate is off, so every platform joins the nightly rehearsal and
+      the render sweep instead of only the recommended discord.
+    """
+    variants: list[Leaf] = []
+    for leaf in base_leaves:
+        if leaf.answers.get("use_recommended_integrations") is False and leaf.answers.get("project_type") == "web_api":
+            chosen = {**leaf.answers, **dict.fromkeys(DETAIL_VARIANTS, True)}
+            variants.append(
+                Leaf(
+                    id=f"{leaf.id}/details=chosen",
+                    note=f"{leaf.note}; integrations details chosen ({', '.join(DETAIL_VARIANTS)} on)",
+                    answers=chosen,
+                    expect=INVARIANTS.expect_for(chosen),
+                )
+            )
+    for leaf in base_leaves:
+        if leaf.answers.get("use_recommended_bot") is not False:
+            continue
+        variants += [
+            Leaf(
+                id=f"{leaf.id}/bot={platform}",
+                note=f"{leaf.note}; bot platform {platform} chosen",
+                answers={**leaf.answers, "bot_platform": platform},
+                expect=INVARIANTS.expect_for({**leaf.answers, "bot_platform": platform}),
+            )
+            for platform in BOT_PLATFORM_VARIANTS
+        ]
+    return variants
+
+
+def _answer_axis_variants(base_leaves: list[Leaf]) -> list[Leaf]:
+    """The `domain_traits` and `distribution` variants, on their declared hosts.
+
+    Both are multiselects the projection keeps at their empty/default answer,
+    so without these derivations no render carries a domain section or the CRA
+    duties, and no test could see two selections interact.
+
+    Hosted on DOMAIN_TRAIT_HOSTS rather than on every leaf: what they can
+    differ by is the project type carrying AGENTS.md and whether the
+    data-science layout holds, and the two hosts cover both sides of that
+    pair (data_science: the layout side, where CARE also lands; cli: no
+    layout). Hosting every leaf would add ~700 leaves for no new coverage.
+
+    `base_leaves` is never appended to -- the variants are returned, so a
+    variant cannot be re-hosted on itself (the duplicate ids this replaced).
+    """
+    hosts = [leaf for leaf in base_leaves if leaf.id in DOMAIN_TRAIT_HOSTS]
+    missing = sorted(DOMAIN_TRAIT_HOSTS - {leaf.id for leaf in hosts})
+    if missing:
+        msg = f"DOMAIN_TRAIT_HOSTS names leaves the space no longer enumerates: {missing}"
+        raise SystemExit(msg)
+    variants: list[Leaf] = []
+    for leaf in hosts:
+        variants += [
+            Leaf(
+                id=f"{leaf.id}/domain={label}",
+                note=f"{leaf.note}; domain traits selected ({', '.join(choices)})",
+                answers={**leaf.answers, "domain_traits": choices},
+                expect=INVARIANTS.expect_for({**leaf.answers, "domain_traits": choices}),
+            )
+            for label, choices in DOMAIN_TRAIT_VARIANTS
+        ]
+        variants += [
+            Leaf(
+                id=f"{leaf.id}/distribution={label}",
+                note=f"{leaf.note}; distribution answered ({', '.join(choices)})",
+                answers={**leaf.answers, "distribution": choices},
+                expect=INVARIANTS.expect_for({**leaf.answers, "distribution": choices}),
+            )
+            for label, choices in DISTRIBUTION_VARIANTS
+        ]
+    return variants
+
+
+def _derived_variants(base_leaves: list[Leaf]) -> list[Leaf]:
+    """Every derived leaf: the detail variants plus the answer-axis ones.
+
+    The projection enumerates the questionnaire's Z3 axes; these add the
+    configurations it deliberately does not model, each because the axis is a
+    detail rather than a dimension. See the two helpers for what each covers.
+    """
+    return _detail_variants(base_leaves) + _answer_axis_variants(base_leaves)
+
+
 def build() -> tuple[dict[str, Any], list[Leaf]]:
     """Return the declared leaf space and its enumerated leaves."""
     questions, _order = when_model.load_questions()
@@ -465,88 +571,7 @@ def build() -> tuple[dict[str, Any], list[Leaf]]:
     domains = when_model.str_domains(questions, pt_domain)
     leaves = [_leaf(questions, space, values, domains) for values in _models(space)]
 
-    # The integrations-details variant: for the web_api leaf with the
-    # integrations gate off, a render with the details *chosen* (docker and
-    # the MCP scaffold on) is a distinct configuration -- it is what the
-    # inverse template's flagship query matches, and without it no leaf can
-    # answer "docker + mcp" (TODO §18.8). Only web_api: mcp_effective holds
-    # there, and the scaffold lives at the fixed app/ path, so one row claims
-    # every placement.
-    variant_leaves: list[Leaf] = []
-    for leaf in leaves:
-        if leaf.answers.get("use_recommended_integrations") is False and leaf.answers.get("project_type") == "web_api":
-            chosen = {**leaf.answers, **dict.fromkeys(DETAIL_VARIANTS, True)}
-            variant_leaves.append(
-                Leaf(
-                    id=f"{leaf.id}/details=chosen",
-                    note=f"{leaf.note}; integrations details chosen ({', '.join(DETAIL_VARIANTS)} on)",
-                    answers=chosen,
-                    expect=INVARIANTS.expect_for(chosen),
-                )
-            )
-
-    # The bot-platform details variant: for each leaf whose answers turn the
-    # bot gate off -- the only leaves where bot_platform is asked -- one
-    # derived leaf per generated platform the base leaf does not carry (the
-    # base leaf itself answers the default, discord). Without these, the
-    # slack / line / gmail scaffolds are rendered by dedicated tests only and
-    # never join the nightly rehearsal or the render sweep.
-    for leaf in leaves:
-        if leaf.answers.get("use_recommended_bot") is not False:
-            continue
-        for platform in BOT_PLATFORM_VARIANTS:
-            chosen = {**leaf.answers, "bot_platform": platform}
-            variant_leaves.append(
-                Leaf(
-                    id=f"{leaf.id}/bot={platform}",
-                    note=f"{leaf.note}; bot platform {platform} chosen",
-                    answers=chosen,
-                    expect=INVARIANTS.expect_for(chosen),
-                )
-            )
-    leaves.extend(variant_leaves)
-
-    # The domain-trait variants: the `domain_traits` multiselect's choices.
-    #
-    # One leaf per choice answered alone, plus one answering all of them --
-    # the co-occurrence the multiselect exists for, and the leaf the
-    # additivity check compares against the solo ones. The projection keeps
-    # `domain_traits` at its default (empty) for every leaf, so without this
-    # derivation no render carries a domain section and no test could see a
-    # duplication between two domains that are both selected.
-    #
-    # Derived rather than projected into the space on purpose: a domain trait
-    # adds no artifact and no layout, only an ethics section (and, for
-    # face-recognition, a dependency), so making it a product axis would
-    # multiply the leaf space for an axis that cannot interact with the rest.
-    #
-    # Hosted on a declared subset of leaves, not on all of them: the domain
-    # sections' gates read `domain_traits` and the guide's own presence
-    # (AGENTS.md), so what a domain variant can differ by is the project type
-    # that carries the guide and whether the data-science layout holds. Two
-    # hosts cover both sides of that pair -- data_science (the layout side,
-    # where CARE also lands) and cli (no layout, the AGENTS.md + no-CARE
-    # side) -- and every other leaf would render an identical domain
-    # appendix. Hosting all 234 would add ~700 leaves for no new coverage and
-    # blow LEAF_BUDGET.
-    # `leaves` is iterated over a snapshot: appending while iterating it would
-    # re-host every variant leaf on itself (the double ids this replaced).
-    hosts = [leaf for leaf in leaves if leaf.id in DOMAIN_TRAIT_HOSTS]
-    missing_hosts = sorted(DOMAIN_TRAIT_HOSTS - {leaf.id for leaf in hosts})
-    if missing_hosts:
-        msg = f"DOMAIN_TRAIT_HOSTS names leaves the space no longer enumerates: {missing_hosts}"
-        raise SystemExit(msg)
-    for leaf in hosts:
-        for label, choices in DOMAIN_TRAIT_VARIANTS:
-            chosen = {**leaf.answers, "domain_traits": choices}
-            leaves.append(
-                Leaf(
-                    id=f"{leaf.id}/domain={label}",
-                    note=f"{leaf.note}; domain traits selected ({', '.join(choices)})",
-                    answers=chosen,
-                    expect=INVARIANTS.expect_for(chosen),
-                )
-            )
+    leaves.extend(_derived_variants(leaves))
 
     leaves.sort(key=lambda leaf: leaf.id)
     ids = [leaf.id for leaf in leaves]

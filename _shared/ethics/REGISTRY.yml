@@ -31,6 +31,23 @@ sections:
     superseded_by: null
     why: "Public NTP concentration case (Fukuoka University 133.100.9.2/133.100.11.8, clock.nc.fukuoka-u.ac.jp): single-IP hardcoding plus retry storms as the DDoS-to-self pattern. First sample section for the region bundle."
 
+  - id: baseline-cra-obligations
+    file: _shared/ethics/region/eu-cra.md.jinja
+    version: 2026-09-20.1
+    effective: 2026-09-11
+    review_by: 2027-03-31
+    sources:
+      - https://eur-lex.europa.eu/eli/reg/2024/2847/oj
+      - https://digital-strategy.ec.europa.eu/en/policies/cra-reporting
+    scope: {jurisdiction: [eu], sector: [], category: [supply-chain-security]}
+    scale: regional
+    audience: [library, cli, web, mcp]
+    enforcement: L1
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    superseded_by: null
+    why: "Regulation (EU) 2024/2847 applies in stages: conformity-assessment notification since 2024-06-11, the reporting duty since 2026-09-11 (already live), the main obligations from 2027-12-11. It reaches non-EU developers who place products on the EU market, and art. 24's free-software exemption holds only while the work is non-commercial -- which is why the gate is the `distribution` answer (commercial), not a jurisdiction question: the answer that decides whether a regulator cares is monetisation, and asking a personal project about CE marking would be the over-distribution the ethics-appendix predicate calls uninvited. The mechanical half (SBOM generation, dependency vulnerability monitoring) is what a template can actually ship; the 24-hour reporting duty stays process, documented rather than automated. L1: tools/ethics.py's presence trigger fires on the code vocabulary, and the predicate asserts the section appears exactly where `distribution` selects it."
+
   - id: baseline-personal-data
     file: _shared/ethics/baseline/personal-data.md.jinja
     version: 2026-09-20.1

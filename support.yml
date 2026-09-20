@@ -75,6 +75,9 @@ best_effort:
   - combination: "any domain-trait variant (domain_traits selects personal-data / face-recognition / medtech)"
     tier: best_effort
     why: "the domain traits route ethics sections and one dependency; the derived variants render and ruff-check in the fast tier, and the sections' presence is asserted by the ethics-appendix predicate there rather than by executing a project"
+  - combination: "any distribution variant (distribution answers commercial and/or oss)"
+    tier: best_effort
+    why: "the distribution answer routes the EU CRA section; the derived variants render and ruff-check in the fast tier, and the art. 24 exemption (oss alone ships nothing) is asserted by the additivity check rather than by executing a project"
 
 tier_policy:
   - leaf_class: "project_type=*/gate=recommended (library, web_api, cli, data_science, script, micropython, online_judge)"
@@ -98,6 +101,9 @@ tier_policy:
   - leaf_class: "project_type=*/.../domain=* (domain_traits variants)"
     tier: fast
     why: "a domain trait adds an ethics section (and for face-recognition a dependency) and no artifact: its presence is the ethics-appendix predicate's business, which render + ruff-check already exercises. The co-occurrence leaf is what the additivity check compares against the solo ones"
+  - leaf_class: "project_type=*/.../distribution=* (distribution variants)"
+    tier: fast
+    why: "the distribution answer adds one ethics section (the EU CRA duties on `commercial`) and no artifact; render + ruff-check exercises it, and the additivity check pins that `oss` alone ships nothing (art. 24's non-commercial exemption)"
   - leaf_class: "(reserved) no class today"
     tier: none
     why: "every declared witness leaf has a recorded fast-tier run; tests/matrix/witnesses.json keeps the tier:none + reason hook as the future exclusion mechanism"

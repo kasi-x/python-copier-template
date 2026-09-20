@@ -112,6 +112,12 @@ LEDGER_LEAVES: tuple[str, ...] = (
     "project_type=data_science/gate=recommended/domain=all",
     "project_type=data_science/gate=recommended/domain=medtech",
     "project_type=data_science/gate=recommended/domain=face-recognition",
+    # the distribution answers: the predicate must render one of each, or a
+    # dropped CRA gate (the section is the only thing `commercial` adds) is
+    # invisible to the ethics-appendix check
+    "project_type=cli/gate=recommended/distribution=commercial",
+    "project_type=cli/gate=recommended/distribution=oss",
+    "project_type=cli/gate=recommended/distribution=commercial+oss",
 )
 
 # Third-party imports the platform provides, never a PyPI distribution: ROS
@@ -815,6 +821,29 @@ def _personal_data_selector(answers: dict[str, object]) -> bool:
     return bool(traits & {"personal-data", "face-recognition", "medtech"})
 
 
+def _distribution_values(answers: dict[str, object]) -> set[str]:
+    """The `distribution` multiselect's answer, in either recorded shape."""
+    recorded = answers.get("distribution", [])
+    if isinstance(recorded, str):
+        return {recorded}
+    if isinstance(recorded, (list, tuple, set)):
+        return {str(entry) for entry in recorded}
+    return set()
+
+
+def _commercial_selector(answers: dict[str, object]) -> bool:
+    """The CRA duties: the `commercial` distribution answer.
+
+    Regulation (EU) 2024/2847 art. 24 exempts free software *while it is not
+    commercialised*, so monetisation is what makes a regulator care -- not the
+    project type, and not jurisdiction on its own (a personal project in the EU
+    owes nothing). Reading the answer the user gave for that purpose keeps the
+    section off internal tools, which is the same over-distribution the
+    ethics-appendix predicate calls uninvited.
+    """
+    return "commercial" in _distribution_values(answers)
+
+
 ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
     "license-drift": ("ライセンス変動", lambda answers: True),
     "personal-data": ("個人データ", _personal_data_selector),
@@ -824,6 +853,7 @@ ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
     "ml-bias": ("MLバイアス", _ds_stack_trait),
     "face-recognition": ("顔認識", _domain_trait("face-recognition")),
     "samd-regulatory": ("医療SaMD", _domain_trait("medtech")),
+    "cra-obligations": ("EU CRA", _commercial_selector),
 }
 
 
@@ -960,6 +990,18 @@ def _domain_leaf_answers() -> dict[str, dict[str, object]]:
     return found
 
 
+def _distribution_leaf_answers() -> dict[str, dict[str, object]]:
+    """The distribution leaves from the ledger, keyed by their answer label."""
+    declared = _declared_answers()
+    found: dict[str, dict[str, object]] = {}
+    for leaf_id, answers in declared.items():
+        if "/distribution=" not in leaf_id:
+            continue
+        label = leaf_id.rsplit("/distribution=", 1)[1]
+        found[label] = dict(answers)
+    return found
+
+
 def _section_titles(root: Path) -> list[str]:
     """Every ethics section title in the render's AGENTS.md, in document order."""
     path = root / "AGENTS.md"
@@ -1060,3 +1102,72 @@ def test_domain_contributions_are_additive(
     ]
 
     assert problems == [], "the domain contributions are not additive:\n  " + "\n  ".join(problems)
+
+
+def test_the_distribution_leaves_cover_each_answer_and_the_combination():
+    """The distribution variants the additivity check reads must all exist."""
+    leaves = _distribution_leaf_answers()
+    expected = {"commercial", "oss", "commercial+oss"}
+    assert set(leaves) == expected, (
+        f"the witness ledger's distribution leaves are {sorted(leaves)}, expected {sorted(expected)}; "
+        f"regenerate tests/matrix/witnesses.jsonl (task witness)"
+    )
+
+
+def test_distribution_contributions_are_additive(tmp_path: Path, render_cache: RenderCache, counters: Counters) -> None:
+    """`commercial` and `oss` combine without dropping or doubling anything.
+
+    The same property the domain traits are held to, on the axis that decides
+    whether a regulator cares: selecting both must ship what each ships alone
+    (the CRA duties come from `commercial`; `oss` adds nothing while it is not
+    commercial), and nothing may appear twice. The pair is the case EU
+    2024/2847 art. 24 turns on -- free software stops being exempt once it is
+    monetised -- so it is the one combination worth pinning here.
+    """
+    leaves = _distribution_leaf_answers()
+    both = leaves["commercial+oss"]
+    rendered: dict[str, Path] = {}
+    for name, answers in leaves.items():
+        rendered[name] = tmp_path / name.replace("+", "_")
+        render_cache.render(rendered[name], answers)
+        counters.renders += 1
+
+    combined_sections = _section_titles(rendered["commercial+oss"])
+    problems: list[str] = []
+    duplicated = sorted({title for title in combined_sections if combined_sections.count(title) > 1})
+    if duplicated:
+        problems.append(f"selecting commercial+oss renders these sections more than once: {duplicated}")
+    for name in ("commercial", "oss"):
+        problems += [
+            f"selecting {name} ships the {section!r} section, but commercial+oss drops it"
+            for section in _section_titles(rendered[name])
+            if section not in combined_sections
+        ]
+    # The combined answer must not invent a section neither answer selects.
+    unconditional = {marker for marker, selects in ETHICS_SECTIONS.values() if selects({})}
+    solo = {section for name in ("commercial", "oss") for section in _section_titles(rendered[name])}
+    problems += [
+        f"commercial+oss ships the {section!r} section, which neither answer selects alone"
+        for section in combined_sections
+        if section not in solo and section not in unconditional
+    ]
+    # And the substantive claim, in both directions: the combined answer is
+    # the commercial one's, and `oss` alone ships NO CRA section -- that is
+    # art. 24's exemption, and asserting only the combination would let a gate
+    # that fires on `oss` through (both sides would carry it).
+    commercial = _section_titles(rendered["commercial"])
+    if combined_sections != commercial:
+        problems.append(
+            f"commercial+oss ships {combined_sections}, but commercial alone ships {commercial}: "
+            f"adding `oss` must not change the appendix (art. 24 exempts non-commercial free software, "
+            f"not commercial free software)"
+        )
+    cra = ETHICS_SECTIONS["cra-obligations"][0]
+    if cra in _section_titles(rendered["oss"]):
+        problems.append(
+            f"selecting oss alone ships the {cra!r} section, but the CRA exempts free software while it is "
+            f"non-commercial (art. 24): only `commercial` may select it"
+        )
+    assert problems == [], "the distribution contributions are not additive:\n  " + "\n  ".join(problems)
+    # Guard the oracle: the leaves really differ, so the comparison is not vacuous.
+    assert both.get("distribution") == ["commercial", "oss"]

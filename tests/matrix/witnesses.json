@@ -946,6 +946,61 @@
       "source": "full"
     },
     {
+      "id": "project_type=cli/gate=recommended/distribution=commercial",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "cli",
+        "distribution": [
+          "commercial"
+        ]
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=recommended/distribution=commercial+oss",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "cli",
+        "distribution": [
+          "commercial",
+          "oss"
+        ]
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=recommended/distribution=oss",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "cli",
+        "distribution": [
+          "oss"
+        ]
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=cli/gate=recommended/domain=all",
       "tier": "fast",
       "result": "pass",
@@ -1394,6 +1449,61 @@
         "project_type": "data_science"
       },
       "source": "full"
+    },
+    {
+      "id": "project_type=data_science/gate=recommended/distribution=commercial",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "data_science",
+        "distribution": [
+          "commercial"
+        ]
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=recommended/distribution=commercial+oss",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "data_science",
+        "distribution": [
+          "commercial",
+          "oss"
+        ]
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=recommended/distribution=oss",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "data_science",
+        "distribution": [
+          "oss"
+        ]
+      },
+      "source": "fast"
     },
     {
       "id": "project_type=data_science/gate=recommended/domain=all",
@@ -4120,8 +4230,8 @@
     }
   ],
   "coverage": {
-    "total": 242,
-    "executed_fast": 242,
+    "total": 248,
+    "executed_fast": 248,
     "executed_full": 8,
     "none": 0,
     "unexecuted": []

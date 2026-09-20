@@ -37,6 +37,7 @@ regression that only breaks install or run is not caught there.
 | `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api \| include_bot)` | `best_effort` | the layer leaves render and ruff-check in the fast tier; only the eight sampled leaves get the execution tier |
 | `any detailed-question branch (gate=off:use_recommended_*)` | `best_effort` | only cli/gate=off:use_recommended_agent is in the sample; the remaining gate-off branches are fast-tier renders, not executions |
 | `any domain-trait variant (domain_traits selects personal-data / face-recognition / medtech)` | `best_effort` | the domain traits route ethics sections and one dependency; the derived variants render and ruff-check in the fast tier, and the sections' presence is asserted by the ethics-appendix predicate there rather than by executing a project |
+| `any distribution variant (distribution answers commercial and/or oss)` | `best_effort` | the distribution answer routes the EU CRA section; the derived variants render and ruff-check in the fast tier, and the art. 24 exemption (oss alone ships nothing) is asserted by the additivity check rather than by executing a project |
 
 ## Tier policy
 
@@ -54,5 +55,6 @@ today because every declared leaf has a recorded fast-tier run.
 | `project_type=*/.../include=include_*` | `fast` | the opt-in layers (ctf / data_science / scraping / web_api / bot) are coverable by rendering: their artifacts are file-set invariants; the bot layer's real execution is tests/test_bot_layer.py's heavy case |
 | `project_type=online_judge/.../oj=*` | `fast` | AtCoder carries the execution sample; leetcode / yukicoder / aoj / ctf / kaggle are render-only |
 | `project_type=*/.../domain=* (domain_traits variants)` | `fast` | a domain trait adds an ethics section (and for face-recognition a dependency) and no artifact: its presence is the ethics-appendix predicate's business, which render + ruff-check already exercises. The co-occurrence leaf is what the additivity check compares against the solo ones |
+| `project_type=*/.../distribution=* (distribution variants)` | `fast` | the distribution answer adds one ethics section (the EU CRA duties on `commercial`) and no artifact; render + ruff-check exercises it, and the additivity check pins that `oss` alone ships nothing (art. 24's non-commercial exemption) |
 | `(reserved) no class today` | `none` | every declared witness leaf has a recorded fast-tier run; tests/matrix/witnesses.json keeps the tier:none + reason hook as the future exclusion mechanism |
 <!-- END GENERATED: support-matrix -->

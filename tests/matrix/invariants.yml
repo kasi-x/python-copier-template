@@ -652,3 +652,30 @@ leaf_classes:
       name: fast
       why: "render + ruff: the trait adds an ethics section and, only where the data-science layout holds, the CARE sheet"
     why: "the medtech domain trait: AGENTS.md gains the medical-SaMD section, plus the privacy section (health data is a special category). questions/_internal.yml's `care` takes the trait as a second trigger but keeps the `data_science_layout` conjunct, so a clinical web service gets the sections and no data/ sheet."
+
+  # -- the distribution answers ------------------------------------------- #
+  #
+  # Like the domain traits, `distribution` is a derived axis: the projection
+  # keeps it at its default (`in-house`), and the variants in
+  # tools/z3_witnesses.py vary it. What it changes is one section -- the EU
+  # CRA duties on `commercial` -- and nothing else, so these rows declare no
+  # artifacts and carry the `ethics-appendix` predicate.
+  - id: distribution=commercial
+    select: {}
+    ships: []
+    absent: []
+    predicates: [ethics-appendix]
+    tier:
+      name: fast
+      why: "render + ruff: the answer adds an ethics section, no artifact of its own (support.yml tier_policy)"
+    why: "the `commercial` distribution answer: AGENTS.md gains the EU CRA section (24-hour vulnerability reporting, SBOM, an explicit support period). Monetisation is what lifts the regulation's free-software exemption, which is why the section is gated on this answer rather than on the project type."
+
+  - id: distribution=oss
+    select: {}
+    ships: []
+    absent: []
+    predicates: []
+    tier:
+      name: fast
+      why: "render + ruff: publishing the source without selling it changes no declared artifact"
+    why: "the `oss` answer on its own adds no section. That is the regulation's own line, not an omission: EU 2024/2847 art. 24 exempts free software while it is non-commercial, so an open repository owes no CRA duties until it is monetised -- the `commercial+oss` variant is where both apply."

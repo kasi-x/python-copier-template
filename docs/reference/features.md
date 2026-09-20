@@ -374,6 +374,7 @@ element to a combinable base:
 | `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api \| include_bot)` | `best_effort` |
 | `any detailed-question branch (gate=off:use_recommended_*)` | `best_effort` |
 | `any domain-trait variant (domain_traits selects personal-data / face-recognition / medtech)` | `best_effort` |
+| `any distribution variant (distribution answers commercial and/or oss)` | `best_effort` |
 
 Full matrix and the evidence behind each tier: [support.md](support.md).
 <!-- END GENERATED: support-table -->

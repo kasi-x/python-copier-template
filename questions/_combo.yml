@@ -224,6 +224,45 @@ domain_traits:
         not. Answering none is correct when the project only resembles one
         of these domains.
 
+# How the project reaches the world, which is what decides whose rules apply.
+# A separate axis from `domain_traits` (what it handles) because the two are
+# independent: a medical CLI can stay in-house or ship as a commercial
+# product, and only the second answers to a regulator.
+#
+# Multiselect rather than one choice because the answers genuinely overlap -- a
+# project can be an internal tool that is also released as OSS -- and because
+# they are not exclusive states: `in-house` plus `oss` is normal, `in-house`
+# plus `commercial` is a contradiction the user can see and fix.
+#
+# Asked before the distribution questions it informs (`pypi`, `docker`), and
+# consumed by the ethics gates as a second signal next to `domain_traits`.
+distribution:
+    type: str
+    multiselect: true
+    default: [in-house]
+    choices:
+        - in-house
+        - oss
+        - commercial
+    help: |
+        How will this project be distributed and used (select all that
+        apply)?
+        - in-house: it stays inside one organisation or one person — an
+          internal tool, a private analysis, a personal project. Nothing is
+          published, so nothing is owed to users outside.
+        - oss: the source is published for others to use, study or modify
+          (a public repository, a package on PyPI, a shared template).
+          Answer this when you expect strangers to depend on it.
+        - commercial: it is sold, packaged as a product, or offered as a
+          paid service. This is what makes a regulator care — EU rules that
+          exempt non-commercial work (the Cyber Resilience Act's treatment
+          of free software, for instance) stop applying the moment the
+          product is monetised.
+        Answering in-house alone is right for most internal work. Select
+        several when several are true: an internal tool with a public
+        repository is in-house + oss, and a product you also open-source is
+        commercial + oss.
+
 # The include question's `when` / `combinable` / `has_*` trio is THREE
 # deliberate layers, not one — do not collapse it:
 # 1. each include_*.when (above) keeps the layer question from being ASKED
