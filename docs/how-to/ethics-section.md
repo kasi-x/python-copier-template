@@ -45,7 +45,14 @@ and every guard accepts it without any other file being touched.
 Write the rule as a one-line summary plus a link to the primary source;
 never paste statutes or license texts verbatim, and keep the
 not-legal-advice footer. Name concrete shapes in 禁止パターン and
-copy-pasteable settings in 推奨設定, not slogans.
+copy-pasteable settings in 推奨設定, not slogans — back the rule with at
+least one bad/good code-or-config pair, the way the active sections do.
+Keep snippets free of `{{ }}` / `{% %}`: the section file is rendered as
+jinja, so double braces would be evaluated, not printed. And keep
+` ```python ` examples ruff-format-clean: ruff 0.16+ formats Python code
+blocks inside markdown, so a stylistically-off example fails the
+generated project's `task check` (the registry test catches this before
+any render — a "bad" example is bad semantically, not stylistically).
 
 ## Promote a draft to active
 

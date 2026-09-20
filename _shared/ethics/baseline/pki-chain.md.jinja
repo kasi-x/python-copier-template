@@ -1,4 +1,4 @@
-{# ethics: id=baseline-pki-chain version=2026-09-21.1 status=active
+{# ethics: id=baseline-pki-chain version=2026-09-21.2 status=active
    triggers=["tls","cert","trust-store","pinning","mtls","ca_bundle"] #}
 # PKIチェーン再編 — 中間証明書・発行チェーンをハードコードしない
 
@@ -43,6 +43,20 @@ Cloudflareコミュニティ(REGISTRY.ymlに記録)。
 - チェーン検証をCIに入れる(`openssl s_client -showcerts`相当で
   実チェーンを確認し、issuer前提コードを検出する)。
 - 有効期限・失効情報(OCSP/CRL・CTログ)の監視を証明書運用の一部にする。
+
+具体例(TLSクライアントの既定形。悪い形と良い形の対):
+
+```python
+# 悪い: 検証の握りつぶしと、焼き込み・単一鍵への固定
+httpx.get(url, verify=False)  # CERT_NONE での障害回避
+requests.get(url, verify="packaging/chain.pem")  # 同梱チェーンの固定
+if issuer_cn(cert) == "R3":
+    ...  # 発行チェーン前提の分岐
+
+# 良い: 既定の trust store に従い、pin は公開鍵集合で行う
+httpx.get(url)  # システムの検証に従う
+pin_set = {"sha256/現行の鍵", "sha256/バックアップ鍵"}  # 手順と一緒に版管理
+```
 
 ## 運用チェック
 

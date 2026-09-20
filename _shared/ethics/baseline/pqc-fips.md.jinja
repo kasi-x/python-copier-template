@@ -1,4 +1,4 @@
-{# ethics: id=baseline-pqc-fips version=2026-09-18.1 status=active
+{# ethics: id=baseline-pqc-fips version=2026-09-21.1 status=active
    triggers=["pqc","fips","tls","rsa","ecdh","ecdsa","kyber","ml-kem"] #}
 # PQC標準 — 新規の暗号選択はML-KEM/ML-DSA系・ハイブリッドで行う
 
@@ -46,6 +46,18 @@ NIST IR 8547はRSA-2048・ECDH-P256等の112bit安全性を2030年までにdepre
 - ライブラリ: 標準名API(`ML-KEM-768`等)を提供する版に上げ、独自実装をしない。
 - 用語の移行: ドキュメント・設定・ログの応募名を標準名に置換し、
   対応はIANA等の公式レジストリで確認する。
+
+具体例(設定・識別子に現れる形。悪い形と良い形の対):
+
+```text
+# 悪い: 応募名と旧単体の新規採用
+kyber768 / dilithium3                  # 応募名。標準名に直す
+TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256  # ECDH 単独の新規鍵共有
+
+# 良い: 標準名 + ハイブリッド
+ML-KEM-768(鍵共有) / ML-DSA-65(署名)     # FIPS 203/204 の標準名
+group = X25519MLKEM768                  # TLS のハイブリッド群(OpenSSL 3.5系は既定群)
+```
 
 ## 運用チェック
 

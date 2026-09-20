@@ -1,4 +1,4 @@
-{# ethics: id=baseline-personal-data version=2026-09-20.1 status=active
+{# ethics: id=baseline-personal-data version=2026-09-21.1 status=active
    triggers=["pii","personal","gdpr","privacy","user_data","deletion"] #}
 # 個人データ — 集める前に最小化し、消せる経路を先に作る
 
@@ -64,6 +64,22 @@ EUのGDPR(2016/679、2018-05-25適用)は、個人データを「識別され
 - 自動判断は説明可能な形で記録する(入力の要約・モデル版・結果・
   人間の確認有無)。
 - 開発環境は本番データを使わない。必要なら生成データで代替する。
+
+具体例(ログとエラートラッカーの最小化。悪い形と良い形の対):
+
+```python
+# 悪い: 本文・トークンがそのまま外へ出る
+async def log_request_bad(request, user_id, e):
+    logger.info("payload", body=await request.body())  # 本文が外へ出る
+    capture_exception(e)  # 送信前スクラブなし
+
+
+# 良い: 落とす列を既定にし、識別子は仮名化する
+async def log_request_good(request, user_id):
+    payload = await request.json()
+    logger.info("request", keys=sorted(payload), user_ref=pseudonym(user_id))
+    init_error_tracker(before_send=scrub_pii)  # プロセス外に出る前に削る
+```
 
 ## 運用チェック
 

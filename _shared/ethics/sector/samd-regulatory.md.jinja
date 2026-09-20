@@ -1,4 +1,4 @@
-{# ethics: id=sector-samd-regulatory version=2026-09-20.1 status=active
+{# ethics: id=sector-samd-regulatory version=2026-09-21.1 status=active
    triggers=["samd","pmda","fda","pccp","clinical","diagnosis"] #}
 # 医療SaMD — 継続学習は承認済み変更限界の中で、判断は人間と共に
 
@@ -51,6 +51,22 @@ CE適合性評価と市販後監視(PMS)が必要になる。AI Actは2026-08-02
 - Human-in-the-Loop UI: 最終判断欄・承認者・根拠提示(ヒートマップ等の
   補助情報)を画面設計に組み込む。
 - モデルカード(用途、制限、検証結果)をリリース物に同梱する。
+
+具体例(監査記録と変更限界の判定):
+
+```python
+# どの版が、どの入力に、何を出し、誰が確認したかを残す
+audit.record(
+    model_version=MODEL_VERSION,
+    case_ref=case_id,
+    output=decision,
+    reviewed_by=clinician_id,
+)
+
+# 本番差し替えは固定評価セットで再評価し、承認済み変更限界内かで判定する
+if not pccp_allows(eval_on_locked_suite(candidate_model)):
+    rollback_to(current_model)  # 変更計画の外なら本番に出さない
+```
 
 ## 運用チェック
 

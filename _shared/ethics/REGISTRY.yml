@@ -33,7 +33,7 @@ sections:
 
   - id: baseline-cra-obligations
     file: _shared/ethics/region/eu-cra.md.jinja
-    version: 2026-09-20.1
+    version: 2026-09-21.1
     effective: 2026-09-11
     review_by: 2027-03-31
     sources:
@@ -50,7 +50,7 @@ sections:
 
   - id: baseline-personal-data
     file: _shared/ethics/baseline/personal-data.md.jinja
-    version: 2026-09-20.1
+    version: 2026-09-21.1
     effective: 2018-05-25
     review_by: 2027-03-31
     sources:
@@ -68,7 +68,7 @@ sections:
 
   - id: baseline-pqc-fips
     file: _shared/ethics/baseline/pqc-fips.md.jinja
-    version: 2026-09-18.1
+    version: 2026-09-21.1
     effective: 2024-08-13
     review_by: 2027-03-31
     sources:
@@ -88,7 +88,7 @@ sections:
 
   - id: baseline-pki-chain
     file: _shared/ethics/baseline/pki-chain.md.jinja
-    version: 2026-09-21.1
+    version: 2026-09-21.2
     effective: 2024-06-06
     review_by: 2026-12-18
     sources:
@@ -108,7 +108,7 @@ sections:
 
   - id: baseline-license-drift
     file: _shared/ethics/baseline/license-drift.md.jinja
-    version: 2026-09-19.1
+    version: 2026-09-21.1
     effective: 2023-08-10
     review_by: 2027-03-31
     sources:
@@ -125,7 +125,7 @@ sections:
 
   - id: baseline-copyright-ai
     file: _shared/ethics/baseline/copyright-ai.md.jinja
-    version: 2026-09-21.1
+    version: 2026-09-21.2
     effective: 2024-03-15
     review_by: 2027-03-31
     sources:
@@ -157,7 +157,7 @@ sections:
 
   - id: domain-face-recognition
     file: _shared/ethics/domain/face-recognition.md.jinja
-    version: 2026-09-20.1
+    version: 2026-09-21.1
     effective: 2025-02-02
     review_by: 2027-03-31
     sources:
@@ -176,7 +176,7 @@ sections:
 
   - id: domain-ml-bias
     file: _shared/ethics/domain/ml-bias.md.jinja
-    version: 2026-09-20.1
+    version: 2026-09-21.1
     effective: 2024-08-01
     review_by: 2026-12-18
     sources:
@@ -193,7 +193,7 @@ sections:
 
   - id: sector-samd-regulatory
     file: _shared/ethics/sector/samd-regulatory.md.jinja
-    version: 2026-09-20.1
+    version: 2026-09-21.1
     effective: 2024-12-04
     review_by: 2026-12-18
     sources:

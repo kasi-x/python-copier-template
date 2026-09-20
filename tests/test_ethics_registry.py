@@ -230,6 +230,49 @@ def test_copyright_terms_table_matches_its_section():
     )
 
 
+def test_python_examples_are_ruff_format_clean(tmp_path: Path):
+    """A section's ```python blocks survive the generated project's `task check`.
+
+    ruff 0.16+ formats Python code blocks inside markdown files, and the
+    section bodies render into the generated AGENTS.md — so an example
+    whose style is off fails `ruff format --check` for every project kind
+    that ships the section. The examples are checked under both generated
+    widths (allow_japanese's 88 and 120). A "bad" example is bad
+    semantically (verify=False, a missing scrub), never stylistically.
+    """
+    import subprocess  # noqa: PLC0415
+
+    blocks: list[tuple[str, int, str]] = []
+    for row in _load_registry():
+        text = (TOP / str(row["file"])).read_text(encoding="utf-8")
+        for index, span in enumerate(re.findall(r"```python\n(.*?)```", text, re.DOTALL)):
+            blocks.append((str(row["id"]), index, span))
+    assert blocks, "no python examples found: the sections lost their concrete examples"
+
+    for line_length in (88, 120):
+        for section_id, index, code in blocks:
+            example = tmp_path / f"{section_id}-{index}.py"
+            example.write_text(code, encoding="utf-8")
+            proc = subprocess.run(  # noqa: S603
+                [
+                    sys.executable,
+                    "-m",
+                    "ruff",
+                    "format",
+                    "--check",
+                    "--no-cache",
+                    f"--line-length={line_length}",
+                    str(example),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            assert proc.returncode == 0, (
+                f"{section_id} example {index} is not ruff-format-clean at width {line_length}:\n"
+                f"{proc.stdout}{proc.stderr}"
+            )
+
+
 def test_no_review_date_has_passed():
     """A section whose review_by is in the past is overdue, loudly.
 

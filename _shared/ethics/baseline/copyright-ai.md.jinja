@@ -1,4 +1,4 @@
-{# ethics: id=baseline-copyright-ai version=2026-09-21.1 status=active
+{# ethics: id=baseline-copyright-ai version=2026-09-21.2 status=active
    triggers=["scraping","robots.txt","rag","fine-tuning","dataset","public-domain"] #}
 # AIと著作権 — 取得・学習・RAGコードは「非享受目的」を壊さない
 
@@ -54,6 +54,21 @@
   (死後年数・団体名義・戦時加算など)はテンプレート側の単一源
   `_shared/ethics/lang/copyright-terms.yml` に構造化してある。生成物には
   本要約のみ同梱され、チェッカー実装時は対象法域の現行法で再確認する。
+
+具体例(取得とRAGの既定形。悪い形と良い形の対):
+
+```python
+# 取得は拒否措置を尊重する(標準庫の robots.txt パーサ)
+rp = robotparser.RobotFileParser()
+rp.set_url(base_url + "/robots.txt")
+rp.read()
+if not rp.can_fetch(USER_AGENT, url):
+    skip(url)  # 迂回(UA 偽装・IP ローテーション)を書かない
+
+# RAG は生チャンクを返さない: 既知ソースとの長い共通 n-gram を差し戻す
+if longest_common_ngram(answer, source, n=12):
+    reject("output is too close to the source")
+```
 
 ## 運用チェック
 

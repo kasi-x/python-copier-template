@@ -1,4 +1,4 @@
-{# ethics: id=baseline-cra-obligations version=2026-09-20.1 status=active
+{# ethics: id=baseline-cra-obligations version=2026-09-21.1 status=active
    triggers=["cra","sbom","vulnerability","cve","incident","resilience"] #}
 # EU CRA — 商用ソフトの脆弱性報告とSBOMは、もう任意ではない
 
@@ -61,6 +61,15 @@ EU のサイバーレジリエンス規則(Cyber Resilience Act、規則 (EU) 20
   実際の報告先は ENISA の単一報告プラットフォーム。
 - 商用化の判断時に、非商用だった構成のままかを確認する(依存の
   ライセンスと同様、`distribution` の回答が変われば義務も変わる)。
+
+具体例(報告の流れ。第14条。2026-09-11 以降は適用済み):
+
+```text
+1) 能動的悪用を認識 → 24h 以内に ENISA へ早期警告(未確定でも出す)
+2) 72h 以内に詳細報告(影響範囲・既知対策の状況)
+3) 脆弱性は 14 日以内に最終報告(修正版の有無を含む)
+```
+窓口と担当者を `SECURITY.md` に書き、この手順自体を版管理する。
 
 ## 運用チェック
 

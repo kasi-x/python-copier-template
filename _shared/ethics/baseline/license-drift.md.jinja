@@ -1,4 +1,4 @@
-{# ethics: id=baseline-license-drift version=2026-09-19.1 status=active
+{# ethics: id=baseline-license-drift version=2026-09-21.1 status=active
    triggers=["license","bsl","sspl","copyleft","gpl","terraform"] #}
 # ライセンス変動 — 依存の現行ライセンスを追跡し、BSL/SSPL混入を防ぐ
 
@@ -41,7 +41,12 @@ BSL適用後コードの不正利用を主張する書簡を送付し、OpenTofu
 ## 推奨設定
 
 - allowlist方針を明文化(Apache-2.0/MIT/BSD/MPL-2.0等を許可、
-  GPL系は配布形態照合、BSL/SSPLは例外承認制)。
+  GPL系は配布形態照合、BSL/SSPLは例外承認制)。明文化の雛形:
+  ```text
+  許可: Apache-2.0 / MIT / BSD-2・3-Clause / ISC / MPL-2.0 / Python-2.0 / Unlicense
+  要照合: LGPL(リンク形態) / EPL-2.0(例外条項の範囲)
+  原則拒否・例外承認制: GPL系(配布形態照合) / AGPL / BSL / SSPL / RSAL / ELv2
+  ```
 - 依存ライセンスの列挙と照合は、生成物に同梱の `license-check` タスクが
   行う(`pip-licenses --from=mixed --partial-match`。security推奨で有効、
   CIのlintジョブから呼ばれる。fail-on はプロジェクトのライセンスから

@@ -1,4 +1,4 @@
-{# ethics: id=domain-face-recognition version=2026-09-20.1 status=active
+{# ethics: id=domain-face-recognition version=2026-09-21.1 status=active
    triggers=["face","facial","biometric","recognition","bipa","liveness"] #}
 # 顔認識 — 生体識別は例外手続き、用途の適法性を先に確認する
 
@@ -58,6 +58,18 @@ Part 3(2019)は、多くのアルゴリズムで偽陽性率が人種・性別�
 - 同意記録(取得時の書面同意・目的・期間)をデータと一緒に持つ。
 - 監査ログは「いつ・誰が・どのモデル版で照合したか」を残し、
   照合スコアそのものと生体データは残さない。
+
+具体例(用途ゲートと集団別しきい値):
+
+```python
+# 用途区分は起動時に明示させ、禁止区分は起動を拒否する
+if settings.purpose not in ALLOWED_PURPOSES:  # 設定ミスが本番に載らない形
+    raise SystemExit(f"purpose not allowed: {settings.purpose}")
+
+# しきい値は集団別誤り率の表から根拠付きで選ぶ(単一値を既定にしない)
+for group, rows in eval_rows.groupby("demographic_group"):
+    fpr_by_threshold[group] = false_positive_rates(rows, thresholds)
+```
 
 ## 運用チェック
 
