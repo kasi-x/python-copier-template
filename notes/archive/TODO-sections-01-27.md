@@ -179,7 +179,7 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
         ENTRYPOINT（`scripts.<name>` = CLI）や既存テスト（`python -m <pkg> --version`）
         と衝突する。常駐物ごとに独立モジュール + 専用 `[project.scripts]` を持つ方が
         CLI / 常駐の二重起動を構造的に防げる
-- [ ] **botter 向け（discord / slack / LINE / Gmail）: 常駐レイヤーの platform として
+- [x] **botter 向け（discord / slack / LINE / Gmail）: 常駐レイヤーの platform として
       実装する**（2026-09-08 方針確定: bot も実装する。project_type は増やさない）
       → **第一スライス着地（2026-09-14、734844aa + bbaa98e0 + b275e98b + 17d2a8f3）**:
         `include_bot` / `use_recommended_bot` / `bot_platform`（選択肢は discord のみ。
@@ -1055,7 +1055,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
 
 ### 残課題（2026-09-06 時点。解消分は下記に降格）
 
-- [ ] 生成物の `dependencies = []` を project_type に応じて自動設定する改善
+- [x] 生成物の `dependencies = []` を project_type に応じて自動設定する改善
       （web_api / data_science は既に設定済み。library の空依存は
       「依存ゼロで始める」設計として維持するか、質問にするかは要検討）
       → **残り（2026-09-14 監査）**: web_api / data_science は設定済み。library の空依存を「維持」とするか「質問化」するかが未決
@@ -1325,7 +1325,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       - `z3` の `importorskip` 黙り skip をやめ、必須化または skip 件数を assert する
       - `hypothesis` は現状 `tests/` でゼロ使用（deptry 除外で延命）。property test を
         `_tokenize_when` / questionnaire parser に書くか、依存から外すか決める
-- [ ] **setup 重複を composite action 化する**（runner 分岐の方は 2026-09-16 に完了）
+- [x] **setup 重複を composite action 化する**（runner 分岐の方は 2026-09-16 に完了）
       - `_tasks.yml` / `_test.yml` / `_docs.yml` / `_dist.yml` の
         checkout(fetch-depth:0) + setup-uv/pixi/poetry + setup-task/just 約30行を
         `setup-runner` composite action に抽出する（**未着手**。この一式は
@@ -1838,7 +1838,7 @@ Acceptance はそのまま有効で、ここには**再掲しない**。この�
       - [x] `lint_render(answers)` — render して `ruff format --check` / `ruff check` まで
       - [x] `list_witnesses()` / `run_witness(tier)` — W3 の成果物を tool 面に出す
       - [x] `template_fingerprint()` — `render_cache.py` の指紋（render 入力の sha256）を返す
-- [ ] **`render_project` の戻り値を拡張する**（現状はファイル一覧 + dest）
+- [x] **`render_project` の戻り値を拡張する**（現状はファイル一覧 + dest）
       - ファイルごとの sha256 と `diff_against`（既存 dest との差分）を返す。
         tool の出力がそのまま回帰検証の入力になる。回帰比較そのものは
         `render_diff` が既に担うので、本項は利便性の重複整理として優先度低
@@ -1907,7 +1907,7 @@ Z3 の力は「どこを実行すれば十分か」を確定できる点にあ�
         23.3 の `render_diff` tool 化 + この不変条件で自動化）
       - AGENTS.md のコマンド表がタスクモデルと一致する / 生成 README の内部リンクが実在する
       - いずれも**レンダ後に決定的に判定できる**述語だけを不変条件にする（実行・network は入れない）
-- [ ] **手書きテストを不変条件へ移す棚卸し**（W3 Acceptance の「文言固定 assert の洗い出し」と同一作業）
+- [x] **手書きテストを不変条件へ移す棚卸し**（W3 Acceptance の「文言固定 assert の洗い出し」と同一作業）
       → **残り（2026-09-14 監査）**: 単一源と述語は着地済みだが移行は未完（§26.4-1b T12 の「他で回していない」render sweep 6 本 ≈60s を L1 へ移す）
       - 465 本のうち「葉 × 不変条件」で置換できるものを移し、実行テスト（heavy）は
         **不変条件で表現できない領域だけ**に絞る。これが「Z3 + 全葉検証」の比率を上げる唯一の道

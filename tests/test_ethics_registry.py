@@ -185,6 +185,50 @@ def test_every_row_documents_a_parseable_presence_trigger():
     )
 
 
+def test_copyright_terms_table_matches_its_section():
+    """The lang/ table is the structured half of baseline-copyright-ai.
+
+    `lang/` is reserved for the translation-style dictionaries the section
+    prose keeps out of AGENTS.md: the protection-term differences a
+    public-domain checker must consult. The pin holds the table to the
+    section it serves -- same review_by as the registry row, every
+    jurisdiction carrying rules plus its own primary sources, and the
+    wartime extension the section's prose names present as data, so the
+    section can claim "法域差" without the checker's inputs living only in
+    a paragraph.
+    """
+    rows = [row for row in _load_registry() if row["id"] == "baseline-copyright-ai"]
+    assert rows, "the copyright-ai section must stay registered"
+    review_by = _datestr(rows[0]["review_by"])
+    table_path = ETHICS / "lang" / "copyright-terms.yml"
+    assert table_path.is_file(), "the copyright-terms table must live under _shared/ethics/lang/"
+    payload = yaml.safe_load(table_path.read_text(encoding="utf-8"))
+    assert payload.get("version") == 1, "table version must be 1"
+    assert payload.get("serves") == "baseline-copyright-ai", "table must name the section it serves"
+    assert _datestr(payload.get("review_by")) == review_by, (
+        "the table's review_by must match the baseline-copyright-ai row"
+    )
+    terms = payload.get("terms")
+    assert isinstance(terms, dict) and terms, "terms must be a non-empty mapping"
+    for jurisdiction, entry in terms.items():
+        assert ID_RE.fullmatch(jurisdiction), f"bad jurisdiction id {jurisdiction!r}"
+        for key in ("individual", "corporate", "notes", "sources"):
+            assert key in entry, f"{jurisdiction}: missing key {key!r}"
+        assert entry["individual"] and entry["corporate"], f"{jurisdiction}: term rules must be non-empty"
+        assert isinstance(entry["notes"], list) and entry["notes"], f"{jurisdiction}: notes must be non-empty"
+        sources = entry["sources"]
+        assert isinstance(sources, list) and sources, f"{jurisdiction}: sources must be non-empty"
+        assert all(str(url).startswith("https://") for url in sources), f"{jurisdiction}: sources must be https URLs"
+    jp = terms.get("jp")
+    assert jp is not None and "戦時加算" in "".join(jp["notes"]), (
+        "jp must carry the wartime extension as data, not only in the section prose"
+    )
+    section_text = (TOP / str(rows[0]["file"])).read_text(encoding="utf-8")
+    assert "lang/copyright-terms.yml" in section_text, (
+        "the section must point at the table so the two cannot drift apart silently"
+    )
+
+
 def test_kyushu_ntp_denylist_and_detector():
     """The first section names the retired identifiers and ships a detector."""
     rows = [row for row in _load_registry() if row["id"] == "region-kyushu-ntp"]

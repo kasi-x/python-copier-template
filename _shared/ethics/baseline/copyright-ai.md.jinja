@@ -1,4 +1,4 @@
-{# ethics: id=baseline-copyright-ai version=2026-09-18.1 status=active
+{# ethics: id=baseline-copyright-ai version=2026-09-21.1 status=active
    triggers=["scraping","robots.txt","rag","fine-tuning","dataset","public-domain"] #}
 # AIと著作権 — 取得・学習・RAGコードは「非享受目的」を壊さない
 
@@ -50,7 +50,10 @@
 - 取り込み工程に利用規約・ライセンス確認ステップを置き、
   拒否措置(robots.txt/ToS)の有無をデータセットのメタデータに記録する。
 - パブリックドメイン判定は法域+著作者の没年/公表年を入力にする
-  チェッカーを通し、判定根拠を残す。
+  チェッカーを通し、判定根拠を残す。法域別の保護期間データ
+  (死後年数・団体名義・戦時加算など)はテンプレート側の単一源
+  `_shared/ethics/lang/copyright-terms.yml` に構造化してある。生成物には
+  本要約のみ同梱され、チェッカー実装時は対象法域の現行法で再確認する。
 
 ## 運用チェック
 

@@ -125,7 +125,7 @@ sections:
 
   - id: baseline-copyright-ai
     file: _shared/ethics/baseline/copyright-ai.md.jinja
-    version: 2026-09-18.1
+    version: 2026-09-21.1
     effective: 2024-03-15
     review_by: 2027-03-31
     sources:
