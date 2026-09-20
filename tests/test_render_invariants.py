@@ -800,8 +800,24 @@ def _domain_trait(name: str) -> Callable[[dict[str, object]], bool]:
     return selects
 
 
+def _personal_data_selector(answers: dict[str, object]) -> bool:
+    """The privacy rules: the `personal-data` choice, or any answer implying it.
+
+    Biometric data (face-recognition) and health data (medtech) ARE special
+    categories of personal data -- GDPR art. 9 says so, and so does Japan's
+    個人情報保護法 (要配慮個人情報). So selecting one of them is also a statement
+    that the project handles personal data, and the privacy section follows:
+    the implication is the regulation's own structure, not a convenience. The
+    AGENTS.md gate spells the same disjunction, and
+    tests/test_render_invariants.py holds the two together.
+    """
+    traits = _domain_traits(answers)
+    return bool(traits & {"personal-data", "face-recognition", "medtech"})
+
+
 ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
     "license-drift": ("ライセンス変動", lambda answers: True),
+    "personal-data": ("個人データ", _personal_data_selector),
     "pqc-fips": ("PQC標準", _crypto_trait),
     "copyright-ai": ("AIと著作権", _copyright_trait),
     "llm-appsec": ("MCP安全設計", _mcp_trait),

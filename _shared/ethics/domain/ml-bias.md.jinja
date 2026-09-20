@@ -1,9 +1,11 @@
-{# ethics: id=domain-ml-bias version=2026-09-18.1 status=active
+{# ethics: id=domain-ml-bias version=2026-09-20.1 status=active
    triggers=["fairness","bias","subgroup","xai","demographic"] #}
 # MLバイアス — 集団別評価・説明可能性・人間確認を評価に組み込む
 
 > **適用条件**: モデル学習・評価パイプライン、スクリーニング/判定
-> ロジック、データセット構築で、人に関する予測を扱う場面。
+> ロジック、データセット構築で、人に関する予測や判断を扱う場面。
+> 人について自動的に決める場合(評価・順位付け・承認・審査・照合)は、
+> 精度の高低にかかわらず本節の対象。
 > 規模: 世界問題(偏ったデータはどの国の集団にも不利に働き得る)。
 > 配布: data-science / kaggle(モデル学習・評価を含むもの)。
 > 要約: (1)平均精度だけでなく集団別の性能を必ず出す (2)protected

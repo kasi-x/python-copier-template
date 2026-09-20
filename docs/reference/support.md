@@ -36,7 +36,7 @@ regression that only breaks install or run is not caught there.
 | `project_type=online_judge/.../oj=* except atcoder` | `best_effort` | the non-AtCoder judges (leetcode / yukicoder / aoj / ctf / kaggle) render and ruff-check in the fast tier but never get a venv; only atcoder is in the full sample |
 | `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api \| include_bot)` | `best_effort` | the layer leaves render and ruff-check in the fast tier; only the eight sampled leaves get the execution tier |
 | `any detailed-question branch (gate=off:use_recommended_*)` | `best_effort` | only cli/gate=off:use_recommended_agent is in the sample; the remaining gate-off branches are fast-tier renders, not executions |
-| `any domain-trait variant (domain_traits selects face-recognition and/or medtech)` | `best_effort` | the domain traits route ethics sections and one dependency; the derived variants render and ruff-check in the fast tier, and the sections' presence is asserted by the ethics-appendix predicate there rather than by executing a project |
+| `any domain-trait variant (domain_traits selects personal-data / face-recognition / medtech)` | `best_effort` | the domain traits route ethics sections and one dependency; the derived variants render and ruff-check in the fast tier, and the sections' presence is asserted by the ethics-appendix predicate there rather than by executing a project |
 
 ## Tier policy
 

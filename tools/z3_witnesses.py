@@ -148,7 +148,7 @@ BOT_PLATFORM_VARIANTS: tuple[str, ...] = ("slack", "line", "gmail")
 # enough for that check because the sections and dependencies are independent
 # per domain -- if the union of {face} and {medtech} equals {face, medtech},
 # any larger selection follows by induction.
-DOMAIN_TRAIT_CHOICES: tuple[str, ...] = ("face-recognition", "medtech")
+DOMAIN_TRAIT_CHOICES: tuple[str, ...] = ("personal-data", "face-recognition", "medtech")
 
 # The leaves the domain variants are hosted on: the two ids whose answers put
 # them on either side of the pair a domain trait can interact with (does the

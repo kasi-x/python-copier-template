@@ -958,6 +958,7 @@
         "author_email": "kashimiya.exe@gmail.com",
         "project_type": "cli",
         "domain_traits": [
+          "personal-data",
           "face-recognition",
           "medtech"
         ]
@@ -996,6 +997,24 @@
         "project_type": "cli",
         "domain_traits": [
           "medtech"
+        ]
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=cli/gate=recommended/domain=personal-data",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "cli",
+        "domain_traits": [
+          "personal-data"
         ]
       },
       "source": "fast"
@@ -1389,6 +1408,7 @@
         "author_email": "kashimiya.exe@gmail.com",
         "project_type": "data_science",
         "domain_traits": [
+          "personal-data",
           "face-recognition",
           "medtech"
         ]
@@ -1427,6 +1447,24 @@
         "project_type": "data_science",
         "domain_traits": [
           "medtech"
+        ]
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=data_science/gate=recommended/domain=personal-data",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "data_science",
+        "domain_traits": [
+          "personal-data"
         ]
       },
       "source": "fast"
@@ -4082,8 +4120,8 @@
     }
   ],
   "coverage": {
-    "total": 240,
-    "executed_fast": 240,
+    "total": 242,
+    "executed_fast": 242,
     "executed_full": 8,
     "none": 0,
     "unexecuted": []

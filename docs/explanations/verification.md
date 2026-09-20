@@ -139,13 +139,13 @@ leave behind — after a deliberate tier change.
 <!-- BEGIN GENERATED: tier-ledger (tools/gen_docs.py --write) -->
 | Ledger row | Selector | Tests | Budget | Measured |
 |---|---|---|---|---|
-| `test-fast` | `-m "not heavy and not slow and not meta and not network"` | 985 | 30s (measured 18.6s) | 2026-09-20 |
+| `test-fast` | `-m "not heavy and not slow and not meta and not network"` | 987 | 30s (measured 18.6s) | 2026-09-20 |
 | `test-slow` | `-m "slow"` | 7 | measured 89.6s | 2026-09-17 |
 | `test-heavy` | `-m "heavy"` | 50 | measured 25.7s | 2026-09-17 |
 | `test-meta` | `-m "meta"` | 10 | measured 6.6s | 2026-09-17 |
-| `test` | `—` | 1052 | measured 178.6s | 2026-09-17 |
-| `test-randomly` | `-m "not heavy and not slow and not meta and not network"` | 985 | measured 22.3s | 2026-09-17 |
-| `witness-fast` | `-m "fast"` | 246 | measured 16.9s | 2026-09-18 |
+| `test` | `—` | 1054 | measured 178.6s | 2026-09-17 |
+| `test-randomly` | `-m "not heavy and not slow and not meta and not network"` | 987 | measured 22.3s | 2026-09-17 |
+| `witness-fast` | `-m "fast"` | 248 | measured 16.9s | 2026-09-18 |
 <!-- END GENERATED: tier-ledger -->
 
 The edit-loop budget is **30 s**; anything that pushes `task test-fast` past it

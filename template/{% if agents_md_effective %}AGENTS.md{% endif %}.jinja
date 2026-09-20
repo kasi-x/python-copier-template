@@ -99,7 +99,8 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
 Field rules the generator matched to this project kind (crypto choices,
 dependency license drift, data-collection copyright, LLM/MCP tool
 security, model-evaluation fairness), plus the rules your `domain_traits`
-answer selected (biometric identification, medical device software). Each
-section opens with a scope blockquote: if its triggers do not apply to the
-code you are editing, skip that section. Sections are written in Japanese.
-{% include "_shared/ethics/baseline/license-drift.md.jinja" %}{% if project_type in ['library', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pqc-fips.md.jinja" %}{% endif %}{% if project_type == 'cli' or data_science_layout %}{% include "_shared/ethics/baseline/copyright-ai.md.jinja" %}{% endif %}{% if mcp_effective %}{% include "_shared/ethics/domain/llm-appsec.md.jinja" %}{% endif %}{% if ds_stack %}{% include "_shared/ethics/domain/ml-bias.md.jinja" %}{% endif %}{% if 'face-recognition' in domain_traits %}{% include "_shared/ethics/domain/face-recognition.md.jinja" %}{% endif %}{% if 'medtech' in domain_traits %}{% include "_shared/ethics/sector/samd-regulatory.md.jinja" %}{% endif -%}
+answer selected (personal data, biometric identification, medical device
+software). Each section opens with a scope blockquote: if its triggers do
+not apply to the code you are editing, skip that section. Sections are
+written in Japanese.
+{% include "_shared/ethics/baseline/license-drift.md.jinja" %}{% if 'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits %}{% include "_shared/ethics/baseline/personal-data.md.jinja" %}{% endif %}{% if project_type in ['library', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pqc-fips.md.jinja" %}{% endif %}{% if project_type == 'cli' or data_science_layout %}{% include "_shared/ethics/baseline/copyright-ai.md.jinja" %}{% endif %}{% if mcp_effective %}{% include "_shared/ethics/domain/llm-appsec.md.jinja" %}{% endif %}{% if ds_stack %}{% include "_shared/ethics/domain/ml-bias.md.jinja" %}{% endif %}{% if 'face-recognition' in domain_traits %}{% include "_shared/ethics/domain/face-recognition.md.jinja" %}{% endif %}{% if 'medtech' in domain_traits %}{% include "_shared/ethics/sector/samd-regulatory.md.jinja" %}{% endif -%}

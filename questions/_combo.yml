@@ -182,25 +182,47 @@ domain_traits:
     multiselect: true
     default: []
     choices:
+        - personal-data
         - face-recognition
         - medtech
     help: |
         Which of these does the project actually touch (select all that
         apply, or none)?
+        - personal-data: does the project handle data about identifiable
+          people — accounts, contacts, orders, logs that keep an IP or a
+          user id, messages, uploaded files, analytics events? Adds the
+          privacy rules to AGENTS.md: minimise what you collect and log,
+          give deletion a path, and know what leaves the process (error
+          trackers and cloud services included). Select this even when
+          the data only passes through. If the project also *decides*
+          something about those people automatically (scoring, ranking,
+          approving, screening, matching), say so in the same answer's
+          spirit — the rules cover automated decisions too, since that is
+          what makes them a privacy question in the first place: keep a
+          human in the loop for consequential calls, be able to explain
+          one, and record how it was made.
         - face-recognition: identifying or verifying people from face
           imagery (detection, embeddings, matching, liveness, attribute
-          estimation). Adds the biometric-identification rules to
-          AGENTS.md: confirm the use is lawful before implementing, store
-          templates irreversibly with a deletion path, and measure error
-          rates per demographic group instead of shipping one threshold.
+          estimation). Adds the biometric-identification rules: confirm
+          the use is lawful before implementing, store templates
+          irreversibly with a deletion path, and measure error rates per
+          demographic group instead of shipping one threshold. Biometric
+          data is a special category of personal data, so this also brings
+          the privacy rules above.
         - medtech: anything reaching diagnosis, treatment support or
           patient screening. Adds the medical-SaMD rules: continuous
           learning only inside an approved change envelope, a human making
-          the final call, and post-market performance monitoring.
-        Both are about purpose, not about project type — a health-data
-        CLI, an MCP server exposing a clinical tool, and a data-science
-        pipeline are all in scope, and answering none is correct when the
-        project only resembles one of these domains.
+          the final call, and post-market performance monitoring. Health
+          data is a special category of personal data too, so this also
+          brings the privacy rules above.
+        It is a question rather than a derivation from the other answers
+        on purpose: a web API with a database is not necessarily personal
+        (a product catalogue stores `Item(name)`), and a CLI that writes a
+        log is not necessarily either — the answers cannot tell "handles
+        people" from "handles things", and guessing it would ship privacy
+        rules to every service. You know which it is; the template does
+        not. Answering none is correct when the project only resembles one
+        of these domains.
 
 # The include question's `when` / `combinable` / `has_*` trio is THREE
 # deliberate layers, not one — do not collapse it:

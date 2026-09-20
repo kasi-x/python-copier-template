@@ -31,6 +31,24 @@ sections:
     superseded_by: null
     why: "Public NTP concentration case (Fukuoka University 133.100.9.2/133.100.11.8, clock.nc.fukuoka-u.ac.jp): single-IP hardcoding plus retry storms as the DDoS-to-self pattern. First sample section for the region bundle."
 
+  - id: baseline-personal-data
+    file: _shared/ethics/baseline/personal-data.md.jinja
+    version: 2026-09-20.1
+    effective: 2018-05-25
+    review_by: 2027-03-31
+    sources:
+      - https://eur-lex.europa.eu/eli/reg/2016/679/oj
+      - https://www.ppc.go.jp/personalinfo/legal/
+      - https://oag.ca.gov/privacy/ccpa
+    scope: {jurisdiction: [], sector: [], category: [privacy]}
+    scale: global
+    audience: [library, cli, script, web, data-science, kaggle, mcp]
+    enforcement: L1
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    superseded_by: null
+    why: "GDPR art. 4/5/17/22, Japan's 個人情報保護法 and the US state laws impose the same engineering duties from different directions: minimise what is collected and logged, make deletion reach every copy, and know what leaves the process. The section is asked rather than derived because the answers cannot tell a project that handles people from one that handles things -- a web API with a database stores `Item(name)`, and deriving 'has a DB therefore personal data' would ship these rules to 74 of 240 leaves, which is the over-distribution the ethics-appendix predicate calls uninvited. L1: tools/ethics.py's presence trigger fires on the code vocabulary, and the predicate asserts the section appears exactly where the answer selects it."
+
   - id: baseline-pqc-fips
     file: _shared/ethics/baseline/pqc-fips.md.jinja
     version: 2026-09-18.1
@@ -141,7 +159,7 @@ sections:
 
   - id: domain-ml-bias
     file: _shared/ethics/domain/ml-bias.md.jinja
-    version: 2026-09-18.1
+    version: 2026-09-20.1
     effective: 2024-08-01
     review_by: 2026-12-18
     sources:
@@ -154,7 +172,7 @@ sections:
     status: active
     rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
     superseded_by: null
-    why: "Pulse-oximetry occult-hypoxemia disparity and EU AI Act art. 10 data-governance duties: subgroup metrics, documented fairness-metric choice, and human review are the minimum evaluation surface."
+    why: "Pulse-oximetry occult-hypoxemia disparity and EU AI Act art. 10 data-governance duties: subgroup metrics, documented fairness-metric choice, and human review are the minimum evaluation surface. The 適用条件 widens to any automatic decision about a person (2026-09-20): a scoring/screening endpoint is in scope whatever its accuracy, which is the case GDPR art. 22 and the AI Act's high-risk duties turn on. When such a project also answers `personal-data`, the privacy section carries the explainability-and-record-keeping side, so this row keeps its ds/kaggle audience and does not duplicate it."
 
   - id: sector-samd-regulatory
     file: _shared/ethics/sector/samd-regulatory.md.jinja
