@@ -161,8 +161,9 @@ runner every recipe goes through:
   [web-api how-to](../how-to/web-api.md))
 - **cli** — a command-line tool
 - **data_science**: `data/`, `models/`, `reports/`, `notebooks/` and a `src/`
-  pipeline (`src/data`, `src/features`, ...) layout. GPU Dockerfile and a
-  Quarto paper are always included (see the
+  pipeline layout. GPU Dockerfile, a Quarto paper and the de-identification
+  data-sharing gate are always included (see the
+  [data-science how-to](../how-to/data-science.md) and the
   [quarto-paper how-to](../how-to/quarto-paper.md)). Ships polars / duckdb / pyarrow as base
   deps and a `data/queries/` SQL workspace readable via
   `duckdb.sql(open("data/queries/example.sql").read())`.

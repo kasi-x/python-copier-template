@@ -23,7 +23,7 @@ terminal. From inside the checkout the same two forms are
 | `library` | `library` | a reusable Python package (src/ layout) |
 | `cli` | `cli` | a command-line application |
 | `web-api` | `web_api` | a FastAPI service (Postgres, Alembic, Prometheus, rate limiting, CORS) |
-| `data-science` | `data_science` | notebooks, `data/`, `models/`, `reports/` and the [Quarto paper](../how-to/quarto-paper.md) |
+| `data-science` | `data_science` | notebooks, `data/`, `models/`, `reports/` — see the [data-science how-to](../how-to/data-science.md) |
 | `ros2` | `ros2` | a ROS 2 package (ament_python + rclpy, Humble, apt toolchain) |
 | `micropython` | `micropython` | firmware (esp32 by default) beside the CPython dev toolchain |
 | `online-judge-atcoder` | `online_judge` | an AtCoder workspace driven with `oj` + `acc` |

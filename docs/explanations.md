@@ -7,6 +7,8 @@ Explanations of how it works and why it works that way.
 - [Why Use This Template](explanations/why-use-template.md)
 - [Template Project Structure](explanations/structure.md)
 - [Authoring Template Sources](explanations/template-dev.md)
+- [Extending the Questionnaire](explanations/extending.md)
 - [Long-Running Executables](explanations/long-running.md)
 - [Security & Compliance](explanations/security.md)
 - [Verification Architecture](explanations/verification.md)
+- [Drift Detection](explanations/drift-detection.md)
