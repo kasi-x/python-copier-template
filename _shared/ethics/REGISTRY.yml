@@ -157,7 +157,7 @@ sections:
 
   - id: domain-face-recognition
     file: _shared/ethics/domain/face-recognition.md.jinja
-    version: 2026-09-21.1
+    version: 2026-09-21.2
     effective: 2025-02-02
     review_by: 2027-03-31
     sources:
@@ -176,7 +176,7 @@ sections:
 
   - id: domain-ml-bias
     file: _shared/ethics/domain/ml-bias.md.jinja
-    version: 2026-09-21.1
+    version: 2026-09-21.2
     effective: 2024-08-01
     review_by: 2026-12-18
     sources:

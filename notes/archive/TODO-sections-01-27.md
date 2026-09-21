@@ -1380,6 +1380,13 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
         → **解決**: dependency-audit.yml 冒頭コメントが「週次 schedule +
         workflow_dispatch のみが検証経路」を明記済み。Taskfile の audit
         desc にも 2026-09-21 同旨を追記
+      - **2026-09-21 act 実走の追加教訓**: `act push -W ci.yml --job lint`
+        （ローカル Docker、リユーザブル workflow は act がサポート）で lint
+        ワークフローを実走できた。生成物の typos が ethics 例コードの
+        `fpr` 識別子を誤検知する実バグを検出（テンプレ側 typos も同様に赤 —
+        両側で修正済み。例識別子は typs 判定されない語に統一）。CI の
+        workflow_call への引数渡し・キャッシュ挙動は GitHub と差異があるため
+        「初回実走確認」は引き続き push 後の run 観察で行う
 
 ## 20. Docs・導入UX の改善（2026-09-08 監査）
 
