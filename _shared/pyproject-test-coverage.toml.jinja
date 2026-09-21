@@ -38,10 +38,11 @@ skip_empty = true
 # The ethics appendix (AGENTS.md) carries trigger-regex stems (`certificat`,
 # `advertis` — deliberate word-stem matches), proper nouns (`certifi` the
 # package, `HashiCorp`) and metric acronyms (`fpr`/`fnr` in its code
-# examples) that the spellchecker must not correct. The ignore lists are
-# also what keeps `typos -w` (the `fix` task) from silently renaming such
-# identifiers -- -w auto-applies every single-correction dictionary word,
-# inside camelCase/snake_case identifiers too.
+# examples) that the spellchecker must not correct. typos is report-only
+# on purpose (no task runs `typos -w`: it applies single-correction
+# dictionary words inside identifiers too, silently) -- these lists are
+# what lets a legit acronym identifier pass that report instead of being
+# renamed away.
 extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
 extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
 

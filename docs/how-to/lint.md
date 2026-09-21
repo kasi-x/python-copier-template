@@ -19,7 +19,11 @@ Repository hygiene checks are not run locally: they run in CI via the repository
 The typical workflow is:
 
 - Make a code change
-- Run the `fix` task (`task fix` or `just fix`), which runs `ruff check --fix .`, `ruff format .` and (at the recommended/full strictness levels) `typos -w .` to fix misspellings
+- Run the `fix` task (`task fix` or `just fix`), which runs `ruff check --fix .` and `ruff format .`.
+  The spellchecker is deliberately not auto-fixed: `typos -w` rewrites identifiers
+  (every single-correction dictionary word, `serie_total` → `series_total`, silently),
+  so typos stays a report-only gate in `type-check` — see the
+  [static-analysis how-to](static-analysis.md#typos-the-spellchecker-that-rewrites-code)
 - If anything changes it will be left in your working copy
 - Review the changes, then `git add` and commit them
 

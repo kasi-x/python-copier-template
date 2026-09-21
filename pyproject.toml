@@ -320,9 +320,10 @@ ignore-fully-untyped = true
 # `advertis` -- deliberate word-stem matches) and proper nouns (`certifi`
 # the package, `HashiCorp`) that the spellchecker must not correct.
 # `fpr`/`fnr` are the fairness-metrics acronyms the ethics appendix's code
-# examples use; typos -w silently rewrites identifiers matching
-# single-correction dictionary words, so a legit acronym identifier belongs
-# in these ignore lists rather than in a rename.
+# examples use. typos is report-only in this repo's tasks for the same
+# reason as in generated ones (-w rewrites identifiers silently), so a
+# legit acronym identifier belongs in these ignore lists rather than in a
+# rename.
 extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
 extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
 

@@ -94,7 +94,7 @@ by CI too). Swap `task` for your runner; the task names are the same:
 
 ```shell
 task lint        # ruff format --check + ruff check (check-only)
-task fix         # ruff --fix + format, plus typos -w at the recommended strictness
+task fix         # ruff --fix + format (typos stays report-only in type-check)
 task type-check  # basedpyright + pyrefly, vulture, deptry, typos
 task test        # pytest, with coverage at the recommended strictness
 task docs        # build the documentation site

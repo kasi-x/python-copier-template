@@ -138,9 +138,12 @@ def test_template_task_runner_pixi_native(tmp_path: Path):
     assert not (tmp_path / "Taskfile.yml").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     tasks = pyproject_toml["tool"]["pixi"]["feature"]["dev"]["tasks"]
-    # same task set as the other runners, including the typos auto-fix step
+    # same task set as the other runners; `fix` carries no typos step --
+    # typos -w rewrites identifiers (serie_total -> series_total, silently),
+    # so the spellchecker is report-only: type-check fails, a human decides
     assert {"lint", "fix", "type-check", "test", "check"} <= set(tasks)
-    assert "typos -w" in tasks["fix"]["cmd"]
+    assert "typos -w" not in tasks["fix"]["cmd"]
+    assert "typos ." in tasks["type-check"]["cmd"]
     assert "ruff format --check" in tasks["lint"]["cmd"]
 
 

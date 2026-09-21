@@ -21,8 +21,10 @@ firmware type stubs (`firmware/pyrightconfig.json`).
 
 `typos` scans every text file, and its tokenizer splits identifiers
 (`camelCase`/`snake_case`) into words — so a dictionary word inside an
-identifier is checked like prose. That makes `task fix`'s `typos -w`
-pass a **code-rewriting** tool, not just a docs tool:
+identifier is checked like prose, and its `-w` mode is a
+**code-rewriting** tool, not just a docs tool. That is why no task runs
+`typos -w` for you: the spellchecker is a report-only gate in
+`type-check`, and a rewrite is something you do deliberately:
 
 - A word with exactly **one** dictionary correction is auto-applied by
   `-w`, identifiers included: `serie_total` becomes `series_total`,
@@ -39,5 +41,7 @@ rename. The lists ship with the fairness-metrics acronyms (`fpr`, `fnr`)
 the ethics appendix's examples use; add yours there when the checker
 flags a word that is genuinely correct. Everything else the spellchecker
 catches is probably a real typo — in a comment, a docstring, or your
-identifier — and `typos -w` fixing it is the feature, visible in the
-diff you review before committing.
+identifier. If you want the bulk rewrite anyway, run `typos -w .`
+yourself and review the diff — an identifier that mirrors an external
+name (an API field, a JSON key) must be fixed by hand, not by the
+dictionary.
