@@ -205,9 +205,10 @@
 {# The single declarative assembly: conditions that used to gate eight
    separate `set tasks = tasks + [...]` blocks are the inline guards here. #}
 {# `fix` carries no typos step on purpose: -w applies every single-correction
-   dictionary word inside identifiers too (serie_total -> series_total,
-   silently), so the spellchecker stays report-only in `type-check`. Run
-   `typos -w .` yourself when you want the rewrites, and review the diff. #}
+   dictionary word inside identifiers too -- a "misspelt" identifier that
+   mirrors an external name gets renamed silently -- so the spellchecker
+   stays report-only in `type-check`. Run `typos -w .` yourself when you
+   want the rewrites, and review the diff. #}
 {% set tasks = [
     {'name': 'lint', 'desc': 'Check formatting and lint (ruff, check-only)', 'shell': true,
      'run': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .']},
