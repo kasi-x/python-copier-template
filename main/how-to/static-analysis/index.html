@@ -801,6 +801,23 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Static Analysis
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="././" class="md-nav__link md-nav__link--active">
         
   
@@ -816,6 +833,37 @@
   
 
       </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#typos-the-spellchecker-that-rewrites-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        typos: the spellchecker that rewrites code
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -2126,6 +2174,11 @@
                       
                     
                     
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
                   
                   <div class="md-sidebar__inner">
                     
@@ -2137,6 +2190,25 @@
   
     
   
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#typos-the-spellchecker-that-rewrites-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        typos: the spellchecker that rewrites code
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -2168,6 +2240,29 @@ match. You can run them with:</p>
 checker, then the static-analysis tools (vulture, deptry, typos). For
 MicroPython projects it also runs a dedicated basedpyright pass against the
 firmware type stubs (<code>firmware/pyrightconfig.json</code>).</p>
+<h2 id="typos-the-spellchecker-that-rewrites-code">typos: the spellchecker that rewrites code<a class="headerlink" href="#typos-the-spellchecker-that-rewrites-code" title="Permanent link">&para;</a></h2>
+<p><code>typos</code> scans every text file, and its tokenizer splits identifiers
+(<code>camelCase</code>/<code>snake_case</code>) into words — so a dictionary word inside an
+identifier is checked like prose. That makes <code>task fix</code>'s <code>typos -w</code>
+pass a <strong>code-rewriting</strong> tool, not just a docs tool:</p>
+<ul>
+<li>A word with exactly <strong>one</strong> dictionary correction is auto-applied by
+  <code>-w</code>, identifiers included: <code>serie_total</code> becomes <code>series_total</code>,
+  <code>SerieReader</code> becomes <code>SeriesReader</code>, silently. If the identifier
+  mirrors an external name (an API field, a JSON key), that rename is a
+  bug.</li>
+<li>A word with <strong>multiple</strong> corrections (<code>fpr</code> → for / far / fps) is
+  never auto-applied, but still fails <code>type-check</code>.</li>
+</ul>
+<p>The policy: a legitimate acronym or domain word lives in the
+<code>[tool.typos.default]</code> ignore lists in <code>pyproject.toml</code>
+(<code>extend-ignore-words-re</code> / <code>extend-ignore-identifiers-re</code>) — not in a
+rename. The lists ship with the fairness-metrics acronyms (<code>fpr</code>, <code>fnr</code>)
+the ethics appendix's examples use; add yours there when the checker
+flags a word that is genuinely correct. Everything else the spellchecker
+catches is probably a real typo — in a comment, a docstring, or your
+identifier — and <code>typos -w</code> fixing it is the feature, visible in the
+diff you review before committing.</p>
 
 
 
