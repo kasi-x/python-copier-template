@@ -2243,8 +2243,10 @@ firmware type stubs (<code>firmware/pyrightconfig.json</code>).</p>
 <h2 id="typos-the-spellchecker-that-rewrites-code">typos: the spellchecker that rewrites code<a class="headerlink" href="#typos-the-spellchecker-that-rewrites-code" title="Permanent link">&para;</a></h2>
 <p><code>typos</code> scans every text file, and its tokenizer splits identifiers
 (<code>camelCase</code>/<code>snake_case</code>) into words — so a dictionary word inside an
-identifier is checked like prose. That makes <code>task fix</code>'s <code>typos -w</code>
-pass a <strong>code-rewriting</strong> tool, not just a docs tool:</p>
+identifier is checked like prose, and its <code>-w</code> mode is a
+<strong>code-rewriting</strong> tool, not just a docs tool. That is why no task runs
+<code>typos -w</code> for you: the spellchecker is a report-only gate in
+<code>type-check</code>, and a rewrite is something you do deliberately:</p>
 <ul>
 <li>A word with exactly <strong>one</strong> dictionary correction is auto-applied by
   <code>-w</code>, identifiers included: <code>serie_total</code> becomes <code>series_total</code>,
@@ -2261,8 +2263,10 @@ rename. The lists ship with the fairness-metrics acronyms (<code>fpr</code>, <co
 the ethics appendix's examples use; add yours there when the checker
 flags a word that is genuinely correct. Everything else the spellchecker
 catches is probably a real typo — in a comment, a docstring, or your
-identifier — and <code>typos -w</code> fixing it is the feature, visible in the
-diff you review before committing.</p>
+identifier. If you want the bulk rewrite anyway, run <code>typos -w .</code>
+yourself and review the diff — an identifier that mirrors an external
+name (an API field, a JSON key) must be fixed by hand, not by the
+dictionary.</p>
 
 
 

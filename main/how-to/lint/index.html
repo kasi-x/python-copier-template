@@ -2282,7 +2282,11 @@
 <p>The typical workflow is:</p>
 <ul>
 <li>Make a code change</li>
-<li>Run the <code>fix</code> task (<code>task fix</code> or <code>just fix</code>), which runs <code>ruff check --fix .</code>, <code>ruff format .</code> and (at the recommended/full strictness levels) <code>typos -w .</code> to fix misspellings</li>
+<li>Run the <code>fix</code> task (<code>task fix</code> or <code>just fix</code>), which runs <code>ruff check --fix .</code> and <code>ruff format .</code>.
+  The spellchecker is deliberately not auto-fixed: <code>typos -w</code> rewrites identifiers
+  (every single-correction dictionary word, <code>serie_total</code> → <code>series_total</code>, silently),
+  so typos stays a report-only gate in <code>type-check</code> — see the
+  <a href="../static-analysis/#typos-the-spellchecker-that-rewrites-code">static-analysis how-to</a></li>
 <li>If anything changes it will be left in your working copy</li>
 <li>Review the changes, then <code>git add</code> and commit them</li>
 </ul>
