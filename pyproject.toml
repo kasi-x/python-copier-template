@@ -319,8 +319,12 @@ ignore-fully-untyped = true
 # The ethics baseline files carry trigger-regex stems (`certificat`,
 # `advertis` -- deliberate word-stem matches) and proper nouns (`certifi`
 # the package, `HashiCorp`) that the spellchecker must not correct.
-extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis']
-extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis']
+# `fpr`/`fnr` are the fairness-metrics acronyms the ethics appendix's code
+# examples use; typos -w silently rewrites identifiers matching
+# single-correction dictionary words, so a legit acronym identifier belongs
+# in these ignore lists rather than in a rename.
+extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
 
 [tool.typos.files]
 # template/ は生成コード。生成先プロジェクト側でチェックされる。

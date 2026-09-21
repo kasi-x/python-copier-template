@@ -1391,7 +1391,10 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
         （ローカル Docker、リユーザブル workflow は act がサポート）で lint
         ワークフローを実走できた。生成物の typos が ethics 例コードの
         `fpr` 識別子を誤検知する実バグを検出（テンプレ側 typos も同様に赤 —
-        両側で修正済み。例識別子は typs 判定されない語に統一）。CI の
+        修正は fpr/fnr を両側の typos ignore リストへ追加する方式に落ち着いた。
+        rename から ignore へ差し替えた経緯と `-w` の識別子書き換え挙動は
+        docs/how-to/static-analysis.md の「typos: the spellchecker that
+        rewrites code」節に文書化）。CI の
         workflow_call への引数渡し・キャッシュ挙動は GitHub と差異があるため
         「初回実走確認」は引き続き push 後の run 観察で行う
 

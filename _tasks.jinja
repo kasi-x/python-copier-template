@@ -207,7 +207,7 @@
 {% set tasks = [
     {'name': 'lint', 'desc': 'Check formatting and lint (ruff, check-only)', 'shell': true,
      'run': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .']},
-    {'name': 'fix', 'desc': 'Auto-fix formatting, lint and typos (run before committing)',
+    {'name': 'fix', 'desc': 'Auto-fix formatting, lint and typos (run before committing; review the diff - typos -w rewrites identifiers too)',
      'run': [run ~ 'ruff check --fix .',
              run ~ 'ruff format .'
              ~ (' && ' ~ run ~ 'typos -w .' if strictness in ['recommended', 'full'] else '')]},

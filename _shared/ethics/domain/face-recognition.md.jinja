@@ -1,4 +1,4 @@
-{# ethics: id=domain-face-recognition version=2026-09-21.2 status=active
+{# ethics: id=domain-face-recognition version=2026-09-21.3 status=active
    triggers=["face","facial","biometric","recognition","bipa","liveness"] #}
 # 顔認識 — 生体識別は例外手続き、用途の適法性を先に確認する
 
@@ -68,7 +68,7 @@ if settings.purpose not in ALLOWED_PURPOSES:  # 設定ミスが本番に載ら�
 
 # しきい値は集団別誤り率の表から根拠付きで選ぶ(単一値を既定にしない)
 for group, rows in eval_rows.groupby("demographic_group"):
-    false_pos_by_threshold[group] = false_positive_rates(rows, thresholds)
+    fpr_by_threshold[group] = false_positive_rates(rows, thresholds)
 ```
 
 ## 運用チェック

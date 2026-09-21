@@ -36,10 +36,14 @@ skip_empty = true
 
 [tool.typos.default]
 # The ethics appendix (AGENTS.md) carries trigger-regex stems (`certificat`,
-# `advertis` — deliberate word-stem matches) and proper nouns (`certifi` the
-# package, `HashiCorp`) that the spellchecker must not correct.
-extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis']
-extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis']
+# `advertis` — deliberate word-stem matches), proper nouns (`certifi` the
+# package, `HashiCorp`) and metric acronyms (`fpr`/`fnr` in its code
+# examples) that the spellchecker must not correct. The ignore lists are
+# also what keeps `typos -w` (the `fix` task) from silently renaming such
+# identifiers -- -w auto-applies every single-correction dictionary word,
+# inside camelCase/snake_case identifiers too.
+extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
 
 [tool.typos.files]
 # docs のビルド出力 (site/) はチェック対象外。
