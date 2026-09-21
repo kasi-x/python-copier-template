@@ -30,7 +30,16 @@ Each area of the questionnaire first asks "use the recommended settings?"
   deptry, pip-audit, pytest + coverage + hypothesis, hardened CI with pinned
   actions, SECURITY.md and OpenSSF Scorecard.
 - **Opt-in layers** — the data-science layout, a FastAPI service, MCP servers,
-  a Discord bot, polite web scraping, CTF tooling, cloud providers and Sentry.
+  chat bots (Discord / Slack / LINE / Gmail), polite web scraping, CTF
+  tooling, cloud providers and Sentry.
+- **Field rules, not vibes** — every generated project ships an `AGENTS.md`
+  agent guide plus an ethics/regional appendix matched to the project kind:
+  dependency-license drift, post-quantum crypto standards, AI-and-copyright,
+  PKI trust chains, personal data, EU CRA duties, medical-device software,
+  face recognition, ML fairness and LLM/MCP security. Sections are
+  registered, dated and enforcement-graded (`_shared/ethics/`), held to the
+  renders by invariants, and machine-readable through the template's MCP
+  server (`check_ethics`, `template://ethics`).
 
 The [feature catalogue](docs/reference/features.md) walks through all of it,
 [the questionnaire reference](docs/reference/questionnaire.md) lists every
@@ -106,8 +115,9 @@ task check       # lint + type-check + test
 - **Already have a repo** — [adopt this template into it](docs/tutorials/adopt-existing.md), or
   [update an existing project](docs/how-to/update-template.md) that already uses it.
 - **Template internals** — [authoring template sources](docs/explanations/template-dev.md),
-  the [structure](docs/explanations/structure.md) and
-  [how a change is verified](docs/explanations/verification.md).
+  the [structure](docs/explanations/structure.md),
+  [how a change is verified](docs/explanations/verification.md) and
+  [how the template catches rot with no code changes](docs/explanations/drift-detection.md).
 
 ## License, contributing and releases
 
