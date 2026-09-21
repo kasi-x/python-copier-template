@@ -797,7 +797,14 @@ Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push �
       （085b1579 追加の scraping 質問が example-answers.yml に答えを持たないため。
       `_example.yml` に `--defaults` + `--with copier-template-extensions` +
       `--trust` を追加。テストの update コマンドとは既に揃っていた）
-- [ ] **次の CI run が緑になることの確認**（上記修正の push 後。test 12分前後）
+- [x] **次の CI run が緑になることの確認**（上記修正の push 後。test 12分前後）
+      → **2026-09-21 解決**: 大規変更 12 コミットpush後の CI (run 35565903980) が
+      全面緑(lint 26s / docs 58s / hygiene 35s / test 5m52s / test-meta 41s /
+      Security ✓)。初回 run で hygiene の EOF チェックが検出した実差分
+      （ベンダーした clean.scss に改行が無い。upstreamの出荷物のまま）を修正し
+      2回目で緑。なおローカル act 実走が先行して typos の実バグ(fpr 識別子)を
+      捕捉済み — §19 の act 教訓を参照。週次 lychee (periodic.yml, 水曜) は
+      schedule 到来待ち
       → 2026-09-07: 大規模変更(bug修正一式 + pre-commit 廃止)を push 済み。
       初回ランで2件の新規失敗を処理済み: ①`_hygiene.yml` のEOFチェックが
       ディレクトリsymlinkでクラッシュ + .jinja 部分テンプレ(意図的に改行なし)を
