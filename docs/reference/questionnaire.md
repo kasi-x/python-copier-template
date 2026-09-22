@@ -33,8 +33,8 @@ questions depend on it.
   - **`oj_category`** (str; default `data_science`) — Which competition category is this project
     for?
     - **`data_science`** — Kaggle-style data competitions (GPU competition layout).
-    - **`competitive_coding`** — code-submission judges (AtCoder / LeetCode / yukicoder / AOJ). A
-      bare workspace driven with oj / acc / aoj-cli.
+    - **`competitive_coding`** — code-submission judges (AtCoder / LeetCode / yukicoder / AOJ /
+      Codeforces / Kattis / other). A bare workspace driven with oj / acc / aoj-cli / submit.py.
     - **`ctf`** — CTF competitions (participant workspace with challenges/ and a solve.py starter,
       plus pwntools / z3-solver).
   - **`oj_kind`** (str; default `'ctf' if oj_category == 'ctf' else ('atcoder' if oj_category ==
@@ -49,6 +49,13 @@ questions depend on it.
       (download / test / submit all work).
     - **`aoj`** — Aizu Online Judge (Japanese beginner courses). A bare workspace driven with
       aoj-cli (oj can download samples but not submit).
+    - **`codeforces`** — Codeforces (world-scale contests). A bare workspace driven with oj
+      (download / test work; submit via `oj submit` where the service allows, else the browser).
+    - **`kattis`** — Kattis (open problem archive, university courses). A bare workspace driven with
+      the Kattis submit client (`submit.py` with a personal `.kattisrc`; `oj download` also reads
+      samples).
+    - **`other`** — any other stdin/stdout judge. A bare workspace with no site-specific tooling —
+      oj download/test where the service allows, else the judge's own editor.
     - **`ctf`** — CTF competitions. A participant workspace (challenges/ with a solve.py starter,
       pwntools / z3-solver via the ctf extra).
   - **`oj_allow_ai`** (bool; default no) — Is AI assistance (coding agents, code completion) allowed

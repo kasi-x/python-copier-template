@@ -11,7 +11,9 @@ guide is [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 {% elif oj_code %}
 > Code-submission workspace ({{ oj_kind }}): write solutions as single files
 > (e.g. `main.py`). Per-problem folders and `test/` sample cases are created
-> by the judge CLI at runtime — do not commit downloaded cases.
+> by the judge tooling at runtime — do not commit downloaded cases
+> (oj / acc for AtCoder, oj for yukicoder and Codeforces, aoj-cli for AOJ,
+> submit.py + `.kattisrc` for Kattis, the judge's editor for LeetCode/other).
 {% if oj_allow_ai %}
 > The judge's rules permit AI assistance, so agents may help build and
 > debug here. Rules override this statement: re-check them before submitting.
@@ -36,9 +38,17 @@ guide is [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 > routers expose results computed by `src/` code. Do not commit data,
 > models or reports — they are git-ignored.
 {% endif %}
+{% elif data_science_layout %}
+> Data-science project: `src/` holds the importable package (`{{ pkg_dir }}/`)
+> beside the analysis pipeline stubs (`data/`, `features/`, `models/`,
+> `visualization/`, each a `.gitkeep` stub). Promote notebook cells into
+> tested modules there; the stubs are linted like any other `src/` code,
+> so new third-party imports need a `[project] dependencies` entry first.
+> Rename or extend the stubs via the `src_dirs` answer
+> (`.copier-answers.yml`).
 {% endif %}
-## Commands
 
+## Commands
 The `{{ task_runner_effective }}` task runner drives the common commands:
 
 ```sh{# The rows below are the `_tasks.jinja` model, not a hand-written table:

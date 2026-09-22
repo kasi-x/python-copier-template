@@ -50,7 +50,7 @@ layers (input space, render invariants, execution) the checks live in.
 ## The tools this runbook leans on
 
 - `task predicates` — the condition-site inventory: equivalence classes over
-  the 248-leaf space, fire counts per internal (a special case that never
+  the 272-leaf space, fire counts per internal (a special case that never
   splits is a flattening candidate), naming candidates for repeated raw
   classes, and the unification guard.
 - `task question-graph` — where a new internal or question may live given

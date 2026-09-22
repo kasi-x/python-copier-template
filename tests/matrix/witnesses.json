@@ -2392,6 +2392,42 @@
       "source": "fast"
     },
     {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=competitive_coding/codeforces",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "codeforces",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=competitive_coding/kattis",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "kattis",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=competitive_coding/leetcode",
       "tier": "fast",
       "result": "pass",
@@ -2405,6 +2441,24 @@
         "project_type": "online_judge",
         "oj_category": "competitive_coding",
         "oj_kind": "leetcode",
+        "use_recommended_docs": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_docs/oj=competitive_coding/other",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "other",
         "use_recommended_docs": false
       },
       "source": "fast"
@@ -2519,6 +2573,42 @@
       "source": "fast"
     },
     {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=competitive_coding/codeforces",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "codeforces",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=competitive_coding/kattis",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "kattis",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=competitive_coding/leetcode",
       "tier": "fast",
       "result": "pass",
@@ -2532,6 +2622,24 @@
         "project_type": "online_judge",
         "oj_category": "competitive_coding",
         "oj_kind": "leetcode",
+        "use_recommended_integrations": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_integrations/oj=competitive_coding/other",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "other",
         "use_recommended_integrations": false
       },
       "source": "fast"
@@ -2646,6 +2754,42 @@
       "source": "fast"
     },
     {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=competitive_coding/codeforces",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "codeforces",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=competitive_coding/kattis",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "kattis",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=online_judge/gate=off:use_recommended_license/oj=competitive_coding/leetcode",
       "tier": "fast",
       "result": "pass",
@@ -2659,6 +2803,24 @@
         "project_type": "online_judge",
         "oj_category": "competitive_coding",
         "oj_kind": "leetcode",
+        "use_recommended_license": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_license/oj=competitive_coding/other",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "other",
         "use_recommended_license": false
       },
       "source": "fast"
@@ -2773,6 +2935,42 @@
       "source": "fast"
     },
     {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=competitive_coding/codeforces",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "codeforces",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=competitive_coding/kattis",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "kattis",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=competitive_coding/leetcode",
       "tier": "fast",
       "result": "pass",
@@ -2786,6 +2984,24 @@
         "project_type": "online_judge",
         "oj_category": "competitive_coding",
         "oj_kind": "leetcode",
+        "use_recommended_polish": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_polish/oj=competitive_coding/other",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "other",
         "use_recommended_polish": false
       },
       "source": "fast"
@@ -2900,6 +3116,42 @@
       "source": "fast"
     },
     {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=competitive_coding/codeforces",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "codeforces",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=competitive_coding/kattis",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "kattis",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=competitive_coding/leetcode",
       "tier": "fast",
       "result": "pass",
@@ -2913,6 +3165,24 @@
         "project_type": "online_judge",
         "oj_category": "competitive_coding",
         "oj_kind": "leetcode",
+        "use_recommended_quality": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_quality/oj=competitive_coding/other",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "other",
         "use_recommended_quality": false
       },
       "source": "fast"
@@ -3027,6 +3297,42 @@
       "source": "fast"
     },
     {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=competitive_coding/codeforces",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "codeforces",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=competitive_coding/kattis",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "kattis",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=online_judge/gate=off:use_recommended_security/oj=competitive_coding/leetcode",
       "tier": "fast",
       "result": "pass",
@@ -3040,6 +3346,24 @@
         "project_type": "online_judge",
         "oj_category": "competitive_coding",
         "oj_kind": "leetcode",
+        "use_recommended_security": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_security/oj=competitive_coding/other",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "other",
         "use_recommended_security": false
       },
       "source": "fast"
@@ -3154,6 +3478,42 @@
       "source": "fast"
     },
     {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=competitive_coding/codeforces",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "codeforces",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=competitive_coding/kattis",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "kattis",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=competitive_coding/leetcode",
       "tier": "fast",
       "result": "pass",
@@ -3167,6 +3527,24 @@
         "project_type": "online_judge",
         "oj_category": "competitive_coding",
         "oj_kind": "leetcode",
+        "use_recommended_toolchain": false
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=off:use_recommended_toolchain/oj=competitive_coding/other",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "other",
         "use_recommended_toolchain": false
       },
       "source": "fast"
@@ -3298,6 +3676,40 @@
       "source": "full"
     },
     {
+      "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/codeforces",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "codeforces"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/kattis",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "kattis"
+      },
+      "source": "fast"
+    },
+    {
       "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/leetcode",
       "tier": "fast",
       "result": "pass",
@@ -3311,6 +3723,23 @@
         "project_type": "online_judge",
         "oj_category": "competitive_coding",
         "oj_kind": "leetcode"
+      },
+      "source": "fast"
+    },
+    {
+      "id": "project_type=online_judge/gate=recommended/oj=competitive_coding/other",
+      "tier": "fast",
+      "result": "pass",
+      "answers": {
+        "package_name": "smoke_example",
+        "description": "An example project",
+        "git_platform": "github.com",
+        "github_org": "kasi-x",
+        "author_name": "kasi-x",
+        "author_email": "kashimiya.exe@gmail.com",
+        "project_type": "online_judge",
+        "oj_category": "competitive_coding",
+        "oj_kind": "other"
       },
       "source": "fast"
     },
@@ -4230,8 +4659,8 @@
     }
   ],
   "coverage": {
-    "total": 248,
-    "executed_fast": 248,
+    "total": 272,
+    "executed_fast": 272,
     "executed_full": 8,
     "none": 0,
     "unexecuted": []

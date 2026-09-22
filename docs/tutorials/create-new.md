@@ -27,6 +27,8 @@ terminal. From inside the checkout the same two forms are
 | `ros2` | `ros2` | a ROS 2 package (ament_python + rclpy, Humble, apt toolchain) |
 | `micropython` | `micropython` | firmware (esp32 by default) beside the CPython dev toolchain |
 | `online-judge-atcoder` | `online_judge` | an AtCoder workspace driven with `oj` + `acc` |
+| `online-judge-codeforces` | `online_judge` | a Codeforces workspace driven with `oj` |
+| `online-judge-kattis` | `online_judge` | a Kattis workspace driven with `submit.py` + `.kattisrc` |
 
 Each preset is a file under `presets/`: it names only the answers that define
 the family, so adding a preset of your own is a two-line YAML file. For a

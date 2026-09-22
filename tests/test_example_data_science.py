@@ -139,6 +139,16 @@ def test_template_data_science_layout(tmp_path: Path):
         assert web_api_name not in ignores, (
             f"deptry DEP002 leaks {web_api_name} into a pure data_science render (bug #17)"
         )
+    # Bug #16 regression: the src/<pkg> package and the src/ analysis stubs
+    # coexist, so both guides must say so — where the stubs live, that they
+    # are linted/type-checked like the package (deptry flags undeclared
+    # imports), and that src_dirs renames/extends them.
+    assert "two things side by side" in readme
+    assert "deptry" in readme
+    assert "src_dirs" in readme
+    agents = (tmp_path / "AGENTS.md").read_text()
+    assert "analysis pipeline stubs" in agents
+    assert "src_dirs" in agents
 
 
 def test_template_online_judge_no_solutions_for_kaggle(tmp_path: Path):

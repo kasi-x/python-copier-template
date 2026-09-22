@@ -1,0 +1,94 @@
+{# OJ sample-check: an opt-in generated workflow for code-submission judges.
+
+   Why a file and not a task: `oj test` / `aoj test` need the judge's own
+   CLI plus network (sample download) and, for submit, credentials. None of
+   that belongs in `task check` or ci.yml — both must stay offline and green
+   on a fresh clone. This workflow is dispatch-only (manual + weekly), runs
+   the judge CLI's own sample test against one pinned problem per site, and
+   installs only that site's tool (uv for Python, Go for aoj-cli).
+   `oj_sample` gates the file: it is asked for oj_code judges (default
+   off), so existing renders are byte-identical. #}
+{% if oj_sample %}name: OJ sample check
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      problem:
+        description: "Problem URL or id to check (default: the judge's pinned sample)"
+        required: false
+        default: ""
+  schedule:
+    # Weekly sample drift: the judge's pages and CLIs move without notice.
+    - cron: "0 6 * * SUN"
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+{% if oj_kind == 'aoj' %}      - name: Install aoj-cli
+        run: go install github.com/YuminosukeSato/AOJ-cli/cmd/aojcli@latest
+      - name: Sample check (aoj-cli)
+        run: |
+          set -eu
+          PROBLEM="{% raw %}${{ inputs.problem }}{% endraw %}"
+          if [ -z "$PROBLEM" ]; then PROBLEM="ITP1_1_A"; fi
+          aoj init "$PROBLEM"
+          cat > "$PROBLEM/main.py" <<'EOF'
+          print("Hello World")
+          EOF
+          (cd "$PROBLEM" && aoj test main.py)
+{% elif oj_kind == 'kattis' %}      - name: Install Kattis submit client
+        run: |
+          set -eu
+          curl -sS -o submit.py https://raw.githubusercontent.com/Kattis/kattis-cli/master/submit.py
+          uv pip install --system requests lxml
+      - name: Sample check (local run only)
+        run: |
+          set -eu
+          printf 'Hello World\n' > expected.txt
+          cat > hello.py <<'EOF'
+          print("Hello World")
+          EOF
+          python3 hello.py > actual.txt
+          diff -u expected.txt actual.txt
+{% elif oj_kind == 'leetcode' %}      - name: Sample check (local run only)
+        run: |
+          set -eu
+          cat > solution.py <<'EOF'
+          class Solution:
+              def solve(self) -> int:
+                  return 42
+          EOF
+          python3 -c "from solution import Solution; assert Solution().solve() == 42"
+{% else %}      - name: Install online-judge-tools
+        run: uv pip install --system online-judge-tools
+      - name: Sample check (oj download + test)
+        run: |
+          set -eu
+          PROBLEM="{% raw %}${{ inputs.problem }}{% endraw %}"
+{% if oj_kind == 'atcoder' %}          if [ -z "$PROBLEM" ]; then PROBLEM="https://atcoder.jp/contests/abc086/tasks/abc086_a"; fi
+          oj download "$PROBLEM"
+          printf 'n = int(input())\na = list(map(int, input().split()))\nprint(max(a))\n' > main.py
+{% elif oj_kind == 'yukicoder' %}          if [ -z "$PROBLEM" ]; then PROBLEM="https://yukicoder.me/problems/no/1234"; fi
+          oj download "$PROBLEM"
+          printf 'print(sum(map(int, open(0).read().split())))\n' > main.py
+{% elif oj_kind == 'codeforces' %}          if [ -z "$PROBLEM" ]; then PROBLEM="https://codeforces.com/contest/4/problem/A"; fi
+          oj download "$PROBLEM"
+          printf 'w = int(input())\nprint("YES" if w > 2 and w %% 2 == 0 else "NO")\n' > main.py
+{% else %}          if [ -z "$PROBLEM" ]; then PROBLEM="https://judge.yosupo.jp/submission/1234"; fi
+          oj download "$PROBLEM" || true
+          printf 'print(open(0).read())\n' > main.py
+{% endif %}          oj test -c "python3 main.py"
+{% endif %}{% endif %}

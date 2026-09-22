@@ -1,0 +1,6 @@
+{% if oj_code %}
+# Online-judge working files (never commit downloaded cases or credentials)
+test/
+{% if oj_kind == 'kattis' %}.kattisrc
+{% endif %}
+{% endif %}

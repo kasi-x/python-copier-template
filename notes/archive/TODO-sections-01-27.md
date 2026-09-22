@@ -114,7 +114,7 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       （online_judge では use_recommended_agent 質問自体が出ないことを確認）
 - [x] online_judge のテスト: 生成物の有無（src 無し・deps 空・CI に dist 無し）+
       空ワークスペースで task check が通ること + kaggle に solutions が無いこと
-- [ ] **将来拡張**: oj_kind を世界基準の主要 OJ 9種 + 「その他」（選ぶと更に
+- [x] **将来拡張（2026-09-22 着地）**: oj_kind に Codeforces / Kattis / other を追加し competitive_coding は 7 種に（atcoder / leetcode / yukicoder / aoj / codeforces / kattis / other）。codeforces = oj download+test（submit は可否次第）、kattis = submit.py + `.kattisrc` 主軸（oj は samples 読込のみ）、other = 汎用 stdin/stdout（oj が通るところだけ）。`oj_code` は 7 種に拡大、`oj_allow_ai` は atcoder / leetcode / codeforces / kattis / other に拡大（yukicoder / AOJ は check-the-rules のまま）。生成物は README サイト別手順 + Quick start 分岐、AGENTS.md の tooling 一行、`_shared/gitignore-oj.jinja`（`test/` + kattis のみ `.kattisrc`）、`oj_sample` 質問（oj_code 配下・既定 off）の dispatch-only な `oj-sample.yml`（pinned sample 1 問/週次・push CI と `check` は offline のまま）。witness は 248 → 272 葉、`oj_kind=code` 行と support.yml / tier_policy の judge 列挙を追随、`oj_sample` は include_sentry と同型の excluded question（per-site 本文は tests/test_example_oj.py が担保）。
 - [x] **2段階化**: `oj_category` 3択（data_science / competitive_coding / ctf）を
       OJ 直後に新設し、`oj_kind` の選択肢をカテゴリごとに切替（kaggle のみ /
       atcoder・leetcode・yukicoder・aoj / ctf のみ）。`default` もカテゴリ連動

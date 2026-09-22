@@ -55,7 +55,7 @@ flowchart TD
     G_toolchain_yes --> D2
     G_toolchain_no --> D2
     D2{"online_judge?"}
-    D2 -->|Yes| Q7["ask: oj_category (data_science / competitive_coding / ctf), oj_kind<br/>(kaggle / atcoder / leetcode / yukicoder / aoj / ctf),<br/>oj_allow_ai (atcoder / leetcode)"]
+    D2 -->|Yes| Q7["ask: oj_category (data_science / competitive_coding / ctf), oj_kind<br/>(kaggle / atcoder / leetcode / yukicoder / aoj / codeforces /<br/>kattis / other / ctf), oj_allow_ai (atcoder / leetcode /<br/>codeforces / kattis / other)"]
     Q7 --> INC
     D2 -->|No| INC
     INC["ask: include_data_science, include_web_api, include_ctf,<br/>include_scraping, include_bot<br/>(each only for the bases it combines with)"]
@@ -170,11 +170,12 @@ runner every recipe goes through:
 - **online_judge**: a competitive-programming / Kaggle project. The follow-up
   `oj_kind` question picks the judge:
   - **kaggle**: the competition layout `src/{configs,data,input,output,features,logs,models,notebook,scripts,utils}` where `src/utils` is the installable package, plus the GPU Dockerfile
-  - **atcoder / leetcode / yukicoder / aoj**: a bare code-submission workspace
+  - **atcoder / leetcode / yukicoder / aoj / codeforces / kattis / other**: a bare code-submission workspace
     (stdlib only) — no package or `solutions/` tree is generated, and the
     repo stays empty until a CLI tool creates the per-problem folders and
-    `test/` sample files (`oj` for AtCoder / yukicoder, `acc` for AtCoder
-    contests, `aoj-cli` for AOJ; LeetCode is solved in its own editor)
+    `test/` sample files (`oj` for AtCoder / yukicoder / Codeforces, `acc` for AtCoder
+    contests, `aoj-cli` for AOJ, `submit.py` + `.kattisrc` for Kattis; LeetCode is solved in its own editor,
+    `other` uses `oj` where the service allows)
 - **script** — a minimal script, flat package at the repo root
 - **ros2** — a ROS 2 package (`ament_python` with rclpy, or `ament_cmake`
   with C++), built with **colcon + rosdep**. Choose **Humble** (Ubuntu

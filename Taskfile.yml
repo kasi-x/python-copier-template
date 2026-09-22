@@ -36,7 +36,7 @@ tasks:
       {{ .CLI_ARGS }}
 
   test-slow:
-    desc: 'Run the slow tier: the serial 234-leaf witness batch runner (~2 min)'
+    desc: 'Run the slow tier: the serial 272-leaf witness batch runner (~2 min)'
     cmd: uv run --locked pytest -q -m slow {{ .CLI_ARGS }}
 
   test-heavy:

@@ -11,7 +11,8 @@ oj_category:
         Which competition category is this project for?
         - data_science: Kaggle-style data competitions (GPU competition layout).
         - competitive_coding: code-submission judges (AtCoder / LeetCode /
-          yukicoder / AOJ). A bare workspace driven with oj / acc / aoj-cli.
+          yukicoder / AOJ / Codeforces / Kattis / other). A bare workspace
+          driven with oj / acc / aoj-cli / submit.py.
         - ctf: CTF competitions (participant workspace with challenges/ and
           a solve.py starter, plus pwntools / z3-solver).
     choices:
@@ -36,18 +37,30 @@ oj_kind:
         - aoj: Aizu Online Judge (Japanese beginner courses). A bare
           workspace driven with aoj-cli (oj can download samples but not
           submit).
+        - codeforces: Codeforces (world-scale contests). A bare workspace
+          driven with oj (download / test work; submit via `oj submit` where
+          the service allows, else the browser).
+        - kattis: Kattis (open problem archive, university courses). A bare
+          workspace driven with the Kattis submit client (`submit.py` with a
+          personal `.kattisrc`; `oj download` also reads samples).
+        - other: any other stdin/stdout judge. A bare workspace with no
+          site-specific tooling — oj download/test where the service allows,
+          else the judge's own editor.
         - ctf: CTF competitions. A participant workspace (challenges/ with a
           solve.py starter, pwntools / z3-solver via the ctf extra).
         (Kaggle projects always allow AI coding agents; every judge's
-        AGENTS.md defers to the contest rules — AtCoder / LeetCode ask
-        `oj_allow_ai` next to pick the guide's AI wording, the other judges
-        get the check-the-rules wording.)
+        AGENTS.md defers to the contest rules — AtCoder / LeetCode /
+        Codeforces / Kattis / other ask `oj_allow_ai` next to pick the
+        guide's AI wording, yukicoder / AOJ get the check-the-rules wording.)
     choices: |
         {%- if oj_category == 'competitive_coding' %}
         - atcoder
         - leetcode
         - yukicoder
         - aoj
+        - codeforces
+        - kattis
+        - other
         {%- elif oj_category == 'ctf' %}
         - ctf
         {%- else %}
@@ -65,17 +78,17 @@ kaggle:
     default: "{{ online_judge and oj_kind == 'kaggle' }}"
     when: false
 
-# Code-submission judges (AtCoder / LeetCode / yukicoder / AOJ): single-file
-# solutions submitted to the judge's sandbox. No installable package, no
-# src/ layout, no logging_setup — the repo is a bare workspace the user
-# drives with oj / acc / aoj-cli. CTF is excluded: it ships challenges/ +
-# tests + the ctf extra (a layout-carrying judge like kaggle).
+# Code-submission judges (AtCoder / LeetCode / yukicoder / AOJ / Codeforces /
+# Kattis / other): single-file solutions submitted to the judge's sandbox.
+# No installable package, no src/ layout, no logging_setup — the repo is a
+# bare workspace the user drives with oj / acc / aoj-cli / submit.py. CTF is
+# excluded: it ships challenges/ + tests + the ctf extra (a layout-carrying
+# judge like kaggle).
 oj_code:
     type: bool
-    default: "{{ online_judge and oj_kind in ['atcoder', 'leetcode', 'yukicoder', 'aoj'] }}"
-    when: false
+    default: "{{ online_judge and oj_kind in ['atcoder', 'leetcode', 'yukicoder', 'aoj', 'codeforces', 'kattis', 'other'] }}"
 
-# An OJ workspace without kaggle's real package: the four code-submission
+# An OJ workspace without kaggle's real package: the seven code-submission
 # judges AND ctf. Deliberately not the same as oj_code — ctf is included
 # here (its challenges/ + solve.py workspace is still package-less), which is
 # what the docker gate and the vulture domain list want. kaggle is excluded:
@@ -108,7 +121,7 @@ no_pkg:
 
 oj_allow_ai:
     type: bool
-    when: "{{ online_judge and (oj_kind == 'atcoder' or oj_kind == 'leetcode') }}"
+    when: "{{ online_judge and (oj_kind == 'atcoder' or oj_kind == 'leetcode' or oj_kind == 'codeforces' or oj_kind == 'kattis' or oj_kind == 'other') }}"
     default: false
     help: |
         Is AI assistance (coding agents, code completion) allowed for this judge?
@@ -119,3 +132,13 @@ oj_allow_ai:
         rules before submitting; they override this answer.
         (Kaggle always allows AI; yukicoder / AOJ never ask this and get the
         check-the-rules wording.)
+oj_sample:
+    type: bool
+    when: "{{ oj_code }}"
+    default: false
+    help: |
+        Add an opt-in sample-check workflow (.github/workflows/oj-sample.yml)?
+        It runs the judge CLI's own sample test (oj download + test, aoj-cli,
+        or the Kattis client) on manual dispatch and weekly. Off by default:
+        it needs network and the judge's tool, so it stays out of `check`
+        and the push CI.

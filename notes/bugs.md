@@ -331,10 +331,7 @@ copier copy --defaults --vcs-ref=HEAD --trust --data-file answers.yml \
   スクリプト置き場）がインストール可能パッケージ `src/<pkg>/` と並んで生成される。
   使い道の説明がどこにもなく、ここに分析スクリプトを置き始めると
   deptry / ruff の対象になって依存宣言エラー (DEP001 等) で怒られる。
-- **提案**: (a) README / AGENTS.md に使い道と依存宣言の注意を注記する、
-  (b) 質問で on/off を選べるようにする、の少なくとも一方。
-  パッケージ本体 (src layout) とスクリプト置き場 (flat src) は慣習が混在するので、
-  分離（scripts/ など）も検討の価値あり。
+- **✅ 対応 (2026-09-22)**: 提案 (a) の文書化で解消。生成 README（Quick start 直後、`{% if data_science_layout %}`）に「`src/<pkg>/` パッケージと `data/ features/ models/ visualization/` スタブの同居、notebooks からの昇格先、lint 対象としての deptry 注意、`src_dirs` での改名・拡張（`.copier-answers.yml` + `copier recopy --overwrite`）」を追記。AGENTS.md 冒頭（`{% if data_science_layout and not web_api %}`。web_api 併用時は既存の共存ブロックが担う）に同旨の短文を追加し、web_api 共存ブロックにも stubs の lint 一文を補足。質問の on/off 化（提案 b）は見送り: スタブは既に構造化回答 `src_dirs` で改名・拡張・空化できる（`src_dirs: []` で stubs だけ消去、パッケージは残る。`tests/test_structured_answers.py::test_src_dirs_answer_controls_the_tree` がピン）。回帰ピンは `tests/test_example_data_science.py::test_template_data_science_layout` の bug #16 assert（README / AGENTS の文言を両方向で固定）。
 
 ## 17. 生成 pyproject の deptry `per_rule_ignores` に web_api 系の依存名が data_science でも大量に混入する
 

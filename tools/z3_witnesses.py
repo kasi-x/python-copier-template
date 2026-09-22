@@ -57,7 +57,7 @@ the derivation nor declared excluded is an error, and every exclusion must
 still describe the live questionnaire. The one-line accounting is printed on
 every run, so "enumerated" and "excluded" are both numbers a reader can trust:
 
-    leaves: 234 enumerated, 2 excluded (project_type=web_django, ...)
+    leaves: 272 enumerated, 3 excluded (project_type=web_django, ...)
 
 Usage:
 

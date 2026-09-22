@@ -213,7 +213,7 @@ internals, `{% if %}` gates in template file names and bodies, `_tasks`
 guards — and §18's unification (the `oj_bare` / `no_pkg` inventory) was done
 by hand against a snapshot that could rot. `tools/predicates.py` keeps the
 inventory alive: it collects every boolean condition site, evaluates each
-against all 248 witness leaves with copier's own machinery, and reports the
+against all 272 witness leaves with copier's own machinery, and reports the
 classification tree (every `invariants.yml` row with its leaf count),
 per-internal reference and fire counts, the equivalence classes over the
 leaf space, mechanically-detected unification candidates (a site whose leaf
@@ -234,14 +234,14 @@ The naming rule it suggests with numbers:
   not a new concept — and a class living entirely in question `when:`s is
   the questionnaire's own ask-time vocabulary, governed by the
   forward-reference rule below, not by render-side naming.
-- **A named internal that never splits the 248-leaf space** (fires on all
+- **A named internal that never splits the 272-leaf space** (fires on all
   or none) — a shortcut that cannot distinguish leaves is dead weight;
   consider flattening it or saying why the leaf space never exercises it.
 
 The fast-tier guard `tests/test_predicate_classifier.py` holds the
 space-wide version of the same rule: no template condition may duplicate a
 named internal unconditionally (proven in Z3 over the whole questionnaire
-space, not just the 248 leaves) without referencing it — unless the pair is
+space, not just the 272 leaves) without referencing it — unless the pair is
 declared in its `DECLARED_EQUIVALENCES` registry with a reason, as the
 `has_*` / `web_api` / `data_science` alias family from §18 is.
 

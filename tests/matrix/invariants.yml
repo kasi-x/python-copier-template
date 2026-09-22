@@ -110,6 +110,8 @@ excluded:
     why: "generation aborts by design: the _tasks.jinja web_django task exits 1"
   - question: include_sentry
     why: "an integration detail question behind use_recommended_integrations, not a leaf-space layer; every leaf keeps it at its default false"
+  - question: oj_sample
+    why: "an opt-in sample-check workflow behind oj_code, not a leaf-space dimension; every leaf keeps it at its default false and the per-site bodies are covered by tests/test_example_oj.py"
 
 # One row per leaf class, in composition order (base first, override last).
 leaf_classes:
@@ -328,7 +330,7 @@ leaf_classes:
     why: "the CTF participant workspace plus the agent guide (kaggle and ctf always allow AI coding agents)"
 
   - id: oj_kind=code
-    select: {project_type: [online_judge], oj_kind: [atcoder, leetcode, yukicoder, aoj]}
+    select: {project_type: [online_judge], oj_kind: [atcoder, leetcode, yukicoder, aoj, codeforces, kattis, other]}
     ships:
       - AGENTS.md
     absent:
@@ -345,7 +347,7 @@ leaf_classes:
       - [AGENTS.md, "ライセンス変動"]
     tier:
       name: fast
-      why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj are render-only"
+      why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj / codeforces / kattis / other are render-only"
     why: "competitive-programming judges ship a bare workspace: no package and no challenges. The agent guide ships since 2026-09-21; its AI wording defers to the contest (oj_allow_ai picks the sentence where it was asked, the check-the-rules wording where it was not)"
 
   # -- opt-in layers ------------------------------------------------------ #

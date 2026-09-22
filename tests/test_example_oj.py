@@ -1,5 +1,5 @@
 """online_judge: the bare judge workspaces (atcoder / leetcode / yukicoder /
-aoj / ctf) and the AGENTS.md wording rules that follow oj_allow_ai."""
+aoj / codeforces / kattis / other / ctf) and the AGENTS.md wording rules that follow oj_allow_ai."""
 
 import tomllib
 from pathlib import Path
@@ -98,6 +98,79 @@ def test_template_aoj_workspace(tmp_path: Path):
     assert "aoj submit main.py --lang Python3" in readme
 
 
+def test_template_codeforces_workspace(tmp_path: Path):
+    # Codeforces is a code-submission judge: the same bare workspace as
+    # atcoder, driven with oj (download / test work; submit via oj or browser)
+    copy_project(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="codeforces")
+    assert not (tmp_path / "src").exists()
+    assert not (tmp_path / "tests" / "test_samples.py").exists()
+    assert not list(tmp_path.glob("*.py"))
+    pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
+    assert pyproject_toml["project"]["dependencies"] == []
+    readme = (tmp_path / "README.md").read_text()
+    assert "oj download https://codeforces.com/contest/4/problem/A" in readme
+    assert "oj test" in readme
+    guide = (tmp_path / "AGENTS.md").read_text()
+    assert "codeforces" in guide
+    assert "test/" in (tmp_path / ".gitignore").read_text()
+
+
+def test_template_kattis_workspace(tmp_path: Path):
+    # Kattis is a code-submission judge: the same bare workspace, but the
+    # README leads with submit.py + .kattisrc and oj only downloads samples
+    copy_project(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="kattis")
+    assert not (tmp_path / "src").exists()
+    assert not list(tmp_path.glob("*.py"))
+    readme = (tmp_path / "README.md").read_text()
+    assert "python3 submit.py hello.py" in readme
+    assert "oj download https://open.kattis.com/problems/hello" in readme
+    gitignore = (tmp_path / ".gitignore").read_text()
+    assert ".kattisrc" in gitignore
+    assert "test/" in gitignore
+
+
+def test_template_other_workspace(tmp_path: Path):
+    # other is the generic stdin/stdout judge: a bare workspace with no
+    # site-specific tooling beyond oj download/test where allowed
+    copy_project(tmp_path, project_type="online_judge", oj_category="competitive_coding", oj_kind="other")
+    assert not (tmp_path / "src").exists()
+    readme = (tmp_path / "README.md").read_text()
+    assert "oj download <problem-url>" in readme
+    guide = (tmp_path / "AGENTS.md").read_text()
+    assert "other" in guide
+
+
+def test_template_oj_sample_workflow_per_site(tmp_path: Path):
+    # oj_sample is opt-in (default off): off renders no file, on renders a
+    # per-site oj-sample.yml that parses as YAML and pins that site's tool.
+    # Off must stay byte-identical for existing renders, so assert absence too.
+    off = tmp_path / "off"
+    copy_project(off, project_type="online_judge", oj_category="competitive_coding", oj_kind="codeforces")
+    assert not (off / ".github" / "workflows" / "oj-sample.yml").exists()
+    pins = {
+        "atcoder": "https://atcoder.jp/contests/abc086/tasks/abc086_a",
+        "codeforces": "https://codeforces.com/contest/4/problem/A",
+        "yukicoder": "https://yukicoder.me/problems/no/1234",
+        "aoj": "aoj init",
+        "kattis": "submit.py",
+        "leetcode": "Solution",
+        "other": "judge.yosupo.jp",
+    }
+    for oj_kind, pin in pins.items():
+        project_path = tmp_path / f"sample_{oj_kind}"
+        copy_project(
+            project_path,
+            project_type="online_judge",
+            oj_category="competitive_coding",
+            oj_kind=oj_kind,
+            oj_sample=True,
+        )
+        body = (project_path / ".github" / "workflows" / "oj-sample.yml").read_text()
+        assert pin in body, f"{oj_kind}: oj-sample.yml lacks its pinned marker {pin!r}"
+        parsed = yaml.safe_load(body)
+        assert "sample" in parsed["jobs"], f"{oj_kind}: oj-sample.yml has no sample job"
+
+
 @pytest.mark.heavy
 @pytest.mark.network
 def test_template_online_judge_repo_lints_clean(tmp_path: Path):
@@ -158,6 +231,12 @@ def test_template_agents_md_wording_follows_oj_allow_ai(tmp_path: Path):
         ("leetcode", {}, "Contest rules govern AI use"),
         ("yukicoder", {}, "Contest rules govern AI use"),
         ("aoj", {}, "Contest rules govern AI use"),
+        ("codeforces", {"oj_allow_ai": True}, "The judge's rules permit AI assistance"),
+        ("codeforces", {}, "Contest rules govern AI use"),
+        ("kattis", {"oj_allow_ai": True}, "The judge's rules permit AI assistance"),
+        ("kattis", {}, "Contest rules govern AI use"),
+        ("other", {"oj_allow_ai": True}, "The judge's rules permit AI assistance"),
+        ("other", {}, "Contest rules govern AI use"),
     ]
     for index, (oj_kind, extra, expected) in enumerate(cases):
         project_path = tmp_path / f"case_{index}"

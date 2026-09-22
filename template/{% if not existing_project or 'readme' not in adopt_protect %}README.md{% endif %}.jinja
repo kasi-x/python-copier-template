@@ -183,6 +183,46 @@ aoj submit main.py --lang Python3
 [online-judge-tools](https://github.com/online-judge-tools/oj) (`oj`) can also
 download AOJ samples into `./test/` (`oj download <problem-url>`), but cannot
 submit — use `aoj submit` for that.
+{% elif oj_kind == 'codeforces' %}
+Use [online-judge-tools](https://github.com/online-judge-tools/oj) (`oj`) —
+it downloads Codeforces samples and tests locally (submit goes through
+`oj submit` where the service allows, else the browser):
+
+```sh
+# download samples into ./test/, then test a solution
+oj download https://codeforces.com/contest/4/problem/A
+# ... write your answer in main.py ...
+oj test -c "python3 main.py"
+oj submit https://codeforces.com/contest/4/problem/A main.py
+```
+{% elif oj_kind == 'kattis' %}
+Use the [Kattis submit client](https://github.com/Kattis/kattis-cli)
+(`submit.py` with a personal `.kattisrc`) — download your config once, then
+submit from the terminal ([online-judge-tools](https://github.com/online-judge-tools/oj)
+(`oj`) also reads Kattis samples into `./test/`):
+
+```sh
+# ... write your answer in hello.py ...
+python3 submit.py hello.py
+# ... or download samples first, then test locally ...
+oj download https://open.kattis.com/problems/hello
+oj test -c "python3 hello.py"
+```
+
+Keep `.kattisrc` out of git (it carries your submission token).
+{% elif oj_kind == 'other' %}
+Any other stdin/stdout judge: keep a `main.py` per problem as your working
+copy. Where the service allows it, [online-judge-tools](https://github.com/online-judge-tools/oj)
+(`oj`) downloads samples into `./test/` and tests them:
+
+```sh
+oj download <problem-url>
+# ... write your answer in main.py ...
+oj test -c "python3 main.py"
+# oj submit <problem-url> main.py
+```
+
+Otherwise use the judge's own editor to run and submit.
 {% else %}
 LeetCode solutions are written and judged in LeetCode's own editor (a
 function body, not stdin/stdout), so there is no CLI to fetch samples here.
@@ -190,11 +230,13 @@ Keep a `main.py` per problem in this repo as your working copy, and paste it
 into the LeetCode editor to run and submit.
 {% endif %}
 
-{% if oj_kind == 'atcoder' or oj_kind == 'yukicoder' %}
+{% if oj_kind in ['atcoder', 'yukicoder', 'codeforces'] %}
 `oj download` writes samples to a `test/` directory in the current folder —
 add `test/` to your `.gitignore` (or keep those folders out of git) so
 downloaded cases are not committed.
 {% endif %}
+
+
 {% endif %}
 {% else %}```sh
 {% if package_manager == "uv" %}pip install {{distribution_name}}
@@ -269,12 +311,13 @@ pixi run -e dev predict
 ```
 
 Marimo notebooks live in `src/notebook/` (open with the `marimo` task).
-{% elif oj_kind == 'atcoder' or oj_kind == 'yukicoder' %}Grab the samples for a problem, write a single-file solution, and
+{% elif oj_kind in ['atcoder', 'yukicoder', 'codeforces'] %}Grab the samples for a problem, write a single-file solution, and
 test it against the downloaded cases:
 
 ```sh
 {% if oj_kind == 'atcoder' %}oj download https://atcoder.jp/contests/abc086/tasks/abc086_a   # creates test/
-{% else %}oj download https://yukicoder.me/problems/no/1234   # creates test/
+{% elif oj_kind == 'yukicoder' %}oj download https://yukicoder.me/problems/no/1234   # creates test/
+{% else %}oj download https://codeforces.com/contest/4/problem/A   # creates test/
 {% endif %}# write main.py ...
 oj test -c "python3 main.py"          # run the sample cases
 # oj submit <problem-url> main.py
@@ -297,17 +340,34 @@ aoj submit main.py --lang Python3
 The repo is linted and type-checked as a whole (the relaxed rules are aimed
 at contest code), so `task check` / `just check` keep your workspace tidy
 before you submit.
-{% else %}Pick a LeetCode problem and keep your working copy here (LeetCode's own
-editor is the judge — the platform does not expose samples to CLI tools):
+{% elif oj_kind == 'kattis' %}Write the solution, test it against the samples, then
+submit it with the Kattis client:
 
 ```sh
-# main.py: your solution as a class/function (LeetCode signature)
-# paste it into the LeetCode editor to run and submit
+# ... write your answer in hello.py ...
+python3 submit.py hello.py
+# ... or download samples first, then test locally ...
+oj download https://open.kattis.com/problems/hello
+oj test -c "python3 hello.py"
 ```
 
 The repo is linted and type-checked as a whole (the relaxed rules are aimed
 at contest code), so `task check` / `just check` keep your workspace tidy
 before you submit.
+{% elif oj_kind == 'other' %}Grab the samples for a problem where the service allows it,
+write a single-file solution, and test it against the downloaded cases:
+
+```sh
+oj download <problem-url>   # creates test/
+# write main.py ...
+oj test -c "python3 main.py"          # run the sample cases
+# oj submit <problem-url> main.py
+```
+
+The repo is linted and type-checked as a whole (the relaxed rules are aimed
+at contest code), so `task check` / `just check` keep your workspace tidy
+before you submit.
+{% else %}Pick a LeetCode problem and keep your working copy here (LeetCode's own
 {% endif %}
  {% elif web_api %}Start the API server (the FastAPI app lives in `app/`):
 
@@ -343,7 +403,8 @@ The intended split: heavy processing lives in `src/` scripts/notebooks and
 writes its results where the service can read them; `app/` routers expose
 those results over HTTP. If a router needs a `src/` helper directly, move
 the helper into an importable module and add its dependencies to
-`[project] dependencies` first.
+`[project] dependencies` first (the stubs are linted like any other `src/`
+code, so `deptry` flags undeclared imports there too).
 {% endif %}{% if mcp_effective %}
 The project also ships an [MCP](https://modelcontextprotocol.io) server with
 two typed example tools (`add`, `divide`), two resources (`project://about`,
@@ -461,6 +522,19 @@ Or if it is a commandline tool:
 ```sh
 python -m {{package_name}} --version
 ```
+{% if data_science_layout %}
+The `src/` tree holds two things side by side: the importable package
+(`{{ pkg_dir }}/`, tested like any other module) and the analysis
+pipeline stubs (`data/`, `features/`, `models/`, `visualization/`, each an
+empty directory with only a `.gitkeep`). The stubs are where analysis code
+goes as it graduates from `notebooks/` — promote a cell into a tested module
+there and call it from the notebook. They are linted like any other `src/`
+code, so if a helper needs a third-party import, add it to
+`[project] dependencies` (or the structured `dependencies` answer) first;
+otherwise `deptry` flags it. Rename or extend the stub set via the
+structured `src_dirs` answer (`.copier-answers.yml`, picked up by
+`copier recopy --overwrite`).
+{% endif %}
 {% if mcp_effective %}
 The project also ships an [MCP](https://modelcontextprotocol.io) server with
 two typed example tools (`add`, `divide`), two resources (`project://about`,

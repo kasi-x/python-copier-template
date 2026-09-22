@@ -15,7 +15,7 @@ with tools/when_model.py's Z3 encoder on
 `FreeSpace` substitutes every boolean internal by its definition
 recursively (cycle-guarded; string-valued internals have no variable in the
 when grammar, so a site reading one is skipped as unmodelable rather than
-silently modeled as a free boolean). The 234-leaf sweep the tool itself
+silently modeled as a free boolean). The 272-leaf sweep the tool itself
 runs samples the space; this proves over all of it, without running copier
 once -- that is what keeps it in the fast tier.
 
