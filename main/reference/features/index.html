@@ -2715,7 +2715,7 @@ runner every recipe goes through:</p>
 <li>A task runner of your choice (<a href="https://just.systems">Just</a> (default) /
   <a href="https://taskfile.dev">Task&nbsp;(go-task)</a> / <a href="https://github.com/nat-n/poethepoet">poethepoet</a> /
   <a href="https://www.gnu.org/software/make/">Make</a> / <a href="https://www.pyinvoke.org">pyinvoke</a> /
-  <a href="https://duty.readthedocs.io">duty</a>) driving lint / type-check / test / docs — one shared task
+  <a href="https://pawamoy.github.io/duty">duty</a>) driving lint / type-check / test / docs — one shared task
   definition, invoked by CI too. With <code>package_manager</code> = pixi, the choices are
   <a href="https://pixi.sh">pixi&nbsp;(native&nbsp;tasks)</a> (default) /
   <a href="https://taskfile.dev">Task&nbsp;(go-task)</a> / <a href="https://just.systems">Just</a> /
@@ -2758,7 +2758,7 @@ runner every recipe goes through:</p>
   22.04 / Python 3.10, recommended for its wide deployment) or <strong>Jazzy</strong>
   (Ubuntu 24.04 / Python 3.12), and provision the environment with <strong>apt</strong>
   (classic <code>ros-&lt;distro&gt;-*</code> + industrial_ci) or <strong>pixi</strong> (RoboStack
-  conda-forge via <code>https://prefix.dev/robostack-&lt;distro&gt;</code>). Generates
+  conda-forge via the <code>robostack-&lt;distro&gt;</code> channel on prefix.dev). Generates
   <code>package.xml</code>, <code>setup.py</code>/<code>CMakeLists.txt</code>, <code>resource/</code>, ament linter
   tests, <code>Dockerfile.ros2</code>, and a ROS-aware devcontainer. CI runs
   industrial_ci (apt) or setup-pixi + colcon (pixi). See the
@@ -2893,7 +2893,7 @@ element to a combinable base:</p>
 <li>A <code>.env.example</code> with the environment variables the project understands
   (<code>.env</code> is git-ignored and auto-loaded by direnv / the compose stack)</li>
 <li>Author/GitHub-org questions have plain defaults (override at any prompt)</li>
-<li><a href="https://zens.python.dev">zensical</a>, <a href="https://www.sphinx-doc.org">sphinx</a> or
+<li><a href="https://zensical.org">zensical</a>, <a href="https://www.sphinx-doc.org">sphinx</a> or
   <a href="https://posit-dev.github.io/great-docs/">great-docs</a> for docs</li>
 <li>README badge row: CI, coverage, license, a Python-version badge matching
   the actual CI test matrix, and each tool's own <em>officially documented</em>
@@ -3026,7 +3026,7 @@ element to a combinable base:</p>
   static-analysis toolchain are now one axis (<code>none</code> / <code>basic</code> /
   <code>recommended</code> / <code>full</code>) instead of two loosely-coupled ones. <code>recommended</code>
   (the default) is the full toolchain used by the author's
-  <a href="https://github.com/kasi-x/dotfiles"><code>~/dotfiles/template</code></a>: ruff with
+  <code>~/dotfiles/template</code> (private repo): ruff with
   <code>ALL</code> rules, basedpyright + pyrefly, typos / vulture / deptry / pip-audit.</li>
 <li><strong><code>is_ds</code> / <code>quarto_paper</code> / <code>use_gpu</code> → <code>project_type</code></strong>: project kind is
   now one axis (<code>library</code> / <code>web_api</code> / <code>cli</code> / <code>data_science</code> / <code>online_judge</code>

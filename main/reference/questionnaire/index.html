@@ -2689,9 +2689,8 @@ questions depend on it.</p>
     provisioned?<ul>
 <li><strong><code>apt</code></strong> — the classic ROS 2 way — Ubuntu + apt (ros-{{ ros_distro }}-*) + colcon + rosdep.
   Docker base image ros:{{ ros_distro }}-ros-base.</li>
-<li><strong><code>pixi</code></strong> — RoboStack conda-forge packages via pixi, using the distro channel
-  (https://prefix.dev/robostack-{{ ros_distro }}). No sudo/apt needed. See
-  https://pixi.prefix.dev/latest/robotics/.</li>
+<li><strong><code>pixi</code></strong> — RoboStack conda-forge packages via pixi, using the robostack-<distro> channel on
+  prefix.dev. No sudo/apt needed. See https://pixi.prefix.dev/latest/robotics/.</li>
 </ul>
 </li>
 <li><strong>micropython</strong> — MicroPython firmware for a microcontroller (esp32, rp2, ...). Deployed with

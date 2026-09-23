@@ -2481,7 +2481,7 @@ git<span class="w"> </span>add<span class="w"> </span>-A<span class="w"> </span>
 <p>Later updates: <code>copier update --trust</code> and review the diff (see
 <a href="../../how-to/update-template/">Update Template</a>).</p>
 <h2 id="if-you-have-a-skeleton-based-project">If you have a skeleton-based project<a class="headerlink" href="#if-you-have-a-skeleton-based-project" title="Permanent link">&para;</a></h2>
-<p>If you have a <a href="https://github.com/kasi-x/python3-pip-skeleton">python3-pip-skeleton</a> based project then it is best to adopt the <em>first</em> release of this template (<code>6.0.0</code>, the tag the fork detach creates), then <code>copier update</code> to get to the latest. This is because <code>copier update</code> will try and merge file changes across renames done between releases, while <code>copier copy</code> cannot. This looks like:</p>
+<p>If you have a python3-pip-skeleton based project then it is best to adopt the <em>first</em> release of this template (<code>6.0.0</code>, the tag the fork detach creates), then <code>copier update</code> to get to the latest. This is because <code>copier update</code> will try and merge file changes across renames done between releases, while <code>copier copy</code> cannot. This looks like:</p>
 <div class="highlight"><pre><span></span><code>uvx<span class="w"> </span>copier<span class="w"> </span>copy<span class="w"> </span>https://github.com/kasi-x/python-copier-template.git<span class="w"> </span>--trust<span class="w"> </span>--vcs-ref<span class="o">=</span><span class="m">6</span>.0.0<span class="w"> </span>/path/to/existing-project
 git<span class="w"> </span>diff
 <span class="c1"># Examine the changes, put back anything you want to keep</span>

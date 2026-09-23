@@ -2157,7 +2157,7 @@
 <h1 id="why-use-a-copier-template">Why Use a Copier Template?<a class="headerlink" href="#why-use-a-copier-template" title="Permanent link">&para;</a></h1>
 <p>Many projects start from some kind of template. These define some basic structure, customized with project specific variables, that developers can add their code into. One example of this is <a href="https://cookiecutter.readthedocs.io">cookiecutter</a>.</p>
 <p>The problem with this approach is that it is difficult to apply changes to the template into projects that have been cut from it. Individual changes have to be copy/pasted into the code, leading to partially applied fixes and missed updates.</p>
-<p>A previous attempt, <a href="https://github.com/kasi-x/python3-pip-skeleton">python3-pip-skeleton</a>, took a different approach, being a repo that can be forked and updates merged into projects tracking it. This was initially encouraging, but led to downstream confusion on who had actually contributed to the repository, as well as messy merges when text that contained the project name (like documentation) was changed upstream.</p>
+<p>A previous attempt, python3-pip-skeleton, took a different approach, being a repo that can be forked and updates merged into projects tracking it. This was initially encouraging, but led to downstream confusion on who had actually contributed to the repository, as well as messy merges when text that contained the project name (like documentation) was changed upstream.</p>
 <p>This template now makes use of <a href="https://copier.readthedocs.io/">copier</a> which gives the best of both worlds, a templating engine to expand the template, then an update mechanism to apply diffs of the updated template to the project.</p>
 
 
