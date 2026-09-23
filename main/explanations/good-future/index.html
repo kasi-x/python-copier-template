@@ -502,6 +502,8 @@
       
         
       
+        
+      
     
     
     
@@ -1168,6 +1170,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../../how-to/online-judge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Online Judge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../how-to/quarto-paper/" class="md-nav__link">
         
   
@@ -1633,6 +1662,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         The three respects
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-legal-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The legal surface
       </span>
     </span>
   </a>
@@ -2220,6 +2260,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-legal-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The legal surface
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#how-it-is-enforced" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2271,6 +2322,24 @@ violates the site's terms. Personal data follows the same bar as
 (<code>CITATION.cff</code>) and SPDX annotations (<code>REUSE.toml</code>); datasets carry DUO
 use-conditions and CARE governance notes where they apply. Caches,
 harvests, and credentials are git-ignored — commit code, never data.</p>
+<h2 id="the-legal-surface">The legal surface<a class="headerlink" href="#the-legal-surface" title="Permanent link">&para;</a></h2>
+<p>Two field rules name the law that the mechanical defaults sit inside. The
+<strong>scraping-law</strong> section (<code>domain-scraping-law</code>, on the <code>scraping_effective</code>
+gate) maps copyright and the EU database right (Directive 96/9/EC art. 7)
+against the contract question (ToS) and the unauthorized-access line
+(CFAA / 不正アクセス禁止法), with robots.txt as evidence of the operator's
+intent rather than an authorization — hiQ Labs v. LinkedIn (9th Cir. 2022)
+kept the contract claim alive while the CFAA reading narrowed. Its generated
+counterpart is <strong><code>LEGAL.md</code></strong>, the per-source pre-crawl checklist a scraping
+project ships. The <strong>contest-rules</strong> section (<code>domain-contest-rules</code>, on the
+<code>oj_code</code> judges) records that AI-use rules differ per judge and change
+(AtCoder bans generative AI during ABC/ARC/AGC except a whitelisted
+translation prompt), that the submission is the entrant's own responsibility,
+and that rating manipulation and multi-accounting are banned. Both are
+enforcement L0: they reach the reader through the generated <code>AGENTS.md</code>
+appendix, and the ethics-appendix predicate in
+<code>tests/test_render_invariants.py</code> holds them to the leaf classes that select
+them.</p>
 <h2 id="how-it-is-enforced">How it is enforced<a class="headerlink" href="#how-it-is-enforced" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

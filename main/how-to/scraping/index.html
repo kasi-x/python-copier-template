@@ -16,7 +16,7 @@
         <link rel="prev" href="../bot/">
       
       
-        <link rel="next" href="../quarto-paper/">
+        <link rel="next" href="../online-judge/">
       
       
         
@@ -437,6 +437,8 @@
   
     
     
+      
+        
       
         
       
@@ -1213,6 +1215,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-scrape-mode-urls-in-stored-records-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The scrape mode: URLs in, stored records out
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scaling-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scaling up
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#license-consequences" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -1238,6 +1262,33 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../online-judge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Online Judge
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -2231,6 +2282,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-scrape-mode-urls-in-stored-records-out" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The scrape mode: URLs in, stored records out
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scaling-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scaling up
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#license-consequences" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2277,10 +2350,11 @@ per-host rate limiting, on-disk caching, and a contactable User-Agent. The
 charter's rules are enforced by the toolchain (ruff <code>banned-api</code>, pytest,
 CI) — not left to discipline.</p>
 <p>Answering <strong>Yes</strong> to <code>include_scraping</code> (asked for the <code>cli</code> base only)
-generates a <code>CHARTER.md</code> plus a fetcher module. Answering <strong>No</strong> to
-<code>use_recommended_scraping</code> reveals the engine question (<code>scraping_engine</code>):
-<code>httpx</code> (recommended), <code>scrapy</code>, <code>memorious</code>, <code>playwright</code>, or <code>all</code>
-(every engine at once).</p>
+generates a <code>CHARTER.md</code>, a fetcher module, and the <strong>scrape mode</strong> built
+on it: a URL-list pipeline, a JSONL result store and a <code>scrape</code> subcommand.
+Answering <strong>No</strong> to <code>use_recommended_scraping</code> reveals the engine question
+(<code>scraping_engine</code>): <code>httpx</code> (recommended), <code>scrapy</code>, <code>memorious</code>,
+<code>playwright</code>, or <code>all</code> (every engine at once).</p>
 <h2 id="what-gets-generated">What gets generated<a class="headerlink" href="#what-gets-generated" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>CHARTER.md</code> — the Good-future rules for this project (respect the
@@ -2304,7 +2378,13 @@ generates a <code>CHARTER.md</code> plus a fetcher module. Answering <strong>No<
      <code>cache_ttl_seconds</code>, so the second page on a host costs one HEAD probe
      instead of re-probing 8 feed paths + API hints;</li>
 <li>rate-limit (1 req/s per host), serve from the on-disk cache when
-     fresh, otherwise GET once and cache.</li>
+     fresh, otherwise GET once and cache. <code>fetch()</code> is the same call with
+     the HTTP status attached (<code>FetchedPage(url, status, text)</code>); <code>fetch_text()</code>
+     returns just the body.
+  The httpx politeness core also renders the scrape mode described below —
+  <code>&lt;pkg&gt;/pipeline.py</code>, <code>&lt;pkg&gt;/storage.py</code>, <code>tests/test_pipeline.py</code> and the
+  <code>scrape</code> CLI subcommand — so <code>memorious</code> and <code>playwright</code> (which reuse the
+  core) carry it too; <code>scrapy</code> (the one httpx-free engine) does not.</li>
 <li><code>scrapy</code> engine: <code>&lt;pkg&gt;/spider.py</code> — spider starter with <code>ROBOTSTXT_OBEY</code></li>
 <li><code>AUTOTHROTTLE</code> enforced in <code>custom_settings</code>, plus
   <code>tests/test_scrapy_spider.py</code> (settings + offline parse). Adds <code>scrapy</code>.</li>
@@ -2321,6 +2401,45 @@ generates a <code>CHARTER.md</code> plus a fetcher module. Answering <strong>No<
   <code>urllib.request.urlopen</code>, ...) are banned outside the fetcher, so every
   fetch stays polite. <code>.cache/fetcher/</code> is git-ignored.</li>
 </ul>
+<h2 id="the-scrape-mode-urls-in-stored-records-out">The scrape mode: URLs in, stored records out<a class="headerlink" href="#the-scrape-mode-urls-in-stored-records-out" title="Permanent link">&para;</a></h2>
+<p>The <code>httpx</code> engine renders more than the fetcher — it renders a usable
+scraping <em>mode</em>, so a crawl is a command rather than a blank page:</p>
+<ul>
+<li><code>&lt;pkg&gt;/pipeline.py</code> — <code>ScrapePipeline</code> takes an iterable of URLs, runs
+  each through <code>PoliteFetcher</code> (the same robots / rate-limit / cache path
+  <code>fetch_text()</code> uses — nothing re-implemented), and yields a
+  <code>ScrapeResult(url, status, text, fetched_at)</code> per URL, appending each to
+  the store as it goes. It is synchronous and needs nothing beyond <code>httpx</code>.</li>
+<li><code>&lt;pkg&gt;/storage.py</code> — <code>ResultStore</code> appends those records as JSONL under
+  <code>.cache/scraped/results.jsonl</code> (git-ignored with the rest of <code>.cache/</code>)
+  and reads them back with <code>iter()</code>. No database: one JSON object per line
+  is durable, greppable and re-runnable, and a torn trailing line is
+  skipped rather than failing the read.</li>
+<li>the CLI: <code>python -m &lt;pkg&gt; scrape &lt;url&gt;...</code> (also <code>&lt;repo_name&gt; scrape ...</code>
+  once installed) fetches every URL, appends one record per page, and
+  prints a per-URL summary plus the store path. It exits non-zero when any
+  page failed.</li>
+</ul>
+<p>Failure policy, pinned by <code>tests/test_pipeline.py</code> (mocked fetcher, no
+network):</p>
+<ul>
+<li>a page that robots.txt denies, a site that answers 401/403, or a
+  transport error is <strong>recorded</strong> — status <code>0</code> / the real HTTP code plus
+  the error text — and the next URL proceeds. A many-page crawl is not
+  all-or-nothing, and the store shows what happened instead of hiding it.</li>
+<li>the one global stop is <code>BudgetExceededError</code>: an exhausted host budget
+  stops the crawl and propagates, exactly as the charter demands — never
+  quietly continue past a budget you set.</li>
+</ul>
+<h2 id="scaling-up">Scaling up<a class="headerlink" href="#scaling-up" title="Permanent link">&para;</a></h2>
+<p>The pipeline is deliberately single-process and single-host polite. Mass
+crawls, distributed queues, proxy rotation and multi-day schedules are out
+of scope on purpose: the charter's <strong>ask-first</strong> rule is the scaling path —
+open an issue describing the crawl size and get review before raising
+<code>max_requests_per_host</code> or parallelizing across hosts. <code>ResultStore</code> stays a
+boring JSONL sink so the harvested data is yours to move (into a database,
+a data-science pipeline, or a de-identification review) without the
+template locking you into a storage engine.</p>
 <h2 id="license-consequences">License consequences<a class="headerlink" href="#license-consequences" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>memorious4</code> is AGPL-3.0: linking it forces the whole project to
@@ -2392,13 +2511,13 @@ and likely the law.</p>
         
         
           
-          <a href="../quarto-paper/" class="md-footer__link md-footer__link--next" aria-label="Next: Quarto Paper">
+          <a href="../online-judge/" class="md-footer__link md-footer__link--next" aria-label="Next: Online Judge">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Quarto Paper
+                Online Judge
               </div>
             </div>
             <div class="md-footer__button md-icon">

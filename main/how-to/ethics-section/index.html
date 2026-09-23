@@ -504,6 +504,8 @@
       
         
       
+        
+      
     
     
     
@@ -1170,6 +1172,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../online-judge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Online Judge
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../quarto-paper/" class="md-nav__link">
         
   
@@ -1282,6 +1311,17 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Enforcement levels
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-sections-this-template-currently-ships" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The sections this template currently ships
       </span>
     </span>
   </a>
@@ -2275,6 +2315,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#the-sections-this-template-currently-ships" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The sections this template currently ships
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#structured-data-the-lang-dictionaries" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -2439,6 +2490,31 @@ and the selector spell the mapping, the row keeps the word.</p>
 already parsed for every row; drafts warn through <code>check_ethics</code> even
 while they ship nowhere. A <code>L2</code> lift needs a real gate with an offline
 contract (see how <code>license-check</code> stays out of <code>type-check</code>/<code>check</code>).</p>
+<h2 id="the-sections-this-template-currently-ships">The sections this template currently ships<a class="headerlink" href="#the-sections-this-template-currently-ships" title="Permanent link">&para;</a></h2>
+<p>The full inventory lives in <code>_shared/ethics/REGISTRY.yml</code>; the two most
+recently promoted rows are:</p>
+<ul>
+<li><code>domain-scraping-law</code> — <strong>L0</strong>, gate <code>scraping_effective</code> (the AGENTS.md
+  include is <code>{% if scraping_effective %}</code>). The scraping-law map: copyright
+  and the EU database right (Directive 96/9/EC art. 7) sit beside the
+  contract question (ToS) and the unauthorized-access line (CFAA /
+  不正アクセス禁止法), and robots.txt is evidence of the operator's intent,
+  not an authorization (hiQ Labs v. LinkedIn, 9th Cir. 2022). Its generated
+  counterpart is <code>LEGAL.md</code> — the per-source pre-crawl checklist every
+  scraping layer ships, asserting what the toolchain enforces vs what stays
+  the operator's duty.</li>
+<li><code>domain-contest-rules</code> — <strong>L0</strong>, gate <code>oj_code</code> (the code-submission
+  judges; kaggle and ctf are deliberately outside it). Competition
+  integrity: AI-use rules differ per judge and change (AtCoder bans
+  generative AI during ABC/ARC/AGC except a whitelisted translation
+  prompt), the submission is the entrant's own responsibility, and rating
+  manipulation / multi-accounting are banned.</li>
+</ul>
+<p>Both are <code>status: active</code> with <code>rendered_from</code> naming the AGENTS.md
+appendix, and the <code>ethics-appendix</code> predicate in
+<code>tests/test_render_invariants.py</code> holds each to the leaf classes its gate
+selects — the mutation that drops a gate fails the render sweep, not a
+human review.</p>
 <h2 id="structured-data-the-lang-dictionaries">Structured data: the <code>lang/</code> dictionaries<a class="headerlink" href="#structured-data-the-lang-dictionaries" title="Permanent link">&para;</a></h2>
 <p>Rules whose substance is a table (protection terms per jurisdiction,
 per-country filing deadlines) keep the prose summary in the section and
