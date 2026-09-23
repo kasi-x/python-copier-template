@@ -37,12 +37,20 @@ def run(*args: str, cwd: Path | None = None) -> str:
     ).stdout
 
 
-def _tree(root: Path) -> dict[str, bytes]:
+# Consumer-side wiring that is not vendored: REGISTRY.yml (its gate column
+# names template flags) and FLAGS.yml (the abstract->concrete mapping the
+# codex's MANIFEST.yml resolves against). MANIFEST.yml itself lives in the
+# codex and is the contract, not vendored content.
+CONSUMER_OWNED = {"REGISTRY.yml", "FLAGS.yml"}
+CODEX_OWNED = {"MANIFEST.yml"}
+
+
+def _tree(root: Path, skip: frozenset[str] = frozenset()) -> dict[str, bytes]:
     """Map every file under root to its bytes, keyed by relative path."""
     return {
         str(p.relative_to(root)): p.read_bytes()
         for p in sorted(root.rglob("*"))
-        if p.is_file() and p.name not in CONSUMER_OWNED
+        if p.is_file() and p.name not in CONSUMER_OWNED and p.name not in skip
     }
 
 
@@ -68,11 +76,11 @@ def main() -> int:
         # private codex fails a bare https git clone.
         run("gh", "repo", "clone", "ConstitutiveTemplates/good-future-codex", str(codex), "--", "--quiet")
         upstream_head = run("git", "rev-parse", "HEAD", cwd=codex).strip()
-        upstream_sections = _tree(codex / "sections")
+        upstream_sections = _tree(codex / "sections", skip=CODEX_OWNED)
 
         # The codex's own tree at the vendored SHA, for the dirty-vendor check.
         run("git", "checkout", "--quiet", vendored_sha, cwd=codex)
-        vendored_sections = _tree(codex / "sections")
+        vendored_sections = _tree(codex / "sections", skip=CODEX_OWNED)
 
     local = _tree(VENDORED)
     dirty = _diff(local, vendored_sections)

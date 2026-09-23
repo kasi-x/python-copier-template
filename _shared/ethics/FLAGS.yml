@@ -1,0 +1,59 @@
+# The flag vocabulary this template exports to good-future-codex.
+#
+# The codex's sections/MANIFEST.yml declares each section's placement under an
+# ABSTRACT `when` (scraping / oj_code / mcp / ...). This file is the mapping
+# the other direction: the audience token and the concrete gate expression
+# each abstract condition resolves to here. It is the contract the two repos
+# share — the codex's manifest stays flag-agnostic, and this file is the only
+# place the abstract names meet real conditions. A new abstract condition in
+# the codex fails the consumer's drift check until a row here names its
+# mapping.
+#
+# `audience` is the leaf-class token REGISTRY.yml's `audience:` column uses;
+# `gate` is the exact Jinja condition the AGENTS.md.jinja include chain tests
+# (verbatim — keep it in sync with the template). A section lands on a leaf
+# when the leaf's audience token is in the section's audience AND the gate
+# holds for that leaf's answers.
+
+version: 1
+conditions:
+  always:
+    audience: [library, cli, script, web, data-science, kaggle, mcp, online-judge, iot]
+    gate: "true"
+    note: "no gate — every project that ships the appendix gets the section"
+  scraping:
+    audience: [cli]
+    gate: scraping_effective
+    note: "include_scraping AND project_type == 'cli' — the layer only renders on cli"
+  oj_code:
+    audience: [online-judge]
+    gate: oj_code
+    note: "code-submission judges (atcoder/leetcode/yukicoder/aoj/codeforces/kattis/other); kaggle and ctf are separate"
+  mcp:
+    audience: [mcp]
+    gate: mcp_effective
+    note: "include_mcp AND (cli or web_api)"
+  data_science:
+    audience: [data-science, kaggle]
+    gate: data_science_layout
+    note: "the data-science/kaggle layout, not the bare project_type answer"
+  web_api:
+    audience: [web]
+    gate: web_api
+    note: "the web_api layer (project_type or include)"
+  commercial:
+    audience: [library, cli, web, mcp]
+    gate: "'commercial' in distribution"
+    note: "the CRA gate is monetisation, not jurisdiction — the distribution multiselect carries it"
+  eu_market:
+    audience: [library, cli, web, mcp]
+    gate: "'commercial' in distribution"
+    note: "EU reach is decided by monetisation (CRA art. 24 exempts non-commercial), so it shares the commercial gate"
+  jp:
+    audience: [iot, cli]
+    gate: "project_type in ['micropython', 'cli']"
+    note: "Japanese-law sections currently reach iot (micropython) and cli leaves"
+  ai_assisted:
+    audience: [library, cli, script, web, data-science, kaggle, mcp, online-judge, iot]
+    gate: agents_md_effective
+    note: "AGENTS.md is generated — the section only matters where an AI agent reads it"
