@@ -198,21 +198,32 @@ class _Job:
     target_dirty: bool
     fresh: bool
 
-
 def _rehearse_job(job: _Job) -> LeafVerdict:
     """Module-level entry for the process pool (closures do not pickle)."""
     work = Path(tempfile.mkdtemp(prefix=f"rehearsal-{job.leaf_id.replace('/', '__')}-"))
     try:
-        return rehearse_leaf(
-            job.leaf_id,
-            job.answers,
-            base_rev=job.base_rev,
-            target_rev=job.target_rev,
-            target_dirty=job.target_dirty,
-            renders=ReleasedRenders(job.base_ref, job.base_rev, copier.__version__),
-            fresh_render_available=job.fresh,
-            work=work,
-        )
+        for attempt in (1, 2):
+            try:
+                return rehearse_leaf(
+                    job.leaf_id,
+                    job.answers,
+                    base_rev=job.base_rev,
+                    target_rev=job.target_rev,
+                    target_dirty=job.target_dirty,
+                    renders=ReleasedRenders(job.base_ref, job.base_rev, copier.__version__),
+                    fresh_render_available=job.fresh,
+                    work=work,
+                )
+            except OSError:
+                # copier's update renders into a TemporaryDirectory whose
+                # cleanup races git's own .git writes under parallel workers
+                # ("Directory not empty: '.git'"). Transient: retry once on a
+                # fresh workspace before letting it count as a failure.
+                if attempt == 2:
+                    raise
+                shutil.rmtree(work, ignore_errors=True)
+                work = Path(tempfile.mkdtemp(prefix=f"rehearsal-{job.leaf_id.replace('/', '__')}-"))
+        raise AssertionError("unreachable")  # the loop always returns or raises
     finally:
         shutil.rmtree(work, ignore_errors=True)
 
