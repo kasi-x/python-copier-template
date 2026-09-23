@@ -623,3 +623,22 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
   update-path 該当テスト pass、fast tier 1023 pass。
 
 
+### 31.5 検証完了（2026-09-23）
+
+- 復活させた週次チェックがさらに 2 件の潜伏バグを表面化し、すべて解消:
+  - `test_each_tier_collects_what_the_ledger_records`: 新設した
+    trailing-whitespace パラメタ化が fast tier に 26 件追加 →
+    `UPDATE_TIERS=1` で tiers.json 再記録 + gen_docs で
+    verification.md / test-loop.md の件数同期。
+  - rehearsal の `OSError: Directory not empty: '.git'`: copier の
+    run_update が TemporaryDirectory cleanup で git の .git 書き込みと
+    競合する一過性レース（並列 worker 下）。`_rehearse_job` に 1 回の
+    リトライを追加。
+  - ついでに `ruff format` の 2-blank-line 違反 1 件（lint ジョブが捕捉）。
+- 最終 run 35817016824: **lint / test / docs 全緑**（test は heavy 込みの
+  全 tier、23 分）。drift-issue ジョブは正しく skipped。
+- 新設テスト `test_generated_files_have_no_trailing_whitespace` が
+  pyproject.toml.jinja / README.md.jinja / .gitleaks.toml / shortcodes.lua
+  の行末空白を一掃（.scss を suffix 集合に追加 — vendored clean.scss は
+  従来の EOF チェックの盲点だった）。
+
