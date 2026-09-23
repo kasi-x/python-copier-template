@@ -238,7 +238,15 @@ def test_update_from_the_released_ref_to_head(
 ):
     """Replay a real `copier update` onto a project generated at the release."""
     project = tmp_path / case
-    released_renders.render(project, answers)
+    try:
+        released_renders.render(project, answers)
+    except ValueError as exc:
+        # Schema drift: the case's answers name a choice the released
+        # questionnaire did not have (e.g. an oj_kind added after the tag).
+        # No user could have rendered this configuration at the released ref,
+        # so there is nothing to update *from* -- skip, don't fail (the
+        # rehearsal in tools/update_rehearsal.py applies the same rule).
+        pytest.skip(f"{case}: not renderable at the released ref ({exc})")
     metadata = _answers(project)
     # The update clones this path, so a render served from another checkout
     # would drag the merge (and the assertions below) to that tree instead.
