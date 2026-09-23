@@ -198,6 +198,7 @@ class _Job:
     target_dirty: bool
     fresh: bool
 
+
 def _rehearse_job(job: _Job) -> LeafVerdict:
     """Module-level entry for the process pool (closures do not pickle)."""
     work = Path(tempfile.mkdtemp(prefix=f"rehearsal-{job.leaf_id.replace('/', '__')}-"))
