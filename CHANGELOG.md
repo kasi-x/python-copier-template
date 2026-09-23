@@ -10,6 +10,8 @@ All notable changes to this project are documented in this file.
 
 - generated `.gitignore` files end with exactly one trailing newline on every conditional CTF/OJ/scraping/gmail include branch
 
+- the weekly Scheduled full check no longer dies as `startup_failure`: the docs reusable call now grants `contents: write`, matching `_docs.yml`'s job-level grant (a called workflow's permissions may not exceed the caller's)
+
 
 ### Dependencies
 

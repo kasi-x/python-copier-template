@@ -33,6 +33,12 @@ jobs:
       task_runner: task
       # Build-only: a scheduled drift check must not publish docs.
       publish: false
+    # _docs.yml's build job declares contents: write (needed for the gh-pages
+    # publish path). A reusable workflow's permissions may not exceed the
+    # caller's grant, so without this the whole run dies as startup_failure
+    # before any job starts -- the weekly check never ran once.
+    permissions:
+      contents: write
 
   open-drift-issue:
     name: Open issue on drift
