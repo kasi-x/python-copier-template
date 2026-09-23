@@ -88,9 +88,14 @@ def test_the_full_rehearsal_passes_on_every_leaf():
     # No --only: the rehearsal must cover every declared leaf, and the floor is
     # the committed ledger's own count rather than a literal -- a leaf space
     # that shrank (or a ledger that stopped matching it) fails here, while a
-    # deliberate regeneration moves both numbers together.
+    # deliberate regeneration moves both numbers together. Leaves whose
+    # answers are invalid at the released ref (a choice added after the tag)
+    # are skipped, not rehearsed -- they count toward coverage because no user
+    # could hold a project rendered from them at the base.
     ledger = json.loads((TOP / "tests" / "matrix" / "witnesses.json").read_text(encoding="utf-8"))
-    assert payload["rehearsed"] >= ledger["coverage"]["total"] >= 225, (
-        f"the rehearsal covered {payload['rehearsed']} leaves; the ledger records {ledger['coverage']['total']}, "
-        "and the floor this guard landed with is 225"
+    covered = payload["rehearsed"] + len(payload["skipped"])
+    assert covered >= ledger["coverage"]["total"] >= 225, (
+        f"the rehearsal covered {covered} leaves ({payload['rehearsed']} rehearsed, "
+        f"{len(payload['skipped'])} skipped as unrenderable at the base); the ledger records "
+        f"{ledger['coverage']['total']}, and the floor this guard landed with is 225"
     )

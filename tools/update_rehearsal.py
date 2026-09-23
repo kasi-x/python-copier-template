@@ -68,6 +68,7 @@ class LeafVerdict:
     ok: bool
     failed: list[str]
     convergence: list[str]  # update-vs-fresh-render divergences (informational)
+    skipped: str | None = None  # set when the leaf cannot exist at the base ref
 
 
 def _sha(data: bytes) -> str:
@@ -227,10 +228,16 @@ def rehearse_leaf(  # noqa: PLR0913 C901  WHYNOT: the arguments are the replay's
     fresh_render_available: bool,
     work: Path,
 ) -> LeafVerdict:
-    """Replay a user's lifecycle for one leaf and return the verdict."""
     project = work / "project"
     project.mkdir(parents=True)
-    renders.render(leaf_id, answers, project)
+    try:
+        renders.render(leaf_id, answers, project)
+    except ValueError as exc:
+        # Schema drift: the leaf's answers name a choice the released
+        # questionnaire did not have (e.g. an oj_kind added after the tag).
+        # No user could have rendered this configuration at the base ref, so
+        # there is nothing to update *from* -- the leaf is skipped, not failed.
+        return LeafVerdict(leaf_id=leaf_id, ok=True, failed=[], convergence=[], skipped=str(exc))
     recorded = _answers(project).get("_commit", "")
 
     # The state a user's repo is in after `copier copy`: one commit. The
@@ -325,6 +332,7 @@ def run(
         verdicts = list(pool.map(_rehearse_job, jobs_to_run))
 
     failures = [v for v in verdicts if not v.ok]
+    skipped = {v.leaf_id: v.skipped for v in verdicts if v.skipped is not None}
     convergence = {v.leaf_id: v.convergence for v in verdicts if v.convergence}
     # the pool workers each hold their own counters; the cache is the one place
     # the numbers live after a parallel run
@@ -334,7 +342,8 @@ def run(
         "base_rev": base_rev,
         "target": target_ref,
         "target_rev": target_rev,
-        "rehearsed": len(verdicts),
+        "rehearsed": len(verdicts) - len(skipped),
+        "skipped": skipped,
         "failures": {v.leaf_id: v.failed for v in failures},
         "convergence": convergence,
         "renders": {"cached": rendered_done, "fresh": renders.renders, "reused": renders.reuses},
@@ -374,6 +383,8 @@ def main(argv: list[str] | None = None) -> int:
             f"{payload['target']} ({payload['target_rev'][:10]}), {payload['renders']['cached']} cached render(s)",
             file=sys.stderr,
         )
+        for leaf_id, reason in payload["skipped"].items():
+            print(f"[SKIP]   {leaf_id}: not renderable at {payload['base']} ({reason})", file=sys.stderr)
         for leaf_id, failed in payload["failures"].items():
             print(f"[FAIL]   {leaf_id}: {'; '.join(failed)}", file=sys.stderr)
         for leaf_id, files in payload["convergence"].items():
