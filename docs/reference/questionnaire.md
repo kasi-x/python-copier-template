@@ -74,9 +74,8 @@ questions depend on it.
     provisioned?
     - **`apt`** — the classic ROS 2 way — Ubuntu + apt (ros-{{ ros_distro }}-*) + colcon + rosdep.
       Docker base image ros:{{ ros_distro }}-ros-base.
-    - **`pixi`** — RoboStack conda-forge packages via pixi, using the distro channel
-      (https://prefix.dev/robostack-{{ ros_distro }}). No sudo/apt needed. See
-      https://pixi.prefix.dev/latest/robotics/.
+    - **`pixi`** — RoboStack conda-forge packages via pixi, using the robostack-<distro> channel on
+      prefix.dev. No sudo/apt needed. See https://pixi.prefix.dev/latest/robotics/.
 - **micropython** — MicroPython firmware for a microcontroller (esp32, rp2, ...). Deployed with
   mpremote; the CPython dev toolchain (uv/ruff/pytest/basedpyright) coexists for testing and
   type-checking against micropython-<port>-stubs.

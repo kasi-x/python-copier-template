@@ -17,7 +17,7 @@ package the analysis uses.
 | `_quarto.yml` | project config: bibliography, CSL, and the `quartodoc` section |
 | `references/references.bib` + `references/chicago-author-date.csl` | starter bibliography and citation style |
 | `outputs/` | tables and figures the paper reads in (git-ignored like `data/`) |
-| `paper/_extensions/arxiv/` | the [arxiv Quarto extension](https://github.com/mikemahoney218/arxiv) by Mike Mahoney (vendored, MIT) |
+| `paper/_extensions/arxiv/` | the [arxiv Quarto extension](https://github.com/mikemahoney218/quarto-arxiv) by Mike Mahoney (vendored, MIT) |
 | `slides/_extensions/clean/` | the [clean revealjs theme](https://github.com/grantmcdermott/quarto-revealjs-clean) by Grant McDermott (vendored, MIT) |
 
 The `paper`, `slides` and `paper-api` tasks exist only where the scaffold

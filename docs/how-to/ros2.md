@@ -39,7 +39,7 @@ the ROS packages *and* the dev tooling — so the package-manager question is
 not asked (no uv/poetry alongside):
 
 ```sh
-pixi init my_ros_ws -c https://prefix.dev/robostack-<distro> -c https://prefix.dev/conda-forge
+pixi init my_ros_ws -c https://prefix.dev/robostack-jazzy -c https://prefix.dev/conda-forge
 cd my_ros_ws
 pixi add ros-<distro>-rclpy
 pixi run rviz2

@@ -139,7 +139,7 @@ runner every recipe goes through:
 - A task runner of your choice ([Just](https://just.systems) (default) /
   [Task&nbsp;(go-task)](https://taskfile.dev) / [poethepoet](https://github.com/nat-n/poethepoet) /
   [Make](https://www.gnu.org/software/make/) / [pyinvoke](https://www.pyinvoke.org) /
-  [duty](https://duty.readthedocs.io)) driving lint / type-check / test / docs — one shared task
+  [duty](https://pawamoy.github.io/duty)) driving lint / type-check / test / docs — one shared task
   definition, invoked by CI too. With `package_manager` = pixi, the choices are
   [pixi&nbsp;(native&nbsp;tasks)](https://pixi.sh) (default) /
   [Task&nbsp;(go-task)](https://taskfile.dev) / [Just](https://just.systems) /
@@ -182,7 +182,7 @@ runner every recipe goes through:
   22.04 / Python 3.10, recommended for its wide deployment) or **Jazzy**
   (Ubuntu 24.04 / Python 3.12), and provision the environment with **apt**
   (classic `ros-<distro>-*` + industrial_ci) or **pixi** (RoboStack
-  conda-forge via `https://prefix.dev/robostack-<distro>`). Generates
+  conda-forge via the `robostack-<distro>` channel on prefix.dev). Generates
   `package.xml`, `setup.py`/`CMakeLists.txt`, `resource/`, ament linter
   tests, `Dockerfile.ros2`, and a ROS-aware devcontainer. CI runs
   industrial_ci (apt) or setup-pixi + colcon (pixi). See the
@@ -321,7 +321,7 @@ element to a combinable base:
 - A `.env.example` with the environment variables the project understands
   (`.env` is git-ignored and auto-loaded by direnv / the compose stack)
 - Author/GitHub-org questions have plain defaults (override at any prompt)
-- [zensical](https://zens.python.dev), [sphinx](https://www.sphinx-doc.org) or
+- [zensical](https://zensical.org), [sphinx](https://www.sphinx-doc.org) or
   [great-docs](https://posit-dev.github.io/great-docs/) for docs
 - README badge row: CI, coverage, license, a Python-version badge matching
   the actual CI test matrix, and each tool's own *officially documented*
@@ -390,7 +390,7 @@ The option set has been consolidated over time. The key moves:
   static-analysis toolchain are now one axis (`none` / `basic` /
   `recommended` / `full`) instead of two loosely-coupled ones. `recommended`
   (the default) is the full toolchain used by the author's
-  [`~/dotfiles/template`](https://github.com/kasi-x/dotfiles): ruff with
+  `~/dotfiles/template` (private repo): ruff with
   `ALL` rules, basedpyright + pyrefly, typos / vulture / deptry / pip-audit.
 - **`is_ds` / `quarto_paper` / `use_gpu` → `project_type`**: project kind is
   now one axis (`library` / `web_api` / `cli` / `data_science` / `online_judge`

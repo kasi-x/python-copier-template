@@ -97,7 +97,7 @@ RUNNER_URLS: dict[str, str] = {
     "poe": "https://github.com/nat-n/poethepoet",
     "make": "https://www.gnu.org/software/make/",
     "invoke": "https://www.pyinvoke.org",
-    "duty": "https://duty.readthedocs.io",
+    "duty": "https://pawamoy.github.io/duty",
     "pixi": "https://pixi.sh",
 }
 

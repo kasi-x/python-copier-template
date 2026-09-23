@@ -104,7 +104,7 @@ Later updates: `copier update --trust` and review the diff (see
 
 ## If you have a skeleton-based project
 
-If you have a [python3-pip-skeleton](https://github.com/kasi-x/python3-pip-skeleton) based project then it is best to adopt the *first* release of this template (`6.0.0`, the tag the fork detach creates), then `copier update` to get to the latest. This is because `copier update` will try and merge file changes across renames done between releases, while `copier copy` cannot. This looks like:
+If you have a python3-pip-skeleton based project then it is best to adopt the *first* release of this template (`6.0.0`, the tag the fork detach creates), then `copier update` to get to the latest. This is because `copier update` will try and merge file changes across renames done between releases, while `copier copy` cannot. This looks like:
 
 ```shell
 uvx copier copy https://github.com/kasi-x/python-copier-template.git --trust --vcs-ref=6.0.0 /path/to/existing-project
