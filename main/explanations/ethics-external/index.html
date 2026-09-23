@@ -2406,10 +2406,11 @@
 is the one part of this template whose content has its own review cadence —
 OWASP revisions, FIPS finalization, Let's Encrypt chain ceremonies, regional
 law — independent of the template's release cycle. That makes it the natural
-candidate to split into its own repository so other templates and projects
-can consume the same reviewed text. This page records the design for that
-split: what moves, what stays, and why the sync happens at vendor time and
-never at render time. It is a design note, not yet implemented.</p>
+candidate to split into its own repository — <strong><code>good-future-codex</code></strong>, the
+canonical section texts of the Good-future charter — so other templates and
+projects can consume the same reviewed text. This page records the design
+for that split: what moves, what stays, and why the sync happens at vendor
+time and never at render time. It is a design note, not yet implemented.</p>
 <h2 id="why-not-fetch-at-render-time">Why not fetch at render time<a class="headerlink" href="#why-not-fetch-at-render-time" title="Permanent link">&para;</a></h2>
 <p>The tempting version — <code>copier copy</code> pulls the latest ethics text from the
 external repo — breaks the property the whole verification stack rests on:</p>
