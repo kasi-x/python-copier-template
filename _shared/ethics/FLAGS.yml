@@ -50,9 +50,9 @@ conditions:
     gate: "'commercial' in distribution"
     note: "EU reach is decided by monetisation (CRA art. 24 exempts non-commercial), so it shares the commercial gate"
   jp:
-    audience: [iot, cli]
-    gate: "project_type in ['micropython', 'cli']"
-    note: "Japanese-law sections currently reach iot (micropython) and cli leaves"
+    audience: [iot, cli, web]
+    gate: "project_type in ['micropython', 'cli'] or web_api"
+    note: "Japanese-law sections reach iot/cli (kyushu-ntp) and web (external-transmission); the gate is the union of both"
   ai_assisted:
     audience: [library, cli, script, web, data-science, kaggle, mcp, online-judge, iot]
     gate: agents_md_effective

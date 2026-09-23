@@ -1,0 +1,87 @@
+# Placement & distribution contract for the codex sections.
+#
+# Each section declares WHERE it wants to land and UNDER WHAT ABSTRACT
+# CONDITION -- in the codex's own vocabulary, never a consumer's flag name.
+# A consumer maps each abstract `when` to its own gating (e.g. this template's
+# REGISTRY.yml maps `scraping` -> `scraping_effective`, `oj_code` -> `oj_code`).
+# The codex owns the intent; the consumer owns the wiring.
+#
+# `when` vocabulary (abstract, consumer-agnostic):
+#   always            every project that ships the appendix
+#   scraping          the project fetches the web (any engine)
+#   oj_code           a code-submission judge workspace
+#   mcp               an MCP server is generated
+#   data_science      a data-science / kaggle layout
+#   web_api           an HTTP API project
+#   commercial        the distribution answer is commercial
+#   eu_market         the project ships to the EU market
+#   jp                the project operates under Japanese law
+#   ai_assisted       AI coding agents are in scope
+#
+# `placement` names the document the section wants to join:
+#   agents_md         the generated AGENTS.md ethics appendix
+#   charter           the generated CHARTER.md (scraping projects)
+#   legal_md          the generated LEGAL.md checklist
+#   standalone        its own file in the generated repo
+
+sections:
+  - id: baseline-copyright-ai
+    file: baseline/copyright-ai.md.jinja
+    when: ai_assisted
+    placement: agents_md
+  - id: baseline-license-drift
+    file: baseline/license-drift.md.jinja
+    when: always
+    placement: agents_md
+  - id: baseline-personal-data
+    file: baseline/personal-data.md.jinja
+    when: data_science
+    placement: agents_md
+  - id: baseline-pki-chain
+    file: baseline/pki-chain.md.jinja
+    when: always
+    placement: agents_md
+  - id: baseline-pqc-fips
+    file: baseline/pqc-fips.md.jinja
+    when: always
+    placement: agents_md
+  - id: domain-contest-rules
+    file: domain/contest-rules.md.jinja
+    when: oj_code
+    placement: agents_md
+  - id: domain-face-recognition
+    file: domain/face-recognition.md.jinja
+    when: data_science
+    placement: agents_md
+  - id: domain-llm-appsec
+    file: domain/llm-appsec.md.jinja
+    when: mcp
+    placement: agents_md
+  - id: domain-ml-bias
+    file: domain/ml-bias.md.jinja
+    when: data_science
+    placement: agents_md
+  - id: domain-scraping-law
+    file: domain/scraping-law.md.jinja
+    when: scraping
+    placement: agents_md
+  - id: region-eu-cra
+    file: region/eu-cra.md.jinja
+    when: eu_market
+    placement: agents_md
+  - id: region-eu-eaa
+    file: region/eu-eaa.md.jinja
+    when: eu_market
+    placement: agents_md
+  - id: region-jp-external-transmission
+    file: region/jp-external-transmission.md.jinja
+    when: jp
+    placement: agents_md
+  - id: region-kyushu-ntp
+    file: region/kyushu-ntp.md.jinja
+    when: jp
+    placement: agents_md
+  - id: sector-samd-regulatory
+    file: sector/samd-regulatory.md.jinja
+    when: always
+    placement: agents_md

@@ -39,11 +39,10 @@ def run(*args: str, cwd: Path | None = None) -> str:
 
 # Consumer-side wiring that is not vendored: REGISTRY.yml (its gate column
 # names template flags) and FLAGS.yml (the abstract->concrete mapping the
-# codex's MANIFEST.yml resolves against). MANIFEST.yml itself lives in the
-# codex and is the contract, not vendored content.
+# codex's MANIFEST.yml resolves against). MANIFEST.yml IS vendored: it is the
+# contract the consistency test reads offline, so it travels with the
+# sections even though the codex owns it.
 CONSUMER_OWNED = {"REGISTRY.yml", "FLAGS.yml"}
-CODEX_OWNED = {"MANIFEST.yml"}
-
 
 def _tree(root: Path, skip: frozenset[str] = frozenset()) -> dict[str, bytes]:
     """Map every file under root to its bytes, keyed by relative path."""
@@ -76,12 +75,11 @@ def main() -> int:
         # private codex fails a bare https git clone.
         run("gh", "repo", "clone", "ConstitutiveTemplates/good-future-codex", str(codex), "--", "--quiet")
         upstream_head = run("git", "rev-parse", "HEAD", cwd=codex).strip()
-        upstream_sections = _tree(codex / "sections", skip=CODEX_OWNED)
+        upstream_sections = _tree(codex / "sections")
 
         # The codex's own tree at the vendored SHA, for the dirty-vendor check.
         run("git", "checkout", "--quiet", vendored_sha, cwd=codex)
-        vendored_sections = _tree(codex / "sections", skip=CODEX_OWNED)
-
+        vendored_sections = _tree(codex / "sections")
     local = _tree(VENDORED)
     dirty = _diff(local, vendored_sections)
     ahead = _diff(local, upstream_sections) if vendored_sha != upstream_head else []

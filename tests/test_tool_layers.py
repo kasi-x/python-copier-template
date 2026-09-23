@@ -63,7 +63,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
             "maintenance/CI scripts that import nothing from tools/"
             " (a pristine checkout or a released tarball is their world)"
         ),
-        frozenset({"check_ethics_drift", "check_questionnaire_diff", "check_upstream", "check_upstream_fork", "generate_license_template"}),
+        frozenset({"check_ethics_contract", "check_ethics_drift", "check_questionnaire_diff", "check_upstream", "check_upstream_fork", "generate_license_template"}),
     ),
     "foundations": (
         "the questionnaire model and shared primitives: data and meaning, no behavior on real trees",
