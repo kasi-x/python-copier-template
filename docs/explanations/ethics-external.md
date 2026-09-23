@@ -4,10 +4,11 @@ The ethics appendix (`_shared/ethics/`, surfaced into generated `AGENTS.md`)
 is the one part of this template whose content has its own review cadence —
 OWASP revisions, FIPS finalization, Let's Encrypt chain ceremonies, regional
 law — independent of the template's release cycle. That makes it the natural
-candidate to split into its own repository so other templates and projects
-can consume the same reviewed text. This page records the design for that
-split: what moves, what stays, and why the sync happens at vendor time and
-never at render time. It is a design note, not yet implemented.
+candidate to split into its own repository — **`good-future-codex`**, the
+canonical section texts of the Good-future charter — so other templates and
+projects can consume the same reviewed text. This page records the design
+for that split: what moves, what stays, and why the sync happens at vendor
+time and never at render time. It is a design note, not yet implemented.
 
 ## Why not fetch at render time
 
