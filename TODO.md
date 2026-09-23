@@ -642,3 +642,24 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
   の行末空白を一掃（.scss を suffix 集合に追加 — vendored clean.scss は
   従来の EOF チェックの盲点だった）。
 
+### 31.6 Periodic linkcheck の赤も解消（2026-09-24）
+
+週次 linkcheck（Periodic、水曜 08:00）も 6 件の死リンクで赤だった:
+
+- `duty.readthedocs.io` → `pawamoy.github.io/duty`（docs が RTD から移転。
+  生成ブロックなので tools/gen_docs.py の RUNNER_URLS を修正）
+- `zens.python.dev` → `zensical.org`（改名）
+- `mikemahoney218/arxiv` → `quarto-arxiv`（リポジトリ改名。
+  docs + 生成 README の両方）
+- `kasi-x/python3-pip-skeleton`（削除済み）と `kasi-x/dotfiles`
+  （private）→ リンクを外し、名前だけ残す
+- `prefix.dev/robostack-{{ ros_distro }}`: Jinja プレースホルダが生成 docs
+  にそのまま出て 404。prose はチャネル名パターン表記に、ros2 how-to は
+  具体の `robostack-jazzy` に。pixi.toml.jinja のプレースホルダは生成物で
+  正しく展開されるので無関係。
+- 検証: workflow_dispatch で Periodic 緑（run 35892182109）。
+  update-rehearsal も dispatch で緑（run 35892333419: 248 葉 rehearsed、
+  新 oj_kind 24 葉は [SKIP] 報告どおり）。これで全スケジュール
+  workflow が健全: scheduled-check / periodic / rehearsal / witness /
+  dependency-audit / check-upstream すべて緑。
+
