@@ -517,4 +517,56 @@ rules as sections first」、レジストリは `_shared/ethics/REGISTRY.yml`。
 - Let's Encrypt チェーン / ISRG ルート儀式: review_by 2026-12-18。
 - FIPS 206 (FN-DSA) 草案 / IR 8547 final: review_by 2027-03-31。
 
+## §30 完了: `.gitignore` 末尾改行と root `.gitignore` 同期の修正（2026-09-23）
+
+> **2026-09-23 着地**。サブエージェント `FixGitignoreTrailingNewline` が Jinja 空白制御のみで解決。
+
+### 30.1 発見
+
+`task test-fast` で 23 件の失敗が出ていた。すべて `.gitignore` 関連:
+- `tests/test_generated_lint.py::test_generated_files_end_with_single_newline[...]` が
+  `.gitignore: trailing blank line(s)` で失敗。
+- `tests/test_example_library_cli.py::test_gitignore_same` が root `.gitignore` に
+  `test/` / `.kattisrc` が欠けていると失敗。
+- `tests/test_update_rehearsal.py::test_the_rehearsal_of_head_replays_cleanly` が
+  `.gitignore:117: new blank line at EOF` で失敗。
+
+### 30.2 原因
+
+1. `template/.gitignore.jinja` の最後で `_shared/gitignore-{ctf,oj,scraping,gmail}.jinja`
+   を `{% include %}` していたが、include ファイルの `{% endif %}` の後の改行が
+   累積し、条件が true の組合せで末尾に余分な改行が生じていた。
+2. `_shared/gitignore-oj.jinja` は `oj_code` 条件で `test/` / `.kattisrc` を
+   レンダーするが、root `.gitignore` には同じエントリが欠けていた。
+
+### 30.3 既に適用した変更
+
+- `.gitignore`: OJ エントリ `test/` / `.kattisrc` を追加（`test_gitignore_same` を緑化）。
+- `template/{% if not existing_project or 'gitignore' not in adopt_protect %}.gitignore{% endif %}.jinja`:
+  `.test.db` の後の改行を削除し、コメント・include 行を 1 行にまとめ、
+  ファイル末尾の改行も削除。これにより条件 false の組合せでは末尾が `\n` になった。
+- `_shared/gitignore-oj.jinja`: ネストされた `.kattisrc` 分岐の改行を整理。
+
+### 30.4 着地内容
+
+サブエージェント `FixGitignoreTrailingNewline` が Jinja 空白制御だけで解決。
+Copier 9.18.1 は `keep_trailing_newline=True` なので、Jinja ソースが出す改行が
+そのまま生成ファイルの末尾になる。
+
+- `_shared/gitignore-{ctf,oj,scraping,gmail}.jinja` の最終 `{% endif %}` を
+  `{%- endif %}` に変更し、条件 false のとき include 自身が空改行を出さないように。
+- `_shared/gitignore-oj.jinja` のネストされた `.kattisrc` 分岐も
+  `{%- if oj_kind == 'kattis' %}` / `{%- endif %}` にし、EOF 改行を除去。
+- `template/.gitignore.jinja` は既存の変更（`.test.db` 後改行削除・include 行 1 行化・
+  末尾改行削除）を維持。
+- root `.gitignore` は `test/` / `.kattisrc` 追加済みのまま。
+- `CHANGELOG.md` [Unreleased] → Bug Fixes に 1 行追加。
+
+### 30.5 検証結果
+
+- `rm -rf .cache/renders && uv run --locked pytest -q tests/test_generated_lint.py::test_generated_files_end_with_single_newline tests/test_example_library_cli.py::test_gitignore_same tests/test_update_rehearsal.py::test_the_rehearsal_of_head_replays_cleanly` → 28 passed。
+- `rm -rf .cache/renders && uv run --locked pytest -q -m 'not heavy and not slow and not meta and not network'` → 1023 passed, 5 skipped, 1 xfailed, 0 failed。
+- すべての条件分岐（all-false / ctf / oj-atcoder / oj-kattis / scraping / gmail / ctf+oj）で
+  `.gitignore` の末尾がちょうど 1 つの `\n` で終わることを直接確認済み。
+
 

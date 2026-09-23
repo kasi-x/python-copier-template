@@ -8,6 +8,8 @@ All notable changes to this project are documented in this file.
 
 - copier should not be a dev dependency (#364) (718a485)
 
+- generated `.gitignore` files end with exactly one trailing newline on every conditional CTF/OJ/scraping/gmail include branch
+
 
 ### Dependencies
 

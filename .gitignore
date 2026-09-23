@@ -168,3 +168,9 @@ challenges/**/flag*
 # downloaded from Google Cloud Console and the token the first consent writes
 /credentials.json
 /token.json
+
+# Online-judge working files (union of the conditional oj_code branch —
+# generated non-OJ projects don't get these): never commit downloaded cases or
+# credentials
+test/
+.kattisrc
