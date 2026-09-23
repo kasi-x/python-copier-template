@@ -1,0 +1,3233 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Copier template for Python projects">
+      
+      
+        <meta name="author" content="kasi-x">
+      
+      
+      
+        <link rel="prev" href="../features/">
+      
+      
+        <link rel="next" href="../answers-file/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>The questionnaire - python-copier-template</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.812a03bb.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#the-questionnaire" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="python-copier-template" class="md-header__button md-logo" aria-label="python-copier-template" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            python-copier-template
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              The questionnaire
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/kasi-x/python-copier-template" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    kasi-x/python-copier-template
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="python-copier-template" class="md-nav__button md-logo" aria-label="python-copier-template" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    python-copier-template
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kasi-x/python-copier-template" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    kasi-x/python-copier-template
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorials
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Tutorials
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/create-new/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Create New Project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/adopt-existing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Adopt Existing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  How-To Guides
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  How-To Guides
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/setup-repo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Setup Repo
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/dev-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Dev Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/build-docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build Docs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/run-tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run Tests
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/local-ci/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run CI Locally
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/test-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Check a Change Without the Full Suite
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/batch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run a Batch of Generation Requests
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/lint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Linting
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/static-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Static Analysis
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/strict-mode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Strict Mode
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/update-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Update Template
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/lock-requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Lock Requirements
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/make-release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Make Release
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/pypi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  PyPI
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/ros2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  ROS 2
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/micropython/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  MicroPython
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/web-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/data-science/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data-Science Layout
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  MCP Server
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/bot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chat Bots
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/scraping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web Fetching
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/quarto-paper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Quarto Paper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/ethics-section/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ethics Sections
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/detect/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Inspect a Target Before Adopting
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/adopt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Adopt Into an Existing Project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Code Coverage
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/check-docs-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Check Docs Style
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/renovate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Renovate Dependency Updates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/readme-images/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Add Images to the README
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/excalidraw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Excalidraw Diagrams
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/contribute/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contribute
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Explanations
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Explanations
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/good-future/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Good-Future Charter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/why-use-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Why Use Template
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/template-dev/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authoring Template Sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Extending the Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/long-running/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Long-Running Executables
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security & Compliance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/verification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Verification Architecture
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../explanations/drift-detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Drift Detection
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Feature Catalogue
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Questionnaire
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#project-type-project_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Project type (<code>project_type</code>)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#not-project-types-by-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Not project types (by design)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combining-bases-and-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Combining bases and layers
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#areas-and-their-recommended-defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Areas and their recommended defaults
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-detailed-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The detailed questions
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The detailed questions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_agent</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_toolchain" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_toolchain</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_scraping" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_scraping</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_bot" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_bot</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_data_science" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_data_science</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_polish</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_docs</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_quality</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_license" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_license</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_integrations</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_web_api" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_web_api</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_security" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_security</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Project details
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../non-interactive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Non-interactive Generation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  References
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../standards/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Standards
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#project-type-project_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Project type (<code>project_type</code>)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#not-project-types-by-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Not project types (by design)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#combining-bases-and-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Combining bases and layers
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#areas-and-their-recommended-defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Areas and their recommended defaults
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-detailed-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The detailed questions
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The detailed questions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_agent</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_toolchain" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_toolchain</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_scraping" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_scraping</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_bot" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_bot</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_data_science" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_data_science</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_polish</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_docs</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_quality</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_license" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_license</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_integrations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_integrations</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_web_api" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_web_api</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use_recommended_security" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        <code>use_recommended_security</code>
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#project-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Project details
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="the-questionnaire">The questionnaire<a class="headerlink" href="#the-questionnaire" title="Permanent link">&para;</a></h1>
+<p>When you run <code>copier copy</code> (or <code>copier update</code>), the template asks a small
+number of questions and generates a project tailored to your answers.</p>
+<p>Each customisable area asks a single <strong>"use the recommended settings?"</strong>
+question first (default: yes), with the recommendation spelled out in its help
+text. Answer <strong>yes</strong> and that area is configured from its recommended defaults
+without asking anything else; answer <strong>no</strong> and the detailed question(s) for
+that area are asked.</p>
+<p>Every answer can also come from a file instead of the prompt —
+<a href="../non-interactive/">Non-interactive Generation</a> covers the flags — and
+<a href="https://github.com/kasi-x/python-copier-template/blob/main/example-answers.yml"><code>example-answers.yml</code></a>
+at the template root is a ready-made starting point: it turns every area gate
+off, so it spells out each detailed question that the recommended path would
+otherwise leave at its default.</p>
+<h2 id="project-type-project_type">Project type (<code>project_type</code>)<a class="headerlink" href="#project-type-project_type" title="Permanent link">&para;</a></h2>
+<p>Asked first, ahead of every area, because the toolchain and several later
+questions depend on it.</p>
+<!-- BEGIN GENERATED: project-types (tools/gen_docs.py --write) -->
+<ul>
+<li><strong>library</strong> — a Python library/package.</li>
+<li><strong>web_api</strong> — a web API service (Docker included).</li>
+<li><strong>cli</strong> — a command-line tool.</li>
+<li><strong>data_science</strong> — a data science project with notebooks, data/, models/, reports/ and experiment
+  extras. GPU Dockerfile and Quarto paper are included.</li>
+<li><strong>online_judge</strong> — a competitive-programming / Kaggle project. The rules for AI coding agents
+  differ per judge, and the agent guide's wording defers to them.
+  Questions asked when this is the base type:</li>
+<li><strong><code>oj_category</code></strong> (str; default <code>data_science</code>) — Which competition category is this project
+    for?<ul>
+<li><strong><code>data_science</code></strong> — Kaggle-style data competitions (GPU competition layout).</li>
+<li><strong><code>competitive_coding</code></strong> — code-submission judges (AtCoder / LeetCode / yukicoder / AOJ /
+  Codeforces / Kattis / other). A bare workspace driven with oj / acc / aoj-cli / submit.py.</li>
+<li><strong><code>ctf</code></strong> — CTF competitions (participant workspace with challenges/ and a solve.py starter,
+  plus pwntools / z3-solver).</li>
+</ul>
+</li>
+<li><strong><code>oj_kind</code></strong> (str; default <code>'ctf' if oj_category == 'ctf' else ('atcoder' if oj_category ==
+    'competitive_coding' else 'kaggle')</code>) — Which online judge is this project for?<ul>
+<li><strong><code>kaggle</code></strong> — Kaggle competitions. GPU work is the norm and the competition layout
+  (src/utils, src/input, src/output) is generated.</li>
+<li><strong><code>atcoder</code></strong> — AtCoder (Japanese competitive programming). A bare workspace driven with oj +
+  acc (atcoder-cli).</li>
+<li><strong><code>leetcode</code></strong> — LeetCode-style problems. A bare workspace (LeetCode's editor is the judge; oj
+  does not support it).</li>
+<li><strong><code>yukicoder</code></strong> — yukicoder (Japanese practice site). A bare workspace driven with oj
+  (download / test / submit all work).</li>
+<li><strong><code>aoj</code></strong> — Aizu Online Judge (Japanese beginner courses). A bare workspace driven with
+  aoj-cli (oj can download samples but not submit).</li>
+<li><strong><code>codeforces</code></strong> — Codeforces (world-scale contests). A bare workspace driven with oj
+  (download / test work; submit via <code>oj submit</code> where the service allows, else the browser).</li>
+<li><strong><code>kattis</code></strong> — Kattis (open problem archive, university courses). A bare workspace driven with
+  the Kattis submit client (<code>submit.py</code> with a personal <code>.kattisrc</code>; <code>oj download</code> also reads
+  samples).</li>
+<li><strong><code>other</code></strong> — any other stdin/stdout judge. A bare workspace with no site-specific tooling —
+  oj download/test where the service allows, else the judge's own editor.</li>
+<li><strong><code>ctf</code></strong> — CTF competitions. A participant workspace (challenges/ with a solve.py starter,
+  pwntools / z3-solver via the ctf extra).</li>
+</ul>
+</li>
+<li><strong><code>oj_allow_ai</code></strong> (bool; default no) — Is AI assistance (coding agents, code completion) allowed
+    for this judge?</li>
+<li><strong>script</strong> — a minimal script, no package layout.</li>
+<li><strong>ros2</strong> — a ROS 2 package (ament_python or ament_cmake). Built with colcon + rosdep; not a
+  uv/pixi/poetry project.
+  Questions asked when this is the base type:</li>
+<li><strong><code>pkg_language</code></strong> (str; default <code>python</code>) — Which language for the ROS 2 package?<ul>
+<li><strong><code>python</code></strong> — ament_python (rclpy) — setup.py + package.xml + resource/.</li>
+<li><strong><code>cpp</code></strong> — ament_cmake — CMakeLists.txt + src/*.cpp + include/.</li>
+</ul>
+</li>
+<li><strong><code>ros_distro</code></strong> (str; default <code>humble</code>) — ROS 2 distribution. Humble (Ubuntu 22.04, Python
+    3.10) is the most widely deployed; Jazzy (Ubuntu 24.04, Python 3.12) is the current LTS.
+    One of: <code>humble</code> (Humble (22.04 / Python 3.10)) · <code>jazzy</code> (Jazzy (24.04 / Python 3.12)).</li>
+<li><strong><code>ros2_package_manager</code></strong> (str; default <code>apt</code>) — How should the ROS 2 environment be
+    provisioned?<ul>
+<li><strong><code>apt</code></strong> — the classic ROS 2 way — Ubuntu + apt (ros-{{ ros_distro }}-*) + colcon + rosdep.
+  Docker base image ros:{{ ros_distro }}-ros-base.</li>
+<li><strong><code>pixi</code></strong> — RoboStack conda-forge packages via pixi, using the robostack-<distro> channel on
+  prefix.dev. No sudo/apt needed. See https://pixi.prefix.dev/latest/robotics/.</li>
+</ul>
+</li>
+<li><strong>micropython</strong> — MicroPython firmware for a microcontroller (esp32, rp2, ...). Deployed with
+  mpremote; the CPython dev toolchain (uv/ruff/pytest/basedpyright) coexists for testing and
+  type-checking against micropython-<port>-stubs.
+  Questions asked when this is the base type:</li>
+<li><strong><code>micropython_port</code></strong> (str; default <code>esp32</code>) — Which MicroPython port are you targeting? This
+    picks the micropython-<port>-stubs package used for type-checking.<ul>
+<li><strong><code>esp32</code></strong> — ESP32 family (most common; default)</li>
+<li><strong><code>esp8266</code></strong> — ESP8266 (legacy, low memory)</li>
+<li><strong><code>rp2</code></strong> — Raspberry Pi Pico / RP2040 / RP2350</li>
+<li><strong><code>stm32</code></strong> — STM32 family (Pyboard etc.)</li>
+<li><strong><code>samd</code></strong> — Microchip SAMD21 / SAMD51</li>
+<li><strong><code>unix</code></strong> — Unix port (runs on your computer — handy for testing)</li>
+<li><strong><code>windows</code></strong> — Windows port</li>
+<li><strong><code>mimxrt</code></strong> — NXP i.MX RT family (Teensy 4.x etc.)</li>
+</ul>
+</li>
+</ul>
+<!-- END GENERATED: project-types -->
+
+<h2 id="not-project-types-by-design">Not project types (by design)<a class="headerlink" href="#not-project-types-by-design" title="Permanent link">&para;</a></h2>
+<p><code>project_type</code> only grows for a fundamentally different execution environment
+or a distinct competition-rules axis. Everything else is a layer on an
+existing type, or out of scope:</p>
+<ul>
+<li><strong>CTF</strong> — same CPython environment as <code>library</code> / <code>cli</code>, so no new type.
+  Two entry paths share one shape: <code>include_ctf</code> (asked for the <code>library</code> /
+  <code>cli</code> bases) and <code>oj_category=ctf</code> under <code>online_judge</code>.
+  Organiser scaffolds (Docker + socat + gdb) are out of scope — a
+  separate-repo concern.</li>
+<li><strong>Ansible / Terraform / Kubernetes</strong> — separate-repo concerns, not Python
+  projects. IaC lives beside the app, not in this template.</li>
+<li><strong>Django</strong> — no <code>project_type</code> of its own: <code>web_api</code> (FastAPI / Litestar /
+  Flask) is the Python API type, and Django itself belongs to
+  <a href="https://github.com/cookiecutter/cookiecutter-django">upstream cookiecutter-django</a>
+  — see <a href="../../how-to/web-api/">the web-api how-to</a>.</li>
+<li><strong>SRE</strong> — scoped to <code>web_api</code> hardening: non-root runtime user,
+  read-only root filesystem, resource limits, <code>/health</code> probes. No
+  separate observability questionnaire (metrics are the three web_api
+  switches).</li>
+</ul>
+<h2 id="combining-bases-and-layers">Combining bases and layers<a class="headerlink" href="#combining-bases-and-layers" title="Permanent link">&para;</a></h2>
+<p><code>project_type</code> picks the <strong>base</strong>; the <code>include_*</code> questions can layer another
+element on top of it (same idea as the MCP layer on <code>cli</code>). The layer list,
+its conditions and the recommended defaults are generated below; two things
+that list cannot show:</p>
+<ul>
+<li>The added content is the same whether the matching layer comes from the base
+  or from the opt-in: the <code>data_science</code> and <code>web_api</code> detail questions are
+  asked whenever that layer is present.</li>
+<li>Answering No to <code>use_recommended_scraping</code> reveals <code>scraping_engine</code>
+  (<code>httpx</code> / <code>scrapy</code> / <code>memorious</code> / <code>playwright</code> / <code>all</code>); <code>memorious</code> forces
+  the project license to AGPL-3.0. See <a href="../../how-to/scraping/">the scraping how-to</a>
+  and <a href="../../explanations/good-future/">the Good-future charter</a>.</li>
+</ul>
+<p><code>ros2</code> / <code>micropython</code> / code-submission judges / <code>script</code> stay single-type:
+their build or execution shape cannot be combined.</p>
+<h2 id="areas-and-their-recommended-defaults">Areas and their recommended defaults<a class="headerlink" href="#areas-and-their-recommended-defaults" title="Permanent link">&para;</a></h2>
+<!-- BEGIN GENERATED: areas (tools/gen_docs.py --write) -->
+<p>Each area asks one gate question first: answering <strong>Yes</strong> configures it from the recommendation below, answering <strong>No</strong> reveals that area's detailed questions.</p>
+<table>
+<thead>
+<tr>
+<th>Area gate</th>
+<th>Recommended default</th>
+<th>Asked when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>use_recommended_agent</code></td>
+<td>yes — a plain library / CLI without agent tooling.</td>
+<td>library / cli</td>
+</tr>
+<tr>
+<td><code>use_recommended_toolchain</code></td>
+<td>uv (package manager) + just (task runner).</td>
+<td>not ros2 + <code>ros2_package_manager</code> = pixi</td>
+</tr>
+<tr>
+<td><code>use_recommended_data_science</code></td>
+<td>GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer).</td>
+<td>the data_science layer is present</td>
+</tr>
+<tr>
+<td><code>use_recommended_polish</code></td>
+<td>src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings.</td>
+<td>all</td>
+</tr>
+<tr>
+<td><code>use_recommended_docs</code></td>
+<td>zensical (Zensical, an MkDocs fork with mkdocstrings).</td>
+<td>all</td>
+</tr>
+<tr>
+<td><code>use_recommended_quality</code></td>
+<td>basedpyright (primary) + pyrefly (additional static analysis), strictness "recommended" (ruff ALL rules, typos/vulture/deptry/pip-audit).</td>
+<td>all</td>
+</tr>
+<tr>
+<td><code>use_recommended_license</code></td>
+<td>MIT license, no FAIR research-software metadata (CITATION.cff / REUSE).</td>
+<td>all</td>
+</tr>
+<tr>
+<td><code>use_recommended_integrations</code></td>
+<td>no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP support, GitHub Actions for CI, structlog for logging.</td>
+<td>all</td>
+</tr>
+<tr>
+<td><code>use_recommended_web_api</code></td>
+<td>a FastAPI app in a top-level <code>app/</code> package (no library <pkg>): async SQLAlchemy 2.0 + Alembic + Postgres, a demo CRUD router, request-id logging (asgi-correlation-id), a BackgroundTasks example, and /health + /docs endpoints.</td>
+<td>the web_api layer is present</td>
+</tr>
+<tr>
+<td><code>use_recommended_security</code></td>
+<td>minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that CI runs alongside type-check.</td>
+<td>all</td>
+</tr>
+</tbody>
+</table>
+<p>An opt-in layer adds its area to a combinable base:</p>
+<ul>
+<li><strong><code>include_data_science</code></strong> (asked when library / cli / web_api; default no) — Add the data_science
+  analysis layout (notebooks/, data/, models/, reports/, Quarto paper) on top of this project?</li>
+<li><strong><code>include_web_api</code></strong> (asked when library / cli / data_science / kaggle; default no) — Add the
+  FastAPI scaffold (top-level app/ package) on top of this project? The web_api detail questions
+  follow when answered Yes.</li>
+<li><strong><code>include_ctf</code></strong> (asked when library / cli; default no) — Add a CTF participant workspace
+  (challenges/<category>/<problem>/ with a solve.py exploit starter, plus pwntools and z3-solver)?</li>
+<li><strong><code>include_scraping</code></strong> (asked when cli; default no) — Add a polite web-fetching layer (robots.txt</li>
+<li>rate limit + cache)?</li>
+<li><strong><code>include_bot</code></strong> (asked when cli / web_api / library + the web_api layer; default no) — Add a
+  long-running chat bot on top of this project (the long-running layer's second platform after the
+  MCP server)?</li>
+</ul>
+<p>An opt-in layer asks its own gate on top:</p>
+<ul>
+<li><strong><code>use_recommended_scraping</code></strong> (asked when a <code>cli</code> base answers Yes to <code>include_scraping</code>): httpx
+  — a polite stdlib-robots fetcher (contactable User-Agent, robots.txt check, per-host rate
+  limiting, on-disk cache) with offline tests.</li>
+<li><strong><code>use_recommended_bot</code></strong> (asked when a <code>cli</code> / <code>web_api</code> base answers Yes to <code>include_bot</code>):
+  discord = discord.py — the de-facto Discord library (async, typed, slash commands via
+  app_commands, actively maintained, unlike the py-cord / nextcord forks).</li>
+</ul>
+<!-- END GENERATED: areas -->
+
+<h2 id="the-detailed-questions">The detailed questions<a class="headerlink" href="#the-detailed-questions" title="Permanent link">&para;</a></h2>
+<!-- BEGIN GENERATED: detailed-questions (tools/gen_docs.py --write) -->
+<p>Answering <strong>No</strong> to a gate reveals that area's detailed questions:</p>
+<h3 id="use_recommended_agent"><code>use_recommended_agent</code><a class="headerlink" href="#use_recommended_agent" title="Permanent link">&para;</a></h3>
+<p>Use the recommended agent setup (no agent tooling)? Recommended: yes — a plain library / CLI without agent tooling.</p>
+<p>Answer <strong>No</strong> to add a runnable pydantic-ai example: a prompts/ directory, a typed tools/ package and an agent module wired with @agent.tool, tested offline with pydantic-ai's TestModel.</p>
+<h3 id="use_recommended_toolchain"><code>use_recommended_toolchain</code><a class="headerlink" href="#use_recommended_toolchain" title="Permanent link">&para;</a></h3>
+<p>Use the recommended package manager &amp; task runner? Recommended: uv (package manager) + just (task runner).</p>
+<p>Answer <strong>No</strong> to pick pixi/poetry, or a different task runner.</p>
+<ul>
+<li><strong><code>package_manager</code></strong> (str; default <code>'pixi' if project_type == 'ros2' and ros2_package_manager ==
+  'pixi' else 'uv'</code>) — Which package manager would you like to use?</li>
+<li><strong><code>uv</code></strong> — Fast, pure Python package manager with a pip-like workflow.</li>
+<li><strong><code>pixi</code></strong> — Conda-based package manager with cross-language support.</li>
+<li><strong><code>poetry</code></strong> — Dependency management and packaging with Poetry.</li>
+<li><strong><code>task_runner</code></strong> (str; default <code>just</code>) — Which task runner would you like to use to drive lint /
+  type-check / test / docs (and, for kaggle's pipeline, the ML shortcuts)?</li>
+<li><strong><code>just</code></strong> — Just. Simple justfile, external binary.</li>
+<li><strong><code>task</code></strong> — Task (go-task). YAML, external binary, used by CI too.</li>
+<li><strong><code>poe</code></strong> — poethepoet. Pure Python, lives in pyproject.toml, no extra binary to install (just a
+    dev dependency).</li>
+<li><strong><code>make</code></strong> — GNU Make. Universally available, terse Makefile syntax.</li>
+<li><strong><code>invoke</code></strong> — pyinvoke. Pure Python, tasks.py with @task-decorated functions, no extra binary
+    to install (just a dev dependency).</li>
+<li><strong><code>duty</code></strong> — duty (used by pawamoy's copier-uv). Pure Python, duties.py with @duty-decorated
+    functions, no extra binary to install.</li>
+<li><strong><code>task_runner_pixi</code></strong> (str; default <code>pixi</code>) — Which task runner would you like to use?
+  (poethepoet doesn't work with pixi, so pixi's own native tasks take its place here.)</li>
+<li><strong><code>pixi</code></strong> — pixi's own native tasks (<code>pixi run &lt;name&gt;</code>). No extra tool.</li>
+<li><strong><code>task</code></strong> — Task (go-task). YAML, external binary, used by CI too.</li>
+<li><strong><code>just</code></strong> — Just. Simple justfile, external binary.</li>
+<li><strong><code>make</code></strong> — GNU Make. Universally available, terse Makefile syntax.</li>
+</ul>
+<h3 id="use_recommended_scraping"><code>use_recommended_scraping</code><a class="headerlink" href="#use_recommended_scraping" title="Permanent link">&para;</a></h3>
+<p>Use the recommended web-fetching engine? Recommended: httpx — a polite stdlib-robots fetcher (contactable User-Agent, robots.txt check, per-host rate limiting, on-disk cache) with offline tests.</p>
+<p>Answer <strong>No</strong> to pick scrapy / memorious / playwright instead (or all).</p>
+<ul>
+<li><strong><code>scraping_engine</code></strong> (str; default <code>httpx</code>) — Which web-fetching engine should the fetcher layer
+  prepare?</li>
+<li><strong><code>httpx</code></strong> — polite httpx fetcher (same as recommended).</li>
+<li><strong><code>scrapy</code></strong> — a Scrapy spider starter (ROBOTSTXT_OBEY + AUTOTHROTTLE + DOWNLOAD_DELAY enforced
+    in settings, offline parse test).</li>
+<li><strong><code>memorious</code></strong> — a memorious crawler config (rate-limited, cached HTTP sessions). memorious4 is
+    AGPL-3.0 — choosing it requires an AGPL-3.0 project license (enforced below).</li>
+<li><strong><code>playwright</code></strong> — a Playwright browser-fetch module (Chromium via <code>playwright install</code>; robots
+    precheck + rate limit reused from the fetcher; no browser launch in tests).</li>
+<li><strong><code>all</code></strong> — prepare every engine above (all runtime dependencies).</li>
+</ul>
+<h3 id="use_recommended_bot"><code>use_recommended_bot</code><a class="headerlink" href="#use_recommended_bot" title="Permanent link">&para;</a></h3>
+<p>Use the recommended bot platform? Recommended: discord = discord.py — the de-facto Discord library (async, typed, slash commands via app_commands, actively maintained, unlike the py-cord / nextcord forks).</p>
+<p>Answer <strong>No</strong> to pick a platform instead (discord, slack, line and gmail).</p>
+<ul>
+<li><strong><code>bot_platform</code></strong> (str; default <code>discord</code>) — Which chat platform should the bot layer prepare?</li>
+<li><strong><code>discord</code></strong> — a discord.py bot (Gateway intents declared explicitly, a /ping app command,
+    DISCORD_BOT_TOKEN from the environment with a startup check that refuses to start without it).</li>
+<li><strong><code>slack</code></strong> — a slack-bolt bot on Socket Mode (an outbound WebSocket, so there is no public
+    endpoint to open or sign; an /app_mention listener that answers pong, and SLACK_BOT_TOKEN +
+    SLACK_APP_TOKEN from the environment with a startup check that refuses to start without either).</li>
+<li><strong><code>line</code></strong> — a line-bot-sdk bot on the Messaging API (no long-polling and no socket, so the
+    module serves LINE's webhook itself: a small FastAPI app whose POST /callback verifies the
+    X-Line-Signature HMAC before answering a text ping with pong, and LINE_CHANNEL_SECRET +
+    LINE_CHANNEL_ACCESS_TOKEN from the environment with a startup check that refuses to start
+    without either). LINE listens on BOT_PORT (default 8000), unlike discord and slack, which only
+    dial out.</li>
+<li><strong><code>gmail</code></strong> — a Gmail bot on google-api-python-client + google-auth (OAuth installed-app flow:
+    the OAuth client downloaded from Google Cloud Console and the granted token are FILES, so
+    GMAIL_CREDENTIALS_JSON + GMAIL_TOKEN_JSON name their paths in the environment with a startup
+    check that refuses to start without either; the poll answers an unread INBOX message whose
+    subject contains /ping with a pong reply on the same thread and marks it read — an outbound poll
+    on GMAIL_POLL_SECONDS, so there is no Pub/Sub push endpoint to host and nothing listens, like
+    discord and slack).</li>
+</ul>
+<h3 id="use_recommended_data_science"><code>use_recommended_data_science</code><a class="headerlink" href="#use_recommended_data_science" title="Permanent link">&para;</a></h3>
+<p>Use the recommended data_science options? Recommended: GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer).</p>
+<p>Answer <strong>No</strong> to change the GPU setting.</p>
+<ul>
+<li><strong><code>use_gpu</code></strong> (bool; default yes) — Will you run GPU workloads?</li>
+</ul>
+<h3 id="use_recommended_polish"><code>use_recommended_polish</code><a class="headerlink" href="#use_recommended_polish" title="Permanent link">&para;</a></h3>
+<p>Use the recommended layout &amp; repo polish? Recommended: src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings.</p>
+<p>Answer <strong>No</strong> to change the layout or allow Japanese text.</p>
+<ul>
+<li><strong><code>layout</code></strong> (str; default <code>src</code>) — Which layout would you like to use for the package?</li>
+<li><strong><code>src</code></strong> — package in a src/ directory (recommended, prevents accidental imports of an
+    uninstalled package).</li>
+<li><strong><code>flat</code></strong> — package at the repository root.</li>
+<li><strong><code>allow_japanese</code></strong> (bool; default no) — Allow Japanese (multibyte) characters in comments and
+  docstrings?</li>
+</ul>
+<h3 id="use_recommended_docs"><code>use_recommended_docs</code><a class="headerlink" href="#use_recommended_docs" title="Permanent link">&para;</a></h3>
+<p>Use the recommended documentation tool? Recommended: zensical (Zensical, an MkDocs fork with mkdocstrings).</p>
+<p>Answer <strong>No</strong> to pick README-only, Sphinx or Great Docs instead.</p>
+<ul>
+<li><strong><code>docs_type</code></strong> (str; default <code>zensical</code>) — Which documentation tool would you like to use?</li>
+<li><strong><code>README</code></strong> — just a README, no dedicated docs site.</li>
+<li><strong><code>zensical</code></strong> — Zensical, an MkDocs fork with mkdocstrings. Fast to set up.</li>
+<li><strong><code>sphinx</code></strong> — Sphinx with the pydata theme. More powerful, more config.</li>
+<li><strong><code>great-docs</code></strong> — Great Docs, a Quarto-based tool. Requires Quarto installed.</li>
+</ul>
+<h3 id="use_recommended_quality"><code>use_recommended_quality</code><a class="headerlink" href="#use_recommended_quality" title="Permanent link">&para;</a></h3>
+<p>Use the recommended type checker &amp; strictness level? Recommended: basedpyright (primary) + pyrefly (additional static analysis), strictness "recommended" (ruff ALL rules, typos/vulture/deptry/pip-audit).</p>
+<p>Answer <strong>No</strong> to pick a different secondary checker or strictness level.</p>
+<ul>
+<li><strong><code>type_checker</code></strong> (str; default <code>pyrefly</code>) — Which additional static-analysis checker should run
+  alongside basedpyright? (basedpyright is always the primary type checker.)</li>
+<li><strong><code>pyrefly</code></strong> — Meta's lightweight type checker. Recommended: it has been used by this template
+    longest and is stable in production.</li>
+<li><strong><code>ty</code></strong> — Astral's fast Rust type checker (complements basedpyright with a second, independent
+    analysis pass; currently in beta).</li>
+<li><strong><code>strictness</code></strong> (str; default <code>recommended</code>) — How strict should the toolchain be? One axis
+  controls both the type-annotation requirements and the static-analysis toolchain.</li>
+<li><strong><code>none</code></strong> — pytest + ruff (minimal rules), no type checking.</li>
+<li><strong><code>basic</code></strong> — pytest + ruff, no type checking.</li>
+<li><strong><code>recommended</code></strong> — ruff (ALL rules), basedpyright + the secondary checker (pyrefly by default),
+    typos/vulture/deptry/pip-audit, driven by your chosen task runner. Recommended default.</li>
+<li><strong><code>full</code></strong> — recommended + strict type checking (Any forbidden), minimized ruff ignores, full
+    annotations required.</li>
+</ul>
+<h3 id="use_recommended_license"><code>use_recommended_license</code><a class="headerlink" href="#use_recommended_license" title="Permanent link">&para;</a></h3>
+<p>Use the recommended license &amp; metadata settings? Recommended: MIT license, no FAIR research-software metadata (CITATION.cff / REUSE).</p>
+<p>Answer <strong>No</strong> to pick a different license or opt into FAIR metadata.</p>
+<ul>
+<li><strong><code>license</code></strong> (str; default <code>MIT</code>) — Which license would you like to use? SPDX license
+  identifiers, same set as https://choosealicense.com.
+  One of: <code>AFL-3.0</code> · <code>Apache-2.0</code> · <code>Artistic-2.0</code> · <code>BSD-2-Clause</code> · <code>BSD-3-Clause</code> ·
+  <code>BSD-3-Clause-Clear</code> · <code>BSD-4-Clause</code> · <code>0BSD</code> · <code>BSD-2-Clause-Patent</code> · <code>BlueOak-1.0.0</code> ·
+  <code>BSL-1.0</code> · <code>CERN-OHL-P-2.0</code> · <code>CERN-OHL-S-2.0</code> · <code>CERN-OHL-W-2.0</code> · <code>CECILL-2.1</code> · <code>CC-BY-4.0</code> ·
+  <code>CC-BY-SA-4.0</code> · <code>CC0-1.0</code> · <code>WTFPL</code> · <code>EPL-1.0</code> · <code>EPL-2.0</code> · <code>ECL-2.0</code> · <code>EUPL-1.1</code> · <code>EUPL-1.2</code>
+  · <code>AGPL-3.0</code> · <code>GFDL-1.3</code> · <code>GPL-2.0</code> · <code>GPL-3.0</code> · <code>LGPL-2.1</code> · <code>LGPL-3.0</code> · <code>ISC</code> · <code>LPPL-1.3c</code>
+  · <code>MIT</code> · <code>MIT-0</code> · <code>MS-PL</code> · <code>MS-RL</code> · <code>MPL-2.0</code> · <code>MulanPSL-2.0</code> · <code>ODbL-1.0</code> · <code>OSL-3.0</code> ·
+  <code>PostgreSQL</code> · <code>OFL-1.1</code> · <code>Unlicense</code> · <code>UPL-1.0</code> · <code>NCSA</code> · <code>Vim</code> · <code>Zlib</code> · <code>Proprietary</code> ·
+  <code>Confidential</code>.</li>
+<li><strong><code>fair</code></strong> (bool; default no) — Add FAIR research-software metadata?</li>
+<li><strong><code>author_orcid</code></strong> (str; default (empty)) — Your ORCID iD (e.g. 0000-0002-1825-0099), recorded in
+  CITATION.cff so citation systems can attribute you correctly. Leave empty to skip.</li>
+</ul>
+<h3 id="use_recommended_integrations"><code>use_recommended_integrations</code><a class="headerlink" href="#use_recommended_integrations" title="Permanent link">&para;</a></h3>
+<p>Use the recommended deployment &amp; integration settings? Recommended: no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP support, GitHub Actions for CI, structlog for logging.</p>
+<p>Answer <strong>No</strong> to turn any of these on, switch the CI provider, or pick a different logging library.</p>
+<ul>
+<li><strong><code>docker</code></strong> (bool; default no) — Would you like to publish your project in a Docker container?
+  You should select this if you are making a service.</li>
+<li><strong><code>pypi</code></strong> (bool; default no) — Would you like the wheel and source distribution to be
+  automatically uploaded to PyPI when a release is made?</li>
+<li><strong><code>cloud_provider</code></strong> (str; default <code>none</code>) — Which cloud provider will this project deploy to?</li>
+<li><strong><code>none</code></strong> — no cloud-specific code or dependencies.</li>
+<li><strong><code>aws</code></strong> — boto3 and service-specific dependencies are added.</li>
+<li><strong><code>gcp</code></strong> — google-cloud-storage is added.</li>
+<li><strong><code>azure</code></strong> — azure-identity is added.</li>
+<li><strong><code>aws_services</code></strong> (str; default <code>essential</code>) — Which AWS services will you use?</li>
+<li><strong><code>essential</code></strong> — core services (S3, SQS, DynamoDB, Lambda types).</li>
+<li><strong><code>s3</code></strong> — just S3.</li>
+<li><strong><code>dynamodb</code></strong> — just DynamoDB.</li>
+<li><strong><code>sqs</code></strong> — just SQS.</li>
+<li><strong><code>lambda</code></strong> — just Lambda.</li>
+<li><strong><code>include_sentry</code></strong> (bool; default no) — Would you like to include Sentry for error tracking?</li>
+<li><strong><code>include_mcp</code></strong> (bool; default no) — Publish this project as an MCP (Model Context Protocol)
+  server?</li>
+<li><strong><code>ci_provider</code></strong> (str; default <code>github_actions</code>) — Which CI provider would you like to use?</li>
+<li><strong><code>github_actions</code></strong> — GitHub Actions workflows for lint, type-checking, tests and docs.</li>
+<li><strong><code>none</code></strong> — no CI workflows are generated.</li>
+<li><strong><code>log_library</code></strong> (str; default <code>structlog</code>) — Which logging library should logging_setup.py use?</li>
+<li><strong><code>structlog</code></strong> — structured, contextvars-aware logging with console/JSON renderers. Recommended
+    default.</li>
+<li><strong><code>loguru</code></strong> — batteries-included logger — no boilerplate configuration, built-in colours,
+    exception-catching decorator.</li>
+<li><strong><code>picologging</code></strong> — a C-accelerated, drop-in-compatible reimplementation of the standard library
+    logging module. Faster, same API.</li>
+<li><strong><code>logging</code></strong> — the standard library logging module. No extra dependency.</li>
+</ul>
+<h3 id="use_recommended_web_api"><code>use_recommended_web_api</code><a class="headerlink" href="#use_recommended_web_api" title="Permanent link">&para;</a></h3>
+<p>Use the recommended web API stack? Recommended: a FastAPI app in a top-level <code>app/</code> package (no library <pkg>): async SQLAlchemy 2.0 + Alembic + Postgres, a demo CRUD router, request-id logging (asgi-correlation-id), a BackgroundTasks example, and /health + /docs endpoints.</p>
+<p>Answer <strong>No</strong> to drop Prometheus metrics, rate limiting or CORS, or to switch the database/ORM (SQLAlchemy 2.0 + Postgres stays fixed).</p>
+<ul>
+<li><strong><code>prometheus</code></strong> (bool; default yes) — Expose Prometheus metrics at /metrics?</li>
+<li><strong><code>rate_limit</code></strong> (bool; default yes) — Apply rate limiting to the API?</li>
+<li><strong><code>cors</code></strong> (bool; default yes) — Enable CORS for browser clients?</li>
+</ul>
+<h3 id="use_recommended_security"><code>use_recommended_security</code><a class="headerlink" href="#use_recommended_security" title="Permanent link">&para;</a></h3>
+<p>Use the recommended security &amp; compliance settings? Recommended: minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that CI runs alongside type-check.</p>
+<p>Answer <strong>No</strong> to drop SECURITY.md, drop the license check, or add an OpenSSF Scorecard workflow (GitHub projects; public repos only for the badge).</p>
+<ul>
+<li><strong><code>license_check</code></strong> (bool; default yes) — Keep the license-compliance check (pip-licenses
+  --fail-on)?</li>
+<li><strong><code>security_policy</code></strong> (bool; default yes) — Include a SECURITY.md vulnerability-reporting policy
+  (GitHub Security Advisory workflow + response expectations)?</li>
+<li><strong><code>scorecard</code></strong> (bool; default no) — Add the OpenSSF Scorecard workflow to measure supply-chain
+  security and publish a badge?</li>
+</ul>
+<!-- END GENERATED: detailed-questions -->
+
+<h2 id="project-details">Project details<a class="headerlink" href="#project-details" title="Permanent link">&para;</a></h2>
+<!-- BEGIN GENERATED: project-details (tools/gen_docs.py --write) -->
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Default</th>
+<th>Asked when</th>
+<th>Prompt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>package_name</code></td>
+<td><code>my_package</code></td>
+<td>all</td>
+<td>Name of the python import package. Must be a valid python identifier, i.e. my_package. ASCII characters only (a-z, A-Z, 0-9, _).</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>A Python project generated from python-copier-template</code></td>
+<td>all</td>
+<td>A short description of your project</td>
+</tr>
+<tr>
+<td><code>git_platform</code></td>
+<td><code>github.com</code></td>
+<td>all</td>
+<td>Git platform hosting the repository</td>
+</tr>
+<tr>
+<td><code>github_org</code></td>
+<td><code>my-org</code></td>
+<td><code>git_platform</code> = github.com</td>
+<td>GitHub organisation or username that will contain this repo. Set to your GitHub username (e.g. kasi-x) for a personal repo, or the name of an…</td>
+</tr>
+<tr>
+<td><code>gitlab_group</code></td>
+<td><code>my-group</code></td>
+<td><code>git_platform</code> = gitlab.com</td>
+<td>GitLab group (or username) that will contain this repo.</td>
+</tr>
+<tr>
+<td><code>repo_name</code></td>
+<td><code>package_name \| replace('_', '-')</code></td>
+<td>all</td>
+<td>Name of the repository. Generally the package name with underscores replaced by dashes.</td>
+</tr>
+<tr>
+<td><code>distribution_name</code></td>
+<td><code>repo_name</code></td>
+<td>all</td>
+<td>Name of the python distribution package that will be created. This is what people will <code>pip install</code>.</td>
+</tr>
+<tr>
+<td><code>author_name</code></td>
+<td><code>Your Name</code></td>
+<td>all</td>
+<td>Your full name</td>
+</tr>
+<tr>
+<td><code>author_email</code></td>
+<td><code>you@example.com</code></td>
+<td>all</td>
+<td>Your email address</td>
+</tr>
+<tr>
+<td><code>dependencies</code></td>
+<td><code>derived_dependencies</code></td>
+<td>all</td>
+<td>Runtime dependencies, as a YAML list.</td>
+</tr>
+<tr>
+<td><code>src_dirs</code></td>
+<td><code>derived_src_dirs</code></td>
+<td>all</td>
+<td>Directories to create under <code>src/</code>, as a YAML list.</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED: project-details -->
+
+<p>The author name/email and the GitHub org have plain placeholder defaults —
+answer each prompt with your own values (or pass them via <code>--data-file</code> for
+non-interactive generation).</p>
+<p><code>dependencies</code> and <code>src_dirs</code> are <em>lists</em> whose defaults are derived from your
+other answers; they are recorded in <code>.copier-answers.yml</code>, so you can edit
+either one after generation instead of re-answering the questionnaire. See
+<a href="../answers-file/#structured-answers">the answers file</a> for the workflow and
+for which copier command picks an edit up.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../features/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Feature Catalogue">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Feature Catalogue
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../answers-file/" class="md-footer__link md-footer__link--next" aria-label="Next: Answers File">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Answers File
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://github.com/kasi-x/python-copier-template">kasi-x</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.top","navigation.tracking","search.highlight"],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+    
+  </body>
+</html>

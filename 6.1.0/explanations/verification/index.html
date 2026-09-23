@@ -1,0 +1,3078 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Copier template for Python projects">
+      
+      
+        <meta name="author" content="kasi-x">
+      
+      
+      
+        <link rel="prev" href="../security/">
+      
+      
+        <link rel="next" href="../drift-detection/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="zensical-0.0.57">
+    
+    
+      
+        <title>Verification Architecture - python-copier-template</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.5da3a30f.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.812a03bb.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="Navigation"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#verification-architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="python-copier-template" class="md-header__button md-logo" aria-label="python-copier-template" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="Navigation">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            python-copier-template
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Verification Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="Search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/kasi-x/python-copier-template" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    kasi-x/python-copier-template
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="python-copier-template" class="md-nav__button md-logo" aria-label="python-copier-template" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+
+    </a>
+    python-copier-template
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/kasi-x/python-copier-template" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    kasi-x/python-copier-template
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Tutorials
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Tutorials
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/create-new/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Create New Project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Installation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/adopt-existing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Adopt Existing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  How-To Guides
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  How-To Guides
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/setup-repo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Setup Repo
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/dev-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Dev Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/build-docs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Build Docs
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/run-tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run Tests
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/local-ci/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run CI Locally
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/test-loop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Check a Change Without the Full Suite
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/batch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run a Batch of Generation Requests
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/lint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Linting
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/static-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Static Analysis
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/strict-mode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Strict Mode
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/update-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Update Template
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/lock-requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Lock Requirements
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/make-release/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Make Release
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/pypi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  PyPI
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/ros2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  ROS 2
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/micropython/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  MicroPython
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/pixi/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pixi
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/web-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web API
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/data-science/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data-Science Layout
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  MCP Server
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/bot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Chat Bots
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/scraping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Web Fetching
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/quarto-paper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Quarto Paper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/ethics-section/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Ethics Sections
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/detect/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Inspect a Target Before Adopting
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/adopt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Adopt Into an Existing Project
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Code Coverage
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/check-docs-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Check Docs Style
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/renovate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Renovate Dependency Updates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/readme-images/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Add Images to the README
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/excalidraw/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Excalidraw Diagrams
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../how-to/contribute/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contribute
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Explanations
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Explanations
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Vision & Positioning
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../good-future/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Good-Future Charter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Structure
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../why-use-template/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Why Use Template
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../template-dev/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Authoring Template Sources
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Extending the Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../long-running/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Long-Running Executables
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security & Compliance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Verification Architecture
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Verification Architecture
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The three layers
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The three layers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#l1-the-input-space-z3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        L1 — the input space (Z3)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l2-output-invariants-over-every-leaf" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        L2 — output invariants over every leaf
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l3-bounded-execution-of-a-sample" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        L3 — bounded execution of a sample
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tiers-the-commands-and-their-budgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tiers: the commands and their budgets
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#growth-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Growth rules
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-adding-a-check-five-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before adding a check: five questions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Non-goals
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Non-goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-l3-stays-the-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why L3 stays: the evidence
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#support-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Support levels
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-numbers-come-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the numbers come from
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../drift-detection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Drift Detection
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reference
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  Reference
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Overview
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/features/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Feature Catalogue
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/questionnaire/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Questionnaire
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/answers-file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Answers File
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/non-interactive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Non-interactive Generation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dependencies/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Dependencies
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  References
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/standards/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Standards
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The three layers
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The three layers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#l1-the-input-space-z3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        L1 — the input space (Z3)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l2-output-invariants-over-every-leaf" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        L2 — output invariants over every leaf
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#l3-bounded-execution-of-a-sample" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        L3 — bounded execution of a sample
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tiers-the-commands-and-their-budgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tiers: the commands and their budgets
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#growth-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Growth rules
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-adding-a-check-five-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before adding a check: five questions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Non-goals
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Non-goals">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-l3-stays-the-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Why L3 stays: the evidence
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#support-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Support levels
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-numbers-come-from" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the numbers come from
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+  
+  
+
+
+<h1 id="verification-architecture">Verification Architecture<a class="headerlink" href="#verification-architecture" title="Permanent link">&para;</a></h1>
+<p>Which layer of this repository's verification proves what, what each layer
+costs, and the rules a new check has to satisfy before it lands.</p>
+<p>This page is the written contract behind three things that already exist:
+the tier selectors in <code>Taskfile.yml</code> / <code>pyproject.toml</code>, the witness tiers in
+<code>tests/test_witness_matrix.py</code>, and the support levels in
+<a href="../../reference/support/"><code>support.yml</code></a>. Every number here is measured; the
+source command for each one is listed in
+<a href="#where-the-numbers-come-from">Where the numbers come from</a>.</p>
+<p>The short version: the questionnaire's <strong>input space</strong> is proven by Z3, the
+<strong>rendered output</strong> of every leaf is proven by declarative invariants, and a
+bounded sample of the leaves is <strong>executed</strong> for real. Three layers, three
+different jobs — no layer replaces another. (How these mechanisms map onto
+<em>where wrongness comes from</em> and <em>when it gets noticed</em> — the drift matrix —
+is a different axis again: <a href="../drift-detection/">Drift Detection</a>.)</p>
+<h2 id="the-three-layers">The three layers<a class="headerlink" href="#the-three-layers" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Proves</th>
+<th>Cannot prove</th>
+<th>Input</th>
+<th>Measured unit cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>L1 — input space</strong></td>
+<td>every <code>when</code> is satisfiable, no contradictory or unreachable combination exists, and the leaves can be enumerated</td>
+<td>anything about what the answers <em>render</em></td>
+<td><code>copier.yml</code> + <code>questions/*.yml</code></td>
+<td>milliseconds, no render</td>
+</tr>
+<tr>
+<td><strong>L2 — output invariants</strong></td>
+<td>every leaf's render satisfies its declared file-set and content predicates</td>
+<td>install, run, network, docs build — anything needing a venv or an external tool</td>
+<td>all <strong>272</strong> leaves</td>
+<td><strong>≈0.6 s/leaf</strong> serial; the 234-leaf space of 2026-09-18 measured <strong>≈20 s</strong> with 16 xdist workers and the session render cache (scale linearly for today's 272)</td>
+</tr>
+<tr>
+<td><strong>L3 — execution</strong></td>
+<td>the generated project actually syncs, tests, type-checks and builds its docs</td>
+<td>enumeration — it runs a sample, so it is evidence for those leaves only</td>
+<td>a bounded sample of <strong>8</strong> leaves</td>
+<td><strong>13–24 s/case</strong>; the whole 8-leaf sample 132–195 s</td>
+</tr>
+</tbody>
+</table>
+<h3 id="l1-the-input-space-z3">L1 — the input space (Z3)<a class="headerlink" href="#l1-the-input-space-z3" title="Permanent link">&para;</a></h3>
+<p><code>tools/when_model.py</code> encodes each area gate's <code>when</code> expression for Z3 (the
+tokenizer, <code>when_expr_satisfiable</code> and the string domains), and
+<code>tests/test_copier_structure.py</code> asks the model two questions of the
+questionnaire: is every <code>when</code> satisfiable, and does the sweep detect typo'd
+gates, self-contradictions and impossible genre combinations (the detectors
+have meta-tests that break them on purpose to prove they still detect).
+<code>tools/z3_witnesses.py</code> turns the same model into the leaf list
+(<code>tests/matrix/witnesses.jsonl</code>, 272 leaves), and
+<code>tests/test_witness_matrix.py::test_witness_leaves_match_the_generator</code> keeps
+the committed list equal to what the generator enumerates.</p>
+<p>L1 <strong>cannot</strong> say anything about rendered content, cross-file consistency, the
+equivalence of two task definitions, or whether a generated project runs: those
+need Jinja + copier + filesystem execution semantics, which are outside Z3.</p>
+<p>The Z3 side of <code>when</code> is a <em>projection</em> (re-implementation) of Jinja's
+evaluation, so L1's green is only as strong as that projection. What keeps it
+honest is <code>tests/test_when_model.py</code>: for every declared leaf it asks copier's
+own questionnaire machinery (<code>Worker._ask</code> + <code>Question.get_when</code>) every
+templated <code>when</code> — 48 expressions, 9,840 verdicts — and compares that verdict
+with the model's. Six probe answer sets then vary the values the leaf space
+holds at their copier defaults, for 10,128 comparisons in total, and the test
+asserts <strong>per expression</strong> that both polarities were seen: a <code>when</code> whose inputs
+nothing varies fails instead of quietly proving half of it. It also checks that
+the string domains the production callers pass contain every answer copier
+actually gives. The test states its own narrowing — concrete assignments rather
+than abstract satisfiability, the questionnaire's current expressions, and the
+leaf space plus those probes — while the abstract reachability side stays with
+the sweeps in <code>tests/test_copier_structure.py</code>. Treat "Z3 is green" as "the
+input space is honestly enumerated", never as "the template is correct".</p>
+<h3 id="l2-output-invariants-over-every-leaf">L2 — output invariants over every leaf<a class="headerlink" href="#l2-output-invariants-over-every-leaf" title="Permanent link">&para;</a></h3>
+<p>The witness <code>fast</code> tier renders every leaf with copier (<code>skip_tasks=True</code>, no
+venv), asserts the leaf's declared artifact set (present <em>and</em> absent files),
+and runs <code>ruff format --check</code> / <code>ruff check</code> over the rendered Python. Renders
+go through <code>tests/render_cache.py</code>, so every tier sharing the same answers pays
+for one copier run; the cache is fingerprint-addressed and lives in the
+session's temporary directory.</p>
+<p>This is the layer that grows best: cost is linear in leaves, and one leaf is
+sub-second. It <strong>cannot</strong> express anything that requires the rendered project
+to be installed or executed — a leaf whose file set and content predicates are
+all correct can still fail to <code>uv sync</code>, fail its own pytest, or fail
+<code>mkdocstrings</code>. That residual is exactly what L3 exists for.</p>
+<h3 id="l3-bounded-execution-of-a-sample">L3 — bounded execution of a sample<a class="headerlink" href="#l3-bounded-execution-of-a-sample" title="Permanent link">&para;</a></h3>
+<p>The witness <code>full</code> tier takes 8 leaves from <code>FULL_SAMPLE</code>: one per project
+family whose checks run on a bare runner, plus the one gate-off leaf that
+switches the agent prompts on. Each gets <code>uv sync</code>, the generated project's own
+pytest, <code>basedpyright</code>, and its docs build. Every leaf getting this treatment
+would be ~10 hours, so the sample is a deliberate bound; ros2 is out of the
+sample entirely (its generated recipes need <code>/opt/ros/$ROS_DISTRO</code>, not a bare
+runner). The leaves the sample does not cover stay in L2.</p>
+<p>L3 <strong>cannot</strong> generalize. It is evidence for eight leaves, not for the other
+197, and it is not a cheaper way to run L2 — it is the only way to observe the
+external toolchain. See <a href="#why-l3-stays-the-evidence">Why L3 stays</a> for what
+keeping it has already caught.</p>
+<h2 id="tiers-the-commands-and-their-budgets">Tiers: the commands and their budgets<a class="headerlink" href="#tiers-the-commands-and-their-budgets" title="Permanent link">&para;</a></h2>
+<p>A tier is a contract, not a habit. <code>fast</code> means "the edit loop stays inside its
+budget"; <code>heavy</code> means "this builds a venv or talks to the network". When a
+check moves between tiers, the budget moves with it.</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Command</th>
+<th>Selector</th>
+<th>What runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Edit loop</td>
+<td><code>task test-fast</code></td>
+<td><code>-m "not heavy and not slow and not meta and not network"</code></td>
+<td>L1 + L2 + everything that neither builds a venv nor touches the network</td>
+</tr>
+<tr>
+<td>Cost ledger guard</td>
+<td><code>task test-meta</code></td>
+<td><code>-m meta</code></td>
+<td>the guards in <code>tests/test_marker_drift.py</code>: the venv/network marker scan, the tier-membership check, the cost-staleness check and the leaf-space budget</td>
+</tr>
+<tr>
+<td>Slow</td>
+<td><code>task test-slow</code></td>
+<td><code>-m slow</code></td>
+<td>the serial 272-leaf batch runner (<code>tools/batch.py</code> over <code>tests/matrix/witnesses.jsonl</code>)</td>
+</tr>
+<tr>
+<td>Pre-push / nightly</td>
+<td><code>task test-heavy</code></td>
+<td><code>-m heavy</code></td>
+<td>L3: <code>uv sync</code> + the generated project's pytest / type check / docs build (<code>network</code> follows where the case downloads)</td>
+</tr>
+<tr>
+<td>Witness render</td>
+<td><code>uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast</code></td>
+<td><code>fast</code></td>
+<td>L2 over all 272 leaves</td>
+</tr>
+<tr>
+<td>Witness execution</td>
+<td><code>uv run --no-sync pytest -q tests/test_witness_matrix.py -m full</code></td>
+<td><code>full</code></td>
+<td>L3 over the 8-leaf sample (those tests are also <code>heavy</code> / <code>network</code>)</td>
+</tr>
+<tr>
+<td>Full suite</td>
+<td><code>task test</code></td>
+<td>—</td>
+<td>everything, with coverage</td>
+</tr>
+</tbody>
+</table>
+<p>The ledger guard is <code>meta</code> rather than part of the edit loop because it
+re-collects every tier in a pytest session of its own (six startups): it is a
+check on the cost contract, not a cost the edit loop can carry. <code>ci.yml</code> runs
+<code>task test-meta</code> as its own job on every push and PR, and <code>task test</code> includes
+it.</p>
+<p>One measured hole remains in that nightly type-check coverage:
+<code>tests/test_generated_typecheck.py</code> (the heavy tier's <code>uv sync</code> + basedpyright
++ pyrefly module) does not render the kaggle answers — the only render whose
+dependencies pull the torch cu126 wheels. The weight reason (minutes of
+download into a multi-GB venv) is why the module is heavy+network and
+nightly-only to begin with; the blocking reason (measured 2026-09-18) is
+that a render must reach zero findings to pass — basedpyright enables
+<code>failOnWarnings</code> by default — and the kaggle scaffold carries 31
+reportAny-family warnings (structlog logger typing, DictConfig attribute
+access, the hydra decorator). The one error-level defect that measurement
+surfaced (a <code>FixedTrial</code> passed into an <code>optuna.Trial</code>-annotated objective
+in the generated <code>src/utils/modeling/train.py</code>) is fixed; the decision
+record, with the unblocking steps, lives at that module's <code>TYPECHECK_PATHS</code>.
+The torch-free <code>data_science</code> leaf is already executed nightly by the
+witness <code>full</code> tier.</p>
+<p>The numbers themselves are not hand-copied into this page: the table below is
+a generated block (tools/gen_docs.py, the same generator that owns the
+questionnaire and support tables), rendered from <code>tests/matrix/tiers.json</code>.
+When a number in it disagrees with the suite, the ledger wins:
+<code>tests/test_marker_drift.py</code> re-collects every tier and fails on drift, fails
+when a row's <code>measured</code> date is more than 30 days old, and fails when a row
+with a declared <code>budget_seconds</code> measures over it.
+<code>UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py</code>
+re-records the collected sets — and the Tests column of the tier table in
+<a href="../../how-to/test-loop/">test-loop.md</a>, the hand-edited counts this used to
+leave behind — after a deliberate tier change.</p>
+<!-- BEGIN GENERATED: tier-ledger (tools/gen_docs.py --write) -->
+<table>
+<thead>
+<tr>
+<th>Ledger row</th>
+<th>Selector</th>
+<th>Tests</th>
+<th>Budget</th>
+<th>Measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test-fast</code></td>
+<td><code>-m "not heavy and not slow and not meta and not network"</code></td>
+<td>1055</td>
+<td>30s (measured 18.6s)</td>
+<td>2026-09-20</td>
+</tr>
+<tr>
+<td><code>test-slow</code></td>
+<td><code>-m "slow"</code></td>
+<td>7</td>
+<td>measured 89.6s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>test-heavy</code></td>
+<td><code>-m "heavy"</code></td>
+<td>50</td>
+<td>measured 25.7s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>test-meta</code></td>
+<td><code>-m "meta"</code></td>
+<td>10</td>
+<td>measured 6.6s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td><code>—</code></td>
+<td>1122</td>
+<td>measured 178.6s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>test-randomly</code></td>
+<td><code>-m "not heavy and not slow and not meta and not network"</code></td>
+<td>1055</td>
+<td>measured 22.3s</td>
+<td>2026-09-17</td>
+</tr>
+<tr>
+<td><code>witness-fast</code></td>
+<td><code>-m "fast"</code></td>
+<td>278</td>
+<td>measured 16.9s</td>
+<td>2026-09-18</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED: tier-ledger -->
+
+<p>The edit-loop budget is <strong>30 s</strong>; anything that pushes <code>task test-fast</code> past it
+is either marked <code>slow</code> / <code>heavy</code> / <code>meta</code> or is a regression — for venv and
+network work the marker-drift guard enforces that structurally, and the
+ledger's <code>test-fast</code> row carries the budget as <code>budget_seconds</code>, which the
+same guard compares against the measured wall: the budget is a checked
+statement, not prose. The ledger's own guards are out of the loop by the
+<code>meta</code> marker. The run taken for this page
+on 2026-09-14 was <strong>731 tests in 47 s</strong>
+(<code>uv run --no-sync pytest -q -m "not heavy and not slow and not meta"</code>), on a
+machine whose 32 logical CPUs were also carrying unrelated work at load average
+64–117. That number measures the contention: the same tree with the guard still
+in the selection (738 tests) took 46 s at load 85 in the same session, and the
+ledger's earlier 22 s was taken idle on a 717-test tree that other changes have
+since grown past. What the guard's removal is worth <em>on its own</em> is the ledger's
+<code>test-meta</code> row (10.5 s, nearly all of it the six pytest startups the membership
+check runs); what it is worth inside the loop was below this box's noise. The
+count grows as tests land, so read every time here as a dated observation of a
+moving suite and take the current numbers from the ledger above.</p>
+<h2 id="growth-rules">Growth rules<a class="headerlink" href="#growth-rules" title="Permanent link">&para;</a></h2>
+<p>Adding a capability is not free, and the cost is predictable:</p>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Leaf increment</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>One more include layer (composed with all base leaves)</td>
+<td><strong>+76 leaves</strong></td>
+<td>≈ +45 s serial, ≈ +3 s at 16 workers, ≈ 0 once the render cache holds the answers</td>
+</tr>
+<tr>
+<td>One more gate-off dimension</td>
+<td>+8 base leaves → <strong>+22 leaves</strong></td>
+<td>≈ +13 s serial, ≈ +1 s at 16 workers</td>
+</tr>
+<tr>
+<td>One more <code>project_type</code></td>
+<td>its base leaves (e.g. +3 base ≈ +8 leaves)</td>
+<td><strong>plus one invariant row</strong> in the single invariant source, <strong>plus one L3 sample leaf</strong> (≈ +20 s)</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Include layers are exclusive today</p>
+<p>A leaf carries <strong>at most one</strong> include <em>layer</em> (measured on today's
+272-leaf space: 146 leaves with none, 124 with exactly one, 2 with two, and of those with one
+9 carry a derived detail the variant leaves answer — 3 the integrations
+detail <code>include_mcp</code> and 6 a bot platform — details, not layers, so they do
+not join the product). The layer multiplier is ~2.7×
+rather than the product of four layers because of that exclusivity. Lifting
+it — allowing two layers on one leaf — turns the multiplier into a
+combinatorial product and the leaf count becomes exponential. Any change
+that touches layer composition must declare, up front, whether it keeps
+exclusivity (choose-one) or accepts the product, and the growth table above
+stops applying if it accepts the product.</p>
+</div>
+<p>The growth table is not the whole contract: the leaf space also has a declared
+ceiling. <code>LEAF_BUDGET</code> in <code>tests/test_marker_drift.py</code> — currently <strong>450</strong>
+(it landed at twice the then-225-leaf space; the space is 272 today) — fails
+the meta guard when
+<code>tools/z3_witnesses.py</code> enumerates more leaves than that. The additive
+increments in the table fit several times over; what the budget turns away is
+the multiplicative case above (a lifted exclusivity, or a new axis that
+composes with everything already declared), which would otherwise surface only
+as the witness fast job creeping toward its 30-minute CI timeout. Raising it
+is a decision, not an accident: edit the constant and re-measure the witness
+job's wall time into <code>tests/matrix/tiers.json</code>.</p>
+<p>The conclusion that drives the rules below: growth pushed into L2 stays bounded
+(+22 leaves ≈ +1 s parallel, 0 s cached), while growth pushed into L3 is linear
+in samples and each sample is 13–24 s. So a new check goes into L2 <strong>unless
+there is a reason it cannot be expressed there</strong>.</p>
+<h2 id="before-adding-a-check-five-questions">Before adding a check: five questions<a class="headerlink" href="#before-adding-a-check-five-questions" title="Permanent link">&para;</a></h2>
+<p>Answer all five before writing the check; a "no answer" is a design decision
+that has not been made yet.</p>
+<ol>
+<li><strong>Which existing layer does it sit on?</strong> L1 (input space), L2 (render
+   invariant), or L3 (execution). If it is "a bit of both", split it.</li>
+<li><strong>What is its leaf increment?</strong> Use the growth table. If it multiplies
+   rather than adds, the exclusivity question above must be answered first.</li>
+<li><strong>Which invariant row does it need?</strong> Every file the leaf must (or must not)
+   have, and every content predicate over it, belongs to the single invariant
+   source (TODO §23.4 / §24.4 T6) — never to a second hand-synced dict.</li>
+<li><strong>Which tier runs it?</strong> Pick from the tier table and check the budget it
+   lands in. A check that builds a venv or touches the network carries <code>heavy</code>
+   (and <code>network</code> when it talks to the network), no exceptions.</li>
+<li><strong>Which support level does it get?</strong> <code>supported</code> if CI executes it end to
+   end, <code>best_effort</code> if it is declared and rendered but never executed — and it
+   goes into <code>support.yml</code> with a measured <code>why</code>.</li>
+</ol>
+<h2 id="non-goals">Non-goals<a class="headerlink" href="#non-goals" title="Permanent link">&para;</a></h2>
+<p>Stated plainly, because the vaguer version — "Z3 proves the template is
+correct" — is false:</p>
+<ul>
+<li><strong>Z3 proves the input space only.</strong> Satisfiability of each <code>when</code>, the absence
+  of contradictory or unreachable combinations, and a complete enumeration of
+  the leaves. It does not prove anything about what those leaves render.</li>
+<li><strong>The <code>when</code> model is a re-implementation</strong>, so a Z3 green is a statement
+  about the model, not directly about Jinja. <code>tests/test_when_model.py</code>
+  differentially compares the two at every declared leaf and states the limits
+  of that assurance (concrete assignments, the current expressions, the leaf
+  space plus the probes); nothing beyond those limits is covered by L1.</li>
+<li><strong>venv builds, real pytest runs, network access, Docker and external CI are
+  covered by the heavy tier on purpose.</strong> They cannot be expressed as L2
+  predicates over rendered bytes, so they stay in L3 rather than being
+  re-declared into a weaker form. The <code>heavy</code> tier is a deliberate design
+  decision, not debt to be paid off.</li>
+<li><strong>The goal is the three-part set</strong> — Z3 enumerates the input space,
+  invariants cover every leaf's output, sampled execution covers the external
+  toolchain — <strong>not</strong> "Z3 alone proves everything". A proposal that argues
+  "Z3 already covers it" for a run-time property is arguing the wrong thing.</li>
+</ul>
+<h3 id="why-l3-stays-the-evidence">Why L3 stays: the evidence<a class="headerlink" href="#why-l3-stays-the-evidence" title="Permanent link">&para;</a></h3>
+<p>The 8-leaf sample is not ceremony. On 2026-09-13 it failed <strong>three leaves</strong>, all
+of them invisible to L2 (whose leaves stayed green at the same time):</p>
+<ol>
+<li><code>project_type=micropython/gate=recommended</code> — basedpyright exited 3 with
+   <code>File or directory ".../smoke_example" does not exist</code>: the shared
+   <code>include = ["{{ pkg_dir }}", "tests"]</code> assumed a package directory that the
+   MicroPython layout does not have. The MicroPython branch now excludes the
+   package and checks <code>tests</code> + <code>firmware/core</code> instead (the firmware tree has
+   its own <code>pyrightconfig.json</code> pass).</li>
+<li><code>project_type=online_judge/.../atcoder</code> — <code>just docs</code> failed with
+   <code>mkdocstrings: accessing 'smoke_example' raises ModuleNotFoundError</code>: a
+   code-submission workspace ships no importable package, so the generated API
+   reference had nothing to collect. The competitive-programming layout now
+   omits the module nav and the <code>mkdocstrings</code> plugin.</li>
+<li><code>project_type=cli/gate=off:use_recommended_agent</code> — basedpyright exit 1:
+   <code>run(parsed.prompt, model=parsed.model)</code> passed <code>argparse.Namespace</code>
+   attributes, which type as <code>Any</code>. The generated CLI now parses into a typed
+   <code>_CliArgs</code> namespace.</li>
+</ol>
+<p>All three are fixed, and all three shipped inside a render-only pipeline that
+was entirely green. That is the measured justification for holding L3 at a
+sample rather than dropping it: the render layers prove the file sets, and only
+execution proves the toolchain.</p>
+<h2 id="support-levels">Support levels<a class="headerlink" href="#support-levels" title="Permanent link">&para;</a></h2>
+<p><code>support.yml</code> (repository root) is the machine-readable declaration of what
+this template keeps working. It uses two levels:</p>
+<ul>
+<li><strong><code>supported</code></strong> — executed end to end by the witness <code>full</code> tier: <code>uv sync</code>,
+  the generated project's own pytest, basedpyright and its docs build.
+  <code>tests/test_support_matrix.py</code> asserts the declared <code>supported</code> rows are
+  exactly the ledger's <code>tier: full</code> leaves, so a claim here is a measured one.</li>
+<li><strong><code>best_effort</code></strong> — declared so the questionnaire's existing answers keep
+  rendering, but never CI-gated for execution. The witness <code>fast</code> tier still
+  renders and ruff-checks these leaves; a regression that only breaks install or
+  run is not caught for them.</li>
+</ul>
+<p>Two related pieces of the same vocabulary live in <code>support.yml</code> as well: the
+per-entry <code>why</code> (the measured evidence for the assigned tier) and
+<code>tier_policy</code>, which maps a <em>class</em> of leaf to a tier. <code>none</code> is reserved for a
+future exclusion and is declared per leaf as <code>tier: none</code> plus a <code>reason</code> in
+<code>tests/matrix/witnesses.json</code>; no leaf uses it today, because every declared
+leaf has a recorded run.</p>
+<p><code>support.yml</code> is the source, not the documentation: <code>tools/gen_docs.py --write</code>
+renders <a href="../../reference/support/">the support matrix</a> and the README summary
+from it, and <code>--check</code> fails CI when those drift.</p>
+<h2 id="where-the-numbers-come-from">Where the numbers come from<a class="headerlink" href="#where-the-numbers-come-from" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Measurement</th>
+<th>Source command</th>
+<th>Recorded</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>272 leaves, 146 with no include layer, 124 with exactly one, 2 with two (9 carry a derived detail: 3 the MCP integrations detail, 6 a bot platform)</td>
+<td><code>tests/matrix/witnesses.jsonl</code> (count of <code>include=</code> per leaf)</td>
+<td>2026-09-22, current tree (integrations-details and bot-platform variants)</td>
+</tr>
+<tr>
+<td>L1 model vs real Jinja: 10,128 comparisons (9,840 leaf verdicts + 6 probes × 48 expressions), both polarities asserted per expression</td>
+<td><code>uv run --no-sync pytest -q tests/test_when_model.py</code>; with the structure sweeps, <code>uv run --no-sync pytest -q tests/test_when_model.py tests/test_copier_structure.py</code> → 16 passed, 1 xfailed</td>
+<td>2026-09-14, this tree</td>
+</tr>
+<tr>
+<td>L2 ≈ 0.58 s/leaf at the 205-leaf tree of the 2026-09-13 audit (119 s ÷ 205; that tree's full render ≈ 11 s at 16 workers + cache)</td>
+<td>the serial batch runner's <code>--durations</code> entry (119 s) in the 2026-09-13 audit</td>
+<td>TODO §23.0 / §24.0 P4 / §24.1</td>
+</tr>
+<tr>
+<td>L3 13–24 s/case; the 8-leaf sample 132–195 s</td>
+<td><code>uv run --no-sync pytest -q tests/test_witness_matrix.py -m full</code></td>
+<td>TODO §24.0 P6 (PLAN §W9 top-5)</td>
+</tr>
+<tr>
+<td>L3 found 3 defects L2 missed, with L2 green on every leaf</td>
+<td>same 8-leaf sample; <code>-m fast</code> for the render layer</td>
+<td>TODO §24.0 P6</td>
+</tr>
+<tr>
+<td>Edit loop 731 (of today's 732) tests in 47 s, load average 64; the same tree with the guard still in the selection, then 738 tests, took 46 s at load 85</td>
+<td><code>uv run --no-sync pytest -q -m "not heavy and not slow and not meta"</code></td>
+<td>2026-09-14, this tree — a dated observation; the current per-tier counts are the ledger row below</td>
+</tr>
+<tr>
+<td>Ledger guard: 7 tests, 10.5 s (six pytest startups: the membership check re-collects every tier)</td>
+<td><code>uv run --no-sync pytest -q -m meta</code></td>
+<td>2026-09-14, this tree — the ledger row, measured with unrelated work on the machine</td>
+</tr>
+<tr>
+<td>Witness fast job: 278 tests (272 renders + six leaf-list checks), 4.5 s warm on the dev machine (5.1 s at the 234-leaf tree of 2026-09-18), against the job's 30-minute timeout</td>
+<td><code>uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast</code></td>
+<td>2026-09-22, this tree — the ledger's <code>witness</code> row; a PR runner is always cold</td>
+</tr>
+<tr>
+<td>Per-tier counts, marker expressions, re-measure commands and wall times (task tiers and the witness fast job)</td>
+<td><code>tests/matrix/tiers.json</code>; re-collect with <code>UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py</code>, fill <code>wall_seconds</code>/<code>measured</code> by hand from a <code>time</code> run of the row's own <code>command</code></td>
+<td>2026-09-14, this tree</td>
+</tr>
+<tr>
+<td>Growth table's +76 / +22 leaf increments and their second costs</td>
+<td>derived in the 2026-09-13 audit from the ledger's leaf counts and the 0.58 s/leaf unit</td>
+<td>TODO §24.1</td>
+</tr>
+<tr>
+<td>Leaf-space ceiling: <code>LEAF_BUDGET</code> = 450 (landed at twice the then-225-leaf space)</td>
+<td><code>LEAF_BUDGET</code> in <code>tests/test_marker_drift.py</code>, checked against <code>tools/z3_witnesses.py</code>'s enumeration on every meta run</td>
+<td>declared, citing §24.1 — the enforcement is the record</td>
+</tr>
+<tr>
+<td>Edit-loop budget of 30 s (a contract, not a measurement)</td>
+<td>declared for the tiers in the 2026-09-13 audit</td>
+<td>TODO §24.2</td>
+</tr>
+<tr>
+<td>"all 272 leaves executed would be ~10 hours"</td>
+<td>the <code>FULL_SAMPLE</code> rationale comment: 272 × (venv build + docs) at ~3 min</td>
+<td><code>tests/test_witness_matrix.py</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../security/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Security &amp; Compliance">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Security & Compliance
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../drift-detection/" class="md-footer__link md-footer__link--next" aria-label="Next: Drift Detection">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Drift Detection
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Maintained by <a href="https://github.com/kasi-x/python-copier-template">kasi-x</a>.
+    </div>
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["announce.dismiss","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.top","navigation.tracking","search.highlight"],"search":"../../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.49251538.min.js"></script>
+      
+    
+  </body>
+</html>
