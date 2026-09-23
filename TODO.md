@@ -606,4 +606,20 @@ Copier 9.18.1 は `keep_trailing_newline=True` なので、Jinja ソースが出
 - 5 コミットを push（e60b45f8..928d6810）。§B の「生成物 CI 初回実走確認」
   は push 後 run 観察が条件 — 今回の push run がその観察対象。
 
+### 31.4 週次チェック復活後に表面化した実バグ 2 件（同 2026-09-23 着地）
+
+startup_failure を直した途端、週次チェックが本来の仕事（ドリフト検出）をした:
+
+- **`test_update_from_the_released_ref_to_head`**: vendored `clean.scss` の
+  4 行に行末空白があり、update 差分が `git diff --check` に引っかかった。
+  行末空白を除去（同ファイルは EOF 改行ですでに vendored-modified 済み）。
+- **`test_the_full_rehearsal_passes_on_every_leaf`**: リハーサルは各葉を
+  **リリース時点の質問票**で描画するが、葉の回答は HEAD 由来 —
+  `oj_kind=codeforces` 等（6.0.0 後に追加）の葉が `Invalid choice` で
+  プール全体を crash させていた。base ref で描画不能な葉は「その葉を持つ
+  ユーザーは存在しない」ので `[SKIP]` として報告し、coverage には数える
+  （`rehearsed + skipped >= ledger total` の assertion に更新）。
+- 検証: `--only codeforces` で 8 葉すべて SKIP、rehearsal suite 4 件 pass、
+  update-path 該当テスト pass、fast tier 1023 pass。
+
 

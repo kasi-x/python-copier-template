@@ -12,6 +12,8 @@ All notable changes to this project are documented in this file.
 
 - the weekly Scheduled full check no longer dies as `startup_failure`: the docs reusable call now grants `contents: write`, matching `_docs.yml`'s job-level grant (a called workflow's permissions may not exceed the caller's)
 
+- the update rehearsal skips leaves whose answers are invalid at the released ref (choices added after the tag) instead of crashing the run, and the vendored `clean.scss` no longer trips `git diff --check` on update
+
 
 ### Dependencies
 
