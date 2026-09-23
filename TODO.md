@@ -569,4 +569,41 @@ Copier 9.18.1 は `keep_trailing_newline=True` なので、Jinja ソースが出
 - すべての条件分岐（all-false / ctf / oj-atcoder / oj-kattis / scraping / gmail / ctf+oj）で
   `.gitignore` の末尾がちょうど 1 つの `\n` で終わることを直接確認済み。
 
+## §31 完了: CI 赤 2 件の解消と upstream drift レビュー（2026-09-23）
+
+### 31.1 Scheduled full check の startup_failure（3 週連続）
+
+- 症状: 2026-09-08 / 09-15 / 09-22 の週次 run がすべて `startup_failure`
+  （ジョブ 0 個で即死）。actionlint は clean、YAML も valid。
+- 原因: `scheduled-check.yml` が `_docs.yml` を呼ぶ際に caller 側の
+  `permissions` を付けていなかった。`_docs.yml` の build ジョブは
+  `contents: write`（gh-pages publish 用）を宣言しており、reusable
+  workflow の permissions は caller の grant を超えられない
+  （GitHub 仕様: downgrade のみ可）ため、run 作成時点で全体が拒否される。
+  `ci.yml` の docs 呼び出しは `contents: write` を渡しているので緑だった。
+- 修正: `scheduled-check.yml` の docs ジョブに `permissions: contents: write`
+  を追加（`publish: false` は維持 — grant は天井を満たすだけで publish は
+  しない）。workflow_dispatch で実走確認: lint/test/docs の 3 ジョブが
+  起動し startup_failure を脱した（run 35812055877）。
+
+### 31.2 Check upstream fork の failure = 設計どおりの drift 通知
+
+- upstream (DiamondLightSource) に未レビュー 5 コミット。exit 1 + issue
+  自動起票は仕様。レビュー結果を issue #2 に記録して close:
+  - a0cc77c / 9de143b / 4e8d917: upstream uv.lock 保守 — こちらの lockfile は
+    独立（renovate 管理）。対応不要。
+  - 18db87c: setup-uv v10.0.1→v10.1.0 — こちらは SHA pin + renovate が
+    digest 追随するので対応不要。
+  - 72da24d: 生成 ci.yml に `merge_group:` 追加 — **採用**。生成物が
+    merge queue を後から有効化しても CI が発火するようになる
+    （queue 未使用なら no-op。tag-gated release 系は queue ref が branch
+    なので発火しない）。template ci.yml.jinja に適用済み。
+
+### 31.3 付随作業
+
+- `.zcode/`（エージェント plan キャッシュ）を root + template の
+  `.gitignore` に追加（test_gitignore_same の parity 規則で両側必須）。
+- 5 コミットを push（e60b45f8..928d6810）。§B の「生成物 CI 初回実走確認」
+  は push 後 run 観察が条件 — 今回の push run がその観察対象。
+
 
