@@ -1,0 +1,55 @@
+name: Ethics sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Vendor drift from ConstitutiveTemplates/good-future-codex: the canonical
+    # section texts move on their own review cadence (OWASP / FIPS / regional
+    # law), independent of this repo's commits. Weekly, after the Tuesday
+    # fork check so the two drift reports don't land in the same hour.
+    - cron: "0 7 * * TUE"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check vendored ethics sections for drift
+        id: check
+        env:
+          # gh repo clone inside the checker needs a token that can read the
+          # private codex repo; GITHUB_TOKEN is scoped to this repo only, so
+          # the job wants a CODEX_TOKEN secret (a fine-grained PAT with
+          # contents:read on ConstitutiveTemplates/good-future-codex).
+          GH_TOKEN: ${{ secrets.CODEX_TOKEN }}
+        run: python3 tools/check_ethics_drift.py
+        # Exits 1 when the vendored tree is dirty or codex main is ahead.
+
+      - name: Open drift issue
+        if: failure() && steps.check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          body=$(GH_TOKEN="${{ secrets.CODEX_TOKEN }}" \
+            python3 tools/check_ethics_drift.py 2>&1 || true)
+          existing=$(gh issue list --search "Ethics sections drifted" \
+            --state open --json number --jq 'length')
+          if [ "$existing" -eq 0 ]; then
+            gh issue create \
+              --title "Ethics sections drifted from good-future-codex" \
+              --body "$body"
+          else
+            echo "An issue for this drift is already open; skipping."
+          fi
