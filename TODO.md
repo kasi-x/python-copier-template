@@ -663,3 +663,21 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
   workflow が健全: scheduled-check / periodic / rehearsal / witness /
   dependency-audit / check-upstream すべて緑。
 
+### 31.7 upstream-fork チェックの恒久赤を構造修正（2026-09-24）
+
+- 症状: `check-upstream-fork` が 3 週連続で赤。原因は設計: 比較が
+  `HEAD..FETCH_HEAD` で、fork は意図的に分岐しているため upstream コミットは
+  永遠にマージされず、レビュー済みコミットが毎週再発火していた
+  （アラートの習慣的無視 = 最悪の状態）。
+- 修正: `.upstream-fork-reviewed`（最後にレビューした upstream SHA の
+  1 行ファイル）を導入し、checker は marker..FETCH_HEAD の差分だけを報告。
+  marker が upstream/main の祖先でない場合（force-push / 誤記）も明示的に
+  失敗。レビュー後は `echo <sha> > .upstream-fork-reviewed && git commit`。
+- marker は 4e8d9171 で seed（5 件は issue #2 でレビュー・採用済み）。
+  dispatch で緑確認（run 35899201430）。
+- 併せて issue #1 の mcp floor drift を解消: `mcp[cli]>=2.0` → `>=2.0.1`
+  （PyPI に 2.0.0 final が存在せず floor が空集合を指していた）。
+- これで全スケジュール workflow が緑: scheduled-check / periodic /
+  update-rehearsal / witness / dependency-audit / check-upstream /
+  check-upstream-fork。
+

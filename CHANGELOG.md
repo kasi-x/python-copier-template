@@ -14,6 +14,8 @@ All notable changes to this project are documented in this file.
 
 - the update rehearsal skips leaves whose answers are invalid at the released ref (choices added after the tag) instead of crashing the run, and the vendored `clean.scss` no longer trips `git diff --check` on update
 
+- the upstream-fork drift check compares upstream/main against a reviewed-marker file instead of HEAD, so already-reviewed commits stop re-firing the weekly alert; the `mcp[cli]` floor is `>=2.0.1` (PyPI never published a 2.0.0 final)
+
 
 ### Dependencies
 
