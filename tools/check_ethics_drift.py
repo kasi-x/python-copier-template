@@ -71,9 +71,9 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         codex = Path(tmp) / "codex"
-        # gh repo clone carries auth (GH_TOKEN on CI, gh auth locally); a
-        # private codex fails a bare https git clone.
-        run("gh", "repo", "clone", "ConstitutiveTemplates/good-future-codex", str(codex), "--", "--quiet")
+        # The codex is public (it exists for external consumers), so a plain
+        # https clone needs no auth -- no secret, no deploy key, no PAT.
+        run("git", "clone", "--quiet", "https://github.com/ConstitutiveTemplates/good-future-codex.git", str(codex))
         upstream_head = run("git", "rev-parse", "HEAD", cwd=codex).strip()
         upstream_sections = _tree(codex / "sections")
 
