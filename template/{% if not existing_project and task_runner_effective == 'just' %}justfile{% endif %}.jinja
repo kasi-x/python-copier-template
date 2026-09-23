@@ -1,5 +1,10 @@
 {% import "_tasks.jinja" as _t with context -%}
+{% import "_shared/oj-recipes.jinja" as _oj with context -%}
 default:
     @just --list
 
 {{ _t.justfile() -}}
+{% if oj_code %}
+
+{{ _oj.justfile_oj() }}
+{% endif -%}

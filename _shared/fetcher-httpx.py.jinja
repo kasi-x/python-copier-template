@@ -57,6 +57,7 @@ __all__ = [
     "AccessDeniedError",
     "BudgetExceededError",
     "FetchConfig",
+    "FetchedPage",
     "PoliteFetcher",
     "Preflight",
     "RobotDeniedError",
@@ -102,7 +103,15 @@ class AccessDeniedError(ValueError):
 
     Do not retry around the block, rotate user-agents, or reach for a
     CAPTCHA solver — the site said no. Use its API or ask permission.
+    Carries the HTTP status that denied the request when it is known
+    (``status_code``), so result stores can keep the real code.
     """
+
+    status_code: int | None
+
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class BudgetExceededError(ValueError):
@@ -170,6 +179,21 @@ class FetchConfig:
         return f"{self.project_name}/0.1 (+mailto:{self.contact})"
 
 
+@dataclass(frozen=True)
+class FetchedPage:
+    """A polite GET outcome: the *url* fetched, its HTTP *status*, and *text*.
+
+    ``url`` is the URL actually fetched — the feed endpoint when
+    preflight's feed switch applied, the redirect target after a chain —
+    not necessarily the requested URL. A cache hit carries the status the
+    page was first fetched with.
+    """
+
+    url: str
+    status: int
+    text: str
+
+
 def _robots_parser(
     base_url: str, client: httpx.Client
 ) -> urllib.robotparser.RobotFileParser:
@@ -196,14 +220,16 @@ def _cache_path(url: str, cache_dir: Path) -> Path:
     return cache_dir / f"{digest}.json"
 
 
-def _write_cache(url: str, text: str, config: FetchConfig) -> None:
+def _write_cache(url: str, text: str, config: FetchConfig, status: int = 200) -> None:
     """Persist a GET body for *url*; best-effort (disk errors are ignored)."""
     try:
         config.cache_dir.mkdir(parents=True, exist_ok=True)
         cache_file = _cache_path(url, config.cache_dir)
         tmp = cache_file.with_suffix(".tmp")
         tmp.write_text(
-            json.dumps({"url": url, "fetched_at": time.time(), "text": text}),
+            json.dumps(
+                {"url": url, "status": status, "fetched_at": time.time(), "text": text}
+            ),
             encoding="utf-8",
         )
         tmp.replace(cache_file)
@@ -211,8 +237,8 @@ def _write_cache(url: str, text: str, config: FetchConfig) -> None:
         pass
 
 
-def _read_cache(url: str, config: FetchConfig) -> str | None:
-    """Fresh cached body for *url*, or None on miss/expiry/corruption."""
+def _read_cache(url: str, config: FetchConfig) -> FetchedPage | None:
+    """Fresh cached page for *url*, or None on miss/expiry/corruption."""
     cache_file = _cache_path(url, config.cache_dir)
     if not cache_file.exists():
         return None
@@ -228,7 +254,11 @@ def _read_cache(url: str, config: FetchConfig) -> str | None:
     if time.time() - stamp >= config.cache_ttl_seconds:
         return None
     cached = payload.get("text", "")
-    return cached if isinstance(cached, str) else None
+    if not isinstance(cached, str):
+        return None
+    status = payload.get("status", 200)
+    status_code = status if isinstance(status, int) else 200
+    return FetchedPage(url=url, status=status_code, text=cached)
 
 
 class PoliteFetcher:
@@ -294,7 +324,7 @@ class PoliteFetcher:
                 f"access denied by {origin!r} (HTTP {probe.status_code}): "
                 "use its API or ask permission"
             )
-            raise AccessDeniedError(msg)
+            raise AccessDeniedError(msg, status_code=probe.status_code)
         had_robots = origin in _ROBOTS_CACHE
         parser = _robots_parser(url, self._client)
         if not had_robots:
@@ -403,13 +433,17 @@ class PoliteFetcher:
                 return candidate
         return None
 
-    def fetch_text(self, url: str) -> str:
-        """GET *url* politely: preflight judgement, rate limit, cached GET.
+    def fetch(self, url: str) -> FetchedPage:
+        """GET *url* politely, reporting the HTTP status.
 
         Runs :meth:`preflight` first (feed/API discovery, robots.txt,
         access and budget checks), then rate-limits and serves from the
         on-disk cache when fresh. Every request counts toward the host
-        budget — including the preflight probes.
+        budget — including the preflight probes. Returns the *fetched*
+        URL (the feed endpoint when the feed switch applied, the redirect
+        target after a chain), the HTTP status, and the body — what the
+        scrape pipeline's result store needs. Errors raise exactly as
+        :meth:`fetch_text` does.
         """
         config = self.config
         judged = self.preflight(url)
@@ -426,9 +460,9 @@ class PoliteFetcher:
         if wait > 0:
             time.sleep(wait)
         _LAST_FETCH_AT[host] = time.monotonic()
-        cached_text = _read_cache(url, config)
-        if cached_text is not None:
-            return cached_text
+        cached_page = _read_cache(url, config)
+        if cached_page is not None:
+            return cached_page
         self._check_budget(host)
         response = self._client.get(url, timeout=config.timeout_seconds)
         _REQUEST_COUNTS[host] = _REQUEST_COUNTS.get(host, 0) + 1
@@ -437,11 +471,22 @@ class PoliteFetcher:
                 f"access denied by {url!r} (HTTP {response.status_code}): "
                 "use its API or ask permission"
             )
-            raise AccessDeniedError(msg)
+            raise AccessDeniedError(msg, status_code=response.status_code)
         response.raise_for_status()
         text = response.text
-        _write_cache(url, text, config)
-        return text
+        _write_cache(url, text, config, status=response.status_code)
+        return FetchedPage(url=url, status=response.status_code, text=text)
+
+    def fetch_text(self, url: str) -> str:
+        """GET *url* politely: preflight judgement, rate limit, cached GET.
+
+        Runs :meth:`preflight` first (feed/API discovery, robots.txt,
+        access and budget checks), then rate-limits and serves from the
+        on-disk cache when fresh. Every request counts toward the host
+        budget — including the preflight probes. Returns only the body;
+        use :meth:`fetch` when the HTTP status matters too.
+        """
+        return self.fetch(url).text
 
 
 def preflight(url: str, config: FetchConfig | None = None) -> Preflight:

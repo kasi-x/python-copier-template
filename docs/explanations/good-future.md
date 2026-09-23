@@ -27,6 +27,26 @@ violates the site's terms. Personal data follows the same bar as
 use-conditions and CARE governance notes where they apply. Caches,
 harvests, and credentials are git-ignored — commit code, never data.
 
+## The legal surface
+
+Two field rules name the law that the mechanical defaults sit inside. The
+**scraping-law** section (`domain-scraping-law`, on the `scraping_effective`
+gate) maps copyright and the EU database right (Directive 96/9/EC art. 7)
+against the contract question (ToS) and the unauthorized-access line
+(CFAA / 不正アクセス禁止法), with robots.txt as evidence of the operator's
+intent rather than an authorization — hiQ Labs v. LinkedIn (9th Cir. 2022)
+kept the contract claim alive while the CFAA reading narrowed. Its generated
+counterpart is **`LEGAL.md`**, the per-source pre-crawl checklist a scraping
+project ships. The **contest-rules** section (`domain-contest-rules`, on the
+`oj_code` judges) records that AI-use rules differ per judge and change
+(AtCoder bans generative AI during ABC/ARC/AGC except a whitelisted
+translation prompt), that the submission is the entrant's own responsibility,
+and that rating manipulation and multi-accounting are banned. Both are
+enforcement L0: they reach the reader through the generated `AGENTS.md`
+appendix, and the ethics-appendix predicate in
+`tests/test_render_invariants.py` holds them to the leaf classes that select
+them.
+
 ## How it is enforced
 
 | Charter rule | Mechanism | Runs in |

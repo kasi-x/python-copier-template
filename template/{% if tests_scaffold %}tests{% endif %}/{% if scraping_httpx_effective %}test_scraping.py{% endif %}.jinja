@@ -8,6 +8,7 @@ denials, per-host budgets, rate limiting, and disk caching.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 import httpx
@@ -25,8 +26,8 @@ from {{ package_name }}.fetcher import (
 )
 
 
-def _client(handler: object) -> httpx.Client:
-    transport = httpx.MockTransport(handler)  # type: ignore[arg-type]
+def _client(handler: Callable[[httpx.Request], httpx.Response]) -> httpx.Client:
+    transport = httpx.MockTransport(handler)
     return httpx.Client(transport=transport)
 
 
@@ -82,7 +83,9 @@ class _SiteShape:
     forbidden_paths: tuple[str, ...] = ()
 
 
-def _respond(shape: _SiteShape | None = None) -> object:
+def _respond(
+    shape: _SiteShape | None = None,
+) -> Callable[[httpx.Request], httpx.Response]:
     """Build a fake-origin handler with the requested shape (no network)."""
     shape = shape or _SiteShape()
 
@@ -265,3 +268,38 @@ def test_discovery_cached_per_origin(tmp_path: Path) -> None:
         assert feed_probes_second == [], (
             f"second preflight must not re-probe feeds: {feed_probes_second}"
         )
+
+
+def test_fetch_reports_status_and_fetched_url(tmp_path: Path) -> None:
+    """fetch() is fetch_text() plus the status and the fetched URL."""
+    config = FetchConfig(cache_dir=tmp_path / "cache", delay_seconds=0)
+    with PoliteFetcher(config, client=_client(_NO_FEED_SITE)) as fetcher_:
+        page = fetcher_.fetch("https://example.com/page")
+    assert page.status == 200
+    assert "hi" in page.text
+    assert page.url == "https://example.com/page"
+
+
+def test_fetch_follows_the_feed_switch(tmp_path: Path) -> None:
+    """A page with a feed is fetched as the feed, and says so in ``url``."""
+    config = FetchConfig(cache_dir=tmp_path / "cache", delay_seconds=0)
+    with PoliteFetcher(config, client=_client(_FEED_SITE)) as fetcher_:
+        page = fetcher_.fetch("https://example.com/blog/article-1")
+    assert page.url == "https://example.com/feed"
+    assert "<rss>" in page.text
+
+
+def test_fetch_cache_hit_keeps_the_original_status(tmp_path: Path) -> None:
+    """A cached 201 comes back as 201 — the cache stores the status too."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/created" and request.method != "HEAD":
+            return httpx.Response(201, text="made")
+        return _NO_FEED_SITE(request)
+
+    config = FetchConfig(cache_dir=tmp_path / "cache", delay_seconds=0)
+    with PoliteFetcher(config, client=_client(handler)) as fetcher_:
+        first = fetcher_.fetch("https://example.com/created")
+        second = fetcher_.fetch("https://example.com/created")
+    assert first.status == 201
+    assert second == first, "the cache hit replays the first fetch's record"

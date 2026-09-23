@@ -75,7 +75,7 @@ predicates:
   - id: docs-nav
     why: "every zensical.toml / mkdocs.yml nav target exists in the render"
   - id: ethics-appendix
-    why: "the AGENTS.md ethics appendix ships exactly the sections the render's project kind selects (license drift everywhere the guide ships; PQC on library/cli/web_api; AI-and-copyright on cli and the data-science layout; LLM/MCP security where mcp_effective holds; ML fairness on the data-science layout and kaggle), per _shared/ethics/REGISTRY.yml's active rows"
+    why: "the AGENTS.md ethics appendix ships exactly the sections the render's project kind selects (license drift everywhere the guide ships; PQC on library/cli/web_api; AI-and-copyright on cli and the data-science layout; LLM/MCP security where mcp_effective holds; ML fairness on the data-science layout and kaggle; the scraping-law map where scraping_effective holds; contest rules on the oj_code judges), per _shared/ethics/REGISTRY.yml's active rows"
 
 # Names the witness leaf space deliberately keeps out, one line of reason
 # each (TODO.md §23.4: "enumerated" and "excluded" are both numbers). A
@@ -345,10 +345,11 @@ leaf_classes:
     content:
       - [pyproject.toml, "dependencies = []"]
       - [AGENTS.md, "ライセンス変動"]
+      - [AGENTS.md, "コンテスト規約"]
     tier:
       name: fast
       why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj / codeforces / kattis / other are render-only"
-    why: "competitive-programming judges ship a bare workspace: no package and no challenges. The agent guide ships since 2026-09-21; its AI wording defers to the contest (oj_allow_ai picks the sentence where it was asked, the check-the-rules wording where it was not)"
+    why: "competitive-programming judges ship a bare workspace: no package and no challenges. The agent guide ships since 2026-09-21; its AI wording defers to the contest (oj_allow_ai picks the sentence where it was asked, the check-the-rules wording where it was not), and the contest-rules ethics section renders on this leaf (gated on oj_code)"
 
   # -- opt-in layers ------------------------------------------------------ #
   - id: include=include_data_science
@@ -390,12 +391,15 @@ leaf_classes:
       - src/smoke_example/fetcher.py
       - tests/test_scraping.py
       - CHARTER.md
+      - LEGAL.md
     absent: []
     predicates: []
+    content:
+      - [AGENTS.md, "スクレイピングの適法性"]
     tier:
       name: fast
       why: "the opt-in layers (ctf / data_science / scraping / web_api) are coverable by rendering: their artifacts are file-set invariants"
-    why: "the polite-fetching layer as a module plus its offline test and data-collection charter"
+    why: "the polite-fetching layer as a module plus its offline test, the data-collection charter, and the pre-crawl legal checklist (the scraping-law ethics section renders in AGENTS.md on this leaf, gated on scraping_effective)"
 
   - id: include=include_mcp
     # src/flat placements only: a web_api base carries the scaffold at the

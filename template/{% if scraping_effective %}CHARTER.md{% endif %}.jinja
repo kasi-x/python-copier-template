@@ -53,9 +53,23 @@ if you break one, the checks fail first.
   helpers (2captcha-style solvers, token injectors). If a site blocks bots,
   use its API or ask permission — bypassing bot protection violates the
   site's terms and likely the law (cf. CFAA / 不正アクセス禁止法).
+- **Database rights are separate from copyright.** Public availability is not
+  permission: a compiled catalogue, directory, or listing built with
+  substantial investment can be protected under its own right (EU Database
+  Directive 96/9/EC art. 7), and extracting or re-using a substantial part can
+  infringe even where the individual facts are not copyrightable. Keep to
+  facts and summaries; take the rights question to `LEGAL.md`.
+- **Jurisdiction is not one law.** The same crawl can be read by US access
+  rules (CFAA), EU database and data-protection rules, and Japan's copyright /
+  APPI at once. Do not let one jurisdiction's answer stand in for the others.
 - **Personal data stays personal.** Scraped data containing personal
   information is handled under the same bar as `data/DEIDENTIFICATION.md`:
   suppress identifiers, keep salts out of the repo, log transfers.
+
+Before the first crawl, work through [LEGAL.md](LEGAL.md): the per-source
+checklist (terms of service, robots.txt, access controls, personal data,
+database and copyright rights, jurisdiction) that records what this project
+enforces mechanically and what stays the operator's duty.
 
 ## 3. Respect the commons
 

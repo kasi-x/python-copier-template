@@ -697,6 +697,52 @@ ruff outside the fetcher, so every fetch stays polite. CAPTCHA-solving
 helpers are never generated — if a site blocks bots, use its API or ask
 permission.
 {% endif %}{% endif %}
+{% if not existing_project and oj_code %}
+## 🏆 Online-judge workflow
+
+The judge CLIs (`oj`, `acc`, `aoj`, the Kattis client) are **user-installed
+tools, not project dependencies** — the workspace is bare on purpose, so a
+recipe that reaches for a missing CLI prints an install hint (`pip install
+online-judge-tools`, `npm install -g atcoder-cli`,
+`go install github.com/YuminosukeSato/AOJ-cli/cmd/aojcli@latest`) and stops,
+instead of failing with a stack trace.
+
+Four task-runner recipes drive the daily loop
+(`new` → `dl` → edit `main.py` → `sample` → `submit`):
+
+| Recipe | What it does | Example |
+|--------|--------------|---------|
+| `new <path>` | Scaffold `<path>/main.py` + `<path>/test/` (`acc new <contest>` on AtCoder) | `just new abc086/a` |
+| `dl <url>` | Download the samples into `test/` | `just dl https://atcoder.jp/contests/abc086/tasks/abc086_a` |
+| `sample <dir>` | Run the judge's sample tests in `<dir>` | `just sample abc086/a` |
+| `submit <dir>` | Submit `main.py` from `<dir>` | `just submit abc086/a` |
+
+`sample` runs the judge's *sample* cases; the `test` task is the repo's own
+pytest suite (the workspace ships one smoke test, and CI runs it on every
+push). The same four recipes exist in every task runner:
+`task new -- abc086/a`, `make new DIR=abc086/a`,
+`invoke new abc086/a`, `duty new abc086/a`.
+
+What each judge's tooling can and cannot do from the terminal:
+
+| Judge | Tool | `new` | `dl` | `sample` | `submit` |
+|-------|------|-------|------|----------|----------|
+| AtCoder | [atcoder-cli](https://github.com/Tatamo/atcoder-cli) + [oj](https://github.com/online-judge-tools/oj) | `acc new` | `oj download` | `oj test` | `oj submit` |
+| yukicoder | [oj](https://github.com/online-judge-tools/oj) | scaffold | `oj download` | `oj test` | `oj submit` |
+| Codeforces | [oj](https://github.com/online-judge-tools/oj) | scaffold | `oj download` | `oj test` | `oj submit` where the service allows, else the browser |
+| AOJ | [aoj-cli](https://github.com/YuminosukeSato/AOJ-cli) | scaffold | `aoj init` | `aoj test` | `aoj submit` |
+| Kattis | [oj](https://github.com/online-judge-tools/oj) + the [Kattis client](https://github.com/Kattis/kattis-cli) | scaffold | `oj download` | `oj test` | `python3 submit.py` |
+| LeetCode | — | scaffold | none — copy the samples into `test/` by hand | none — the LeetCode editor is the judge | the browser editor |
+| other | [oj](https://github.com/online-judge-tools/oj) | scaffold | `oj download` | `oj test` | the judge's website / editor |
+
+`oj login <judge-url>` (or `aoj login`) once stores the session the submit
+step needs; Kattis's `submit.py` needs a personal `~/.kattisrc` (git-ignored).
+{% if oj_sample and is_github %}The optional `oj_sample` workflow
+(`.github/workflows/oj-sample.yml`) runs the judge CLI's own sample check on
+manual dispatch and a weekly schedule — it needs network and the judge's tool,
+so it stays out of `check` and the push CI.
+{% endif %}
+{% endif %}
 
 {% if docs %}
 > [!TIP]

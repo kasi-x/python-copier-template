@@ -19,6 +19,7 @@ per-off-type render sweeps (ctf / scraping / mcp x3 / agent-scaffold placement)
 were the L2 spelling of the L1 table and are gone (TODO archive T12)."""
 
 import json
+import re
 import sys
 import tempfile
 import tomllib
@@ -401,12 +402,23 @@ def test_template_include_ctf_runs(tmp_path: Path):
 
 def test_template_include_scraping_httpx(tmp_path: Path):
     """include_scraping layers the polite fetcher: CHARTER.md, fetcher.py,
-    its offline test, the httpx dep, ruff banned-api and gitignore guards."""
+    its offline test, the httpx dep, ruff banned-api and gitignore guards.
+    The httpx engine also renders the scrape mode — pipeline.py, storage.py,
+    their offline test and the `scrape` CLI subcommand — and a cli render
+    with scraping off ships none of it."""
     copy_project(tmp_path, project_type="cli", include_scraping=True)
     assert (tmp_path / "CHARTER.md").exists()
     pkg_dir = tmp_path / "src" / "python_copier_template_example"
     assert (pkg_dir / "fetcher.py").exists()
+    assert (pkg_dir / "pipeline.py").exists()
+    assert (pkg_dir / "storage.py").exists()
     assert (tmp_path / "tests" / "test_scraping.py").exists()
+    assert (tmp_path / "tests" / "test_pipeline.py").exists()
+    # The scrape subcommand is wired into the one CLI entry point.
+    main_file = (pkg_dir / "__main__.py").read_text()
+    assert 'add_subparsers(dest="command")' in main_file
+    assert '"scrape"' in main_file
+    assert "ScrapePipeline" in main_file
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("httpx") for d in pyproject_toml["project"]["dependencies"])
     ruff_lint = pyproject_toml["tool"]["ruff"]["lint"]
@@ -423,28 +435,61 @@ def test_template_include_scraping_httpx(tmp_path: Path):
     assert "banned-api" in agents
     readme = (tmp_path / "README.md").read_text()
     assert "CHARTER.md" in readme
+    # Off: a cli render without the layer ships no fetcher and no scrape mode.
+    off_path = tmp_path / "off"
+    copy_project(off_path, project_type="cli")
+    off_pkg = off_path / "src" / "python_copier_template_example"
+    assert not (off_pkg / "fetcher.py").exists()
+    assert not (off_pkg / "pipeline.py").exists()
+    assert not (off_pkg / "storage.py").exists()
+    assert not (off_path / "tests" / "test_scraping.py").exists()
+    assert not (off_path / "tests" / "test_pipeline.py").exists()
+    assert "scrape" not in (off_pkg / "__main__.py").read_text()
 
 
 @pytest.mark.heavy
 @pytest.mark.network
 def test_template_include_scraping_runs(tmp_path: Path):
-    """The generated fetcher must actually run: sync the project and execute
-    its offline test plus ruff on the fetcher."""
+    """The generated fetcher must actually run: sync the project, execute
+    its offline tests (fetcher politeness + pipeline/store), probe the
+    `scrape` CLI entry (help only — no network), and lint the layer."""
     copy_project(tmp_path, project_type="cli", include_scraping=True)
     run = make_venv(tmp_path)
-    run("uv run --locked pytest tests/test_scraping.py -q")
-    run("uv run --locked ruff check src tests/test_scraping.py")
+    run("uv run --locked pytest tests/test_scraping.py tests/test_pipeline.py -q")
+    run("uv run --locked python -m python_copier_template_example scrape --help")
+    run("uv run --locked ruff check src tests/test_scraping.py tests/test_pipeline.py")
 
 
 def test_template_scraping_engine_choices(tmp_path: Path):
-    """Each non-default engine ships its starter + test; `all` ships all."""
+    """Each engine ships its starter + test; `all` ships all; the scrape
+    mode (pipeline.py / storage.py / test_pipeline.py) rides the httpx
+    politeness core — so scrapy, the one httpx-free engine, has none of it."""
     cases = {
+        "httpx": (
+            ["fetcher.py", "pipeline.py", "storage.py"],
+            ["test_scraping.py", "test_pipeline.py"],
+            "httpx",
+        ),
         "scrapy": (["spider.py"], ["test_scrapy_spider.py"], "scrapy"),
-        "memorious": (["crawler.py"], ["test_memorious_crawler.py"], "memorious4"),
-        "playwright": (["browser_fetch.py"], ["test_browser_fetch.py"], "playwright"),
+        "memorious": (
+            ["fetcher.py", "pipeline.py", "storage.py", "crawler.py"],
+            ["test_scraping.py", "test_pipeline.py", "test_memorious_crawler.py"],
+            "memorious4",
+        ),
+        "playwright": (
+            ["fetcher.py", "pipeline.py", "storage.py", "browser_fetch.py"],
+            ["test_scraping.py", "test_pipeline.py", "test_browser_fetch.py"],
+            "playwright",
+        ),
         "all": (
-            ["fetcher.py", "spider.py", "crawler.py", "browser_fetch.py"],
-            ["test_scraping.py", "test_scrapy_spider.py", "test_memorious_crawler.py", "test_browser_fetch.py"],
+            ["fetcher.py", "pipeline.py", "storage.py", "spider.py", "crawler.py", "browser_fetch.py"],
+            [
+                "test_scraping.py",
+                "test_pipeline.py",
+                "test_scrapy_spider.py",
+                "test_memorious_crawler.py",
+                "test_browser_fetch.py",
+            ],
             "memorious4",
         ),
     }
@@ -464,6 +509,14 @@ def test_template_scraping_engine_choices(tmp_path: Path):
             assert (project_path / "tests" / test).exists(), f"{engine}: missing {test}"
         pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
         assert any(d.startswith(dep) for d in pyproject["project"]["dependencies"]), f"{engine}: missing {dep}"
+        if engine == "scrapy":
+            # scrapy is the one engine that does not reuse the httpx core,
+            # so it ships no fetcher and no scrape mode.
+            for module in ("fetcher.py", "pipeline.py", "storage.py"):
+                assert not (pkg_dir / module).exists(), f"{engine}: the scrape mode rides the httpx core"
+            assert not (project_path / "tests" / "test_pipeline.py").exists(), (
+                f"{engine}: the scrape mode rides the httpx core"
+            )
 
 
 def test_template_scraping_memorious_forces_agpl(tmp_path: Path):
@@ -510,6 +563,51 @@ def test_template_agent_scaffold(tmp_path: Path):
     assert "OPENAI_API_KEY" in env_example
 
 
+# -- the ethics/legal coverage of the scraping and contest layers ------------ #
+
+
+def test_template_scraping_legal_checklist(tmp_path: Path):
+    """include_scraping ships LEGAL.md (the per-source pre-crawl checklist)
+    and selects the scraping-law ethics section in AGENTS.md; a base without
+    the fetcher layer ships neither."""
+    scraping = tmp_path / "scraping"
+    copy_project(scraping, project_type="cli", include_scraping=True)
+    legal = (scraping / "LEGAL.md").read_text()
+    for needle in (
+        "Terms of service",
+        "robots.txt",
+        "Database and copyright rights",
+        "Jurisdiction",
+        "What this template already enforces",
+    ):
+        assert needle in legal, f"LEGAL.md lacks {needle!r}"
+    # the charter points at the checklist, so the two cannot drift apart
+    charter = (scraping / "CHARTER.md").read_text()
+    assert "[LEGAL.md](LEGAL.md)" in charter
+    agents = (scraping / "AGENTS.md").read_text()
+    assert "スクレイピングの適法性" in agents
+    assert "コンテスト規約" not in agents
+    # the layer (and its section) rides the cli base only
+    other = tmp_path / "library"
+    copy_project(other, project_type="library")
+    assert not (other / "LEGAL.md").exists()
+    assert "スクレイピングの適法性" not in (other / "AGENTS.md").read_text()
+
+
+def test_ethics_sections_follow_the_leaf_class(tmp_path: Path):
+    """The contest-rules section rides oj_code (the code-submission judges);
+    the kaggle workspace is an online_judge too, but not a contest whose AI
+    rules the section is about."""
+    atcoder = tmp_path / "atcoder"
+    copy_project(atcoder, project_type="online_judge", oj_category="competitive_coding", oj_kind="atcoder")
+    agents = (atcoder / "AGENTS.md").read_text()
+    assert "コンテスト規約" in agents
+    assert "スクレイピングの適法性" not in agents
+    kaggle = tmp_path / "kaggle"
+    copy_project(kaggle, project_type="online_judge", oj_category="data_science", oj_kind="kaggle")
+    assert "コンテスト規約" not in (kaggle / "AGENTS.md").read_text()
+
+
 def test_template_agent_cli_only(tmp_path: Path):
     # cli also offers the agent gate
     copy_project(tmp_path, project_type="cli", use_recommended_agent=False)
@@ -545,3 +643,94 @@ def test_combo_guards_reject_incompatible_bases(tmp_path: Path):
     assert not (tmp_path / "alembic").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert not any("fastapi" in d for d in pyproject_toml["project"]["dependencies"])
+
+
+# -- the online-judge task recipes (new / dl / sample / submit) -------------- #
+
+# The OJ daily-loop recipes are parameterized, so they cannot live in the
+# canonical task model: each of the five line-runners defines them natively,
+# gated on oj_code, from the shared _shared/oj-recipes.jinja partial.
+
+
+# The judge CLIs are user-installed, not project deps, so every recipe that
+# reaches for one carries an install hint. `sample` is the judge's *sample*
+# test on purpose: the canonical `test` task (pytest, CI-invoked) keeps its
+# name in every runner.
+OJ_RUNNER_FILES: dict[str, tuple[str, list[str]]] = {
+    "just": ("justfile", [r"(?m)^new path:", r"(?m)^dl url dir=", r"(?m)^sample dir:", r"(?m)^submit dir:"]),
+    "task": ("Taskfile.yml", [r"(?m)^  new:$", r"(?m)^  dl:$", r"(?m)^  sample:$", r"(?m)^  submit:$"]),
+    "make": ("Makefile", [r"(?m)^new:$", r"(?m)^dl:$", r"(?m)^sample:$", r"(?m)^submit:$"]),
+    "invoke": ("tasks.py", [r"(?m)^def new\(", r"(?m)^def dl\(", r"(?m)^def sample\(", r"(?m)^def submit\("]),
+    "duty": ("duties.py", [r"(?m)^def new\(", r"(?m)^def dl\(", r"(?m)^def sample\(", r"(?m)^def submit\("]),
+}
+
+
+@pytest.mark.parametrize("runner", OJ_RUNNER_FILES, ids=OJ_RUNNER_FILES)
+def test_template_online_judge_task_recipes_per_runner(tmp_path: Path, runner: str):
+    """An oj_code leaf renders the four OJ recipes (new/dl/sample/submit) in
+    every task runner, each a thin shell over the judge CLI with an install
+    hint for the missing tool."""
+    filename, patterns = OJ_RUNNER_FILES[runner]
+    project = tmp_path / runner
+    copy_project(
+        project,
+        project_type="online_judge",
+        oj_category="competitive_coding",
+        oj_kind="atcoder",
+        use_recommended_toolchain=False,
+        task_runner=runner,
+    )
+    text = (project / filename).read_text()
+    for pattern in patterns:
+        assert re.search(pattern, text), f"{runner}: missing recipe {pattern!r} in {filename}"
+    for marker in ("acc new", "oj download", "oj test -c", "oj submit main.py", "install it with"):
+        assert marker in text, f"{runner}: missing CLI marker {marker!r}"
+    # the canonical pytest `test` task must survive in every runner
+    assert re.search(r"(?m)^\s*(?:def )?test\b", text), f"{runner}: the canonical pytest `test` task must survive"
+    # the sample-test recipe must be named `sample`, not `test` (just refuses a duplicate recipe)
+    assert re.search(r"(?m)^\s*(?:def )?sample\b", text), f"{runner}: sample-test recipe must be named `sample`"
+
+
+def test_template_online_judge_task_recipes_absent_off_oj(tmp_path: Path):
+    """A non-OJ leaf (library) renders no OJ recipes and no judge CLI calls."""
+    project = tmp_path / "library"
+    copy_project(project, project_type="library")
+    text = (project / "Taskfile.yml").read_text()
+    assert "online-judge-tools" not in text
+    assert "acc new" not in text
+    assert "oj download" not in text
+    assert "oj test" not in text
+    for name in ("new", "dl", "sample", "submit"):
+        assert not re.search(rf"(?m)^\s*{name}:\s*$", text), f"non-OJ render must not define a {name!r} recipe"
+
+
+@pytest.mark.parametrize(
+    ("oj_kind", "markers", "absent"),
+    [
+        ("aoj", ["aoj init", "aoj test", "aoj submit main.py --lang Python3"], [r"(?m)^\s*oj \w"]),
+        ("kattis", ["submit.py", "oj download", "~/.kattisrc"], [r"(?m)^\s*oj submit"]),
+        ("leetcode", ["no sample-download CLI", "no submit CLI"], [r"(?m)^\s*oj ", r"\bacc new\b"]),
+        ("yukicoder", ["oj download", "oj test -c", "oj submit main.py"], []),
+        ("codeforces", ["oj download", "oj test -c", "oj submit main.py"], []),
+        ("other", ["oj download", "oj test -c"], [r"(?m)^\s*oj submit"]),
+    ],
+    ids=["aoj", "kattis", "leetcode", "yukicoder", "codeforces", "other"],
+)
+def test_template_online_judge_task_recipes_follow_oj_kind(tmp_path: Path, oj_kind: str, markers: list[str], absent: list[str]):
+    """The recipes branch on oj_kind: aoj delegates to aoj-cli, kattis to the
+    submit client, leetcode prints the no-CLI note, and the oj-based judges
+    call online-judge-tools."""
+    project = tmp_path / oj_kind
+    copy_project(
+        project,
+        project_type="online_judge",
+        oj_category="competitive_coding",
+        oj_kind=oj_kind,
+        use_recommended_toolchain=False,
+        task_runner="just",
+    )
+    text = (project / "justfile").read_text()
+    for marker in markers:
+        assert marker in text, f"{oj_kind}: missing {marker!r}"
+    for pattern in absent:
+        assert not re.search(pattern, text), f"{oj_kind}: unexpected line matching {pattern!r}"

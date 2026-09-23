@@ -759,6 +759,18 @@ def _kaggle_trait(answers: dict[str, object]) -> bool:
     return answers.get("project_type") == "online_judge" and answers.get("oj_kind") == "kaggle"
 
 
+# questions/online_judge.yml's `oj_code` choice list, spelled once here: the
+# code-submission judges, with the kaggle workspace and the ctf challenges
+# deliberately outside it (they are judges too, but neither is a contest whose
+# AI rules the guide is about).
+_OJ_CODE_KINDS = frozenset({"atcoder", "leetcode", "yukicoder", "aoj", "codeforces", "kattis", "other"})
+
+
+def _oj_code_trait(answers: dict[str, object]) -> bool:
+    """questions/online_judge.yml's `oj_code`: online_judge with a code-submission judge."""
+    return answers.get("project_type") == "online_judge" and answers.get("oj_kind") in _OJ_CODE_KINDS
+
+
 # The cryptographically-interesting guides: the two code-producing bases plus
 # whatever opted into the web_api scaffold (the layer is what matters, not the
 # base word).
@@ -770,6 +782,11 @@ def _crypto_trait(answers: dict[str, object]) -> bool:
 def _copyright_trait(answers: dict[str, object]) -> bool:
     """The AI-and-copyright audience: cli, or the data-science layout."""
     return answers.get("project_type") == "cli" or _data_science_layout_trait(answers)
+
+
+def _scraping_trait(answers: dict[str, object]) -> bool:
+    """questions/_internal.yml's `scraping_effective`: the polite fetcher rides the cli base."""
+    return bool(answers.get("include_scraping", False)) and answers.get("project_type") == "cli"
 
 
 def _pki_trait(answers: dict[str, object]) -> bool:
@@ -863,6 +880,8 @@ ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
     "face-recognition": ("顔認識", _domain_trait("face-recognition")),
     "samd-regulatory": ("医療SaMD", _domain_trait("medtech")),
     "cra-obligations": ("EU CRA", _commercial_selector),
+    "scraping-law": ("スクレイピングの適法性", _scraping_trait),
+    "contest-rules": ("コンテスト規約", _oj_code_trait),
 }
 
 

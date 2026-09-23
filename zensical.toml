@@ -40,6 +40,7 @@ nav = [
       { "MCP Server" = "how-to/mcp.md" },
       { "Chat Bots" = "how-to/bot.md" },
       { "Web Fetching" = "how-to/scraping.md" },
+      { "Online Judge" = "how-to/online-judge.md" },
       { "Quarto Paper" = "how-to/quarto-paper.md" },
       { "Ethics Sections" = "how-to/ethics-section.md" },
       { "Inspect a Target Before Adopting" = "how-to/detect.md" },

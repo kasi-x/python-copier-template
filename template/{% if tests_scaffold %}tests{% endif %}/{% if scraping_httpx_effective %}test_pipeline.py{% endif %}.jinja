@@ -1,0 +1,177 @@
+"""The scrape pipeline and its JSONL store, offline.
+
+The pipeline is driven by a *mocked* fetcher — no network, no httpx
+transport — so these tests prove the orchestration: one record per URL,
+shaped ``(url, status, text, fetched_at)``; denied and errored pages are
+recorded instead of aborting the crawl; a host-budget exhaustion stops it.
+The politeness itself (robots, rate limit, cache) stays proven by
+``tests/test_scraping.py`` against a fake transport.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+from {{ package_name }} import fetcher
+from {{ package_name }}.fetcher import BudgetExceededError
+from {{ package_name }}.pipeline import ScrapePipeline
+from {{ package_name }}.storage import ResultStore
+from {{ package_name }}.storage import ScrapeResult
+
+
+class _MockFetcher:
+    """Stand-in for the polite fetcher: canned pages, canned errors."""
+
+    pages: dict[str, fetcher.FetchedPage]
+    errors: dict[str, BaseException]
+    calls: list[str]
+
+    def __init__(
+        self,
+        pages: dict[str, fetcher.FetchedPage] | None = None,
+        errors: dict[str, BaseException] | None = None,
+    ) -> None:
+        self.pages = dict(pages or {})
+        self.errors = dict(errors or {})
+        self.calls = []
+
+    def fetch(self, url: str) -> fetcher.FetchedPage:
+        """Return the canned page for *url*, or raise its canned error."""
+        self.calls.append(url)
+        error = self.errors.get(url)
+        if error is not None:
+            raise error
+        return self.pages[url]
+
+    def close(self) -> None:
+        """The mock owns no HTTP client."""
+
+
+def _page(url: str, status: int = 200, text: str = "body") -> fetcher.FetchedPage:
+    """A canned fetched page for the mock fetcher."""
+    return fetcher.FetchedPage(url=url, status=status, text=text)
+
+
+def _result(
+    url: str, status: int = 200, text: str = "body", at: float = 1.0
+) -> ScrapeResult:
+    """A canned store record to compare against."""
+    return ScrapeResult(url=url, status=status, text=text, fetched_at=at)
+
+
+def test_result_store_round_trip(tmp_path: Path) -> None:
+    """append() then iter() returns the same records, in append order."""
+    store = ResultStore(tmp_path / "scraped")
+    first = _result("https://example.com/a", text="<html>one</html>")
+    second = _result("https://example.com/b", status=404, text="not found", at=2.0)
+    store.append(first)
+    store.append(second)
+    assert list(store.iter()) == [first, second]
+    lines = (
+        (tmp_path / "scraped" / "results.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    )
+    assert len(lines) == 2, "one JSON object per line, no rewriting"
+
+
+def test_result_store_default_sink_is_under_the_ignored_cache(tmp_path: Path) -> None:
+    """The default sink is .cache/scraped/results.jsonl (git-ignored)."""
+    assert ResultStore().path == Path(".cache/scraped/results.jsonl")
+    assert list(ResultStore(tmp_path / "missing").iter()) == []
+
+
+def test_result_store_skips_a_torn_trailing_line(tmp_path: Path) -> None:
+    """A crash mid-write can only tear the last line; iter() skips it."""
+    store = ResultStore(tmp_path / "scraped")
+    keep = _result("https://example.com/a")
+    store.append(keep)
+    torn = store.path.read_text(encoding="utf-8") + '{"url": "torn"\n'
+    store.path.write_text(torn, encoding="utf-8")
+    assert list(store.iter()) == [keep]
+
+
+def test_result_store_refuses_a_corrupt_interior_line(tmp_path: Path) -> None:
+    """Corruption before the last line is data loss, not a torn write: raise."""
+    store = ResultStore(tmp_path / "scraped")
+    store.append(_result("https://example.com/a"))
+    corrupt = '{"url": "bad"\n' + store.path.read_text(encoding="utf-8")
+    store.path.write_text(corrupt, encoding="utf-8")
+    with pytest.raises(ValueError, match="corrupt result line 1"):
+        list(store.iter())
+
+
+def test_pipeline_fetches_and_stores_every_url(tmp_path: Path) -> None:
+    """Each URL yields one stored record, in input order, with its status."""
+    store = ResultStore(tmp_path / "scraped")
+    mock = _MockFetcher(
+        pages={
+            "https://example.com/a": _page("https://example.com/a"),
+            "https://example.com/b": _page(
+                "https://example.com/b", status=404, text="missing"
+            ),
+        }
+    )
+    pipeline = ScrapePipeline(fetcher=mock, store=store)
+    results = list(pipeline.run(["https://example.com/a", "https://example.com/b"]))
+    assert mock.calls == ["https://example.com/a", "https://example.com/b"]
+    assert [result.url for result in results] == [
+        "https://example.com/a",
+        "https://example.com/b",
+    ]
+    assert [result.status for result in results] == [200, 404]
+    assert [result.text for result in results] == ["body", "missing"]
+    assert list(store.iter()) == results, "what run() yields is what the store holds"
+
+
+def test_pipeline_records_a_denied_page_and_continues(tmp_path: Path) -> None:
+    """A robots denial on one page is a record, not a crash: the next proceeds."""
+    store = ResultStore(tmp_path / "scraped")
+    denied = "https://example.com/private"
+    mock = _MockFetcher(
+        pages={"https://example.com/ok": _page("https://example.com/ok")},
+        errors={denied: fetcher.RobotDeniedError("robots.txt disallows fetching")},
+    )
+    pipeline = ScrapePipeline(fetcher=mock, store=store)
+    first, second = list(pipeline.run([denied, "https://example.com/ok"]))
+    assert first.url == denied
+    assert first.status == 0, "no HTTP response was received"
+    assert "robots.txt disallows" in first.text
+    assert second.status == 200
+    assert len(list(store.iter())) == 2
+
+
+def test_pipeline_keeps_the_access_denial_status(tmp_path: Path) -> None:
+    """A 403 the site returned stays a 403 in the stored record."""
+    store = ResultStore(tmp_path / "scraped")
+    url = "https://example.com/private"
+    mock = _MockFetcher(
+        errors={url: fetcher.AccessDeniedError("access denied", status_code=403)}
+    )
+    pipeline = ScrapePipeline(fetcher=mock, store=store)
+    (record,) = list(pipeline.run([url]))
+    assert record.status == 403
+
+
+def test_pipeline_stops_when_the_host_budget_is_exhausted(tmp_path: Path) -> None:
+    """BudgetExceededError is the one global stop: it propagates, unfetched."""
+    store = ResultStore(tmp_path / "scraped")
+    mock = _MockFetcher(
+        pages={"https://example.com/a": _page("https://example.com/a")},
+        errors={"https://example.com/b": BudgetExceededError("host budget exhausted")},
+    )
+    pipeline = ScrapePipeline(fetcher=mock, store=store)
+    with pytest.raises(BudgetExceededError):
+        list(
+            pipeline.run(
+                [
+                    "https://example.com/a",
+                    "https://example.com/b",
+                    "https://example.com/c",
+                ]
+            )
+        )
+    assert "https://example.com/c" not in mock.calls
+    assert [record.url for record in store.iter()] == ["https://example.com/a"]

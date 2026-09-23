@@ -27,6 +27,7 @@ Practical step-by-step guides for the more experienced user.
 - [Chat Bot Scaffolding (Discord / Slack / LINE / Gmail)](how-to/bot.md)
 - [Ethics and Regional Rule Sections](how-to/ethics-section.md)
 - [Polite Web Fetching](how-to/scraping.md)
+- [Online-Judge Workspaces](how-to/online-judge.md)
 - [The Quarto Paper and Slides](how-to/quarto-paper.md)
 - [Code Coverage](how-to/coverage.md)
 - [Check Docs Style](how-to/check-docs-style.md)

@@ -1,0 +1,71 @@
+# Pre-crawl legal checklist — {{ repo_name }}
+
+Work through this list for **each source** before you point
+`{{ pkg_dir }}/fetcher.py` (or the engine starter: `spider.py` /
+`crawler.py` / `browser_fetch.py`) at it. Record the answer with a date, next
+to the source in your fetcher config: an audit trail you can show is what makes
+"we checked" a fact instead of a claim. The mechanical half of polite fetching
+is enforced by this project's toolchain; the legal half below is yours.
+
+## Before the first request
+
+- [ ] **Terms of service.** Read the current ToS of the site you are fetching.
+      Does it allow automated access, and under what conditions (rate,
+      attribution, no re-publication, account access)? If it forbids scraping,
+      stop: prefer an official API, ask for permission, or choose another
+      source. Public availability is not permission.
+- [ ] **robots.txt.** Fetch `/robots.txt` and check the path for your
+      User-Agent. A `Disallow` is a refusal: do not work around it. Note the
+      date you read it — robots.txt changes.
+- [ ] **Access controls.** Is the data behind a login, a paywall, an
+      anti-bot challenge, or an IP ban? Do not bypass any of them (no
+      credential sharing, no CAPTCHA solving, no rotating around a block).
+      Bypassing an access control is where scraping becomes unauthorized
+      access (CFAA / 不正アクセス禁止法), a different and criminal question.
+- [ ] **Personal data.** Does the data identify people (names, handles,
+      emails, IPs, locations, images, user-generated content)? If yes, you
+      need a lawful basis, a stated purpose, a retention limit, and a
+      deletion path before the first request. See `AGENTS.md`'s privacy
+      section and `data/DEIDENTIFICATION.md` where it applies.
+- [ ] **Database and copyright rights.** Is the target a compiled database
+      (catalogue, directory, listings, prices, schedules) built with
+      substantial investment? EU database right (Directive 96/9/EC art. 7)
+      can forbid extracting or re-using a substantial part even when the
+      individual facts are not copyrightable. Are you going to re-publish the
+      text or images? That is copyright territory: check the licence, or keep
+      to facts and summaries.
+- [ ] **Jurisdiction.** Where is the site operated, where are you, and where
+      will the data go? The answer is not one law: US access rules, EU
+      database and data-protection rules, and Japanese copyright/APPI rules
+      can all apply to the same crawl. Record which plausibly applies.
+- [ ] **Where will the data go?** If it leaves the process (a database, an
+      index, a model, a third-party service, a published dataset), that
+      transfer is part of the check, not an implementation detail.
+
+## What this template already enforces (the mechanical half)
+
+| Guarantee | Where it lives |
+|---|---|
+| robots.txt is checked before the first byte | `{{ pkg_dir }}/fetcher.py` (`preflight()` / `PoliteFetcher`) |
+| feed first, API second, page last | `Preflight.should_use_feed` / `.should_use_api` |
+| one request per second per host | `delay_seconds`, enforced by sleep |
+| a per-host session budget (default 100) | `max_requests_per_host` → `BudgetExceededError` |
+| GET responses cached on disk | `.cache/fetcher/` (git-ignored) |
+| a contactable User-Agent | `FETCHER_CONTACT` — replace the placeholder |
+| no direct HTTP calls outside the fetcher | ruff `banned-api` |
+| no CAPTCHA-solving helpers, ever | not generated, for any engine |
+
+## What stays with you (the operator)
+
+- Confirming the legal basis for **this** source, under the rules that apply
+  to you — the template cannot read a site's ToS or your jurisdiction.
+- Deciding what you may **keep** and what you may **re-publish** (facts vs
+  expression vs a substantial part of a database).
+- Answering data-subject requests (access, correction, deletion) for any
+  personal data you collected, and keeping the record that you did.
+- Re-checking the checklist when a site changes its terms or robots.txt —
+  a check is a snapshot, not a licence.
+
+This page is a working checklist, not legal advice. Where the stakes are real
+(commercial use, personal data at scale, a site that has said no), have the
+answer reviewed before the crawl, not after.

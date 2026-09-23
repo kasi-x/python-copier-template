@@ -1,2 +1,7 @@
 {% import "_tasks.jinja" as _t with context %}
+{% import "_shared/oj-recipes.jinja" as _oj with context -%}
 {{ _t.makefile() -}}
+{% if oj_code %}
+
+{{ _oj.makefile_oj() }}
+{% endif -%}

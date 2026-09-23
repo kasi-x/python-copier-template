@@ -1,0 +1,375 @@
+{# Online-judge task recipes (the `oj_code` workspaces).
+
+   The daily loop is `new` (create a problem dir) -> `dl` (download samples)
+   -> edit main.py -> `sample` (run the judge's sample tests) -> `submit`.
+   The judge CLIs (oj / atcoder-cli / aoj-cli / the Kattis client) are user
+   installed, NOT project dependencies -- the OJ workspace deliberately has no
+   package -- so every recipe that reaches for one first fails with an install
+   hint instead of a bare "command not found".
+
+   Why this is a partial and not `_tasks.jinja` entries: the canonical task
+   model is parameterless, while these recipes take a problem path / URL, and
+   each runner spells parameters its own way (`just new abc086/a`,
+   `task new -- abc086/a`, `make new DIR=abc086/a`, `invoke new abc086/a`,
+   `duty new abc086/a`). The four names are mirrored across the five
+   line-runners; each action's body is defined once here.
+
+   `sample` is deliberately NOT called `test`: the canonical model already
+   ships a `test` task (the pytest suite, which the generated CI invokes on
+   every runner) and `just` refuses a recipe redefinition. "Sample" also says
+   what it does -- run the judge's sample cases, not the unit tests.
+
+   The shell bodies carry no `$` of their own: the only shell variables are
+   the per-runner refs passed in (just/task use shell refs like "$1", make
+   uses `$(DIR)`, whose `$` make would otherwise expand). Kattis's
+   submit-client path therefore arrives as a `submit_ref` computed before the
+   `cd` (an absolute shell/make path), not as `$(pwd)` after it.
+
+   `oj_code` is checked at each call site (the runner templates), so a non-OJ
+   render stays byte-identical. The guards keep their echo messages in single
+   quotes and free of apostrophes so the Python runners can embed them in
+   double-quoted string literals without escaping. #}
+{% set OJ_GUARD_OJ = "command -v oj >/dev/null 2>&1 || { echo 'online-judge-tools (oj) is not installed; install it with: pip install online-judge-tools (or: uv tool install online-judge-tools)' >&2; exit 1; }" %}
+{% set OJ_GUARD_ACC = "command -v acc >/dev/null 2>&1 || { echo 'atcoder-cli (acc) is not installed; install it with: npm install -g atcoder-cli' >&2; exit 1; }" %}
+{% set OJ_GUARD_AOJ = "command -v aoj >/dev/null 2>&1 || { echo 'aoj-cli (aoj) is not installed; install it with: go install github.com/YuminosukeSato/AOJ-cli/cmd/aojcli@latest' >&2; exit 1; }" %}
+{% set OJ_NO_SAMPLES = "echo 'LeetCode has no sample-download CLI; copy the samples into test/ by hand, then paste the solution into the LeetCode editor.'" %}
+{% set OJ_NO_SUBMIT = "echo 'LeetCode has no submit CLI; submit the solution in the problem editor in the browser.'" %}
+{% set OJ_OTHER_SUBMIT = "echo 'No CLI submit for this judge; submit through the website or the judge editor.'" %}
+{% set OJ_STARTER = "printf '%s\\n' 'import sys' '' 'data = sys.stdin.read()' 'print(data)'" %}
+{# Just/Go-template double-brace expressions are OTHER tools' syntax, not
+   Jinja's. They are emitted for the generated file, but a literal double
+   brace inside a Jinja expression also starts a (mis-paired) tag for the
+   repo's identifier scanner, so the delimiters are assembled from single
+   braces (JB/JE below). #}
+{% set JB = '{' ~ '{' %}
+{% set JE = '}' ~ '}' %}
+
+{% macro sh_new(ref) -%}
+{%- if oj_kind == 'atcoder' -%}
+{{ OJ_GUARD_ACC }}
+acc new {{ ref }}
+{%- else -%}
+mkdir -p {{ ref }}/test
+[ -f {{ ref }}/main.py ] || {{ OJ_STARTER }} > {{ ref }}/main.py
+{%- endif -%}
+{%- endmacro %}
+
+{% macro sh_dl(dir_ref, url_ref) -%}
+{%- if oj_kind == 'aoj' -%}
+{{ OJ_GUARD_AOJ }}
+aoj init {{ url_ref }}
+{%- elif oj_kind == 'leetcode' -%}
+{{ OJ_NO_SAMPLES }}
+{%- else -%}
+{{ OJ_GUARD_OJ }}
+cd {{ dir_ref }}
+oj download {{ url_ref }}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro sh_sample(dir_ref) -%}
+{%- if oj_kind == 'aoj' -%}
+{{ OJ_GUARD_AOJ }}
+cd {{ dir_ref }}
+aoj test main.py
+{%- elif oj_kind == 'leetcode' -%}
+{{ OJ_NO_SAMPLES }}
+{%- else -%}
+{{ OJ_GUARD_OJ }}
+cd {{ dir_ref }}
+oj test -c "python3 main.py"
+{%- endif -%}
+{%- endmacro %}
+
+{% macro sh_submit(dir_ref, submit_ref) -%}
+{%- if oj_kind == 'aoj' -%}
+{{ OJ_GUARD_AOJ }}
+cd {{ dir_ref }}
+aoj submit main.py --lang Python3
+{%- elif oj_kind == 'kattis' -%}
+[ -f {{ submit_ref }} ] || { echo 'Kattis submit client not found; download submit.py from https://github.com/Kattis/kattis-cli and set up ~/.kattisrc' >&2; exit 1; }
+cd {{ dir_ref }}
+python3 {{ submit_ref }} main.py
+{%- elif oj_kind == 'leetcode' -%}
+{{ OJ_NO_SUBMIT }}
+{%- elif oj_kind == 'other' -%}
+{{ OJ_OTHER_SUBMIT }}
+{%- else -%}
+{{ OJ_GUARD_OJ }}
+cd {{ dir_ref }}
+oj submit main.py
+{%- endif -%}
+{%- endmacro %}
+
+{# ---------------------------------------------------------------------------
+   just ---------------------------------------------------------------------- #}
+{% macro justfile_oj() %}
+# Online-judge daily loop (create: just new <path>)
+new path:
+    #!/usr/bin/env bash
+    set -eu
+{{ ('    ' ~ (sh_new('"' ~ JB ~ 'path' ~ JE ~ '"') | replace('\n', '\n    '))) }}
+
+# Download the samples for a problem (just dl <url> [<dir>])
+dl url dir=".":
+    #!/usr/bin/env bash
+    set -eu
+{{ ('    ' ~ (sh_dl('"' ~ JB ~ 'dir' ~ JE ~ '"', '"' ~ JB ~ 'url' ~ JE ~ '"') | replace('\n', '\n    '))) }}
+
+# Run the judge's sample tests in a problem dir (just sample <dir>)
+sample dir:
+    #!/usr/bin/env bash
+    set -eu
+{{ ('    ' ~ (sh_sample('"' ~ JB ~ 'dir' ~ JE ~ '"') | replace('\n', '\n    '))) }}
+
+# Submit the solution in a problem dir (just submit <dir>)
+submit dir:
+    #!/usr/bin/env bash
+    set -eu
+{{ ('    ' ~ (sh_submit('"' ~ JB ~ 'dir' ~ JE ~ '"', '"$PWD/submit.py"') | replace('\n', '\n    '))) }}
+{%- endmacro %}
+
+{# ---------------------------------------------------------------------------
+   Task (go-task); arguments after `--` arrive in CLI_ARGS ---------------- #}
+{% macro taskfile_oj() %}
+  new:
+    desc: "Create a problem workspace (<path>/main.py + <path>/test/)"
+    cmds:
+      - |
+        set -eu
+        set -- {% raw %}{{.CLI_ARGS}}{% endraw %}
+        [ -n "${1:-}" ] || { echo "usage: task new -- <path>" >&2; exit 1; }
+{{ ('        ' ~ (sh_new('"$1"') | replace('\n', '\n        '))) }}
+  dl:
+    desc: "Download the samples for a problem (<url>, optionally into <dir>)"
+    cmds:
+      - |
+        set -eu
+        set -- {% raw %}{{.CLI_ARGS}}{% endraw %}
+        [ -n "${1:-}" ] || { echo "usage: task dl -- <problem-url> [<dir>]" >&2; exit 1; }
+        dir="${2:-.}"
+{{ ('        ' ~ (sh_dl('"$dir"', '"$1"') | replace('\n', '\n        '))) }}
+  sample:
+    desc: "Run the judge's sample tests in a problem dir"
+    cmds:
+      - |
+        set -eu
+        set -- {% raw %}{{.CLI_ARGS}}{% endraw %}
+        [ -n "${1:-}" ] || { echo "usage: task sample -- <problem-dir>" >&2; exit 1; }
+{{ ('        ' ~ (sh_sample('"$1"') | replace('\n', '\n        '))) }}
+  submit:
+    desc: "Submit the solution in a problem dir"
+    cmds:
+      - |
+        set -eu
+        set -- {% raw %}{{.CLI_ARGS}}{% endraw %}
+        [ -n "${1:-}" ] || { echo "usage: task submit -- <problem-dir>" >&2; exit 1; }
+{{ ('        ' ~ (sh_submit('"$1"', '"$PWD/submit.py"') | replace('\n', '\n        '))) }}
+{%- endmacro %}
+
+{# ---------------------------------------------------------------------------
+   make (GNU Make); bodies are tab-indented, arguments are make variables ---- #}
+{% macro makefile_oj() %}
+.PHONY: new dl sample submit
+
+# Online-judge daily loop (create: make new DIR=<path>)
+new:
+	@set -e; [ -n "$(DIR)" ] || { echo "usage: make new DIR=<path>" >&2; exit 1; }; \
+{{ ('\t' ~ (sh_new('"$(DIR)"') | replace('\n', '; \\\n\t'))) }}
+
+# Download the samples for a problem (make dl URL=<problem-url> [DIR=<dir>])
+dl:
+	@set -e; [ -n "$(URL)" ] || { echo "usage: make dl URL=<problem-url> [DIR=<dir>]" >&2; exit 1; }; \
+{{ ('\t' ~ (sh_dl('"$(if $(DIR),$(DIR),.)"', '"$(URL)"') | replace('\n', '; \\\n\t'))) }}
+
+# Run the judge's sample tests in a problem dir (make sample DIR=<problem-dir>)
+sample:
+	@set -e; [ -n "$(DIR)" ] || { echo "usage: make sample DIR=<problem-dir>" >&2; exit 1; }; \
+{{ ('\t' ~ (sh_sample('"$(DIR)"') | replace('\n', '; \\\n\t'))) }}
+
+# Submit the solution in a problem dir (make submit DIR=<problem-dir>)
+submit:
+	@set -e; [ -n "$(DIR)" ] || { echo "usage: make submit DIR=<problem-dir>" >&2; exit 1; }; \
+{{ ('\t' ~ (sh_submit('"$(DIR)"', '"$(CURDIR)/submit.py"') | replace('\n', '; \\\n\t'))) }}
+{%- endmacro %}
+
+{# ---------------------------------------------------------------------------
+   invoke -------------------------------------------------------------------- #}
+{% macro invoke_oj() -%}
+{% if oj_kind != 'atcoder' %}
+
+_OJ_STARTER = """import sys
+
+data = sys.stdin.read()
+print(data)
+"""
+{% endif %}
+
+@task
+def new(c: Context, path: str) -> None:
+    """Create a problem workspace (<path>/main.py + <path>/test/)."""
+{%- if oj_kind == 'atcoder' %}
+    guard = "{{ OJ_GUARD_ACC }}"
+    c.run(guard)
+    c.run("acc new " + shlex.quote(path))
+{%- else %}
+    c.run("mkdir -p " + shlex.quote(path + "/test"))
+    main = pathlib.Path(path) / "main.py"
+    if not main.exists():
+        main.write_text(_OJ_STARTER)
+{%- endif %}
+
+
+@task
+def dl(c: Context, url: str, dir: str = ".") -> None:
+    """Download the samples for a problem (<url>, optionally into <dir>)."""
+{%- if oj_kind == 'aoj' %}
+    guard = "{{ OJ_GUARD_AOJ }}"
+    c.run(guard)
+    c.run("aoj init " + shlex.quote(url))
+{%- elif oj_kind == 'leetcode' %}
+    note = "{{ OJ_NO_SAMPLES }}"
+    c.run(note)
+{%- else %}
+    guard = "{{ OJ_GUARD_OJ }}"
+    c.run(guard)
+    with c.cd(dir):
+        c.run("oj download " + shlex.quote(url))
+{%- endif %}
+
+
+@task
+def sample(c: Context, dir: str) -> None:
+    """Run the judge's sample tests in a problem dir."""
+{%- if oj_kind == 'aoj' %}
+    guard = "{{ OJ_GUARD_AOJ }}"
+    c.run(guard)
+    with c.cd(dir):
+        c.run("aoj test main.py")
+{%- elif oj_kind == 'leetcode' %}
+    note = "{{ OJ_NO_SAMPLES }}"
+    c.run(note)
+{%- else %}
+    guard = "{{ OJ_GUARD_OJ }}"
+    c.run(guard)
+    with c.cd(dir):
+        c.run('oj test -c "python3 main.py"')
+{%- endif %}
+
+
+@task
+def submit(c: Context, dir: str) -> None:
+    """Submit the solution in a problem dir."""
+{%- if oj_kind == 'aoj' %}
+    guard = "{{ OJ_GUARD_AOJ }}"
+    c.run(guard)
+    with c.cd(dir):
+        c.run("aoj submit main.py --lang Python3")
+{%- elif oj_kind == 'kattis' %}
+    client = pathlib.Path(__file__).resolve().parent / "submit.py"
+    if not client.is_file():
+        missing_client = "Kattis submit client not found; download submit.py from https://github.com/Kattis/kattis-cli and set up ~/.kattisrc"
+        raise SystemExit(missing_client)
+    with c.cd(dir):
+        c.run("python3 " + shlex.quote(str(client)) + " main.py")
+{%- elif oj_kind == 'leetcode' %}
+    note = "{{ OJ_NO_SUBMIT }}"
+    c.run(note)
+{%- elif oj_kind == 'other' %}
+    note = "{{ OJ_OTHER_SUBMIT }}"
+    c.run(note)
+{%- else %}
+    guard = "{{ OJ_GUARD_OJ }}"
+    c.run(guard)
+    with c.cd(dir):
+        c.run("oj submit main.py")
+{%- endif %}
+{%- endmacro %}
+
+{# ---------------------------------------------------------------------------
+   duty ---------------------------------------------------------------------- #}
+{% macro duty_oj() -%}
+{% if oj_kind != 'atcoder' %}
+
+_OJ_STARTER = """import sys
+
+data = sys.stdin.read()
+print(data)
+"""
+{% endif %}
+
+@duty
+def new(ctx: Context, path: str) -> None:
+    """Create a problem workspace (<path>/main.py + <path>/test/)."""
+{%- if oj_kind == 'atcoder' %}
+    guard = "{{ OJ_GUARD_ACC }}"
+    ctx.run(guard, title="Check atcoder-cli")
+    ctx.run("acc new " + shlex.quote(path), title="Create the contest workspace")
+{%- else %}
+    ctx.run("mkdir -p " + shlex.quote(path + "/test"), title="Create the workspace")
+    main = pathlib.Path(path) / "main.py"
+    if not main.exists():
+        main.write_text(_OJ_STARTER)
+{%- endif %}
+
+
+@duty
+def dl(ctx: Context, url: str, dir: str = ".") -> None:
+    """Download the samples for a problem (<url>, optionally into <dir>)."""
+{%- if oj_kind == 'aoj' %}
+    guard = "{{ OJ_GUARD_AOJ }}"
+    ctx.run(guard, title="Check aoj-cli")
+    ctx.run("aoj init " + shlex.quote(url), title="Create the workspace")
+{%- elif oj_kind == 'leetcode' %}
+    note = "{{ OJ_NO_SAMPLES }}"
+    ctx.run(note, title="Download samples")
+{%- else %}
+    guard = "{{ OJ_GUARD_OJ }}"
+    ctx.run(guard, title="Check online-judge-tools")
+    ctx.run("oj download " + shlex.quote(url), workdir=dir, title="Download samples")
+{%- endif %}
+
+
+@duty
+def sample(ctx: Context, dir: str) -> None:
+    """Run the judge's sample tests in a problem dir."""
+{%- if oj_kind == 'aoj' %}
+    guard = "{{ OJ_GUARD_AOJ }}"
+    ctx.run(guard, title="Check aoj-cli")
+    ctx.run("aoj test main.py", workdir=dir, title="Run sample tests")
+{%- elif oj_kind == 'leetcode' %}
+    note = "{{ OJ_NO_SAMPLES }}"
+    ctx.run(note, title="Run sample tests")
+{%- else %}
+    guard = "{{ OJ_GUARD_OJ }}"
+    ctx.run(guard, title="Check online-judge-tools")
+    ctx.run('oj test -c "python3 main.py"', workdir=dir, title="Run sample tests")
+{%- endif %}
+
+
+@duty
+def submit(ctx: Context, dir: str) -> None:
+    """Submit the solution in a problem dir."""
+{%- if oj_kind == 'aoj' %}
+    guard = "{{ OJ_GUARD_AOJ }}"
+    ctx.run(guard, title="Check aoj-cli")
+    ctx.run("aoj submit main.py --lang Python3", workdir=dir, title="Submit")
+{%- elif oj_kind == 'kattis' %}
+    client = pathlib.Path(__file__).resolve().parent / "submit.py"
+    if not client.is_file():
+        missing_client = "Kattis submit client not found; download submit.py from https://github.com/Kattis/kattis-cli and set up ~/.kattisrc"
+        raise SystemExit(missing_client)
+    command = "python3 " + shlex.quote(str(client)) + " main.py"
+    ctx.run(command, workdir=dir, title="Submit")
+{%- elif oj_kind == 'leetcode' %}
+    note = "{{ OJ_NO_SUBMIT }}"
+    ctx.run(note, title="Submit")
+{%- elif oj_kind == 'other' %}
+    note = "{{ OJ_OTHER_SUBMIT }}"
+    ctx.run(note, title="Submit")
+{%- else %}
+    guard = "{{ OJ_GUARD_OJ }}"
+    ctx.run(guard, title="Check online-judge-tools")
+    ctx.run("oj submit main.py", workdir=dir, title="Submit")
+{%- endif %}
+{%- endmacro %}

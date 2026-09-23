@@ -1,0 +1,94 @@
+"""Append-only JSONL result store for the polite scraping layer.
+
+Every page the scrape pipeline fetches lands here as one JSON object per
+line under ``.cache/scraped/`` (git-ignored with the rest of ``.cache/``):
+durable, greppable, re-runnable — the minimal sink a scraper needs, no
+database. The store is deliberately dumb: politeness lives in
+:mod:`{{ package_name }}.fetcher`, and the value this module adds is the
+*record* of what was fetched, when, and what came back, so a crawl is
+reproducible and inspectable from the store alone.
+
+A crash mid-write can only tear the *last* line: :meth:`ResultStore.iter`
+skips a torn trailing line and raises on anything else malformed, so a
+truncated crawl never corrupts earlier records and never fails quietly for
+the wrong reason.
+"""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Iterator
+from dataclasses import asdict
+from dataclasses import dataclass
+from pathlib import Path
+
+__all__ = ["RESULT_FILE", "ResultStore", "ScrapeResult"]
+
+#: The JSONL file name inside the store's base directory.
+RESULT_FILE = "results.jsonl"
+
+
+@dataclass(frozen=True)
+class ScrapeResult:
+    """One polite fetch outcome.
+
+    Attributes:
+        url: the URL whose record this is — the URL *fetched*, so the feed
+            switch and redirects are visible in the store.
+        status: the HTTP status of the fetch; ``0`` means no HTTP response
+            was received (a transport error, or a robots.txt denial).
+        text: the body on success, else a short error description.
+        fetched_at: unix timestamp of when the record was produced.
+    """
+
+    url: str
+    status: int
+    text: str
+    fetched_at: float
+
+
+class ResultStore:
+    """Append-only JSONL sink under *base_dir* (default ``.cache/scraped``).
+
+    One :class:`ScrapeResult` per line in ``results.jsonl``:
+    :meth:`append` adds a record, :meth:`iter` reads them back in append
+    order. Nothing is rewritten, so a store is safe to read while a crawl
+    appends to it.
+    """
+
+    base_dir: Path
+
+    def __init__(self, base_dir: Path = Path(".cache/scraped")) -> None:
+        self.base_dir = base_dir
+
+    @property
+    def path(self) -> Path:
+        """The JSONL file this store reads and appends to."""
+        return self.base_dir / RESULT_FILE
+
+    def append(self, result: ScrapeResult) -> None:
+        """Append *result* as one JSON line (creates the directory tree)."""
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+        line = json.dumps(asdict(result)) + "\n"
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(line)
+
+    def iter(self) -> Iterator[ScrapeResult]:
+        """Yield stored records in append order; skip a torn trailing line."""
+        if not self.path.exists():
+            return
+        lines = self.path.read_text(encoding="utf-8").splitlines()
+        for index, line in enumerate(lines):
+            try:
+                payload = json.loads(line)
+            except ValueError:
+                if index + 1 != len(lines):
+                    msg = f"corrupt result line {index + 1}"
+                    raise ValueError(msg) from None
+                break  # a torn trailing write, not a lost earlier record
+            yield ScrapeResult(
+                url=payload["url"],
+                status=payload["status"],
+                text=payload["text"],
+                fetched_at=payload["fetched_at"],
+            )

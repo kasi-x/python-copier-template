@@ -5,7 +5,8 @@ from collections.abc import Sequence
 
 from . import __version__
 from .logging_setup import logger
-{% if include_sentry %}
+{% if scraping_httpx_effective %}from .pipeline import ScrapePipeline
+{% endif %}{% if include_sentry %}
 import os
 
 import sentry_sdk
@@ -13,7 +14,7 @@ import sentry_sdk
 __all__ = ["main"]
 
 
-def main(args: Sequence[str] | None = None) -> None:
+def main(args: Sequence[str] | None = None) -> int | None:
     """Argument parser for the CLI."""
     {% if include_sentry %}sentry_sdk.init(
         dsn=os.getenv("SENTRY_DSN"),
@@ -26,9 +27,51 @@ def main(args: Sequence[str] | None = None) -> None:
         action="version",
         version=__version__,
     )
-    parsed = parser.parse_args(args)
+    {% if scraping_httpx_effective %}subparsers = parser.add_subparsers(dest="command")
+    scrape_parser = subparsers.add_parser(
+        "scrape",
+        help="politely fetch each URL and store the results",
+        description=(
+            "Fetch every URL through the polite fetcher (robots.txt, rate "
+            "limit, cache) and append one JSONL record per page under "
+            ".cache/scraped/. A denied or failed page is recorded, not "
+            "fatal; an exhausted host budget stops the crawl."
+        ),
+    )
+    scrape_parser.add_argument(
+        "urls",
+        nargs="+",
+        metavar="url",
+        help="a URL to fetch (the fetcher judges feed/API before scraping)",
+    )
+    {% endif %}parsed = parser.parse_args(args)
     logger.info("{{ package_name }}_invoked", args=parsed)
+    {% if scraping_httpx_effective %}if parsed.command == "scrape":
+        return _run_scrape(parsed.urls)
+    {% endif %}return None
 
 
-if __name__ == "__main__":
-    main()
+{% if scraping_httpx_effective %}# The statuses that count as a fetched page: everything outside is a
+# failure (0 = no HTTP response at all — a transport error or a denial).
+_OK_STATUS = range(200, 400)
+
+
+def _run_scrape(urls: Sequence[str]) -> int:
+    """Run the polite pipeline over *urls*, printing a per-URL summary.
+
+    Returns the process exit code: 0 when every URL was fetched, 1 when
+    any page failed (denied, errored, or unreachable) — so a script can
+    rely on ``python -m {{ package_name }} scrape``'s status.
+    """
+    with ScrapePipeline() as pipeline:
+        results = list(pipeline.run(urls))
+    failed = sum(1 for result in results if result.status not in _OK_STATUS)
+    for result in results:
+        outcome = "ok " if result.status in _OK_STATUS else "ERR"
+        print(f"{outcome} {result.status:>3} {result.url}")
+    print(f"stored {len(results)} result(s) in {pipeline.store.path} ({failed} failed)")
+    return 1 if failed else 0
+
+
+{% endif %}if __name__ == "__main__":
+    raise SystemExit(main())

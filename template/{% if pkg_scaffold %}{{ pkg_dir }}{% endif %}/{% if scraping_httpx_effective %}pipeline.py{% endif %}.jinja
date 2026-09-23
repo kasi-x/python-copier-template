@@ -1,0 +1,124 @@
+"""The polite scrape pipeline: a URL list in, stored records out.
+
+:class:`ScrapePipeline` is the *mode* the fetcher's politeness was
+missing: it takes a list of URLs, runs each through the polite fetcher
+(robots.txt, rate limit, cache — reused, nothing re-implemented), and
+writes one :class:`~{{ package_name }}.storage.ScrapeResult` per URL to
+the :class:`~{{ package_name }}.storage.ResultStore` sink.
+
+Failure policy, in code — not left to the caller to guess:
+
+- a page that robots.txt denies, a site that answers 401/403, or a
+  transport error is **recorded** — status ``0`` / the real HTTP code,
+  plus the error text — and the next URL proceeds. A many-page crawl is
+  not all-or-nothing, and the store must show what happened, not hide it.
+- the one global stop is :class:`BudgetExceededError`: when a host's
+  session budget is exhausted the crawl stops and the error propagates,
+  exactly as the charter demands — never quietly continue past a budget
+  you set.
+
+The pipeline is synchronous and depends on nothing beyond httpx (reached
+through the fetcher). Tests inject a mocked fetcher — no network.
+"""
+
+from __future__ import annotations
+
+import time
+from collections.abc import Iterable
+from collections.abc import Iterator
+from typing import Protocol
+from typing import Self
+
+from {{ package_name }}.fetcher import BudgetExceededError
+from {{ package_name }}.fetcher import FetchedPage
+from {{ package_name }}.fetcher import PoliteFetcher
+from {{ package_name }}.storage import ResultStore
+from {{ package_name }}.storage import ScrapeResult
+
+__all__ = ["ScrapePipeline"]
+
+
+class _Fetcher(Protocol):
+    """The slice of the polite fetcher the pipeline uses.
+
+    A protocol, not ``PoliteFetcher``: the pipeline needs exactly these two
+    methods, and tests substitute a mock for the judged GET.
+    """
+
+    def fetch(self, url: str) -> FetchedPage:
+        """Politely GET *url*, returning the fetched page."""
+        ...
+
+    def close(self) -> None:
+        """Release the fetcher's HTTP client."""
+        ...
+
+
+def _status_of(error: BaseException) -> int:
+    """The HTTP status an exception carries, else 0 (no HTTP response)."""
+    status: object = getattr(error, "status_code", None)
+    if isinstance(status, int):
+        return status
+    response: object = getattr(error, "response", None)
+    code: object = getattr(response, "status_code", None)
+    return code if isinstance(code, int) else 0
+
+
+class ScrapePipeline:
+    """Fetch *urls* politely, store one record per URL, yield them in order.
+
+    ``fetcher``/``store`` are injectable, and a fetcher the pipeline did not
+    create stays the caller's to close (see :meth:`__exit__`, which closes
+    only the fetcher the pipeline owns).
+    """
+
+    fetcher: _Fetcher
+    store: ResultStore
+    _owns_fetcher: bool
+
+    def __init__(
+        self,
+        fetcher: _Fetcher | None = None,
+        store: ResultStore | None = None,
+    ) -> None:
+        self.fetcher = fetcher or PoliteFetcher()
+        self.store = store or ResultStore()
+        self._owns_fetcher = fetcher is None
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, exc_type: object, exc_value: object, traceback: object) -> None:
+        if self._owns_fetcher:
+            self.fetcher.close()
+
+    def run(self, urls: Iterable[str]) -> Iterator[ScrapeResult]:
+        """Fetch, store and yield one :class:`ScrapeResult` per *url*.
+
+        Denied and errored pages are recorded and the crawl proceeds;
+        :class:`BudgetExceededError` stops the crawl and propagates.
+        """
+        for url in urls:
+            result = self._fetch_one(url)
+            self.store.append(result)
+            yield result
+
+    def _fetch_one(self, url: str) -> ScrapeResult:
+        """Fetch *url* once, turning a per-page failure into a record."""
+        try:
+            page = self.fetcher.fetch(url)
+        except BudgetExceededError:
+            raise  # the one global stop: never continue past the budget
+        except Exception as exc:  # noqa: BLE001  WHYNOT: a failed page is a stored result, not a crash.
+            return ScrapeResult(
+                url=url,
+                status=_status_of(exc),
+                text=f"{type(exc).__name__}: {exc}",
+                fetched_at=time.time(),
+            )
+        return ScrapeResult(
+            url=page.url,
+            status=page.status,
+            text=page.text,
+            fetched_at=time.time(),
+        )

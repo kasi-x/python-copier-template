@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1055,
+      "collected": 1069,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -20,7 +20,7 @@
         "tests/test_example_adopt.py": 1,
         "tests/test_example_data_science.py": 7,
         "tests/test_example_docs_ci.py": 40,
-        "tests/test_example_layers.py": 18,
+        "tests/test_example_layers.py": 32,
         "tests/test_example_library_cli.py": 10,
         "tests/test_example_micropython.py": 3,
         "tests/test_example_oj.py": 13,
@@ -59,7 +59,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "1d180059f74732093ab758f34bfafb622975c89d86d8d1baf7db91f9f496c960",
+      "ids_sha256": "78257a30f7152c7239e638fe51147ded9b9056d7f947541b29179caeb37730b5",
       "wall_seconds": 18.6,
       "measured": "2026-09-20",
       "budget_seconds": 30,
@@ -122,7 +122,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1122,
+      "collected": 1136,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -138,7 +138,7 @@
         "tests/test_example_adopt.py": 3,
         "tests/test_example_data_science.py": 7,
         "tests/test_example_docs_ci.py": 45,
-        "tests/test_example_layers.py": 22,
+        "tests/test_example_layers.py": 36,
         "tests/test_example_library_cli.py": 11,
         "tests/test_example_micropython.py": 4,
         "tests/test_example_oj.py": 14,
@@ -179,7 +179,7 @@
         "tests/test_witness_matrix.py": 287,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "383deba072047d9404ef320c60da5a35ff11ae3c1f2340ca0c50ba98577e5c21",
+      "ids_sha256": "b4848d5a8863faab2e56d22141937f2f547b15b07fe21569ff807e3954762d64",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -188,7 +188,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1055,
+      "collected": 1069,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -204,7 +204,7 @@
         "tests/test_example_adopt.py": 1,
         "tests/test_example_data_science.py": 7,
         "tests/test_example_docs_ci.py": 40,
-        "tests/test_example_layers.py": 18,
+        "tests/test_example_layers.py": 32,
         "tests/test_example_library_cli.py": 10,
         "tests/test_example_micropython.py": 3,
         "tests/test_example_oj.py": 13,
@@ -243,7 +243,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "1d180059f74732093ab758f34bfafb622975c89d86d8d1baf7db91f9f496c960",
+      "ids_sha256": "78257a30f7152c7239e638fe51147ded9b9056d7f947541b29179caeb37730b5",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",

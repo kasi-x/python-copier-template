@@ -191,6 +191,49 @@ sections:
     superseded_by: null
     why: "Pulse-oximetry occult-hypoxemia disparity and EU AI Act art. 10 data-governance duties: subgroup metrics, documented fairness-metric choice, and human review are the minimum evaluation surface. The 適用条件 widens to any automatic decision about a person (2026-09-20): a scoring/screening endpoint is in scope whatever its accuracy, which is the case GDPR art. 22 and the AI Act's high-risk duties turn on. When such a project also answers `personal-data`, the privacy section carries the explainability-and-record-keeping side, so this row keeps its ds/kaggle audience and does not duplicate it."
 
+  - id: domain-scraping-law
+    file: _shared/ethics/domain/scraping-law.md.jinja
+    version: 2026-09-24.1
+    effective: 2022-04-18
+    review_by: 2027-03-31
+    sources:
+      - https://cdn.ca9.uscourts.gov/datastore/opinions/2022/04/18/17-16783.pdf
+      - https://eur-lex.europa.eu/eli/dir/1996/9/oj
+      - https://www.bunka.go.jp/seisaku/chosakuken/aiandcopyright.html
+      - https://laws.e-gov.go.jp/law/411AC0000000128
+      - https://www.rfc-editor.org/rfc/rfc9309.html
+      - https://eur-lex.europa.eu/eli/reg/2016/679/oj
+      - https://www.ppc.go.jp/personalinfo/legal/
+    scope: {jurisdiction: [], sector: [], category: [copyright, privacy]}
+    scale: global
+    audience: [cli]
+    enforcement: L0
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    superseded_by: null
+    why: "hiQ v. LinkedIn (9th Cir. 2022) read the CFAA's 'without authorization' as not covering public pages refused by cease-and-desist alone, which kept the tortious-interference claim alive while the CFAA argument stalled -- so the technical act can be lawful while the contract claim stands; the EU Database Directive's sui generis right (art. 7) bans extraction of a substantial part even where individual facts are not copyrightable; the Agency of Culture position (already cited in copyright-ai) treats deliberate robots.txt circumvention as potentially harming a paid data market; and CFAA / 不正アクセス禁止法 punish bypassing authentication, not reading public pages. robots.txt (RFC 9309) is evidence of the operator's intent, never an authorization. The gate is derived (scraping_effective) because the template only ships scraping code on that flag -- a project without the fetcher layer owes no scraping-law map. L0: the section reaches the AGENTS.md reader, and the ethics-appendix predicate asserts it appears exactly where scraping_effective holds."
+
+  - id: domain-contest-rules
+    file: _shared/ethics/domain/contest-rules.md.jinja
+    version: 2026-09-24.1
+    effective: 2025-10-03
+    review_by: 2027-03-31
+    sources:
+      - https://info.atcoder.jp/entry/llm-rules-ja
+      - https://atcoder.jp/posts/1347
+      - https://icpc.global/regionals/rules
+      - https://leetcode.com/contest/
+      - https://codeforces.com/
+      - https://open.kattis.com/
+    scope: {jurisdiction: [], sector: [], category: [competition]}
+    scale: global
+    audience: [online-judge]
+    enforcement: L0
+    status: active
+    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    superseded_by: null
+    why: "AI-use rules differ per judge and change frequently: AtCoder's 生成AI対策ルール (current version 2025-10-03) bans generative AI during ABC/ARC/AGC except a whitelisted translation prompt, while AHC and practice runs keep their own rules; LeetCode, Codeforces, Kattis and ICPC publish theirs separately, so 'the judge allowed it last time' is never a safe assumption. The submission is the entrant's own responsibility whatever tool produced it, and rating manipulation / multi-accounting are banned on every platform. The gate is oj_code -- the code-submission judges, deliberately excluding the kaggle workspace and the CTF challenges, which matches the AGENTS.md banner's own split. L0: the section reaches the AGENTS.md reader; the ethics-appendix predicate asserts it appears exactly where oj_code holds."
+
   - id: sector-samd-regulatory
     file: _shared/ethics/sector/samd-regulatory.md.jinja
     version: 2026-09-21.1

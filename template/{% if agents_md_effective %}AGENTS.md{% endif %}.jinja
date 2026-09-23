@@ -109,7 +109,8 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
 - CI runs lint, type-check, and tests on every push
 {% if docs %} plus a docs build{% endif %}; keep all of them green.
 {# The ethics appendix: sections live in _shared/ethics/ (one file per rule,
-   registered in its REGISTRY.yml). A section ships only where its registry
+   registered in its REGISTRY.yml; the include chain below mirrors the
+   registry's active rows). A section ships only where its registry
    audience matches this render, which is what the gates below encode. The
    include chain stays on one line: each section file carries exactly one
    trailing newline (and starts with a jinja comment, whose newline is the
@@ -118,7 +119,8 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
 ## Field rules (ethics appendix)
 
 Field rules the generator matched to this project kind (crypto choices,
-dependency license drift, data-collection copyright, PKI trust-chain
+dependency license drift, data-collection copyright, the scraping-law map,
+contest-integrity rules, PKI trust-chain
 hygiene, LLM/MCP tool security, model-evaluation fairness), plus the
 rules your `domain_traits`
 answer selected (personal data, biometric identification, medical device
@@ -126,4 +128,4 @@ software), and the EU Cyber Resilience Act's duties where the project is
 sold or packaged as a product. Each section opens with a scope blockquote: if its triggers do
 not apply to the code you are editing, skip that section. Sections are
 written in Japanese.
-{% include "_shared/ethics/baseline/license-drift.md.jinja" %}{% if project_type in ['micropython', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pki-chain.md.jinja" %}{% endif %}{% if 'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits %}{% include "_shared/ethics/baseline/personal-data.md.jinja" %}{% endif %}{% if project_type in ['library', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pqc-fips.md.jinja" %}{% endif %}{% if project_type == 'cli' or data_science_layout %}{% include "_shared/ethics/baseline/copyright-ai.md.jinja" %}{% endif %}{% if mcp_effective %}{% include "_shared/ethics/domain/llm-appsec.md.jinja" %}{% endif %}{% if ds_stack %}{% include "_shared/ethics/domain/ml-bias.md.jinja" %}{% endif %}{% if 'face-recognition' in domain_traits %}{% include "_shared/ethics/domain/face-recognition.md.jinja" %}{% endif %}{% if 'medtech' in domain_traits %}{% include "_shared/ethics/sector/samd-regulatory.md.jinja" %}{% endif %}{% if 'commercial' in distribution %}{% include "_shared/ethics/region/eu-cra.md.jinja" %}{% endif -%}
+{% include "_shared/ethics/baseline/license-drift.md.jinja" %}{% if project_type in ['micropython', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pki-chain.md.jinja" %}{% endif %}{% if 'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits %}{% include "_shared/ethics/baseline/personal-data.md.jinja" %}{% endif %}{% if project_type in ['library', 'cli'] or web_api %}{% include "_shared/ethics/baseline/pqc-fips.md.jinja" %}{% endif %}{% if project_type == 'cli' or data_science_layout %}{% include "_shared/ethics/baseline/copyright-ai.md.jinja" %}{% endif %}{% if mcp_effective %}{% include "_shared/ethics/domain/llm-appsec.md.jinja" %}{% endif %}{% if ds_stack %}{% include "_shared/ethics/domain/ml-bias.md.jinja" %}{% endif %}{% if 'face-recognition' in domain_traits %}{% include "_shared/ethics/domain/face-recognition.md.jinja" %}{% endif %}{% if 'medtech' in domain_traits %}{% include "_shared/ethics/sector/samd-regulatory.md.jinja" %}{% endif %}{% if 'commercial' in distribution %}{% include "_shared/ethics/region/eu-cra.md.jinja" %}{% endif %}{% if scraping_effective %}{% include "_shared/ethics/domain/scraping-law.md.jinja" %}{% endif %}{% if oj_code %}{% include "_shared/ethics/domain/contest-rules.md.jinja" %}{% endif -%}

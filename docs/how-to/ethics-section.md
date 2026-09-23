@@ -87,6 +87,33 @@ already parsed for every row; drafts warn through `check_ethics` even
 while they ship nowhere. A `L2` lift needs a real gate with an offline
 contract (see how `license-check` stays out of `type-check`/`check`).
 
+## The sections this template currently ships
+
+The full inventory lives in `_shared/ethics/REGISTRY.yml`; the two most
+recently promoted rows are:
+
+- `domain-scraping-law` — **L0**, gate `scraping_effective` (the AGENTS.md
+  include is `{% if scraping_effective %}`). The scraping-law map: copyright
+  and the EU database right (Directive 96/9/EC art. 7) sit beside the
+  contract question (ToS) and the unauthorized-access line (CFAA /
+  不正アクセス禁止法), and robots.txt is evidence of the operator's intent,
+  not an authorization (hiQ Labs v. LinkedIn, 9th Cir. 2022). Its generated
+  counterpart is `LEGAL.md` — the per-source pre-crawl checklist every
+  scraping layer ships, asserting what the toolchain enforces vs what stays
+  the operator's duty.
+- `domain-contest-rules` — **L0**, gate `oj_code` (the code-submission
+  judges; kaggle and ctf are deliberately outside it). Competition
+  integrity: AI-use rules differ per judge and change (AtCoder bans
+  generative AI during ABC/ARC/AGC except a whitelisted translation
+  prompt), the submission is the entrant's own responsibility, and rating
+  manipulation / multi-accounting are banned.
+
+Both are `status: active` with `rendered_from` naming the AGENTS.md
+appendix, and the `ethics-appendix` predicate in
+`tests/test_render_invariants.py` holds each to the leaf classes its gate
+selects — the mutation that drops a gate fails the render sweep, not a
+human review.
+
 ## Structured data: the `lang/` dictionaries
 
 Rules whose substance is a table (protection terms per jurisdiction,

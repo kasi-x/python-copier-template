@@ -1,5 +1,11 @@
 {% import "_tasks.jinja" as _t with context %}"""Development tasks, run via `invoke <task>` (or `inv <task>`)."""
 
-from invoke.context import Context
+{% import "_shared/oj-recipes.jinja" as _oj with context -%}
+{% if oj_code %}{% if oj_kind != 'atcoder' %}import pathlib
+{% endif %}import shlex
+
+{% endif %}from invoke.context import Context
 from invoke.tasks import task  # pyright: ignore[reportUnknownVariableType]
 {{ _t.invoke_tasks() -}}
+{% if oj_code %}{{ _oj.invoke_oj() }}
+{% endif -%}

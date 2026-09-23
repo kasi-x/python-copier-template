@@ -16,6 +16,12 @@ All notable changes to this project are documented in this file.
 
 - the upstream-fork drift check compares upstream/main against a reviewed-marker file instead of HEAD, so already-reviewed commits stop re-firing the weekly alert; the `mcp[cli]` floor is `>=2.0.1` (PyPI never published a 2.0.0 final)
 
+### Features
+
+- scraping layer gains a real mode: `ScrapePipeline` (URL list -> polite fetch -> results), a JSONL `ResultStore` under `.cache/scraped/`, and a `scrape` CLI subcommand, plus a generated `LEGAL.md` pre-crawl checklist
+- `online_judge` (oj_code) workspaces ship `new`/`dl`/`sample`/`submit` recipes in all five task runners (just/task/make/invoke/duty), a README workflow section, and a `docs/how-to/online-judge.md` guide
+- two new ethics sections: `scraping-law` (copyright/database-right/ToS/CFAA/GDPR map, gated on scraping) and `contest-rules` (AI-use and integrity rules, gated on oj_code)
+
 
 ### Dependencies
 

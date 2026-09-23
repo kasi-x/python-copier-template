@@ -7,10 +7,11 @@ charter's rules are enforced by the toolchain (ruff `banned-api`, pytest,
 CI) — not left to discipline.
 
 Answering **Yes** to `include_scraping` (asked for the `cli` base only)
-generates a `CHARTER.md` plus a fetcher module. Answering **No** to
-`use_recommended_scraping` reveals the engine question (`scraping_engine`):
-`httpx` (recommended), `scrapy`, `memorious`, `playwright`, or `all`
-(every engine at once).
+generates a `CHARTER.md`, a fetcher module, and the **scrape mode** built
+on it: a URL-list pipeline, a JSONL result store and a `scrape` subcommand.
+Answering **No** to `use_recommended_scraping` reveals the engine question
+(`scraping_engine`): `httpx` (recommended), `scrapy`, `memorious`,
+`playwright`, or `all` (every engine at once).
 
 ## What gets generated
 
@@ -35,7 +36,13 @@ generates a `CHARTER.md` plus a fetcher module. Answering **No** to
      `cache_ttl_seconds`, so the second page on a host costs one HEAD probe
      instead of re-probing 8 feed paths + API hints;
   4. rate-limit (1 req/s per host), serve from the on-disk cache when
-     fresh, otherwise GET once and cache.
+     fresh, otherwise GET once and cache. `fetch()` is the same call with
+     the HTTP status attached (`FetchedPage(url, status, text)`); `fetch_text()`
+     returns just the body.
+  The httpx politeness core also renders the scrape mode described below —
+  `<pkg>/pipeline.py`, `<pkg>/storage.py`, `tests/test_pipeline.py` and the
+  `scrape` CLI subcommand — so `memorious` and `playwright` (which reuse the
+  core) carry it too; `scrapy` (the one httpx-free engine) does not.
 - `scrapy` engine: `<pkg>/spider.py` — spider starter with `ROBOTSTXT_OBEY`
   + `AUTOTHROTTLE` enforced in `custom_settings`, plus
   `tests/test_scrapy_spider.py` (settings + offline parse). Adds `scrapy`.
@@ -51,6 +58,48 @@ generates a `CHARTER.md` plus a fetcher module. Answering **No** to
 - ruff `banned-api`: direct HTTP calls (`requests.get`, `httpx.get`,
   `urllib.request.urlopen`, ...) are banned outside the fetcher, so every
   fetch stays polite. `.cache/fetcher/` is git-ignored.
+
+## The scrape mode: URLs in, stored records out
+
+The `httpx` engine renders more than the fetcher — it renders a usable
+scraping *mode*, so a crawl is a command rather than a blank page:
+
+- `<pkg>/pipeline.py` — `ScrapePipeline` takes an iterable of URLs, runs
+  each through `PoliteFetcher` (the same robots / rate-limit / cache path
+  `fetch_text()` uses — nothing re-implemented), and yields a
+  `ScrapeResult(url, status, text, fetched_at)` per URL, appending each to
+  the store as it goes. It is synchronous and needs nothing beyond `httpx`.
+- `<pkg>/storage.py` — `ResultStore` appends those records as JSONL under
+  `.cache/scraped/results.jsonl` (git-ignored with the rest of `.cache/`)
+  and reads them back with `iter()`. No database: one JSON object per line
+  is durable, greppable and re-runnable, and a torn trailing line is
+  skipped rather than failing the read.
+- the CLI: `python -m <pkg> scrape <url>...` (also `<repo_name> scrape ...`
+  once installed) fetches every URL, appends one record per page, and
+  prints a per-URL summary plus the store path. It exits non-zero when any
+  page failed.
+
+Failure policy, pinned by `tests/test_pipeline.py` (mocked fetcher, no
+network):
+
+- a page that robots.txt denies, a site that answers 401/403, or a
+  transport error is **recorded** — status `0` / the real HTTP code plus
+  the error text — and the next URL proceeds. A many-page crawl is not
+  all-or-nothing, and the store shows what happened instead of hiding it.
+- the one global stop is `BudgetExceededError`: an exhausted host budget
+  stops the crawl and propagates, exactly as the charter demands — never
+  quietly continue past a budget you set.
+
+## Scaling up
+
+The pipeline is deliberately single-process and single-host polite. Mass
+crawls, distributed queues, proxy rotation and multi-day schedules are out
+of scope on purpose: the charter's **ask-first** rule is the scaling path —
+open an issue describing the crawl size and get review before raising
+`max_requests_per_host` or parallelizing across hosts. `ResultStore` stays a
+boring JSONL sink so the harvested data is yours to move (into a database,
+a data-science pipeline, or a de-identification review) without the
+template locking you into a storage engine.
 
 ## License consequences
 
