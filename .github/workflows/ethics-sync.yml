@@ -30,9 +30,9 @@ jobs:
         env:
           # gh repo clone inside the checker needs a token that can read the
           # private codex repo; GITHUB_TOKEN is scoped to this repo only, so
-          # the job wants a CODEX_TOKEN secret (a fine-grained PAT with
+          # the job wants a GFCODEX_TOKEN secret (a fine-grained PAT with
           # contents:read on ConstitutiveTemplates/good-future-codex).
-          GH_TOKEN: ${{ secrets.CODEX_TOKEN }}
+          GH_TOKEN: ${{ secrets.GFCODEX_TOKEN }}
         run: python3 tools/check_ethics_drift.py
         # Exits 1 when the vendored tree is dirty or codex main is ahead.
 
@@ -42,7 +42,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
-          body=$(GH_TOKEN="${{ secrets.CODEX_TOKEN }}" \
+          body=$(GH_TOKEN="${{ secrets.GFCODEX_TOKEN }}" \
             python3 tools/check_ethics_drift.py 2>&1 || true)
           existing=$(gh issue list --search "Ethics sections drifted" \
             --state open --json number --jq 'length')
