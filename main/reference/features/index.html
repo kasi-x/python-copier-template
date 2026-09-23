@@ -2633,7 +2633,7 @@ are asked — <a href="../questionnaire/">the questionnaire reference</a> lists 
     G_toolchain_yes --&gt; D2
     G_toolchain_no --&gt; D2
     D2{"online_judge?"}
-    D2 --&gt;|Yes| Q7["ask: oj_category (data_science / competitive_coding / ctf), oj_kind&lt;br/&gt;(kaggle / atcoder / leetcode / yukicoder / aoj / ctf),&lt;br/&gt;oj_allow_ai (atcoder / leetcode)"]
+    D2 --&gt;|Yes| Q7["ask: oj_category (data_science / competitive_coding / ctf), oj_kind&lt;br/&gt;(kaggle / atcoder / leetcode / yukicoder / aoj / codeforces /&lt;br/&gt;kattis / other / ctf), oj_allow_ai (atcoder / leetcode /&lt;br/&gt;codeforces / kattis / other)"]
     Q7 --&gt; INC
     D2 --&gt;|No| INC
     INC["ask: include_data_science, include_web_api, include_ctf,&lt;br/&gt;include_scraping, include_bot&lt;br/&gt;(each only for the bases it combines with)"]
@@ -2746,11 +2746,12 @@ runner every recipe goes through:</p>
 <li><strong>online_judge</strong>: a competitive-programming / Kaggle project. The follow-up
   <code>oj_kind</code> question picks the judge:</li>
 <li><strong>kaggle</strong>: the competition layout <code>src/{configs,data,input,output,features,logs,models,notebook,scripts,utils}</code> where <code>src/utils</code> is the installable package, plus the GPU Dockerfile</li>
-<li><strong>atcoder / leetcode / yukicoder / aoj</strong>: a bare code-submission workspace
+<li><strong>atcoder / leetcode / yukicoder / aoj / codeforces / kattis / other</strong>: a bare code-submission workspace
     (stdlib only) — no package or <code>solutions/</code> tree is generated, and the
     repo stays empty until a CLI tool creates the per-problem folders and
-    <code>test/</code> sample files (<code>oj</code> for AtCoder / yukicoder, <code>acc</code> for AtCoder
-    contests, <code>aoj-cli</code> for AOJ; LeetCode is solved in its own editor)</li>
+    <code>test/</code> sample files (<code>oj</code> for AtCoder / yukicoder / Codeforces, <code>acc</code> for AtCoder
+    contests, <code>aoj-cli</code> for AOJ, <code>submit.py</code> + <code>.kattisrc</code> for Kattis; LeetCode is solved in its own editor,
+    <code>other</code> uses <code>oj</code> where the service allows)</li>
 <li><strong>script</strong> — a minimal script, flat package at the repo root</li>
 <li><strong>ros2</strong> — a ROS 2 package (<code>ament_python</code> with rclpy, or <code>ament_cmake</code>
   with C++), built with <strong>colcon + rosdep</strong>. Choose <strong>Humble</strong> (Ubuntu

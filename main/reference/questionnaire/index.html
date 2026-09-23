@@ -2642,8 +2642,8 @@ questions depend on it.</p>
 <li><strong><code>oj_category</code></strong> (str; default <code>data_science</code>) — Which competition category is this project
     for?<ul>
 <li><strong><code>data_science</code></strong> — Kaggle-style data competitions (GPU competition layout).</li>
-<li><strong><code>competitive_coding</code></strong> — code-submission judges (AtCoder / LeetCode / yukicoder / AOJ). A
-  bare workspace driven with oj / acc / aoj-cli.</li>
+<li><strong><code>competitive_coding</code></strong> — code-submission judges (AtCoder / LeetCode / yukicoder / AOJ /
+  Codeforces / Kattis / other). A bare workspace driven with oj / acc / aoj-cli / submit.py.</li>
 <li><strong><code>ctf</code></strong> — CTF competitions (participant workspace with challenges/ and a solve.py starter,
   plus pwntools / z3-solver).</li>
 </ul>
@@ -2660,6 +2660,13 @@ questions depend on it.</p>
   (download / test / submit all work).</li>
 <li><strong><code>aoj</code></strong> — Aizu Online Judge (Japanese beginner courses). A bare workspace driven with
   aoj-cli (oj can download samples but not submit).</li>
+<li><strong><code>codeforces</code></strong> — Codeforces (world-scale contests). A bare workspace driven with oj
+  (download / test work; submit via <code>oj submit</code> where the service allows, else the browser).</li>
+<li><strong><code>kattis</code></strong> — Kattis (open problem archive, university courses). A bare workspace driven with
+  the Kattis submit client (<code>submit.py</code> with a personal <code>.kattisrc</code>; <code>oj download</code> also reads
+  samples).</li>
+<li><strong><code>other</code></strong> — any other stdin/stdout judge. A bare workspace with no site-specific tooling —
+  oj download/test where the service allows, else the judge's own editor.</li>
 <li><strong><code>ctf</code></strong> — CTF competitions. A participant workspace (challenges/ with a solve.py starter,
   pwntools / z3-solver via the ctf extra).</li>
 </ul>
