@@ -11,4 +11,5 @@ Explanations of how it works and why it works that way.
 - [Long-Running Executables](explanations/long-running.md)
 - [Security & Compliance](explanations/security.md)
 - [Verification Architecture](explanations/verification.md)
+- [Ethics as External Source](explanations/ethics-external.md)
 - [Drift Detection](explanations/drift-detection.md)

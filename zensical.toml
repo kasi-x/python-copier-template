@@ -63,6 +63,7 @@ nav = [
       { "Long-Running Executables" = "explanations/long-running.md" },
       { "Security & Compliance" = "explanations/security.md" },
       { "Verification Architecture" = "explanations/verification.md" },
+      { "Ethics as External Source" = "explanations/ethics-external.md" },
       { "Drift Detection" = "explanations/drift-detection.md" },
   ]},
   { "Reference" = [
