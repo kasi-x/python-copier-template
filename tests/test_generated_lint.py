@@ -249,12 +249,12 @@ _TEXT_SUFFIXES = {
     ".md",
     ".py",
     ".rst",
+    ".scss",
     ".sql",
     ".toml",
     ".txt",
     ".tex",
     ".yaml",
-    ".yml",
 }
 _TEXT_EXCLUDES = {
     ".copier-answers.yml",
@@ -321,3 +321,23 @@ def test_generated_files_end_with_single_newline(tmp_path: Path, render_cache: R
         elif data.endswith(b"\n\n"):
             offenders.append(f"{path.relative_to(tmp_path)}: trailing blank line(s)")
     assert not offenders, "generated text files must end with exactly one newline:\n" + "\n".join(offenders)
+
+
+@pytest.mark.parametrize("answers", RENDERED_PATHS, ids=[_id(a) for a in RENDERED_PATHS])
+def test_generated_files_have_no_trailing_whitespace(
+    tmp_path: Path, render_cache: RenderCache, answers: dict[str, object]
+):
+    """Rendered text files must not carry trailing whitespace.
+
+    `git diff --check` flags it on the update path (the weekly rehearsal
+    caught the vendored clean.scss this way), and the generated project's
+    own trailing-whitespace fixer would rewrite it on first commit -- the
+    same first-commit-dirty class as the newline rule above.
+    """
+    _render(render_cache, tmp_path, answers)
+    offenders: list[str] = []
+    for path in _iter_text_files(tmp_path):
+        for lineno, line in enumerate(path.read_bytes().splitlines(), start=1):
+            if line != line.rstrip():
+                offenders.append(f"{path.relative_to(tmp_path)}:{lineno}: trailing whitespace")
+    assert not offenders, "generated text files must not carry trailing whitespace:\n" + "\n".join(offenders)

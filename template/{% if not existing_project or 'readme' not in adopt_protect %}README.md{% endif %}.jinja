@@ -369,7 +369,7 @@ at contest code), so `task check` / `just check` keep your workspace tidy
 before you submit.
 {% else %}Pick a LeetCode problem and keep your working copy here (LeetCode's own
 {% endif %}
- {% elif web_api %}Start the API server (the FastAPI app lives in `app/`):
+{% elif web_api %}Start the API server (the FastAPI app lives in `app/`):
 
 ```sh
 {{ m.run_prefix() }}uvicorn app.main:app --reload
