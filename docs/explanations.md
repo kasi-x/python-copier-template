@@ -12,4 +12,5 @@ Explanations of how it works and why it works that way.
 - [Security & Compliance](explanations/security.md)
 - [Verification Architecture](explanations/verification.md)
 - [Ethics as External Source](explanations/ethics-external.md)
+- [Branching Model](explanations/branching.md)
 - [Drift Detection](explanations/drift-detection.md)
