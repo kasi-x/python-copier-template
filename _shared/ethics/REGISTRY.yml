@@ -12,41 +12,54 @@ version: 1
 # kind (distributed on its own condition; the promotion PR wires the
 # questionnaire, the witness leaves, invariants.yml and this registry row).
 # `superseded_by` names the successor id; the file stays one version.
+#
+# `gate` is a Jinja/Python-compatible expression evaluated against the leaf
+# context in tools/ethics.py (`gate_holds`); it is the single spelling of
+# "which leaf carries this section" — the generated
+# _shared/ethics-appendix.jinja emits it verbatim into each `{% if %}` and
+# the render-invariants predicate evaluates the same string on the test side.
+# The expression vocabulary is the leaf context's keys (`*_effective`,
+# `*_layout`, the domain/distribution multiselects as lists, `oj_code`,
+# `kaggle`, ...); the registry test pins every row's gate to that allowlist.
 sections:
-  - id: region-kyushu-ntp
-    file: _shared/ethics/region/kyushu-ntp.md.jinja
-    version: 2026-09-18.1
-    effective: 2019-07-02
-    review_by: 2026-12-18
-    sources:
-      - https://www.janog.gr.jp/meeting/janog41/application/files/9815/1692/5488/janog41-sp10ntp-fujimura-03.pdf
-      - https://gigazine.net/news/20190702-fukuoka-u-ntp-server-shut-down/
-      - https://xtech.nikkei.com/atcl/nxt/mag/nc/18/020600011/092500040/
-    scope: {jurisdiction: [jp], sector: [telecom], category: []}
-    scale: global
-    audience: [iot, cli]
-    enforcement: L0
-    status: draft
-    rendered_from: []
-    superseded_by: null
-    why: "Public NTP concentration case (Fukuoka University 133.100.9.2/133.100.11.8, clock.nc.fukuoka-u.ac.jp): single-IP hardcoding plus retry storms as the DDoS-to-self pattern. First sample section for the region bundle."
-
-  - id: baseline-cra-obligations
-    file: _shared/ethics/region/eu-cra.md.jinja
+  - id: baseline-license-drift
+    file: _shared/ethics/baseline/license-drift.md.jinja
     version: 2026-09-21.1
-    effective: 2026-09-11
+    effective: 2023-08-10
     review_by: 2027-03-31
     sources:
-      - https://eur-lex.europa.eu/eli/reg/2024/2847/oj
-      - https://digital-strategy.ec.europa.eu/en/policies/cra-reporting
-    scope: {jurisdiction: [eu], sector: [], category: [supply-chain-security]}
-    scale: regional
-    audience: [library, cli, web, mcp]
-    enforcement: L1
+      - https://www.hashicorp.com/blog/terraform-is-now-source-available
+      - https://opentofu.org/faq/
+    scope: {jurisdiction: [], sector: [], category: [licensing]}
+    scale: global
+    audience: [library, cli, script, web, data-science]
+    enforcement: L2
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "true"
     superseded_by: null
-    why: "Regulation (EU) 2024/2847 applies in stages: conformity-assessment notification since 2024-06-11, the reporting duty since 2026-09-11 (already live), the main obligations from 2027-12-11. It reaches non-EU developers who place products on the EU market, and art. 24's free-software exemption holds only while the work is non-commercial -- which is why the gate is the `distribution` answer (commercial), not a jurisdiction question: the answer that decides whether a regulator cares is monetisation, and asking a personal project about CE marking would be the over-distribution the ethics-appendix predicate calls uninvited. The mechanical half (SBOM generation, dependency vulnerability monitoring) is what a template can actually ship; the 24-hour reporting duty stays process, documented rather than automated. L1: tools/ethics.py's presence trigger fires on the code vocabulary, and the predicate asserts the section appears exactly where `distribution` selects it."
+    why: "Terraform MPL-2.0 to BUSL 1.1 plus the OpenTofu cease-and-desist, and the reverse Elastic/Redis AGPL returns: a dependency's license is a moving value that must be re-checked, never remembered. L2 since 2026-09-19: the generated project ships a license-check gate (pip-licenses --partial-match --fail-on, policy derived from the project license) wired into CI."
+
+  - id: baseline-pki-chain
+    file: _shared/ethics/baseline/pki-chain.md.jinja
+    version: 2026-09-21.2
+    effective: 2024-06-06
+    review_by: 2026-12-18
+    sources:
+      - https://letsencrypt.org/certificates/
+      - https://letsencrypt.org/2023/07/10/cross-sign-expiration
+      - https://letsencrypt.org/2024/04/12/changes-to-issuance-chains
+      - https://community.letsencrypt.org/t/isrg-root-x2-cross-signed-by-isrg-root-x1/239124
+      - https://community.cloudflare.com/t/clarification-about-email-upcoming-lets-encrypt-certificate-chain-change/628713
+    scope: {jurisdiction: [], sector: [], category: [pki]}
+    scale: global
+    audience: [iot, cli, web]
+    enforcement: L0
+    status: active
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "project_type in ['micropython', 'cli'] or web_api"
+    superseded_by: null
+    why: "Chain-of-trust rewrites (DST Root CA X3 gone 2024-09, ISRG Root X2 cross-sign gone 2025-09, CDNs rotating issuers) break hardcoded intermediates and single-key pins. Active since 2026-09-21: AGENTS.md now renders for micropython/ros2/online_judge too, so the guide itself is the channel the former draft was waiting for (iot maps to micropython by the AGENTS.md gate; ros2 stays outside the audience by its own condition)."
 
   - id: baseline-personal-data
     file: _shared/ethics/baseline/personal-data.md.jinja
@@ -62,7 +75,8 @@ sections:
     audience: [library, cli, script, web, data-science, kaggle, mcp]
     enforcement: L1
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "'personal-data' in domain_traits or 'face-recognition' in domain_traits or 'medtech' in domain_traits"
     superseded_by: null
     why: "GDPR art. 4/5/17/22, Japan's 個人情報保護法 and the US state laws impose the same engineering duties from different directions: minimise what is collected and logged, make deletion reach every copy, and know what leaves the process. The section is asked rather than derived because the answers cannot tell a project that handles people from one that handles things -- a web API with a database stores `Item(name)`, and deriving 'has a DB therefore personal data' would ship these rules to 74 of 240 leaves, which is the over-distribution the ethics-appendix predicate calls uninvited. L1: tools/ethics.py's presence trigger fires on the code vocabulary, and the predicate asserts the section appears exactly where the answer selects it."
 
@@ -82,46 +96,10 @@ sections:
     audience: [library, cli, web]
     enforcement: L0
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "project_type in ['library', 'cli'] or web_api"
     superseded_by: null
     why: "FIPS 203/204/205 are function-divergent (KEM vs signatures) and the Kyber-era vernacular is stale; new crypto choices must be ML-KEM/ML-DSA based, hybrid, named by standard names."
-
-  - id: baseline-pki-chain
-    file: _shared/ethics/baseline/pki-chain.md.jinja
-    version: 2026-09-21.2
-    effective: 2024-06-06
-    review_by: 2026-12-18
-    sources:
-      - https://letsencrypt.org/certificates/
-      - https://letsencrypt.org/2023/07/10/cross-sign-expiration
-      - https://letsencrypt.org/2024/04/12/changes-to-issuance-chains
-      - https://community.letsencrypt.org/t/isrg-root-x2-cross-signed-by-isrg-root-x1/239124
-      - https://community.cloudflare.com/t/clarification-about-email-upcoming-lets-encrypt-certificate-chain-change/628713
-    scope: {jurisdiction: [], sector: [], category: [pki]}
-    scale: global
-    audience: [iot, cli, web]
-    enforcement: L0
-    status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
-    superseded_by: null
-    why: "Chain-of-trust rewrites (DST Root CA X3 gone 2024-09, ISRG Root X2 cross-sign gone 2025-09, CDNs rotating issuers) break hardcoded intermediates and single-key pins. Active since 2026-09-21: AGENTS.md now renders for micropython/ros2/online_judge too, so the guide itself is the channel the former draft was waiting for (iot maps to micropython by the AGENTS.md gate; ros2 stays outside the audience by its own condition)."
-
-  - id: baseline-license-drift
-    file: _shared/ethics/baseline/license-drift.md.jinja
-    version: 2026-09-21.1
-    effective: 2023-08-10
-    review_by: 2027-03-31
-    sources:
-      - https://www.hashicorp.com/blog/terraform-is-now-source-available
-      - https://opentofu.org/faq/
-    scope: {jurisdiction: [], sector: [], category: [licensing]}
-    scale: global
-    audience: [library, cli, script, web, data-science]
-    enforcement: L2
-    status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
-    superseded_by: null
-    why: "Terraform MPL-2.0 to BUSL 1.1 plus the OpenTofu cease-and-desist, and the reverse Elastic/Redis AGPL returns: a dependency's license is a moving value that must be re-checked, never remembered. L2 since 2026-09-19: the generated project ships a license-check gate (pip-licenses --partial-match --fail-on, policy derived from the project license) wired into CI."
 
   - id: baseline-copyright-ai
     file: _shared/ethics/baseline/copyright-ai.md.jinja
@@ -135,7 +113,8 @@ sections:
     audience: [cli, data-science]
     enforcement: L0
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "project_type == 'cli' or data_science_layout"
     superseded_by: null
     why: "Agency of Culture's AI-and-copyright position: art. 30-4's enjoyment-purpose exception fails on overfitting, raw-expression RAG retrieval, and robots.txt circumvention; public-domain calls need per-jurisdiction term checks."
 
@@ -151,9 +130,28 @@ sections:
     audience: [mcp]
     enforcement: L0
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "mcp_effective"
     superseded_by: null
     why: "OWASP LLM Top 10 entry numbers move per edition (excessive agency was a different slot in 2023-24); reference by name, and gate destructive tool actions behind human approval."
+
+  - id: domain-ml-bias
+    file: _shared/ethics/domain/ml-bias.md.jinja
+    version: 2026-09-21.3
+    effective: 2024-08-01
+    review_by: 2026-12-18
+    sources:
+      - https://www.nejm.org/doi/full/10.1056/NEJMc1919366
+      - https://eur-lex.europa.eu/eli/reg/2024/1689/oj
+    scope: {jurisdiction: [], sector: [], category: [ml-fairness]}
+    scale: global
+    audience: [data-science, kaggle]
+    enforcement: L0
+    status: active
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "ds_stack"
+    superseded_by: null
+    why: "Pulse-oximetry occult-hypoxemia disparity and EU AI Act art. 10 data-governance duties: subgroup metrics, documented fairness-metric choice, and human review are the minimum evaluation surface. The 適用条件 widens to any automatic decision about a person (2026-09-20): a scoring/screening endpoint is in scope whatever its accuracy, which is the case GDPR art. 22 and the AI Act's high-risk duties turn on. When such a project also answers `personal-data`, the privacy section carries the explainability-and-record-keeping side, so this row keeps its ds/kaggle audience and does not duplicate it."
 
   - id: domain-face-recognition
     file: _shared/ethics/domain/face-recognition.md.jinja
@@ -170,26 +168,47 @@ sections:
     audience: [data-science, web, cli, mcp]
     enforcement: L1
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "'face-recognition' in domain_traits"
     superseded_by: null
     why: "NIST FRVT Part 3 found false-positive rates differing by orders of magnitude across demographic groups, so a single matching threshold converts a measurement gap into an operational one; EU AI Act art. 5 bans several face-recognition uses outright (untargeted scraping, workplace/education emotion recognition, real-time public biometric ID), and BIPA/GDPR make the template store and consent terms legal duties rather than design taste. L1: tools/ethics.py's presence trigger fires on the code vocabulary, and invariants.yml's ethics-appendix predicate asserts the section appears exactly where the audience matches."
 
-  - id: domain-ml-bias
-    file: _shared/ethics/domain/ml-bias.md.jinja
-    version: 2026-09-21.3
-    effective: 2024-08-01
+  - id: sector-samd-regulatory
+    file: _shared/ethics/sector/samd-regulatory.md.jinja
+    version: 2026-09-21.1
+    effective: 2024-12-04
     review_by: 2026-12-18
     sources:
-      - https://www.nejm.org/doi/full/10.1056/NEJMc1919366
+      - https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence-enabled-device-software-functions
+      - https://eur-lex.europa.eu/eli/reg/2017/745/oj
       - https://eur-lex.europa.eu/eli/reg/2024/1689/oj
-    scope: {jurisdiction: [], sector: [], category: [ml-fairness]}
+    scope: {jurisdiction: [], sector: [medtech], category: [regulatory]}
     scale: global
-    audience: [data-science, kaggle]
-    enforcement: L0
+    audience: [data-science, web, cli, mcp]
+    enforcement: L1
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "'medtech' in domain_traits"
     superseded_by: null
-    why: "Pulse-oximetry occult-hypoxemia disparity and EU AI Act art. 10 data-governance duties: subgroup metrics, documented fairness-metric choice, and human review are the minimum evaluation surface. The 適用条件 widens to any automatic decision about a person (2026-09-20): a scoring/screening endpoint is in scope whatever its accuracy, which is the case GDPR art. 22 and the AI Act's high-risk duties turn on. When such a project also answers `personal-data`, the privacy section carries the explainability-and-record-keeping side, so this row keeps its ds/kaggle audience and does not duplicate it."
+    why: "FDA's PCCP final guidance (2024-12), Japan's IDATEN and the EU MDR + AI Act stack all converge on one rule: continuous learning is allowed only inside a pre-approved change envelope, with humans deciding. Promoted from draft when the domain_traits multiselect landed: the section was previously unroutable because 'medical' is a purpose, not a layout -- a health-data CLI or an MCP server exposing a clinical tool was in scope by the section's own 適用条件 while no gate could reach it. L1: tools/ethics.py's presence trigger fires on the clinical vocabulary, and invariants.yml's ethics-appendix predicate asserts the section appears exactly where the answer selects it."
+
+  - id: baseline-cra-obligations
+    file: _shared/ethics/region/eu-cra.md.jinja
+    version: 2026-09-21.1
+    effective: 2026-09-11
+    review_by: 2027-03-31
+    sources:
+      - https://eur-lex.europa.eu/eli/reg/2024/2847/oj
+      - https://digital-strategy.ec.europa.eu/en/policies/cra-reporting
+    scope: {jurisdiction: [eu], sector: [], category: [supply-chain-security]}
+    scale: regional
+    audience: [library, cli, web, mcp]
+    enforcement: L1
+    status: active
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "'commercial' in distribution"
+    superseded_by: null
+    why: "Regulation (EU) 2024/2847 applies in stages: conformity-assessment notification since 2024-06-11, the reporting duty since 2026-09-11 (already live), the main obligations from 2027-12-11. It reaches non-EU developers who place products on the EU market, and art. 24's free-software exemption holds only while the work is non-commercial -- which is why the gate is the `distribution` answer (commercial), not a jurisdiction question: the answer that decides whether a regulator cares is monetisation, and asking a personal project about CE marking would be the over-distribution the ethics-appendix predicate calls uninvited. The mechanical half (SBOM generation, dependency vulnerability monitoring) is what a template can actually ship; the 24-hour reporting duty stays process, documented rather than automated. L1: tools/ethics.py's presence trigger fires on the code vocabulary, and the predicate asserts the section appears exactly where `distribution` selects it."
 
   - id: domain-scraping-law
     file: _shared/ethics/domain/scraping-law.md.jinja
@@ -209,7 +228,8 @@ sections:
     audience: [cli]
     enforcement: L0
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "scraping_effective"
     superseded_by: null
     why: "hiQ v. LinkedIn (9th Cir. 2022) read the CFAA's 'without authorization' as not covering public pages refused by cease-and-desist alone, which kept the tortious-interference claim alive while the CFAA argument stalled -- so the technical act can be lawful while the contract claim stands; the EU Database Directive's sui generis right (art. 7) bans extraction of a substantial part even where individual facts are not copyrightable; the Agency of Culture position (already cited in copyright-ai) treats deliberate robots.txt circumvention as potentially harming a paid data market; and CFAA / 不正アクセス禁止法 punish bypassing authentication, not reading public pages. robots.txt (RFC 9309) is evidence of the operator's intent, never an authorization. The gate is derived (scraping_effective) because the template only ships scraping code on that flag -- a project without the fetcher layer owes no scraping-law map. L0: the section reaches the AGENTS.md reader, and the ethics-appendix predicate asserts it appears exactly where scraping_effective holds."
 
@@ -230,27 +250,28 @@ sections:
     audience: [online-judge]
     enforcement: L0
     status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    rendered_from: ["_shared/ethics-appendix.jinja"]
+    gate: "oj_code"
     superseded_by: null
     why: "AI-use rules differ per judge and change frequently: AtCoder's 生成AI対策ルール (current version 2025-10-03) bans generative AI during ABC/ARC/AGC except a whitelisted translation prompt, while AHC and practice runs keep their own rules; LeetCode, Codeforces, Kattis and ICPC publish theirs separately, so 'the judge allowed it last time' is never a safe assumption. The submission is the entrant's own responsibility whatever tool produced it, and rating manipulation / multi-accounting are banned on every platform. The gate is oj_code -- the code-submission judges, deliberately excluding the kaggle workspace and the CTF challenges, which matches the AGENTS.md banner's own split. L0: the section reaches the AGENTS.md reader; the ethics-appendix predicate asserts it appears exactly where oj_code holds."
 
-  - id: sector-samd-regulatory
-    file: _shared/ethics/sector/samd-regulatory.md.jinja
-    version: 2026-09-21.1
-    effective: 2024-12-04
+  - id: region-kyushu-ntp
+    file: _shared/ethics/region/kyushu-ntp.md.jinja
+    version: 2026-09-18.1
+    effective: 2019-07-02
     review_by: 2026-12-18
     sources:
-      - https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence-enabled-device-software-functions
-      - https://eur-lex.europa.eu/eli/reg/2017/745/oj
-      - https://eur-lex.europa.eu/eli/reg/2024/1689/oj
-    scope: {jurisdiction: [], sector: [medtech], category: [regulatory]}
+      - https://www.janog.gr.jp/meeting/janog41/application/files/9815/1692/5488/janog41-sp10ntp-fujimura-03.pdf
+      - https://gigazine.net/news/20190702-fukuoka-u-ntp-server-shut-down/
+      - https://xtech.nikkei.com/atcl/nxt/mag/nc/18/020600011/092500040/
+    scope: {jurisdiction: [jp], sector: [telecom], category: []}
     scale: global
-    audience: [data-science, web, cli, mcp]
-    enforcement: L1
-    status: active
-    rendered_from: ["template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"]
+    audience: [iot, cli]
+    enforcement: L0
+    status: draft
+    rendered_from: []
     superseded_by: null
-    why: "FDA's PCCP final guidance (2024-12), Japan's IDATEN and the EU MDR + AI Act stack all converge on one rule: continuous learning is allowed only inside a pre-approved change envelope, with humans deciding. Promoted from draft when the domain_traits multiselect landed: the section was previously unroutable because 'medical' is a purpose, not a layout -- a health-data CLI or an MCP server exposing a clinical tool was in scope by the section's own 適用条件 while no gate could reach it. L1: tools/ethics.py's presence trigger fires on the clinical vocabulary, and invariants.yml's ethics-appendix predicate asserts the section appears exactly where the answer selects it."
+    why: "Public NTP concentration case (Fukuoka University 133.100.9.2/133.100.11.8, clock.nc.fukuoka-u.ac.jp): single-IP hardcoding plus retry storms as the DDoS-to-self pattern. First sample section for the region bundle."
 
   - id: region-jp-external-transmission
     file: _shared/ethics/region/jp-external-transmission.md.jinja

@@ -60,19 +60,20 @@ A draft promotes only when a bundle forms: three sections sharing one
 distribution condition, or one section needing a distinct code/test gate
 (enforcement L2). A promotion changes generated renders, so it wires the
 verification stack as it goes — each step below has a check that catches
-its omission.
-
 | # | Touchpoint | What catches the omission |
 | --- | --- | --- |
-| 1 | Registry row: bump `version`, set `status: active`, name the parent(s) in `rendered_from` (usually `template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja`) | `test_ethics_registry.py`: a distributed row must name parents that actually reference the file |
-| 2 | The include, on one line, in the parent's include chain, gated on existing answers (never a new question) | the `ethics-appendix` predicate in `tests/test_render_invariants.py` — it fails a leaf missing the section *and* a leaf shipping it uninvited |
-| 3 | The same gate as a named trait helper + an `ETHICS_SECTIONS` entry (h1 marker + selector) | the docstring rule in that file: one spelling per trait, no inline disjunctions to drift |
-| 4 | `tests/matrix/invariants.yml`: content pairs `[AGENTS.md, "<h1 marker>"]` on every row whose leaves select the section | those rows' leaves fail the content predicate |
+| 1 | Registry row: bump `version`, set `status: active`, name the parent(s) in `rendered_from`, and write the `gate` expression (the single spelling of "which leaf carries this section") | `test_ethics_registry.py`: a distributed row must name parents and carry a gate; its gate must parse under the allowlisted evaluator and name only leaf-context flags |
+| 2 | `uv run python tools/gen_ethics_appendix.py` — regenerate `_shared/ethics-appendix.jinja` from the registry | `test_the_generated_appendix_matches_the_registry` — a stale committed file fails |
+| 3 | The generated include lands in the AGENTS.md appendix automatically — there is no hand-written chain left to edit | the `ethics-appendix` predicate in `tests/test_render_invariants.py` evaluates the same gate string per leaf and fails a leaf missing the section *or* shipping it uninvited |
+| 4 | `tests/matrix/invariants.yml`: name the `ethics-appendix` predicate on every row whose leaves select the section (content pairs for section markers are gone — the predicate is the pin) | the predicate registry fails a named row without it |
 | 5 | `task witness` + the fast tier | the ledger freshness and content checks |
 
 The audience in the registry row is the human-readable word for the gate
 (`iot` may map to `micropython`, as `baseline-pki-chain` does); the gate
-and the selector spell the mapping, the row keeps the word.
+spells the mapping, the row keeps the word. A draft row may carry its
+intended `gate` at registration time — it is linted (safe AST) but not
+bound-checked until activation, so a promotion is a status flip plus the
+answer wiring the gate already names.
 
 ## Enforcement levels
 

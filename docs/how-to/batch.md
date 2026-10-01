@@ -52,6 +52,7 @@ exit 2 instead of silently checking nothing.
 | `matches` | `[{path, regex}]` — the file text must match. |
 | `unmatches` | `[{path, regex}]` — the file text must not match. |
 | `toml` | `[{path, key, equals}]` — dotted-key lookup (integer segments index lists). |
+| `agents_md` | `[{present: [registry-id], absent: [registry-id]}]` — the generated AGENTS.md must carry/not carry the ethics appendix section; ids resolve to section titles through `_shared/ethics/REGISTRY.yml`. |
 
 `expect` and `commands` are judged against the state *after* `update`, if
 that phase is present.

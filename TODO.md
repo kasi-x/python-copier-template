@@ -53,7 +53,8 @@
 
 - §28 の残り 0 件（全 41 項目を 2026-09-18 に着地）→ 下の §28（このファイル）
 - §29 ethics昇格ロードマップ（2026-09-19 検討）→ 下の §29（このファイル）。残りは
-  着手条件つき保留（B: pki-chain / samd / region 2件、C: L1 引き上げ、D: ウォッチ）。
+  着手条件つき保留（B: region 2件 — 同梱参照方式で 2026-09-28 に着地、節自体は
+  draft のまま。appendix 生成化は 2026-10-01 着地）。
   C の L2（license-check ゲート）は 2026-09-19 着地済み。
 - §1–27 の残り 28 件 → `notes/archive/TODO-sections-01-27.md`（27 トップレベル＋ 1 ネスト。行番号は旧 TODO.md と同一）
 - コード・docs の `TODO.md §1–27` / `TODO §xx` 参照も archive を指す。§番号は変えていないので参照は番号で追える
@@ -477,6 +478,25 @@ rules as sections first」、レジストリは `_shared/ethics/REGISTRY.yml`。
   データ化・1次出典付き・review_by を registry 行と同期）に構造化。
   ガードは test_ethics_registry.py の copyright-terms テスト、セクション
   本文からテーブルへ逆参照し drift を防ぐ。
+
+- **`_shared/ethics-appendix.jinja` の生成化**: **2026-10-01 着地**。include
+  チェーンは `tools/gen_ethics_appendix.py` が `REGISTRY.yml` の `status` +
+  `gate` から生成するコミット済み生成物になり、AGENTS.md.jinja は
+  `{% include "_shared/ethics-appendix.jinja" %}` 一行だけを持つ。
+  `gate` が「どの葉が節を持つか」の唯一の綴り — テスト側の述語は
+  `tools/ethics.py` の制限 eval で同じ文字列を評価する（λ 表と
+  `test_generated_lint.py` の private OJ_CODE_KINDS は解消）。
+  `invariants.yml` の per-row コンテンツペア（ライセンス変動等 23 件）も
+  除去 — 述語が同じ主張をするので重複していた。`FLAGS.yml` の `gate:` 列も
+  registry への重複スペルだったため除去（外部契約は `audience` 写像のみ）。
+  新規テスト: 生成物の鮮度チェック + 全 gate の安全/束縛チェック
+  （test_ethics_registry.py）。バッチ仕様に `expect.agents_md` を追加し、
+  smoke.jsonl の 7 リクエストがレジストリ id で節の有無をピンする。
+- **地域ルールの同梱参照**: **2026-09-28 着地（上の「次候補」の実施）**。
+  `ethics/regions.yml`（web_api のみ生成）が per-market 要約 + 1次出典表を
+  同梱し、AGENTS.md は表へのポインタを持つ。`serves:` が draft 節への唯一
+  許される参照（テストでピン）。2 節は draft のまま — 質問追加なしで
+  葉空間不変のまま読者に届く。
 
 ### C. enforcement の引き上げ候補（L0 → L1/L2）
 

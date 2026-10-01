@@ -8,6 +8,7 @@ shape, header agreement, draft isolation, and the denylist the first
 section exists for.
 """
 
+import ast
 import re
 import sys
 from datetime import UTC
@@ -93,6 +94,7 @@ def test_registry_rows_are_well_formed():
             assert row["rendered_from"] == [], f"{row['id']}: draft must render from nowhere"
         else:
             assert row["rendered_from"], f"{row['id']}: distributed rows must name their parents"
+            assert row.get("gate"), f"{row['id']}: a distributed row needs its gate expression"
     assert len(set(ids)) == len(ids), f"duplicate section ids: {ids}"
 
 
@@ -199,6 +201,55 @@ def test_every_row_documents_a_parseable_presence_trigger():
     )
 
 
+def test_the_generated_appendix_matches_the_registry():
+    """_shared/ethics-appendix.jinja is generated, so the committed file must
+    equal what the registry currently produces.
+
+    The AGENTS.md appendix used to hand-write the include chain; now the
+    registry row's `gate` is the single spelling, and the generated file is
+    what actually renders. An edit to a row's status or gate without a
+    regeneration leaves the shipped appendix silently wrong -- the drift is
+    the same class gen_docs' committed-output check catches, so the test
+    runs the generator's check path rather than re-deriving the chain.
+    """
+    sys.path.insert(0, str(TOP))
+    from tools import gen_ethics_appendix  # noqa: PLC0415
+
+    assert gen_ethics_appendix.main(["--check"]) == 0, (
+        "the committed _shared/ethics-appendix.jinja is stale -- run `python tools/gen_ethics_appendix.py`"
+    )
+
+
+def test_gates_are_safe_and_distributed_ones_are_bound():
+    """Every gate parses under the restricted evaluator; a distributed row's
+    gate also names only the flags the leaf context provides.
+
+    Drafts keep their intended `gate` at registration time (a promotion is a
+    status flip plus the answer wiring), so every row's expression is linted;
+    boundness is checked only where it is decidable -- the leaf context's
+    vocabulary is the contract a distributed row renders against, while a
+    draft may reserve a flag that the context does not bind yet (that is the
+    promotion's job to add). A typo'd flag on a distributed row would raise
+    NameError at render time (the generated `{% if %}`), so it fails here,
+    not in a user's copier run.
+    """
+    sys.path.insert(0, str(TOP))
+    from tools import ethics as ethics_mod  # noqa: PLC0415
+
+    context_keys = set(ethics_mod.leaf_context({"project_type": "library"}))
+    for row in _load_registry():
+        gate = str(row.get("gate") or "")
+        if not gate:
+            continue
+        problem = ethics_mod.gate_safe(gate)
+        assert problem is None, f"{row['id']}: gate {gate!r} is not evaluable: {problem}"
+        if row["status"] == "draft":
+            continue  # drafts may reserve flags the context does not bind yet
+        names = {node.id for node in ast.walk(ast.parse(gate, mode="eval")) if isinstance(node, ast.Name)}
+        unknown = names - context_keys
+        assert not unknown, f"{row['id']}: gate {gate!r} names flags the leaf context does not bind: {sorted(unknown)}"
+
+
 def test_copyright_terms_table_matches_its_section():
     """The lang/ table is the structured half of baseline-copyright-ai.
 
@@ -278,9 +329,9 @@ def test_regions_table_serves_registered_drafts():
         for key in ("jurisdiction", "statute", "applies_to", "duties", "triggers", "sources"):
             assert rule.get(key), f"{rule_id}: missing or empty key {key!r}"
         assert isinstance(rule["duties"], list), f"{rule_id}: duties must be a list"
-        assert isinstance(rule["sources"], list) and all(
-            str(url).startswith("https://") for url in rule["sources"]
-        ), f"{rule_id}: sources must be https URLs"
+        assert isinstance(rule["sources"], list) and all(str(url).startswith("https://") for url in rule["sources"]), (
+            f"{rule_id}: sources must be https URLs"
+        )
         served.append(str(rule_id))
         review_by.append(str(served_row["review_by"]))
 
@@ -289,9 +340,7 @@ def test_regions_table_serves_registered_drafts():
         "the first rule to need re-checking sets the table's horizon"
     )
     agents = TOP / "template" / "{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"
-    assert "regions.yml" in _read(agents), (
-        "AGENTS.md must point at the table so the channel cannot drop silently"
-    )
+    assert "regions.yml" in _read(agents), "AGENTS.md must point at the table so the channel cannot drop silently"
 
 
 def test_python_examples_are_ruff_format_clean(tmp_path: Path):

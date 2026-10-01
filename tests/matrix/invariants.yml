@@ -150,9 +150,6 @@ leaf_classes:
     predicates: [agents-md, docs-nav]
     content:
       - [pyproject.toml, polars]
-      - [AGENTS.md, "ライセンス変動"]
-      - [AGENTS.md, "AIと著作権"]
-      - [AGENTS.md, "MLバイアス"]
     why: "the data-science layout (notebooks/ data/ models/ reports/), from project_type=data_science or the include_data_science layer; it changes questions/_internal.yml's pkg_dir"
 
   - id: layout=web_api
@@ -165,9 +162,6 @@ leaf_classes:
     content:
       - [.github/workflows/ci.yml, postgres]
       - [pyproject.toml, fastapi]
-      - [AGENTS.md, "PQC標準"]
-      - [AGENTS.md, "PKIチェーン"]
-      - [AGENTS.md, "ライセンス変動"]
       - [AGENTS.md, regions.yml]
     why: "the FastAPI scaffold: the app lives in a top-level app/ package, so this row (not the project type's) owns the package directory"
 
@@ -189,9 +183,6 @@ leaf_classes:
     markers:
       absent: [compose.local.yml, smoke_example/__init__.py]
     predicates: [agents-md, docs-nav]
-    content:
-      - [AGENTS.md, "PQC標準"]
-      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: full
       why: "recommended library path, executed end to end (~3 min): uv sync + generated pytest + basedpyright + docs"
@@ -206,11 +197,6 @@ leaf_classes:
     markers:
       absent: [compose.local.yml, app/main.py]
     predicates: [agents-md, docs-nav]
-    content:
-      - [AGENTS.md, "PQC標準"]
-      - [AGENTS.md, "PKIチェーン"]
-      - [AGENTS.md, "ライセンス変動"]
-      - [AGENTS.md, "AIと著作権"]
     tier:
       name: full
       why: "recommended CLI path, executed end to end (~3 min): console-script entry point and its CLI tests in the generated pytest run"
@@ -225,8 +211,6 @@ leaf_classes:
     markers:
       absent: [src, compose.local.yml]
     predicates: [agents-md, docs-nav]
-    content:
-      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: full
       why: "recommended script path, executed end to end (~3 min): flat stdlib-style workspace, pytest + basedpyright + docs run"
@@ -277,8 +261,6 @@ leaf_classes:
     absent:
       - ethics/regions.yml
     predicates: [agents-md, docs-nav]
-    content:
-      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: fast
       why: "render + ruff only: executing a ros2 leaf needs /opt/ros/$ROS_DISTRO on the runner"
@@ -291,9 +273,6 @@ leaf_classes:
     absent:
       - ethics/regions.yml
     predicates: [agents-md, docs-nav]
-    content:
-      - [AGENTS.md, "PKIチェーン"]
-      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: full
       why: "recommended MicroPython path, executed end to end (~3 min): generated type checks pass against the micropython-*-stubs"
@@ -312,8 +291,6 @@ leaf_classes:
     predicates: [agents-md]
     content:
       - [pyproject.toml, torch]
-      - [AGENTS.md, "ライセンス変動"]
-      - [AGENTS.md, "MLバイアス"]
     tier:
       name: fast
       why: "AtCoder carries the execution sample; kaggle is render-only"
@@ -331,7 +308,6 @@ leaf_classes:
     predicates: [agents-md]
     content:
       - [pyproject.toml, pwntools]
-      - [AGENTS.md, "ライセンス変動"]
     tier:
       name: fast
       why: "AtCoder carries the execution sample; the CTF judge is render-only"
@@ -352,8 +328,6 @@ leaf_classes:
     predicates: [agents-md]
     content:
       - [pyproject.toml, "dependencies = []"]
-      - [AGENTS.md, "ライセンス変動"]
-      - [AGENTS.md, "コンテスト規約"]
     tier:
       name: fast
       why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj / codeforces / kattis / other are render-only"
@@ -402,8 +376,6 @@ leaf_classes:
       - LEGAL.md
     absent: []
     predicates: []
-    content:
-      - [AGENTS.md, "スクレイピングの適法性"]
     tier:
       name: fast
       why: "the opt-in layers (ctf / data_science / scraping / web_api) are coverable by rendering: their artifacts are file-set invariants"
@@ -420,7 +392,6 @@ leaf_classes:
     predicates: []
     content:
       - [pyproject.toml, mcp]
-      - [AGENTS.md, "MCP安全設計"]
     why: "the MCP server integration at the src/flat placement; a detail question behind use_recommended_integrations, so the web_api placement is claimed by gate_off=use_recommended_integrations/details-chosen and this row declares no tier"
 
   - id: include=include_bot

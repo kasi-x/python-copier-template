@@ -65,6 +65,7 @@ if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.p
     sys.path.insert(0, str(TOP))
 
 from tools import batch  # noqa: E402
+from tools import ethics  # noqa: E402
 from tools import invariants  # noqa: E402
 from tools import z3_witnesses  # noqa: E402
 from tools.answers import BASE  # noqa: E402
@@ -712,176 +713,24 @@ def _nav_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
 # deciding which spelling to copy -- the drift this file's own docstring calls
 # out (TODO.md §28.3, "単一源の『コメント同期』の再発"). One spelling per trait.
 #
-# The derived internals are computed here rather than read, because copier
-# records no name whose `when` is false: `.copier-answers.yml` (and so every
-# witness leaf) carries the *asked* answers only. The definitions below
-# mirror questions/_internal.yml and questions/_combo.yml -- `combinable` is
-# the layer-forcing guard, so a `--data-file` that forces include_web_api onto
-# a non-combinable base must not make this predicate expect the section.
-def _combinable(answers: dict[str, object]) -> bool:
-    """questions/_combo.yml's `combinable`: the bases a layer may ride on."""
-    project_type = answers.get("project_type")
-    is_kaggle = project_type == "online_judge" and answers.get("oj_kind") == "kaggle"
-    return project_type in ("library", "cli", "web_api", "data_science") or is_kaggle
+# The leaf context (which answers imply which *_effective flag) lives in
+# tools/ethics.py next to the registry it serves: the appendix include chain
+# is generated from each row's `gate` string, and this predicate evaluates
+# the same string -- one spelling drives both sides.
 
 
-def _web_api_trait(answers: dict[str, object]) -> bool:
-    """questions/_internal.yml's `web_api` (has_web_api): base or layer opt-in."""
-    return answers.get("project_type") == "web_api" or (
-        bool(answers.get("include_web_api", False)) and _combinable(answers)
-    )
+def _section_rows() -> list[dict[str, Any]]:
+    """The registry rows that can appear in the appendix: active, gated."""
+    return [row for row in ethics.load_registry() if row.get("status") == "active"]
 
 
-def _data_science_trait(answers: dict[str, object]) -> bool:
-    """questions/_internal.yml's `data_science` (has_data_science)."""
-    return answers.get("project_type") == "data_science" or (
-        bool(answers.get("include_data_science", False)) and _combinable(answers)
-    )
-
-
-def _data_science_layout_trait(answers: dict[str, object]) -> bool:
-    """questions/_internal.yml's `data_science_layout` (defaults to data_science)."""
-    return _data_science_trait(answers)
-
-
-def _ds_stack_trait(answers: dict[str, object]) -> bool:
-    """questions/_internal.yml's `ds_stack`: the analysis layout or the kaggle workspace."""
-    return _data_science_layout_trait(answers) or _kaggle_trait(answers)
-
-
-def _mcp_trait(answers: dict[str, object]) -> bool:
-    """questions/_internal.yml's `mcp_effective`: the scaffold ships only on an executable host."""
-    return bool(answers.get("include_mcp", False)) and (answers.get("project_type") == "cli" or _web_api_trait(answers))
-
-
-def _kaggle_trait(answers: dict[str, object]) -> bool:
-    """The kaggle workspace: online_judge with the kaggle judge."""
-    return answers.get("project_type") == "online_judge" and answers.get("oj_kind") == "kaggle"
-
-
-# questions/online_judge.yml's `oj_code` choice list, spelled once here: the
-# code-submission judges, with the kaggle workspace and the ctf challenges
-# deliberately outside it (they are judges too, but neither is a contest whose
-# AI rules the guide is about).
-_OJ_CODE_KINDS = frozenset({"atcoder", "leetcode", "yukicoder", "aoj", "codeforces", "kattis", "other"})
-
-
-def _oj_code_trait(answers: dict[str, object]) -> bool:
-    """questions/online_judge.yml's `oj_code`: online_judge with a code-submission judge."""
-    return answers.get("project_type") == "online_judge" and answers.get("oj_kind") in _OJ_CODE_KINDS
-
-
-# The cryptographically-interesting guides: the two code-producing bases plus
-# whatever opted into the web_api scaffold (the layer is what matters, not the
-# base word).
-def _crypto_trait(answers: dict[str, object]) -> bool:
-    """The PQC audience: library, cli, or anything carrying the web_api scaffold."""
-    return answers.get("project_type") in ("library", "cli") or _web_api_trait(answers)
-
-
-def _copyright_trait(answers: dict[str, object]) -> bool:
-    """The AI-and-copyright audience: cli, or the data-science layout."""
-    return answers.get("project_type") == "cli" or _data_science_layout_trait(answers)
-
-
-def _scraping_trait(answers: dict[str, object]) -> bool:
-    """questions/_internal.yml's `scraping_effective`: the polite fetcher rides the cli base."""
-    return bool(answers.get("include_scraping", False)) and answers.get("project_type") == "cli"
-
-
-def _pki_trait(answers: dict[str, object]) -> bool:
-    """The PKI-chain audience: micropython (the registry's `iot`), cli, or the
-    web_api scaffold. The iot→micropython mapping lives here and in
-    AGENTS.md.jinja's gate, spelled the same way on both sides; the registry
-    keeps `iot` as the human-readable word (long-lived clients pinning certs)."""
-    return answers.get("project_type") in ("micropython", "cli") or _web_api_trait(answers)
-
-
-def _domain_traits(answers: dict[str, object]) -> set[str]:
-    """The `domain_traits` multiselect's answer, as a set.
-
-    Copier records a multiselect as a list of the chosen labels (an empty list
-    when the user selects nothing), but a forced data-file answer or a
-    hand-edited answers file can carry a bare string, so both shapes are
-    accepted -- a section must never be dropped because the answer arrived in
-    the other spelling.
-    """
-    recorded = answers.get("domain_traits", [])
-    if isinstance(recorded, str):
-        return {recorded}
-    if isinstance(recorded, (list, tuple, set)):
-        return {str(entry) for entry in recorded}
-    return set()
-
-
-def _domain_trait(name: str) -> Callable[[dict[str, object]], bool]:
-    """A selector for one `domain_traits` choice.
-
-    The sections are chosen by *purpose*, not by layout: the answer is what
-    says whether the project touches face recognition or patient data, so the
-    selector reads the answer and nothing else. That is what lets a health-data
-    CLI, a clinical MCP tool and a data-science pipeline all reach the same
-    section -- the routing the draft rows could not express while they hung off
-    `project_type`.
-    """
-
-    def selects(answers: dict[str, object]) -> bool:
-        return name in _domain_traits(answers)
-
-    return selects
-
-
-def _personal_data_selector(answers: dict[str, object]) -> bool:
-    """The privacy rules: the `personal-data` choice, or any answer implying it.
-
-    Biometric data (face-recognition) and health data (medtech) ARE special
-    categories of personal data -- GDPR art. 9 says so, and so does Japan's
-    個人情報保護法 (要配慮個人情報). So selecting one of them is also a statement
-    that the project handles personal data, and the privacy section follows:
-    the implication is the regulation's own structure, not a convenience. The
-    AGENTS.md gate spells the same disjunction, and
-    tests/test_render_invariants.py holds the two together.
-    """
-    traits = _domain_traits(answers)
-    return bool(traits & {"personal-data", "face-recognition", "medtech"})
-
-
-def _distribution_values(answers: dict[str, object]) -> set[str]:
-    """The `distribution` multiselect's answer, in either recorded shape."""
-    recorded = answers.get("distribution", [])
-    if isinstance(recorded, str):
-        return {recorded}
-    if isinstance(recorded, (list, tuple, set)):
-        return {str(entry) for entry in recorded}
-    return set()
-
-
-def _commercial_selector(answers: dict[str, object]) -> bool:
-    """The CRA duties: the `commercial` distribution answer.
-
-    Regulation (EU) 2024/2847 art. 24 exempts free software *while it is not
-    commercialised*, so monetisation is what makes a regulator care -- not the
-    project type, and not jurisdiction on its own (a personal project in the EU
-    owes nothing). Reading the answer the user gave for that purpose keeps the
-    section off internal tools, which is the same over-distribution the
-    ethics-appendix predicate calls uninvited.
-    """
-    return "commercial" in _distribution_values(answers)
+def _section_predicate(row: dict[str, Any]) -> Callable[[dict[str, object]], bool]:
+    """The gate evaluator bound to one registry row."""
+    return lambda answers: ethics.gate_holds(row, answers)
 
 
 ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
-    "license-drift": ("ライセンス変動", lambda answers: True),
-    "pki-chain": ("PKIチェーン", _pki_trait),
-    "personal-data": ("個人データ", _personal_data_selector),
-    "pqc-fips": ("PQC標準", _crypto_trait),
-    "copyright-ai": ("AIと著作権", _copyright_trait),
-    "llm-appsec": ("MCP安全設計", _mcp_trait),
-    "ml-bias": ("MLバイアス", _ds_stack_trait),
-    "face-recognition": ("顔認識", _domain_trait("face-recognition")),
-    "samd-regulatory": ("医療SaMD", _domain_trait("medtech")),
-    "cra-obligations": ("EU CRA", _commercial_selector),
-    "scraping-law": ("スクレイピングの適法性", _scraping_trait),
-    "contest-rules": ("コンテスト規約", _oj_code_trait),
+    row["id"]: (ethics.section_title(row), _section_predicate(row)) for row in _section_rows()
 }
 
 
@@ -1190,7 +1039,7 @@ def test_distribution_contributions_are_additive(tmp_path: Path, render_cache: R
             f"adding `oss` must not change the appendix (art. 24 exempts non-commercial free software, "
             f"not commercial free software)"
         )
-    cra = ETHICS_SECTIONS["cra-obligations"][0]
+    cra = ETHICS_SECTIONS["baseline-cra-obligations"][0]
     if cra in _section_titles(rendered["oss"]):
         problems.append(
             f"selecting oss alone ships the {cra!r} section, but the CRA exempts free software while it is "

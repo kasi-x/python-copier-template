@@ -93,6 +93,10 @@ tasks:
     desc: 'Run a JSONL batch of copier requests and verdict each line (FILE=... CLI_ARGS=...)'
     cmd: uv run --locked python tools/batch.py {{ .FILE | default "batches/smoke.jsonl" }} {{ .CLI_ARGS }}
 
+  ethics-appendix:
+    desc: 'Regenerate _shared/ethics-appendix.jinja from REGISTRY.yml (CLI_ARGS="--check" verifies instead)'
+    cmd: uv run --locked python tools/gen_ethics_appendix.py {{ .CLI_ARGS }}
+
   verify-delta:
     desc: >-
       Prove which witness leaves the working tree can affect (Layer A semantic diff

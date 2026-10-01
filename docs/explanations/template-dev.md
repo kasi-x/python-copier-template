@@ -560,6 +560,16 @@ forms:
   picking the sentence where the judge asks), and the section promotes onto
   that channel.
 
+- Since 2026-10-01 the appendix include chain is generated, not hand-written:
+  `tools/gen_ethics_appendix.py` renders `_shared/ethics-appendix.jinja` from
+  each registry row's `status` and `gate`, and the AGENTS.md template just
+  includes it. The row's `gate` is therefore the single spelling of the
+  leaf-selection condition — the generated `{% if %}` and the test-side
+  predicate (`tools/ethics.py gate_holds`, the allowlisted-AST evaluator)
+  evaluate the same string, so adding a section edits the registry once and
+  both sides follow. A stale committed appendix fails
+  `test_the_generated_appendix_matches_the_registry`.
+
 Enforced by `tests/test_ethics_registry.py` (row shape incl. scale /
 audience, header agreement, body scale line, draft isolation, the
 parents a distributed row names actually including its file, the

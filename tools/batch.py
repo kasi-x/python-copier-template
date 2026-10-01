@@ -120,9 +120,10 @@ REQUEST_KEYS = frozenset(
 )
 UPDATE_KEYS = frozenset({"ref", "answers", "answers_file", "conflict"})
 COMMAND_KEYS = frozenset({"run", "cwd", "timeout", "exit", "stdout_regex", "stderr_regex"})
-EXPECT_KEYS = frozenset({"files", "absent", "matches", "unmatches", "toml"})
+EXPECT_KEYS = frozenset({"files", "absent", "matches", "unmatches", "toml", "agents_md"})
 MATCH_KEYS = frozenset({"path", "regex"})
 TOML_KEYS = frozenset({"path", "key", "equals"})
+AGENTS_MD_KEYS = frozenset({"present", "absent"})
 
 DEFAULT_TIMEOUT = 300
 OUTPUT_LIMIT = 2000
@@ -300,6 +301,16 @@ def _parse_expect(request_id: str, raw: Any) -> dict[str, Any]:
         if "equals" not in obj:
             msg = f"{request_id}: expect.toml entries need an 'equals' value (any JSON type)"
             raise SpecError(msg)
+    for entry in _as_list(expect.get("agents_md", []), f"{request_id}: expect.agents_md"):
+        obj = _as_object(entry, f"{request_id}: expect.agents_md entry")
+        _reject_unknown(f"{request_id}: expect.agents_md", obj, AGENTS_MD_KEYS)
+        present = obj.get("present", [])
+        absent = obj.get("absent", [])
+        for key, value in (("present", present), ("absent", absent)):
+            for section_id in _as_list(value, f"{request_id}: expect.agents_md.{key}"):
+                if not isinstance(section_id, str) or not section_id:
+                    msg = f"{request_id}: expect.agents_md.{key} entries must be section ids"
+                    raise SpecError(msg)
     return expect
 
 
@@ -604,6 +615,37 @@ def toml_lookup(data: Any, key: str) -> Any:
     return current
 
 
+def check_agents_md(dest: Path, entries: list[dict[str, Any]]) -> list[Check]:
+    """Ethics-section pins against the generated AGENTS.md.
+
+    Each entry names registry ids under `present`/`absent`; the id resolves
+    through the registry to the section's h1 title (the marker the appendix
+    renders), so a batch line pins the *rule* rather than repeating a marker
+    string that drifts when the prose is reworded.
+    """
+    sys.path.insert(0, str(TOP))
+    from tools import ethics  # noqa: PLC0415 -- deferred: yaml/jinja deps stay lazy
+
+    checks: list[Check] = []
+    path = dest / "AGENTS.md"
+    text = path.read_text(encoding="utf-8", errors="replace") if path.is_file() else ""
+    titles = {str(row["id"]): ethics.section_title(row) for row in ethics.load_registry()}
+    for entry in entries:
+        for key, want in (("present", True), ("absent", False)):
+            for section_id in entry.get(key, []):
+                title = titles.get(str(section_id))
+                name = f"agents_md {key} {section_id}"
+                if title is None:
+                    checks.append(Check(name=name, ok=False, detail="no such registry row"))
+                    continue
+                if not title:
+                    checks.append(Check(name=name, ok=False, detail="registry row has no h1 title"))
+                    continue
+                found = title in text
+                checks.append(Check(name=name, ok=found is want, detail="found" if found else "not found"))
+    return checks
+
+
 def check_toml(dest: Path, entries: list[dict[str, Any]]) -> list[Check]:
     """Compare values in TOML files by dotted key (integers index lists)."""
     checks: list[Check] = []
@@ -823,6 +865,7 @@ def run_request(request: Request, work: Path, repo: Path, *, prepare: bool = Fal
         result.checks.extend(check_matches(dest, expect.get("unmatches", []), want=False))
         result.checks.extend(check_toml(dest, expect.get("toml", [])))
         result.checks.extend(check_commands(dest, request.commands, request.id))
+        result.checks.extend(check_agents_md(dest, expect.get("agents_md", [])))
         if prepare and dest.is_dir():
             result.checks.append(prepare_environment(dest, request.id))
     except Exception as exc:  # noqa: BLE001  WHYNOT: a batch runner must report, not abort.
