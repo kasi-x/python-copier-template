@@ -125,7 +125,7 @@
 > passed / docs sync 10 blocks / test-fast 25.6s（予算 30s 内。cold cache で 34.1s は
 > 測定条件として台帳ノートに明記）。
 
-- 機能の将来拡張（6）: OJ 9 種＋その他（§2, archive L117）/ bot LINE・Gmail 残り（§4, L182）/ スタンドアロン MCP レシピ・MCP 本番運用（§5, L362–363）/ SQLAdmin・FastCRUD（§6, L440）/ library 空依存の維持・質問化（§17, L1058）
+- 機能の将来拡張（7）: OJ 9 種＋その他（§2, archive L117）/ bot LINE・Gmail 残り（§4, L182）/ スタンドアロン MCP レシピ・MCP 本番運用（§5, L362–363）/ SQLAdmin・FastCRUD（§6, L440）/ library 空依存の維持・質問化（§17, L1058）/ 実行環境への配慮 — Colab / AWS Lambda（§35, このファイル）
 - 公開・運用手順（14）: v1.0 fork 解除手順（§11, L544）/ renovate digest・example 再生成・Scorecard 確認・branch 保護（§12, L615–621）/ 改名・由来明記・Scorecard 初回・告知・hypermodern 乗換・Z3 記事・bus-factor（§16, L995–1028）/ fork 作成 F3 着手・手動投稿（§21, L1489–1497）
 - CI・検証の残り（8）: CI 緑確認・教訓（ネスト）・バッジ乖離・Periodic（§15, L800–815。日付が古い。要確認）/ setup composite 化・未検証組合せ（§19, L1328–1348）/ `render_project` 戻り値・手書きテスト棚卸し（§23, L1841–1910）
 
@@ -790,3 +790,27 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
 - 検証: 対象 pytest 551 件 + smoke batch 8/8（update 行含む）・
   ruff/basedpyright/typos クリーン。UPDATE_TIERS で台帳再記録
   （test-fast 1081→1082）。
+
+## §35 検討: 実行環境への配慮 — Colab / AWS Lambda（2026-10-02 提案）
+
+生成物の検証はローカル + GitHub Actions 中心だが、実際の実行環境には
+Colaboratory / AWS Lambda 等がある。スライスごとの衝突を棚卸しする。
+
+- **data_science / Colab**: テンプレは `notebooks/` に `.gitkeep` のみ同梱で、
+  実行用 notebook や install cell を持たない（依存は pyproject/uv 経由）。
+  Colab で notebook を書いて実行するユーザーには uv 前提のツールチェーンが
+  届かず、install cell（`pip install -e .`）や Colab 用セットアップ手順が
+  無い。GPU 前提ツール（torch の CUDA wheel 選択はテンプレが面倒見ない —
+  archive §B#15 と関連）が Colab 既定と合わない可能性。
+- **web_api / AWS Lambda**: `cloud_provider: aws` は現状 AWS サービス依存を
+  足すだけ（boto3 等; questions/_common_b.yml）でデプロイ形態は定めない。
+  Lambda で動かす場合 — メモリ/タイムアウト（生成 workflow の timeout は
+  あるが関数自体の設定は無い）、`Dockerfile` の起動方式（uvicorn サーバーは
+  Lambda の関数ハンドラと別世界）、env 管理（`.env.example` は local 前提）。
+- **判定基準**: 各スライスの「検証環境」と「実際の実行環境」のズレを
+  ドキュメントで明示するだけに留めるか、質問（`deploy_target` 等）を足して
+  Lambda 向けハンドラ/project 設定を生成するか、を設計監査として判断。
+  Leaf 空間を広げるなら witness 再生成（234 葉基準）が必要。
+- 着手はこのTODOの番号（§35）を参照。まず `data_science` の notebook が
+  Colab で開けるか（依存インストール経路）と、`web_api` cloud_provider=aws
+  の Lambda 適合を各1回実レンダで確認するのが最初のステップ。
