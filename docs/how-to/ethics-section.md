@@ -124,6 +124,26 @@ serves (`serves:`), matches its `review_by`, carries primary sources per
 row, and the section references it back; a guard in
 `tests/test_ethics_registry.py` holds the two together.
 
+## Market-triggered rules: the regions table
+
+Some rules have no questionnaire channel at all: whether Japan's
+third-party-transmission disclosure duty or the EU Accessibility Act
+applies depends on the markets a project ships to, and a
+`target_markets` question would add a leaf-space dimension for two
+sections. Those rules do not promote into the AGENTS.md appendix;
+instead the generated project ships `ethics/regions.yml` (web_api
+renders only — both current rules are frontend/UI duties), a per-rule
+summary table whose `serves:` entries point back at the registry draft
+the rule abbreviates. The AGENTS.md appendix links to the file rather
+than including the sections, so the draft isolation the registry test
+enforces stays intact.
+
+A `serves:` line in `regions.yml` is the one permitted reference to a
+draft section from a `template/` file — it names the file for the
+reader without distributing its body. A rule graduates out of the
+table the same way any draft does: three sections sharing one
+distribution condition, or one needing its own gate.
+
 ## Keeping sections alive
 
 Every row's `review_by` is the date its 制度変更ウォッチ items must be

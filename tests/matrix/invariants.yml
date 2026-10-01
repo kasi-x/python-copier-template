@@ -159,6 +159,7 @@ leaf_classes:
     select: {web_api: true}
     ships:
       - app/main.py
+      - ethics/regions.yml
     absent: []
     predicates: [agents-md, docs-nav]
     content:
@@ -167,6 +168,7 @@ leaf_classes:
       - [AGENTS.md, "PQC標準"]
       - [AGENTS.md, "PKIチェーン"]
       - [AGENTS.md, "ライセンス変動"]
+      - [AGENTS.md, regions.yml]
     why: "the FastAPI scaffold: the app lives in a top-level app/ package, so this row (not the project type's) owns the package directory"
 
   - id: layout=no_src
@@ -182,7 +184,8 @@ leaf_classes:
     select: {project_type: [library], web_api: false}
     ships:
       - src/smoke_example/__init__.py
-    absent: []
+    absent:
+      - ethics/regions.yml
     markers:
       absent: [compose.local.yml, smoke_example/__init__.py]
     predicates: [agents-md, docs-nav]
@@ -198,7 +201,8 @@ leaf_classes:
     select: {project_type: [cli], web_api: false}
     ships:
       - src/smoke_example/__init__.py
-    absent: []
+    absent:
+      - ethics/regions.yml
     markers:
       absent: [compose.local.yml, app/main.py]
     predicates: [agents-md, docs-nav]
@@ -216,7 +220,8 @@ leaf_classes:
     select: {project_type: [script], web_api: false}
     ships:
       - smoke_example/__init__.py
-    absent: []
+    absent:
+      - ethics/regions.yml
     markers:
       absent: [src, compose.local.yml]
     predicates: [agents-md, docs-nav]
@@ -269,7 +274,8 @@ leaf_classes:
     ships:
       - package.xml
       - smoke_example/__init__.py
-    absent: []
+    absent:
+      - ethics/regions.yml
     predicates: [agents-md, docs-nav]
     content:
       - [AGENTS.md, "ライセンス変動"]
@@ -282,7 +288,8 @@ leaf_classes:
     select: {project_type: [micropython]}
     ships:
       - firmware/main.py
-    absent: []
+    absent:
+      - ethics/regions.yml
     predicates: [agents-md, docs-nav]
     content:
       - [AGENTS.md, "PKIチェーン"]
@@ -317,7 +324,8 @@ leaf_classes:
     ships:
       - challenges/pwn/example/solve.py
       - AGENTS.md
-    absent: []
+    absent:
+      - ethics/regions.yml
     markers:
       absent: [compose.local.yml, src/smoke_example/__init__.py]
     predicates: [agents-md]
@@ -335,7 +343,7 @@ leaf_classes:
       - AGENTS.md
     absent:
       - src
-      - challenges
+      - ethics/regions.yml
     markers:
       # The bare workspace: README.md and the agent guide are all a
       # code-submission leaf ships beyond the common layout.

@@ -1,0 +1,41 @@
+# Jurisdiction reference table -- the rules whose trigger is a market, not a
+# project kind. The questionnaire cannot ask "which regions do you target"
+# without adding a leaf-space dimension, so this file ships the per-market
+# summaries and their primary sources instead: read the row for the regions
+# you ship to, and follow its source links before deciding a rule does not
+# apply. Each `serves` entry names the full section draft in the template
+# repository (_shared/ethics/region/, registered in its REGISTRY.yml) --
+# this table is the pointer, not the rule.
+#
+# This is not legal advice; a determination needs the current statute and
+# expert review.
+version: 1
+review_by: 2027-03-31
+disclaimer: 法的助言ではない。判定は対象法域の現行法と専門家レビューを通すこと。
+
+rules:
+  - id: region-jp-external-transmission
+    serves: _shared/ethics/region/jp-external-transmission.md.jinja
+    jurisdiction: jp
+    applies_to: "日本の利用者向けサイト・アプリで、アクセス解析・広告・サードパーティタグ/SDK・Cookie 等が利用者端末から外部へ情報を自動送信する場面"
+    statute: 改正電気通信事業法 第27条の12(2023-06-16施行)の外部送信規律
+    duties:
+      - 送信される情報の内容・送信先事業者の名称・自社と送信先での利用目的を、平易な日本語で事前公表する
+      - 開示は視認性を確保したUIで行う(文字サイズ・コントラスト;階層的構成は可)
+      - 本人の要求に基づく送信(認証Cookie等)は適用除外だが、除外の根拠を記録する
+    triggers: "cookie, consent, gtm, gtag, analytics, opt-out, tracker, sdk, tag manager"
+    sources:
+      - https://laws.e-gov.go.jp/law/404AC0000000086
+  - id: region-eu-eaa
+    serves: _shared/ethics/region/eu-eaa.md.jinja
+    jurisdiction: eu
+    applies_to: "EU域内の利用者に提供するECサイト・電子書籍・銀行等の消費者向けサービス、およびそのフロントエンド/UIコンポーネント"
+    statute: 欧州アクセシビリティ法(指令(EU) 2019/882、2025-06-28適用)
+    duties:
+      - 技術基準は調和規格 EN 301 549(WCAG 2.1 AA 相当)で満たす
+      - キーボード操作・コントラスト・alt・ラベルを標準で満たす
+      - microenterprise 等の適用除外は根拠を残して判定する(2030-06-28までの契約猶予あり)
+    triggers: "accessibility, aria, wcag, a11y, axe, tabindex, screen-reader, EN 301 549"
+    sources:
+      - https://eur-lex.europa.eu/eli/dir/2019/882/oj
+      - https://www.etsi.org/deliver/etsi_en/301500_301599/301549/

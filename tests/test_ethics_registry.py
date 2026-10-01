@@ -131,17 +131,30 @@ def _consumer_files():
 
 
 def test_draft_sections_are_not_distributed():
-    """A draft section is documentation only: nothing includes it (leaf +0)."""
+    """A draft section is documentation only: nothing includes it (leaf +0).
+
+    `include`-shaped distribution is the failure this guards; a *reference*
+    to the section file is how the shipped `ethics/regions.yml` table points
+    back at the rule it abbreviates, so a consumer that names the draft only
+    through the table's `serves:` field is exempt -- the distinction is
+    lexical: distribution embeds or pulls the section's body, a reference
+    just names the path for the reader.
+    """
     for row in _load_registry():
         if row["status"] != "draft":
             continue
         text = _read(TOP / str(row["file"]))
         assert "{{" not in text, f"{row['id']}: draft sections take no copier context"
-        offenders = [
-            str(path.relative_to(TOP))
-            for path in _consumer_files()
-            if path != TOP / str(row["file"]) and str(row["file"]) in _read(path)
-        ]
+        offenders = []
+        for path in _consumer_files():
+            if path == TOP / str(row["file"]):
+                continue
+            body = _read(path)
+            if str(row["file"]) not in body:
+                continue
+            if path.name == "regions.yml" and f"serves: {row['file']}" in body:
+                continue  # the table references the draft; it does not distribute it
+            offenders.append(str(path.relative_to(TOP)))
         assert not offenders, f"{row['id']} is draft but included from: {offenders}"
 
 
@@ -227,6 +240,57 @@ def test_copyright_terms_table_matches_its_section():
     section_text = (TOP / str(rows[0]["file"])).read_text(encoding="utf-8")
     assert "lang/copyright-terms.yml" in section_text, (
         "the section must point at the table so the two cannot drift apart silently"
+    )
+
+
+def test_regions_table_serves_registered_drafts():
+    """ethics/regions.yml is the distribution channel for the regional rules
+    whose trigger is a target market, not a project kind.
+
+    The questionnaire cannot ask 'which regions do you target' without a new
+    leaf dimension, so the generated `ethics/regions.yml` (web_api renders
+    only) carries each rule's summary and primary sources and points back at
+    the registry draft it abbreviates. The pin holds both ends: the table
+    names only registered region sections, and its review horizon is the
+    earliest review_by among the rows it serves -- stale statutes surface in
+    the section suite, not after a user's project was already generated.
+    """
+    table_path = TOP / "template" / "{% if web_api %}ethics{% endif %}" / "regions.yml"
+    assert table_path.is_file(), "the regions table must live under template/{% if web_api %}ethics{% endif %}/"
+    payload = yaml.safe_load(table_path.read_text(encoding="utf-8"))
+    assert payload.get("version") == 1, "table version must be 1"
+    rules = payload.get("rules")
+    assert isinstance(rules, list) and rules, "rules must be a non-empty list"
+
+    rows = {row["id"]: row for row in _load_registry()}
+    served: list[str] = []
+    review_by: list[str] = []
+    for rule in rules:
+        rule_id = rule.get("id")
+        assert ID_RE.fullmatch(str(rule_id)), f"bad rule id {rule_id!r}"
+        serves = str(rule.get("serves", ""))
+        assert serves.endswith(".md.jinja"), f"{rule_id}: serves must name the section file"
+        served_row = rows.get(str(rule_id))
+        assert served_row is not None, f"{rule_id}: serves a section the registry does not know"
+        assert str(served_row["file"]) == serves, (
+            f"{rule_id}: serves {serves!r} but the registry names {served_row['file']!r}"
+        )
+        for key in ("jurisdiction", "statute", "applies_to", "duties", "triggers", "sources"):
+            assert rule.get(key), f"{rule_id}: missing or empty key {key!r}"
+        assert isinstance(rule["duties"], list), f"{rule_id}: duties must be a list"
+        assert isinstance(rule["sources"], list) and all(
+            str(url).startswith("https://") for url in rule["sources"]
+        ), f"{rule_id}: sources must be https URLs"
+        served.append(str(rule_id))
+        review_by.append(str(served_row["review_by"]))
+
+    assert _datestr(payload.get("review_by")) == min(review_by), (
+        "the table's review_by is the earliest among the rows it serves -- "
+        "the first rule to need re-checking sets the table's horizon"
+    )
+    agents = TOP / "template" / "{% if agents_md_effective %}AGENTS.md{% endif %}.jinja"
+    assert "regions.yml" in _read(agents), (
+        "AGENTS.md must point at the table so the channel cannot drop silently"
     )
 
 
