@@ -38,7 +38,7 @@
 {% set OJ_STARTER = "printf '%s\\n' 'import sys' '' 'data = sys.stdin.read()' 'print(data)'" %}
 {# Just/Go-template double-brace expressions are OTHER tools' syntax, not
    Jinja's. They are emitted for the generated file, but a literal double
-   brace inside a Jinja expression also starts a (mis-paired) tag for the
+   brace inside a Jinja expression also opens a (mispaired) tag for the
    repo's identifier scanner, so the delimiters are assembled from single
    braces (JB/JE below). #}
 {% set JB = '{' ~ '{' %}
