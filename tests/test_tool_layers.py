@@ -91,7 +91,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
     ),
     "frontends": (
         "the entry points a human or an agent calls; consume the drivers",
-        frozenset({"cli", "gen_docs", "mcp_server"}),
+        frozenset({"cli", "gen_docs", "gen_ethics_appendix", "mcp_server"}),
     ),
 }
 

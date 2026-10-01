@@ -765,3 +765,28 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
   行列・witness 不変条件・example 系 346件パス。UPDATE_TIERS + gen_docs
   再記録済み（test-fast 1080→1081）。
 
+
+## §34 完了: ethics appendix の生成化 + gate 単一綴り（2026-10-01）
+
+- **`_shared/ethics-appendix.jinja` をコミット済み生成物化**:
+  `tools/gen_ethics_appendix.py` が REGISTRY.yml の `status`+`gate` から
+  include チェーンを生成。AGENTS.md.jinja は include 1 行のみ。
+  `gate` が「どの葉が節を持つか」の唯一の綴り — テスト側述語は
+  `tools/ethics.py` の制限 AST eval（`gate_holds`）で同じ文字列を評価。
+  test_render_invariants.py の手書き λ 表と私的 `_OJ_CODE_KINDS` を解消。
+- **invariants.yml の per-row AGENTS.md content pin 23 件除去** —
+  述語が同一主張をするので重複だった。
+- **FLAGS.yml の `gate:` 列を削除** — registry への重複スペルで
+  未検査だった列。外部契約は `audience` 写像のみに一本化。
+- **contract ガード追加**（test_ethics_registry.py）: 配布行の `gate` 必須、
+  全 gate の AST-lint + 配布 gate の leaf-context 束縛チェック、生成物の
+  `--check` 鮮度ピン。prose 形状アサート（本文の scale/audience 記述）は
+  codex 側 content QA に移す方針で本ファイルから除去
+  （notes/upstream-drafts/11 参照）。
+- **batch runner に `expect.agents_md`** — registry id で節の有無をピン。
+  smoke.jsonl 7 リクエストに適用済み。
+- **upstream-drafts 追加**: 11（codex content QA suite）、
+  12（codex regions-table spec）。CONTRIBUTING に ethics 境界節を追加。
+- 検証: 対象 pytest 551 件 + smoke batch 8/8（update 行含む）・
+  ruff/basedpyright/typos クリーン。UPDATE_TIERS で台帳再記録
+  （test-fast 1081→1082）。

@@ -14,6 +14,16 @@ Github also offers [discussions](https://github.com/kasi-x/python-copier-templat
 
 This template is a place to pull together agreed best practices from various sources. As such, it is difficult to demonstrate a change without seeing it in action in another repo. Please link to a repo that has the desired behaviour when proposing changes to the template.
 
+
+## Ethics / regional / operational rule sections
+
+The `_shared/ethics/` sections are field rules with their own review cadence
+(`review_by` per registry row), governed by
+[GOVERNANCE.md](../GOVERNANCE.md): contributors draft sections and re-check
+primary sources; the maintainer owns defaults and promotions. The runbook
+is [docs/how-to/ethics-section.md](../docs/how-to/ethics-section.md) —
+draft first, promote only when a distribution bundle forms.
+
 ## Checking your changes before making a PR
 
 The template has tests for:

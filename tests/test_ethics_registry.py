@@ -3,9 +3,12 @@
 _shared/ethics/REGISTRY.yml is the single source for accumulated rule
 sections (region/sector/domain). Until a section graduates to a genre
 (questions/ + witness leaf) it stays draft and no template/ file may
-include it (leaf +0). These tests hold the registry's contract: row
-shape, header agreement, draft isolation, and the denylist the first
-section exists for.
+include it (leaf +0). These tests pin the *contract surface*: row shape,
+header agreement, draft isolation, gate safety/boundness, generated-appendix
+freshness, and the regions/copyright tables' bindings. Prose-shape QA (the
+body naming its scale/audience tokens, denylist prose checks) moves to the
+codex repo's content suite when the split lands -- see
+notes/upstream-drafts/11-codex-content-qa-suite.md.
 """
 
 import ast
@@ -110,16 +113,6 @@ def test_section_headers_agree_with_registry():
         assert status == row["status"], f"{row['id']}: header status drifted from the row"
         review = _datestr(row["review_by"])
         assert review is not None and review in text, f"{row['id']}: body must repeat the row's review_by"
-
-
-def test_section_bodies_repeat_scale_and_audience():
-    """The body states its scale line and audience so humans and LLMs route it."""
-    scale_ja = {"domestic": "国内問題", "regional": "地域問題", "global": "世界問題"}
-    for row in _load_registry():
-        text = (TOP / str(row["file"])).read_text(encoding="utf-8")
-        assert scale_ja[str(row["scale"])] in text, f"{row['id']}: body must name its scale"
-        for entry in row["audience"]:
-            assert str(entry) in text.lower(), f"{row['id']}: body must name audience {entry!r}"
 
 
 def _consumer_files():
