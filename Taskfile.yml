@@ -97,6 +97,10 @@ tasks:
     desc: 'Regenerate _shared/ethics-appendix.jinja from REGISTRY.yml (CLI_ARGS="--check" verifies instead)'
     cmd: uv run --locked python tools/gen_ethics_appendix.py {{ .CLI_ARGS }}
 
+  changelog:
+    desc: 'Regenerate CHANGELOG.md with git-cliff (uvx git-cliff -o)'
+    cmd: uvx git-cliff -o CHANGELOG.md
+
   verify-delta:
     desc: >-
       Prove which witness leaves the working tree can affect (Layer A semantic diff

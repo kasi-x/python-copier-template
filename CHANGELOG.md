@@ -54,6 +54,11 @@ All notable changes to this project are documented in this file.
 - render every shipped preset end to end (857af60)
 
 
+### Style
+
+- reword mis-paired to clear the spellchecker (91c6d1d)
+
+
 ## [6.1.0]
 
 ### Bug Fixes
