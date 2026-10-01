@@ -43,6 +43,7 @@ from typing import Any
 
 import copier.errors
 import yaml
+from copier._main import Worker
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
@@ -101,7 +102,7 @@ def collision_warning(collisions: list[str]) -> str:
     return f"warning: {len(collisions)} existing file(s) the template also ships will be left alone: {named}"
 
 
-def _render(target: Path, data: dict[str, Any], ref: str, *, defaults: bool) -> None:
+def _render(target: Path, data: dict[str, Any], ref: str, *, defaults: bool) -> Worker:
     """Render this checkout into `target`, through `tools/batch.py:render`.
 
     The convention pins `unsafe` (copier's `--trust`) and `quiet`; the one
@@ -112,16 +113,38 @@ def _render(target: Path, data: dict[str, Any], ref: str, *, defaults: bool) -> 
     terminal).
     """
     with batch.report_stream_only():
-        batch.render(str(TOP), target, data, ref, defaults=defaults)
+        return batch.render(str(TOP), target, data, ref, defaults=defaults)
 
 
-def _fresh(
+def _warn_unknown_preset_keys(worker: Worker | None, answers: dict[str, Any]) -> None:
+    """Warn when a preset key is not a question the rendered ref defines.
+
+    Copier ignores answer keys with no matching question -- an older tag
+    silently drops a newer preset key (measured: `--preset bare` against the
+    6.1.0 tag ignores `cicd_extras`, so the project renders with every
+    extra). `worker.template.questions_data` is the questionnaire the ref
+    actually served; checking against it (not against the recorded answers
+    file, which legitimately omits `when`-gated questions) keeps the warning
+    to real drift.
+    """
+    if worker is None:
+        return
+    unknown = sorted(key for key in answers if key not in worker.template.questions_data)
+    if unknown:
+        print(
+            "warning: preset answer(s) the rendered template does not ask "
+            f"({', '.join(unknown)}) -- they were ignored; "
+            "did the preset outrun the ref?",
+            file=sys.stderr,
+        )
+def _fresh(  # noqa: PLR0913  WHYNOT: a thin shell over copier's flags; preset_answers exists so the rendered ref can be checked for unknown preset keys after the copy.
     target: Path,
     data: dict[str, Any],
     ref: str | None,
     *,
     dry_run: bool,
     defaults: bool,
+    preset_answers: dict[str, Any] | None = None,
 ) -> int:
     """Render this checkout into an empty (or not yet created) directory."""
     resolved, reason = adopt.resolve_ref(ref)
@@ -140,7 +163,7 @@ def _fresh(
         print(f"would create {len(planned)} file(s); top level: {', '.join(top)}")
         return OK
     try:
-        _render(target, data, resolved, defaults=defaults)
+        worker = _render(target, data, resolved, defaults=defaults)
     except copier.errors.InteractiveSessionError as exc:
         msg = f"{exc}; pass --preset <name> for a non-interactive run"
         print(msg, file=sys.stderr)
@@ -149,6 +172,8 @@ def _fresh(
         print(f"render failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         return FAILED
     created = sorted(path for path in target.rglob("*") if path.is_file())
+    if preset_answers:
+        _warn_unknown_preset_keys(worker, preset_answers)
     top = sorted({str(path.relative_to(target)).split("/")[0] for path in created})
     print("mode:    fresh")
     print(f"target:  {target}")
@@ -169,6 +194,8 @@ def _adopt(target: Path, answers: dict[str, Any], ref: str | None, *, dry_run: b
         return INVALID
     print(adopt.render_report(adoption))
     return OK if adoption.ok or adoption.error is None else FAILED
+
+
 
 
 def new(target: Path, *, preset: str | None, ref: str | None, dry_run: bool) -> int:
@@ -200,7 +227,14 @@ def new(target: Path, *, preset: str | None, ref: str | None, dry_run: bool) -> 
         return _adopt(target, answers, ref, dry_run=dry_run)
     # Fresh mode derives `existing_project: false` (and nothing else) from the
     # filesystem; the preset, when there is one, overrides what it names.
-    return _fresh(target, {**detection.suggested_answers, **answers}, ref, dry_run=dry_run, defaults=preset is not None)
+    return _fresh(
+        target,
+        {**detection.suggested_answers, **answers},
+        ref,
+        dry_run=dry_run,
+        defaults=preset is not None,
+        preset_answers=answers if preset else None,
+    )
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:

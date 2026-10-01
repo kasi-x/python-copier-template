@@ -96,6 +96,35 @@ def test_new_fresh_with_preset_keeps_copier_defaults(tmp_path: Path, monkeypatch
     assert calls and calls[0]["defaults"] is True
 
 
+def test_new_fresh_preset_warns_only_for_keys_the_rendered_ref_drops(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    """A preset key the rendered template does not define must be surfaced.
+
+    The rendered questionnaire is what decides: a `when`-gated key (asked for
+    some renders, dropped from .copier-answers.yml) is NOT a warning -- the
+    bare preset names `include_mcp`, which stays silent at HEAD -- while a key
+    an older tag never heard of (`cicd_extras` against 6.1.0) must warn.
+    """
+    from types import SimpleNamespace
+
+    monkeypatch.setattr(detect, "detect", lambda *a, **k: _detection("fresh", suggested_answers={}))
+    monkeypatch.setattr(adopt, "resolve_ref", lambda requested=None: ("6.1.0", "latest tag"))
+
+    def fake_render(src: str, dest: Path, data: dict[str, Any], ref: str = "HEAD", **kwargs: Any) -> Any:
+        (Path(dest) / "README.md").write_text("")
+        # questions_data without cicd_extras mirrors the 6.1.0 questionnaire;
+        # include_mcp present but gated out of the render is the negative case.
+        return SimpleNamespace(template=SimpleNamespace(questions_data={"include_mcp": {}, "project_type": {}}))
+
+    monkeypatch.setattr(batch, "render", fake_render)
+
+    assert cli.new(tmp_path, preset="bare", ref=None, dry_run=False) == cli.OK
+    err = capsys.readouterr().err
+    assert "cicd_extras" in err, "a preset key the ref dropped must warn"
+    assert "include_mcp" not in err, "a defined-but-gated key must not warn"
+
+
 def test_new_fresh_dry_run_writes_nothing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):

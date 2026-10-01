@@ -107,6 +107,7 @@ from typing import Literal
 
 import copier
 import yaml
+from copier._main import Worker
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
@@ -495,7 +496,7 @@ def render(  # noqa: PLR0913  WHYNOT: a thin wrapper over copier's own 19-parame
     overwrite: bool = True,
     defaults: bool = True,
     skip_tasks: bool = False,
-) -> None:
+) -> Worker:
     """Render `src` into `dest` — the one copier `copy` invocation convention.
 
     Every tool in this repository that renders a project goes through here
@@ -524,7 +525,7 @@ def render(  # noqa: PLR0913  WHYNOT: a thin wrapper over copier's own 19-parame
     its sanctioned direct call sites are this module's update phase and
     tools/update_rehearsal.py, whose subject is the update itself.
     """
-    copier.run_copy(
+    return copier.run_copy(
         src_path=src,
         dst_path=dest,
         data=data,
