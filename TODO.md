@@ -681,3 +681,67 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
   update-rehearsal / witness / dependency-audit / check-upstream /
   check-upstream-fork。
 
+## §32 完了: preset 実レンダ検証・list_presets・notes 整理・_tasks.yml timeout（2026-10-01）
+
+- **preset の render 検証**: presets/*.yml は従来 `tools/cli.py` のロード
+  経路（`test_cli.py`）だけで検証され、生成時の `Invalid choice` や
+  `when` による family drop は未検知だった。`tests/test_presets.py` を
+  新設し、`cli.available_presets()` で列挙した全 preset を
+  `copy_project_recommended`（= `cli.new --preset` と同じ answers 構成:
+  BASE + preset + copier 既定）で実レンダし、family sentinel
+  （web-api→app/main.py、ros2→package.xml、micropython→firmware/main.py、
+  data-science→src/<pkg>、oj 3 件は bare workspace なので README 内の
+  judge ドメイン）を assert。センチネル未登録の新 preset は
+  `pytest.fail` で即検出（test_every_preset_has_a_sentinel）。
+- **`list_presets` MCP ツール**: `tools/mcp_server.py` に追加
+  （`cli.available_presets()`/`preset_answers()` の再利用、filesystem
+  only）。`docs/how-to/mcp-tools.md` のツール表に行を追加。
+  TOOL_NAMES + 内容ピンテスト（test_mcp_server.py）。
+- **notes/ 整理**: 全項目解決済みのバグ台帳 3 件（BUG.md /
+  BUGS_AND_IMPROVEMENTS.md / bugs.md）を `notes/archive/` へ移動。
+  生存ドキュメント（SPEC-adoption / PLAN-improvements / Strategy /
+  COPIER_UPSTREAM / upstream-drafts）は notes/ 直下に残す。
+  docs/ からの notes/ 参照は生存ファイルのみで切れ目なし。
+- **`_tasks.yml` に `timeout-minutes: 15`**: 全 workflow で唯一 timeout
+  未設定だった reusable workflow。root と生成物側は symlink 同一ファイル
+  のため 1 箇所の編集で両方に効く（_test.yml は input 化、_dist/_docs
+  /_example は 15-20min 固定、という既存のばらつきは据え置き — _tasks は
+  lint 実行のみなので固定 15 で十分）。
+- 検証: test_presets 10件・test_mcp_server 関連3件・test_workflow_security
+  + test_cli + test_marker_drift 36件パス。UPDATE_TIERS で台帳再記録
+  （test-fast 1069→1080, test 1147, test-randomly 1080）と
+  docs/how-to/test-loop.md の tier 表が再生成済み。
+
+## §33 完了: region セクションの distribution チャネル — `ethics/regions.yml`（2026-10-01）
+
+§29-B の「質問を増やさず地域ルールを届ける」合意を実装。
+
+- **判定**: `region-jp-external-transmission` / `region-eu-eaa` はともに
+  `web` audience だが、昇格ルール（同条件 3 件 or 独自ゲート必須の 1 件）
+  を満たさず、裸の `web_api` include は過剰配布（内部 API にフロントエンド
+  法務を届ける）。よってセクション昇格ではなく**参照テーブル方式**:
+  `template/{% if web_api %}ethics{% endif %}/regions.yml` を新設し、
+  各ルールの `serves:` が registry draft のセクションファイルを指す
+  （要約 + duties + 一次ソースのみ同梱、本文は配布しない）。
+- **AGENTS.md ポインタ**: `web_api` ゲート付きの段落を ethics appendix
+  末尾に追加し `ethics/regions.yml` を指す。draft 隔離
+  （test_draft_sections_are_not_distributed）は `serves:` 参照を
+  exempt として維持 — 配布（本文取り込み）と参照（パス指名）を
+  字句で区別。
+- **ピン**: invariants.yml — `layout=web_api` に `ships: ethics/regions.yml`
+  と `[AGENTS.md, regions.yml]` content ペア、非 web 行
+  （library/cli/script/ros2/micropython/oj_kind=code/ctf）に absent。
+  `project_type=online_judge` 行への absent は kaggle+include_web_api
+  葉と衝突するため oj_kind 行に限定。witnesses.jsonl は
+  `task witness`（z3_witnesses.py --jsonl）で再生成済み。
+- **契約テスト**: test_ethics_registry.py に
+  `test_regions_table_serves_registered_drafts` — serves が登録済み
+  region セクションを指すこと、review_by が対象行の最早日に一致する
+  こと、AGENTS.md がテーブルを指すことを固定。
+- **runbook**: docs/how-to/ethics-section.md に「Market-triggered rules:
+  the regions table」節を追加（§29-B の方式文書化）。
+- 検証: web_api 実レンダで ethics/regions.yml + AGENTS ポインタあり、
+  library/online_judge はなし。ethics_registry 11件・invariants/レイヤ
+  行列・witness 不変条件・example 系 346件パス。UPDATE_TIERS + gen_docs
+  再記録済み（test-fast 1080→1081）。
+
