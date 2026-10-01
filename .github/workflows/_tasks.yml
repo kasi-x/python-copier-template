@@ -16,6 +16,7 @@ permissions:
 jobs:
   run:
     runs-on: "ubuntu-latest"
+    timeout-minutes: 15
 
     steps:
       # The checkout stays here, not in the composite: a local action's files
