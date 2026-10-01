@@ -52,6 +52,7 @@ TOOL_NAMES = {
     "lint_render",
     "list_batch_requests",
     "list_questions",
+    "list_presets",
     "list_witnesses",
     "recommend_answers",
     "render_diff",
@@ -305,6 +306,17 @@ async def test_list_batch_requests_reads_the_shipped_batch(client: Client):
     assert requests, "the shipped batch lists its requests"
     assert any(request["has_update"] for request in requests), "the listing reports the update phase"
 
+
+@pytest.mark.anyio
+async def test_list_presets_names_the_files_and_their_answers(client: Client):
+    """The listing mirrors presets/ exactly: every file on disk, with the
+    answer mapping the CLI would pass to copier for it."""
+    payload = await call(client, "list_presets")
+    names = {preset["name"] for preset in payload["presets"]}
+    assert names == {path.stem for path in (TOP / "presets").glob("*.yml")}
+    by_name = {preset["name"]: preset["answers"] for preset in payload["presets"]}
+    assert by_name["library"] == {"project_type": "library"}
+    assert by_name["online-judge-atcoder"]["oj_kind"] == "atcoder"
 
 @pytest.mark.anyio
 async def test_bad_input_is_a_tool_error(client: Client):

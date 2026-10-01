@@ -47,6 +47,7 @@ witness tiers run into minutes.
 | --- | --- | --- |
 | `template_status` | this checkout: question count, latest tag, commits behind it, dirty or not | git + questionnaire (~50 ms) |
 | `list_questions` | the questionnaire in ask order, with defaults, help and choices | filesystem |
+| `list_presets` | the ready-made answer files under `presets/` -- each name (what `--preset` accepts) with the answer mapping it supplies | filesystem |
 | `list_witnesses` | the 272 Z3 witness leaves with the tier and result the ledger records | filesystem |
 | `template_fingerprint` | sha256 of the render inputs: what a render is a function of | hashes ~0.8 MB (~5 ms) |
 | `inspect_project` | what a target already has, which mode fits it, which files would be overwritten | filesystem |

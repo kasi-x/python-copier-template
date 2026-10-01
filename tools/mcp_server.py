@@ -91,6 +91,7 @@ from starlette.responses import JSONResponse  # noqa: E402
 from tools import adopt  # noqa: E402
 from tools import answers_for  # noqa: E402
 from tools import batch  # noqa: E402
+from tools import cli  # noqa: E402
 from tools import detect  # noqa: E402
 from tools import ethics  # noqa: E402
 from tools import questionnaire  # noqa: E402
@@ -121,6 +122,21 @@ def list_questions(*, asked_only: bool = True) -> dict[str, Any]:
     questions, _settings = questionnaire.load_questions()
     selected = [question.as_dict() for question in questions if not (asked_only and question.internal)]
     return {"count": len(selected), "questions": selected}
+
+@server.tool()
+def list_presets() -> dict[str, Any]:
+    """List the ready-made answer files under presets/.
+
+    Returns {"count", "presets"}; each entry has `name` (what the CLI's
+    `--preset` flag and `new`'s preset parameter accept) and `answers` (the
+    mapping the file supplies on top of copier's defaults -- the family
+    keys only, never the full questionnaire). `recommend_answers` builds an
+    answer set from named constraints; `list_presets` is the cheaper inverse:
+    the named starting points that already exist. Filesystem only -- no
+    render, no network.
+    """
+    presets = [{"name": name, "answers": cli.preset_answers(name)} for name in cli.available_presets()]
+    return {"count": len(presets), "presets": presets}
 
 
 @server.tool()
