@@ -324,7 +324,7 @@ The rule used to be the opposite, and the reason is worth keeping. Before the
 detach the newest tag (`5.4.0`) was inherited from the upstream
 DiamondLightSource template, so a flagless copy silently asked the *old*
 questionnaire and rendered the *old* files. That produced two real bug reports
-("docs_type rejects zensical", "asks component_owner"; see BUG.md — both were
+("docs_type rejects zensical", "asks component_owner"; see notes/archive/BUG.md — both were
 misdiagnosed twice before the tag mechanism was confirmed via
 `git show 5.4.0:copier.yml`), and the published commands pinned `--vcs-ref` to
 escape the trap. The detach removed the need.

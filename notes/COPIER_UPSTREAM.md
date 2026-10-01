@@ -8,7 +8,7 @@ copier-org/copier に issue / PR を投げるために、本テンプレート�
 **そのまま貼れる英語 issue 本文の草稿は `notes/upstream-drafts/` に file 毎に用意済み**
 (01〜09 が本書の項目 1〜9 に対応。再現手順と検証済みの出力を含む)。
 
-先に結論: 動的 `choices` の誤パース(BUG.md #1 で報告された
+先に結論: 動的 `choices` の誤パース(notes/archive/BUG.md #1 で報告された
 `['README', 'sphinx']`)は **9.18.1 では再現しなかった**(最小再現テンプレートで
 正常動作を確認)。テンプレート側も静的 choices 化済みのため、これは upstream
 報告対象から外した。逆に、本テンプレートの bug 報告の大半(`--defaults` で止まる、
@@ -30,8 +30,8 @@ copier-org/copier に issue / PR を投げるために、本テンプレート�
   (`return 0b100`)、raise 箇所は `_main.py:328`。
 - 問題: 文言が「consider adding ...」という提案形のため、**生成が拒否され
   宛先には何も書き込まれていない**ことが伝わらない。実際、本リポジトリに寄せられた
-  非インタラクティブ生成の bug 報告(bugs.md #10「`--defaults` でも質問が
-  スキップされない」、BUG.md #2/#4)は、すべてこの拒否を別の問題と誤認したもの。
+  非インタラクティブ生成の bug 報告(notes/archive/bugs.md #10「`--defaults` でも質問が
+  スキップされない」、notes/archive/BUG.md #2/#4)は、すべてこの拒否を別の問題と誤認したもの。
   生成成功と誤認して宛先ディレクトリを探し回る事態を何度も目撃した。
 - 提案:
   - 文言を指示形に変え、状態を明示する。例:
@@ -85,7 +85,7 @@ copier-org/copier に issue / PR を投げるために、本テンプレート�
 - 現状: 絶対パスを渡すと `ValueError: "/tmp/answers.yml" is not a relative path`
   (`errors.py:111-115`)。ヘルプには "relative to destination_path" とあるが、
   エラー単体では何をどう直せばいいか分からない。本テンプレートの bug 報告
-  (BUG.md #3)の元ネタ。
+  (notes/archive/BUG.md #3)の元ネタ。
 - 提案: エラー文面を `"... is not a relative path (answers file must be
   relative to the destination directory)"` に。もしくは絶対パスを受け付けて
   宛先基準で解決する(破壊的な挙動変更になるので文面改善が安全)。
