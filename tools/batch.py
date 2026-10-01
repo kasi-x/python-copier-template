@@ -280,20 +280,23 @@ def _parse_commands(request_id: str, raw: Any) -> list[dict[str, Any]]:
     return commands
 
 
-def _parse_expect(request_id: str, raw: Any) -> dict[str, Any]:
-    expect = _as_object(raw, f"{request_id}: expect")
-    _reject_unknown(f"{request_id}: expect", expect, EXPECT_KEYS)
-    for key in ("files", "absent"):
-        for pattern in _as_list(expect.get(key, []), f"{request_id}: expect.{key}"):
-            if not isinstance(pattern, str) or not pattern:
-                msg = f"{request_id}: expect.{key} entries must be non-empty glob strings"
-                raise SpecError(msg)
+def _expect_globs(request_id: str, expect: dict[str, Any], key: str) -> None:
+    for pattern in _as_list(expect.get(key, []), f"{request_id}: expect.{key}"):
+        if not isinstance(pattern, str) or not pattern:
+            msg = f"{request_id}: expect.{key} entries must be non-empty glob strings"
+            raise SpecError(msg)
+
+
+def _expect_matches(request_id: str, expect: dict[str, Any]) -> None:
     for key in ("matches", "unmatches"):
         for entry in _as_list(expect.get(key, []), f"{request_id}: expect.{key}"):
             obj = _as_object(entry, f"{request_id}: expect.{key} entry")
             _reject_unknown(f"{request_id}: expect.{key}", obj, MATCH_KEYS)
             _require_str(obj, "path", f"{request_id}: expect.{key}")
             _require_str(obj, "regex", f"{request_id}: expect.{key}")
+
+
+def _expect_toml(request_id: str, expect: dict[str, Any]) -> None:
     for entry in _as_list(expect.get("toml", []), f"{request_id}: expect.toml"):
         obj = _as_object(entry, f"{request_id}: expect.toml entry")
         _reject_unknown(f"{request_id}: expect.toml", obj, TOML_KEYS)
@@ -302,16 +305,29 @@ def _parse_expect(request_id: str, raw: Any) -> dict[str, Any]:
         if "equals" not in obj:
             msg = f"{request_id}: expect.toml entries need an 'equals' value (any JSON type)"
             raise SpecError(msg)
+
+
+def _expect_agents_md(request_id: str, expect: dict[str, Any]) -> None:
     for entry in _as_list(expect.get("agents_md", []), f"{request_id}: expect.agents_md"):
         obj = _as_object(entry, f"{request_id}: expect.agents_md entry")
         _reject_unknown(f"{request_id}: expect.agents_md", obj, AGENTS_MD_KEYS)
-        present = obj.get("present", [])
-        absent = obj.get("absent", [])
-        for key, value in (("present", present), ("absent", absent)):
-            for section_id in _as_list(value, f"{request_id}: expect.agents_md.{key}"):
+        for key in ("present", "absent"):
+            for section_id in _as_list(
+                obj.get(key, []), f"{request_id}: expect.agents_md.{key}"
+            ):
                 if not isinstance(section_id, str) or not section_id:
                     msg = f"{request_id}: expect.agents_md.{key} entries must be section ids"
                     raise SpecError(msg)
+
+
+def _parse_expect(request_id: str, raw: Any) -> dict[str, Any]:
+    expect = _as_object(raw, f"{request_id}: expect")
+    _reject_unknown(f"{request_id}: expect", expect, EXPECT_KEYS)
+    for key in ("files", "absent"):
+        _expect_globs(request_id, expect, key)
+    _expect_matches(request_id, expect)
+    _expect_toml(request_id, expect)
+    _expect_agents_md(request_id, expect)
     return expect
 
 
