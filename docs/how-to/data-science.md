@@ -73,6 +73,23 @@ to them like any other source. Keep scratch work in `notebooks/`; the
 moment a cell is worth keeping, promote it into `src/` (with a test) and
 call it from the notebook.
 
+### Running a notebook in Colab
+
+The project's environment is `uv`-managed; a notebook opened in Google
+Colab has no such environment, so the project's dependencies are not on
+the path. Install them into the Colab runtime first:
+
+```python
+%pip install -e .
+```
+
+(the build backend is `setuptools-scm`, so the editable install is the
+same version the CI builds). GPU-heavy stacks: the project does not
+pin CPU vs CUDA torch wheels — install the variant Colab's runtime
+expects before the editable install if `torch` is a dependency. Data and
+notebooks are already on disk; keep edits to `notebooks/` so the rest of
+the workspace stays clean.
+
 ## Sharing data out: the de-identification gate
 
 `data/sharing/` exists because "send someone the extract" is a decision,

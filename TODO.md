@@ -796,12 +796,20 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
 生成物の検証はローカル + GitHub Actions 中心だが、実際の実行環境には
 Colaboratory / AWS Lambda 等がある。スライスごとの衝突を棚卸しする。
 
-- **data_science / Colab**: テンプレは `notebooks/` に `.gitkeep` のみ同梱で、
-  実行用 notebook や install cell を持たない（依存は pyproject/uv 経由）。
-  Colab で notebook を書いて実行するユーザーには uv 前提のツールチェーンが
-  届かず、install cell（`pip install -e .`）や Colab 用セットアップ手順が
-  無い。GPU 前提ツール（torch の CUDA wheel 選択はテンプレが面倒見ない —
-  archive §B#15 と関連）が Colab 既定と合わない可能性。
+- **第一ステップ（2026-10-02 実施）**: 各 1 回実レンダで確認し、記述を修正。
+  - data_science: `notebooks/` は `.gitkeep` のみ、requirements.txt 無し —
+    Colab(pip)に install 経路が無いことを確認。→ repo docs の
+    `docs/how-to/data-science.md` に Colab 節を追記
+    （`%pip install -e .`、GPU は CUDA wheel を先に入れる旨）。
+  - web_api + `cloud_provider: aws`: boto3 は入るが Lambda ハンドラ・
+    関数設定・デプロイ定義が無いことを確認。→ `docs/how-to/web-api.md` の
+    "Things deliberately left out" に serverless を追記
+    （ASGI は Lambda 関数ハンドラと別世界、Mangum 等の adapter を
+    「必要になったら」明示的に足す、と明記）。
+  - 現時点の判断は **docs-only**。`deploy_target` 質問による Lambda 向け
+    生成（Mangum 統合・SAM/CDK）は leaf 空間を広げるため見送り。
+    生成物の docs/how-to は data-science / web-api の how-to を同梱しない
+    （run-container / contribute のみ）ので、この記述は repo docs 層で完結。
 - **web_api / AWS Lambda**: `cloud_provider: aws` は現状 AWS サービス依存を
   足すだけ（boto3 等; questions/_common_b.yml）でデプロイ形態は定めない。
   Lambda で動かす場合 — メモリ/タイムアウト（生成 workflow の timeout は
