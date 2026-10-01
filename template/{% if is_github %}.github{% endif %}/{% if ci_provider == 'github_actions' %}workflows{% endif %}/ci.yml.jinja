@@ -25,6 +25,7 @@ jobs:
 {% if ros2_pkg %}{% if ros2_package_manager == 'pixi' %}
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -51,6 +52,7 @@ jobs:
       ROS_DISTRO: {{ ros_distro }}
       ROS_REPO: main
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -134,6 +136,7 @@ jobs:
 {% if micropython_pkg %}
   firmware:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -150,6 +153,7 @@ jobs:
     needs: [firmware]
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -167,6 +171,7 @@ jobs:
     needs: [test{% if docs %}, docs{% endif %}]
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -205,6 +210,7 @@ jobs:
 {% raw %}
     if: always()
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check all required jobs passed
         run: |
