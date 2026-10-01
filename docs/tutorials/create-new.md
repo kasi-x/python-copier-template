@@ -21,6 +21,7 @@ terminal. From inside the checkout the same two forms are
 | preset | `project_type` | what you get |
 | --- | --- | --- |
 | `library` | `library` | a reusable Python package (src/ layout) |
+| `bare` | `library` | like `library`, minus the optional infra extras — no devcontainer, `.vscode`, `.envrc`, renovate, secrets/lint config, security workflow, or issue/PR templates |
 | `cli` | `cli` | a command-line application |
 | `web-api` | `web_api` | a FastAPI service (Postgres, Alembic, Prometheus, rate limiting, CORS) |
 | `data-science` | `data_science` | notebooks, `data/`, `models/`, `reports/` — see the [data-science how-to](../how-to/data-science.md) |

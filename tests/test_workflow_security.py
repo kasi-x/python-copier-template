@@ -435,7 +435,7 @@ def test_zizmor_cli_pin_is_inside_the_actions_allowlist():
         / "template"
         / "{% if is_github %}.github{% endif %}"
         / "{% if ci_provider == 'github_actions' %}workflows{% endif %}"
-        / "security.yml.jinja"
+        / "{% if cicd_extras %}security.yml{% endif %}.jinja"
     ).read_text(encoding="utf-8")
     assert action_m.group(0) in jinja, (
         "template security.yml.jinja pins a different zizmor action than the root workflow"

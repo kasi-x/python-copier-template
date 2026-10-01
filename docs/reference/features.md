@@ -102,7 +102,7 @@ flowchart TD
     G_license_no --> G_integrations
     G_integrations{"use_recommended_integrations?"}
     G_integrations -->|Yes| G_integrations_yes["no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP…"]
-    G_integrations -->|No| G_integrations_no["ask: docker, pypi, cloud_provider, aws_services, include_sentry,<br/>include_mcp, ci_provider, log_library"]
+    G_integrations -->|No| G_integrations_no["ask: docker, pypi, cloud_provider, aws_services, include_sentry,<br/>include_mcp, ci_provider, log_library, cicd_extras"]
     G_integrations_yes --> L6
     G_integrations_no --> L6
     L6{"web api layer?"}

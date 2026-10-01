@@ -1,0 +1,19 @@
+# A minimal Python library render: src/ layout, uv + just, docs on — the same
+# family as `library`, but every optional infrastructure extra stays off.
+#
+# `cicd_extras` is only asked when use_recommended_integrations is false, so
+# this preset must decline that gate AND answer every question under it with
+# the same values the gate's defaults would have produced (docker/pypi/
+# sentry/mcp off, no cloud, GitHub CI, structlog) — otherwise --defaults
+# changes rendered output, not just the answers file. Recorded answers are
+# what `copier update` reuses, which is why the answers are explicit.
+project_type: library
+use_recommended_integrations: false
+docker: false
+pypi: false
+cloud_provider: none
+include_sentry: false
+include_mcp: false
+ci_provider: github_actions
+log_library: structlog
+cicd_extras: false

@@ -243,7 +243,7 @@ def extract_pins() -> list[Pin]:
     pins.append(Pin(name="Postgres image (compose + CI)", current=",".join(sorted(pg_tags)) or "?", checkable=True))
 
     # Ubuntu base codename.
-    docker_src = (TEMPLATE_DIR / "Dockerfile.jinja").read_text()
+    docker_src = (TEMPLATE_DIR / "{% if docker or cicd_extras %}Dockerfile{% endif %}.jinja").read_text()
     ubuntu_tags = set(re.findall(r"(?:ubuntu:|ubuntu-devcontainer:)(\w+)", docker_src))
     pins.append(Pin(name="Ubuntu base (Dockerfile)", current=",".join(sorted(ubuntu_tags)) or "?", checkable=False))
 

@@ -367,6 +367,8 @@ Answer **No** to turn any of these on, switch the CI provider, or pick a differe
   - **`picologging`** — a C-accelerated, drop-in-compatible reimplementation of the standard library
     logging module. Faster, same API.
   - **`logging`** — the standard library logging module. No extra dependency.
+- **`cicd_extras`** (bool; default yes) — Include the optional project infrastructure extras? If no,
+  the render stays minimal: no .devcontainer, .vscode, .envrc, renovate.json,…
 
 ### `use_recommended_web_api`
 

@@ -711,3 +711,18 @@ git push origin 6.0.0
 
 削除後は W0 の残手順（README/docs の `--vcs-ref` 除去・test_generation_docs の
 タグ整合テストへの一括更新・CHANGELOG 追記）を続行する。
+
+
+## cicd_extras + bare preset (2026-10-01)
+
+`cicd_extras` gates the optional infrastructure extras (devcontainer, .vscode,
+.envrc, renovate.json, .gitleaks.toml, zizmor/actionlint config, GitHub
+issue/PR templates, CODEOWNERS, the zizmor security workflow, and the
+devcontainer-only Dockerfile stage). It is a real question in
+questions/_common_b.yml (when: not use_recommended_integrations), not a
+`when: false` internal: copier drops un-asked answers from
+.copier-answers.yml (answers.hide), so an internal would survive the first
+render but resurrect on `copier update`. presets/bare.yml declines the
+integrations gate and answers every detail question with its recommended
+value plus cicd_extras: false -- that combination renders the same bytes as
+recommended-minus-extras (verified), and the recorded answers survive update.

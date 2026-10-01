@@ -866,8 +866,9 @@ Copy the example file and adjust the values:
 cp .env.example .env
 ```
 
-`.env` is loaded automatically by [direnv](https://direnv.net) (see `.envrc`)
-and by the Docker stack; it is git-ignored, so never commit real secrets.
+{% if cicd_extras %}`.env` is loaded automatically by [direnv](https://direnv.net) (see `.envrc`)
+and by the Docker stack; it is git-ignored, so never commit real secrets.{% else %}`.env` is loaded by
+the Docker stack and is git-ignored, so never commit real secrets.{% endif %}
 {% if include_sentry %}
 The app initialises [Sentry](https://sentry.io) from `SENTRY_DSN` when set.
 {% endif %}

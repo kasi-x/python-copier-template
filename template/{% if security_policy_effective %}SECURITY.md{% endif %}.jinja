@@ -32,5 +32,5 @@ You will receive an acknowledgement of your report. We aim to:
 
 | In scope | Out of scope |
 |---|---|
-| This repository's source, CI/CD and dependencies | Vulnerabilities in third-party dependencies already tracked by renovate / dependabot alerts |
+| This repository's source, CI/CD and dependencies | Vulnerabilities in third-party dependencies already tracked by {% if cicd_extras %}renovate / dependabot alerts{% else %}automated dependency-update tooling{% endif %} |
 | The generated project itself | Other projects generated from the same template (they have their own `SECURITY.md`) |

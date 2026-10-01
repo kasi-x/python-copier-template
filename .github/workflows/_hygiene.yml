@@ -92,6 +92,11 @@ jobs:
           PY
 
       - name: Scan for secrets (gitleaks)
+        # The step is self-skipping: generated projects only ship
+        # .gitleaks.toml under cicd_extras (the bare preset drops it), so a
+        # render without the config runs no secrets scan -- the config is the
+        # contract, not a template-time if.
+        if: hashFiles('.gitleaks.toml') != ''
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

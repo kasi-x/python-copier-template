@@ -346,3 +346,21 @@ log_library:
         - picologging
         - logging
     default: structlog
+
+cicd_extras:
+    type: bool
+    # An asked question, not a `when: false` internal, on purpose: copier
+    # drops the answers of un-asked questions from .copier-answers.yml
+    # (_main.py hides them), so an internal flag would survive the first
+    # render but be forgotten -- and the extras resurrected -- by
+    # `copier update`. Asking it only off the recommended path keeps the
+    # recommended answer count unchanged while still recording the answer.
+    when: "{{ not use_recommended_integrations }}"
+    help: |
+        Include the optional project infrastructure extras?
+        If no, the render stays minimal: no .devcontainer, .vscode, .envrc,
+        renovate.json, .gitleaks.toml, zizmor/actionlint config, GitHub
+        issue/PR templates, CODEOWNERS, the zizmor security workflow, or the
+        devcontainer-only Dockerfile stage (the publish Dockerfile still
+        renders when docker is on). The `bare` preset sets this to no.
+    default: true

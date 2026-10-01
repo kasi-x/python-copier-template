@@ -33,7 +33,7 @@ security_policy_effective:
 
 scorecard_effective:
     type: bool
-    default: "{{ scorecard and is_github }}"
+    default: "{{ scorecard and is_github and cicd_extras }}"
     when: false
 
 # Project-type derived booleans (render-time only; the ones questions

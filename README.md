@@ -62,7 +62,9 @@ uv run --project python-copier-template python-copier-template new my-project --
 
 `--preset library` answers the one question that defines the project family
 (`cli`, `web-api`, `data-science`, `ros2`, `micropython` and
-`online-judge-atcoder` also exist); drop it and copier asks the
+`online-judge-atcoder` also exist; `bare` is `library` minus the optional
+infrastructure extras — no devcontainer, `.vscode`, renovate, secrets/lint
+config, security workflow, or issue/PR templates); drop it and copier asks the
 [whole questionnaire](docs/reference/questionnaire.md) instead, which needs a
 terminal.
 

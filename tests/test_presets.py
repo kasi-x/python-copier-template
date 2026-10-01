@@ -35,11 +35,27 @@ from support import copy_project_recommended  # noqa: E402
 # one, because the default render ships it too.
 SENTINEL_PATH: dict[str, str] = {
     "library": "src/recommended_example/__init__.py",
+    "bare": "src/recommended_example/__init__.py",
     "cli": "src/recommended_example/__main__.py",
     "web-api": "app/main.py",
     "data-science": "src/recommended_example/__init__.py",
     "micropython": "firmware/main.py",
     "ros2": "package.xml",
+}
+
+# bare's point is what it does NOT ship: the optional infra stays out. The
+# positive sentinel is the library family marker (it shares the family);
+# these absent paths are what make it a different preset rather than an
+# alias.
+SENTINEL_ABSENT: dict[str, tuple[str, ...]] = {
+    "bare": (
+        ".devcontainer",
+        ".vscode",
+        ".gitleaks.toml",
+        "renovate.json",
+        ".github/workflows/security.yml",
+        ".github/ISSUE_TEMPLATE",
+    ),
 }
 
 # The judge workspaces are bare on purpose (the judge's own CLI creates its
@@ -73,6 +89,10 @@ def test_preset_renders(tmp_path: Path, preset: str):
         )
     else:
         pytest.fail(f"preset {preset!r} has no sentinel -- add it to SENTINEL_PATH or SENTINEL_README")
+    for absent in SENTINEL_ABSENT.get(preset, ()):
+        assert not (tmp_path / absent).exists(), (
+            f"preset {preset!r} shipped {absent} -- cicd_extras no longer removes it"
+        )
 
 
 def test_every_preset_has_a_sentinel():
