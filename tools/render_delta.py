@@ -58,7 +58,7 @@ from typing import Any
 TOP = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(TOP))
 
-from copier import Worker  # noqa: E402  # pyright: ignore[reportPrivateImportUsage]  WHYNOT: copier ships no stubs.
+from copier._main import Worker  # noqa: E402
 from tools import batch  # noqa: E402
 from tools.render_inputs import context_fingerprint  # noqa: E402
 from tools.render_inputs import include_graph  # noqa: E402
