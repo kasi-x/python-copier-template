@@ -1,3 +1,7 @@
+> **完了済み（2026-10-01）**: 本計画の作業は全 WP 着地済み。`test-fast` /
+> witness / update rehearsal / regions table / appendix 生成化まで到達。
+> 歴史的記録として残す（コード・テストからの §W 参照先のためパスは維持）。
+
 # PLAN: 劇的改善の作業分解（委託用）
 
 対象リポジトリ: `kasi-x/python-copier-template`（HEAD = `e2a210e1`、2026-09-11）。
