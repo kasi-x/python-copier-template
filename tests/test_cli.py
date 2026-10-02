@@ -111,7 +111,7 @@ def test_new_fresh_preset_warns_only_for_keys_the_rendered_ref_drops(
     monkeypatch.setattr(detect, "detect", lambda *a, **k: _detection("fresh", suggested_answers={}))
     monkeypatch.setattr(adopt, "resolve_ref", lambda requested=None: ("6.1.0", "latest tag"))
 
-    def fake_render(src: str, dest: Path, data: dict[str, Any], ref: str = "HEAD", **kwargs: Any) -> Any:
+    def fake_render(_src: str, dest: Path, _data: dict[str, Any], _ref: str = "HEAD", **_kwargs: Any) -> Any:
         (Path(dest) / "README.md").write_text("")
         # questions_data without cicd_extras mirrors the 6.1.0 questionnaire;
         # include_mcp present but gated out of the render is the negative case.
