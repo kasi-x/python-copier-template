@@ -25,9 +25,6 @@ TOP = Path(__file__).resolve().parent.parent
 CODEX_URL = "https://github.com/ConstitutiveTemplates/good-future-codex.git"
 MARKER = TOP / ".ethics-vendored"
 VENDORED = TOP / "_shared" / "ethics"
-# The registry is consumer-side wiring (its gate column names template flags),
-# so it is not vendored; everything else under _shared/ethics/ is.
-CONSUMER_OWNED = {"REGISTRY.yml"}
 
 
 def run(*args: str, cwd: Path | None = None) -> str:
@@ -74,7 +71,7 @@ def main() -> int:
         codex = Path(tmp) / "codex"
         # The codex is public (it exists for external consumers), so a plain
         # https clone needs no auth -- no secret, no deploy key, no PAT.
-        run("git", "clone", "--quiet", "https://github.com/ConstitutiveTemplates/good-future-codex.git", str(codex))
+        run("git", "clone", "--quiet", CODEX_URL, str(codex))
         upstream_head = run("git", "rev-parse", "HEAD", cwd=codex).strip()
         upstream_sections = _tree(codex / "sections")
 
