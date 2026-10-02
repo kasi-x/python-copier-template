@@ -137,6 +137,8 @@ def _warn_unknown_preset_keys(worker: Worker | None, answers: dict[str, Any]) ->
             "did the preset outrun the ref?",
             file=sys.stderr,
         )
+
+
 def _fresh(  # noqa: PLR0913  WHYNOT: a thin shell over copier's flags; preset_answers exists so the rendered ref can be checked for unknown preset keys after the copy.
     target: Path,
     data: dict[str, Any],
@@ -194,8 +196,6 @@ def _adopt(target: Path, answers: dict[str, Any], ref: str | None, *, dry_run: b
         return INVALID
     print(adopt.render_report(adoption))
     return OK if adoption.ok or adoption.error is None else FAILED
-
-
 
 
 def new(target: Path, *, preset: str | None, ref: str | None, dry_run: bool) -> int:

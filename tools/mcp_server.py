@@ -123,6 +123,7 @@ def list_questions(*, asked_only: bool = True) -> dict[str, Any]:
     selected = [question.as_dict() for question in questions if not (asked_only and question.internal)]
     return {"count": len(selected), "questions": selected}
 
+
 @server.tool()
 def list_presets() -> dict[str, Any]:
     """List the ready-made answer files under presets/.

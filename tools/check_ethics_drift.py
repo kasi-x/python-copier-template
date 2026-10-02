@@ -44,6 +44,7 @@ def run(*args: str, cwd: Path | None = None) -> str:
 # sections even though the codex owns it.
 CONSUMER_OWNED = {"REGISTRY.yml", "FLAGS.yml"}
 
+
 def _tree(root: Path, skip: frozenset[str] = frozenset()) -> dict[str, bytes]:
     """Map every file under root to its bytes, keyed by relative path."""
     return {

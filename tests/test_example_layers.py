@@ -716,7 +716,9 @@ def test_template_online_judge_task_recipes_absent_off_oj(tmp_path: Path):
     ],
     ids=["aoj", "kattis", "leetcode", "yukicoder", "codeforces", "other"],
 )
-def test_template_online_judge_task_recipes_follow_oj_kind(tmp_path: Path, oj_kind: str, markers: list[str], absent: list[str]):
+def test_template_online_judge_task_recipes_follow_oj_kind(
+    tmp_path: Path, oj_kind: str, markers: list[str], absent: list[str]
+):
     """The recipes branch on oj_kind: aoj delegates to aoj-cli, kattis to the
     submit client, leetcode prints the no-CLI note, and the oj-based judges
     call online-judge-tools."""

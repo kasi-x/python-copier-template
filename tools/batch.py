@@ -312,9 +312,7 @@ def _expect_agents_md(request_id: str, expect: dict[str, Any]) -> None:
         obj = _as_object(entry, f"{request_id}: expect.agents_md entry")
         _reject_unknown(f"{request_id}: expect.agents_md", obj, AGENTS_MD_KEYS)
         for key in ("present", "absent"):
-            for section_id in _as_list(
-                obj.get(key, []), f"{request_id}: expect.agents_md.{key}"
-            ):
+            for section_id in _as_list(obj.get(key, []), f"{request_id}: expect.agents_md.{key}"):
                 if not isinstance(section_id, str) or not section_id:
                     msg = f"{request_id}: expect.agents_md.{key} entries must be section ids"
                     raise SpecError(msg)

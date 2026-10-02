@@ -318,6 +318,7 @@ async def test_list_presets_names_the_files_and_their_answers(client: Client):
     assert by_name["library"] == {"project_type": "library"}
     assert by_name["online-judge-atcoder"]["oj_kind"] == "atcoder"
 
+
 @pytest.mark.anyio
 async def test_bad_input_is_a_tool_error(client: Client):
     result = await client.call_tool("list_batch_requests", {"jsonl": "/nonexistent/requests.jsonl"})
