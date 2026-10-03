@@ -126,6 +126,7 @@
 > 測定条件として台帳ノートに明記）。
 
 - 機能の将来拡張（7）: OJ 9 種＋その他（§2, archive L117）/ bot LINE・Gmail 残り（§4, L182）/ スタンドアロン MCP レシピ・MCP 本番運用（§5, L362–363）/ SQLAdmin・FastCRUD（§6, L440）/ library 空依存の維持・質問化（§17, L1058）/ 実行環境への配慮 — Colab / AWS Lambda（§35, このファイル）
+- 設計・メンテナンス戦略（§36, このファイル）: 検証生成の一元化（`task regen`）/ blast-radius 分類 + 貢献レダー / フォーク・アイデンティティ確定 / オンボーディング面 / 結合アーティファクトの導出化。lint・hygiene の docs-only skip 縮小を含む
 - 公開・運用手順（14）: v1.0 fork 解除手順（§11, L544）/ renovate digest・example 再生成・Scorecard 確認・branch 保護（§12, L615–621）/ 改名・由来明記・Scorecard 初回・告知・hypermodern 乗換・Z3 記事・bus-factor（§16, L995–1028）/ fork 作成 F3 着手・手動投稿（§21, L1489–1497）
 - CI・検証の残り（8）: CI 緑確認・教訓（ネスト）・バッジ乖離・Periodic（§15, L800–815。日付が古い。要確認）/ setup composite 化・未検証組合せ（§19, L1328–1348）/ `render_project` 戻り値・手書きテスト棚卸し（§23, L1841–1910）
 
@@ -822,3 +823,38 @@ Colaboratory / AWS Lambda 等がある。スライスごとの衝突を棚卸し
 - 着手はこのTODOの番号（§35）を参照。まず `data_science` の notebook が
   Colab で開けるか（依存インストール経路）と、`web_api` cloud_provider=aws
   の Lambda 適合を各1回実レンダで確認するのが最初のステップ。
+
+## §36 検討: メンテナンス性とコントリビューター増のための設計戦略（2026-10-02）
+
+診断: 資産は検証の深さ（234葉 witness・コスト台帳・不変条件・twin レンダ・
+render cache）。負債は「検証の支払いコスト」— 質問票変更の定義完了に
+`task witness` → `task predicates` → `task question-graph` → `UPDATE_TIERS`
+（台帳）→ `gen_docs.py --write` → zensical docs の **6 コマンド**が別々に必要。
+CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイブリッド（大幅
+乖離 + upstream 追跡の並存）。2026-10-02 の CI 失敗カスケードは docs-only
+判定が lint / hygiene まで skip し、format・type-check 債が複数コミット分
+蓄積して一斉露出したのが直接原因。
+
+戦略（優先度順）:
+
+- **S1 検証生成の一元化（`task regen`）**: witness / ledger / docs /
+  question-graph を依存順に回す 1 コマンド。CI の meta tier は既に drift を
+  検出するので装置は変えず、definition of done を暗黙知から 1 コマンドへ。
+  最大 ROI。
+- **S2 blast-radius 分類 + 貢献レダー**: 変更を docs-only（検証不要）/
+  render-only（twin レンダ + fast tier）/ questionnaire（`task regen`）に
+  分ける決定表を CONTRIBUTING に置く。`good first issue` ラベル + leaf 空間に
+  触れない種（ethics 節追加・task 追加・docs）を 5–8 件シード。
+- **S3 フォーク・アイデンティティ確定**: (a) upstream thin overlay か
+  (b) 完全独立か。乖離は既に深く (b) が現実的 — 文書で確定し、COPIER_UPSTREAM
+  を定期レビュー用に再定義 or アーカイブ。6.2.0 タグ切れの判断もここに含む。
+- **S4 オンボーディング面**: 1 PR を端まで追う「Contributing 101」
+  （例: ethics 節を 1 つ足す → regen 1 コマンド → CI 緑）を追加。装置の詳細は
+  template-dev.md（reference）に据え置き。
+- **S5 結合アーティファクトの導出化**: invariants / layers の手書き行を
+  質問票から生成（witness / ledger / docs は生成化済み。残る手動結合はここ）。
+  大きなリファクタなので S1–S4 の後に。
+- **機制の穴の修正（推奨着手）**: docs-only 判定でも lint / hygiene は常時
+  実行に狭める（~20s の追加で、CI 失敗カスケードの再発防止）。
+- 推奨着手順: S1 + lint/hygiene の docs-only skip 縮小 → S2 レダー + good
+  first issue。
