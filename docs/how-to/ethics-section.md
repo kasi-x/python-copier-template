@@ -34,7 +34,10 @@ not-legal-advice footer. Name concrete shapes in 禁止パターン and
 copy-pasteable settings in 推奨設定, not slogans — back the rule with at
 least one bad/good code-or-config pair, the way the active sections do.
 Fill the `en:` front-matter block (title, summary, prohibited) alongside the
-Japanese prose — `_shared/ethics-summary-en.md.jinja` mirrors it.
+Japanese prose — daimonion renders one or the other into the marker block
+depending on the project's `agents_md_language` (`en` renders `en:`, `ja`
+renders the Japanese prose), so a section without an `en:` block falls back
+to Japanese even in English projects.
 Keep snippets free of `{{ }}` / `{% %}`: the section file is plain Markdown
 with YAML front matter (never rendered as jinja), but double braces in new
 template-adjacent docs would still be evaluated, not printed.

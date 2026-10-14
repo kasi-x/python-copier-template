@@ -142,7 +142,7 @@ Each area asks one gate question first: answering **Yes** configures it from the
 | `use_recommended_agent` | yes — a plain library / CLI without agent tooling. | library / cli |
 | `use_recommended_toolchain` | uv (package manager) + just (task runner). | not ros2 + `ros2_package_manager` = pixi |
 | `use_recommended_data_science` | GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer). | the data_science layer is present |
-| `use_recommended_polish` | src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings, English AGENTS.md rule summaries. | all |
+| `use_recommended_polish` | src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings, English AGENTS.md rules block. | all |
 | `use_recommended_docs` | zensical (Zensical, an MkDocs fork with mkdocstrings). | all |
 | `use_recommended_quality` | basedpyright (primary) + pyrefly (additional static analysis), strictness "recommended" (ruff ALL rules, typos/vulture/deptry/pip-audit). | all |
 | `use_recommended_license` | MIT license, no FAIR research-software metadata (CITATION.cff / REUSE). | all |
@@ -268,9 +268,9 @@ Answer **No** to change the GPU setting.
 
 ### `use_recommended_polish`
 
-Use the recommended layout & repo polish? Recommended: src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings, English AGENTS.md rule summaries.
+Use the recommended layout & repo polish? Recommended: src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings, English AGENTS.md rules block.
 
-Answer **No** to change the layout, allow Japanese text, or keep the AGENTS.md ethics rules Japanese-only.
+Answer **No** to change the layout, allow Japanese text, or keep the AGENTS.md rules block Japanese.
 
 - **`layout`** (str; default `src`) — Which layout would you like to use for the package?
   - **`src`** — package in a src/ directory (recommended, prevents accidental imports of an
@@ -278,11 +278,11 @@ Answer **No** to change the layout, allow Japanese text, or keep the AGENTS.md e
   - **`flat`** — package at the repository root.
 - **`allow_japanese`** (bool; default no) — Allow Japanese (multibyte) characters in comments and
   docstrings?
-- **`agents_md_language`** (str; default `en`) — Language of the AGENTS.md ethics rules.
-  - **`en`** — an English summary of each selected guidance section sits above the ethics marker
-    block; the full sections daimonion renders into the block stay Japanese (English lives in the
-    sections' `en:` front matter).
-  - **`ja`** — the Japanese marker block only.
+- **`agents_md_language`** (str; default `en`) — Language of the AGENTS.md rules block (`daimonion
+  --lang … agents-md --write`).
+  - **`en`** — daimonion renders each selected guidance section's `en:` title and summary lines into
+    the block.
+  - **`ja`** — daimonion renders the Japanese section titles and summary items.
 
 ### `use_recommended_docs`
 

@@ -9,10 +9,9 @@ use_recommended_polish:
     help: |
         Use the recommended layout & repo polish?
         Recommended: src/ layout (library/cli), no Japanese (multibyte)
-        characters in comments/docstrings, English AGENTS.md rule
-        summaries.
+        characters in comments/docstrings, English AGENTS.md rules block.
         Answer No to change the layout, allow Japanese text, or keep the
-        AGENTS.md ethics rules Japanese-only.
+        AGENTS.md rules block Japanese.
 
 layout:
     type: str
@@ -49,11 +48,10 @@ agents_md_language:
     type: str
     when: "{{ not use_recommended_polish }}"
     help: |
-        Language of the AGENTS.md ethics rules.
-        - en: an English summary of each selected guidance section sits above
-          the ethics marker block; the full sections daimonion renders into
-          the block stay Japanese (English lives in the sections' `en:` front matter).
-        - ja: the Japanese marker block only.
+        Language of the AGENTS.md rules block (`daimonion --lang … agents-md --write`).
+        - en: daimonion renders each selected guidance section's `en:` title
+          and summary lines into the block.
+        - ja: daimonion renders the Japanese section titles and summary items.
     choices:
         - en
         - ja

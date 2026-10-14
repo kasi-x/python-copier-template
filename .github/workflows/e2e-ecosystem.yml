@@ -98,12 +98,8 @@ jobs:
           from pathlib import Path
 
           agents = Path("../e2e-project/AGENTS.md").read_text(encoding="utf-8")
-          assert "<!-- daimonion:rules:begin" in agents or "<!-- daimonion:ethics:begin" in agents, (
-              "the rules block markers are missing"
-          )
-          assert "<!-- daimonion:rules:end -->" in agents or "<!-- daimonion:ethics:end -->" in agents, (
-              "the rules block end marker is missing"
-          )
+          assert "<!-- daimonion:rules:begin" in agents, "the rules block markers are missing"
+          assert "<!-- daimonion:rules:end -->" in agents, "the rules block end marker is missing"
           print("render ok: the daimonion rules block is present in AGENTS.md")
           PY
           uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --check --repo ../e2e-project

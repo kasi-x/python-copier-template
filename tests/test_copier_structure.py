@@ -96,6 +96,9 @@ ALLOWED_NON_KEYS = {
     "truncate",
     "trim",
     "first",
+    "default",  # `{{ agents_md_language | default('en') }}`: the language
+    # question is gated on use_recommended_polish, so renders on the
+    # recommended path carry no such answer and fall back to English.
 }
 
 

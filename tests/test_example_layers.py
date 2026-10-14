@@ -568,7 +568,7 @@ def test_template_agent_scaffold(tmp_path: Path):
 
 def test_template_scraping_legal_checklist(tmp_path: Path):
     """include_scraping ships LEGAL.md (the per-source pre-crawl checklist)
-    and selects the scraping-law ethics section in AGENTS.md; a base without
+    and selects the scraping-law rules section in AGENTS.md; a base without
     the fetcher layer ships neither."""
     scraping = tmp_path / "scraping"
     copy_project(scraping, project_type="cli", include_scraping=True)
@@ -585,13 +585,26 @@ def test_template_scraping_legal_checklist(tmp_path: Path):
     charter = (scraping / "CHARTER.md").read_text()
     assert "[LEGAL.md](LEGAL.md)" in charter
     agents = (scraping / "AGENTS.md").read_text()
-    assert "スクレイピングの適法性" in agents
-    assert "コンテスト規約" not in agents
+    # the post-gen task fills the rules block in English (the default
+    # agents_md_language): daimonion renders the sections' `en:` titles
+    assert "Scraping legality" in agents
+    assert "Contest rules" not in agents
     # the layer (and its section) rides the cli base only
     other = tmp_path / "library"
     copy_project(other, project_type="library")
     assert not (other / "LEGAL.md").exists()
-    assert "スクレイピングの適法性" not in (other / "AGENTS.md").read_text()
+    assert "Scraping legality" not in (other / "AGENTS.md").read_text()
+
+
+def test_scraping_rules_block_in_japanese(tmp_path: Path):
+    """agents_md_language=ja fills the rules block with the Japanese prose."""
+    scraping = tmp_path / "scraping-ja"
+    copy_project(
+        scraping, project_type="cli", include_scraping=True, use_recommended_polish=False, agents_md_language="ja"
+    )
+    agents = (scraping / "AGENTS.md").read_text()
+    assert "### スクレイピングの適法性" in agents
+    assert "### Scraping legality" not in agents
 
 
 def test_ethics_sections_follow_the_leaf_class(tmp_path: Path):
@@ -601,11 +614,27 @@ def test_ethics_sections_follow_the_leaf_class(tmp_path: Path):
     atcoder = tmp_path / "atcoder"
     copy_project(atcoder, project_type="online_judge", oj_category="competitive_coding", oj_kind="atcoder")
     agents = (atcoder / "AGENTS.md").read_text()
-    assert "コンテスト規約" in agents
-    assert "スクレイピングの適法性" not in agents
+    assert "Contest rules" in agents
+    assert "Scraping legality" not in agents
     kaggle = tmp_path / "kaggle"
     copy_project(kaggle, project_type="online_judge", oj_category="data_science", oj_kind="kaggle")
-    assert "コンテスト規約" not in (kaggle / "AGENTS.md").read_text()
+    assert "Contest rules" not in (kaggle / "AGENTS.md").read_text()
+
+
+def test_contest_rules_block_in_japanese(tmp_path: Path):
+    """agents_md_language=ja fills the contest-rules block with the Japanese prose."""
+    atcoder = tmp_path / "atcoder-ja"
+    copy_project(
+        atcoder,
+        project_type="online_judge",
+        oj_category="competitive_coding",
+        oj_kind="atcoder",
+        use_recommended_polish=False,
+        agents_md_language="ja",
+    )
+    agents = (atcoder / "AGENTS.md").read_text()
+    assert "コンテスト規約" in agents
+    assert "### Contest rules" not in agents
 
 
 def test_template_agent_cli_only(tmp_path: Path):

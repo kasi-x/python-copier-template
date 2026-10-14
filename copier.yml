@@ -165,15 +165,17 @@ _tasks:
             p.mkdir(parents=True, exist_ok=True)
             (p / ".gitkeep").touch()' {{ src_dirs | map('quote') | join(' ') }}
       when: "{{ src_dirs }}"
-    # Fill the AGENTS.md ethics marker block from the guidance sections right after render:
-    # offline-tolerant on purpose (uvx fetches daimonion from git), so a
-    # failure prints guidance and never fails generation; the generated CI's
-    # ethics-block job (`daimonion agents-md --check`) then fails until the
-    # block is filled. daimonion is pinned to a commit via `daimonion_spec`
-    # (questions/_internal.yml) -- move to a hash-pinned PyPI release once
-    # daimonion is published.
+    # Fill the AGENTS.md rules marker block from the guidance sections right after render,
+    # in the questionnaire's language (`en` renders the sections' `en:` blocks,
+    # `ja` the Japanese prose): offline-tolerant on purpose (uvx fetches
+    # daimonion from git), so a failure prints guidance and never fails
+    # generation; the generated CI's ethics-block job
+    # (`daimonion --lang <agents_md_language> agents-md --check`) then fails
+    # until the block is filled. daimonion is pinned to a commit via
+    # `daimonion_spec` (questions/_internal.yml) -- move to a hash-pinned
+    # PyPI release once daimonion is published.
     - command: |
-        uvx --from {{ daimonion_spec }} daimonion agents-md --write || echo "WARNING: could not render the AGENTS.md ethics block (offline?); run 'uvx --from {{ daimonion_spec }} daimonion agents-md --write' once network is available." >&2
+        uvx --from {{ daimonion_spec }} daimonion --lang {{ agents_md_language | default('en') }} agents-md --write || echo "WARNING: could not render the AGENTS.md rules block (offline?); run 'uvx --from {{ daimonion_spec }} daimonion --lang {{ agents_md_language | default('en') }} agents-md --write' once network is available." >&2
       when: "{{ agents_md_effective }}"
 
 _migrations:

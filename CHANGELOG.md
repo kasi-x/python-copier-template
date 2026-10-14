@@ -6,6 +6,20 @@ All notable changes to this project are documented in this file.
 
 ### Features
 
+- the AGENTS.md rules block is now language-aware: the copier post-gen
+  task, the `ethics-block` task and the generated CI `ethics-block` job
+  run `daimonion --lang <agents_md_language> agents-md`, so `en` (the
+  recommended default) renders each selected guidance section's `en:`
+  title and summary lines into the block while `ja` renders the Japanese
+  prose. The template emits the current `daimonion:rules:begin` /
+  `daimonion:rules:end` empty markers, and the redundant
+  `_shared/ethics-summary-en.md.jinja` English-summary include is deleted
+  (daimonion renders the `en:` blocks in place now). `oj_code` projects
+  opt into the `competitive-programming` pack in `.daimonion.yml` so the
+  contest-rules section renders again. Requires daimonion
+  `5ec9539fd10cb5c5bb09539261e00b7e087dbd33` (pin bump in
+  `questions/_internal.yml`).
+
 - the generated project's daimonion is pinned: every `uvx --from` call
   (copier post-gen task, `ethics-block` / `legal-check` tasks, the AGENTS.md
   hint, CI) uses the `daimonion_spec` internal, a commit-pinned git URL,
@@ -14,17 +28,17 @@ All notable changes to this project are documented in this file.
   required by `required-checks-passed`), so an AGENTS.md whose marker block
   stayed empty because the post-gen task ran offline fails CI instead of
   shipping silently.
-- new `agents_md_language` question (polish gate; `en` by default, `ja`
-  available): `en` adds English summaries of the selected kanon sections
-  above the Japanese marker block, from `_shared/ethics-summary-en.md.jinja`
-  (a translation of kanon 2321063's rule summaries).
+- `agents_md_language` question (polish gate; `en` by default, `ja`
+  available): picks the language daimonion renders into the rules block —
+  `en` renders each selected guidance section's `en:` title/summary,
+  `ja` the Japanese prose.
 - ethics content moves to kanon; the template emits conditions, the
   linter owns the wiring: the generated project now ships
   `.daimonion.yml` (kanon's abstract `when` conditions derived from the
   answers by the single `_shared/daimonion-when.jinja` macro, in
   vocabulary order with provenance comments) and an empty
-  `<!-- daimonion:ethics:begin -->` /
-  `<!-- daimonion:ethics:end -->` marker block in `AGENTS.md` that
+  `<!-- daimonion:rules:begin -->` /
+  `<!-- daimonion:rules:end -->` marker block in `AGENTS.md` that
   `daimonion agents-md --write` fills in. `_shared/ethics/`,
   `REGISTRY.yml`, the appendix include chain, `tools/ethics.py` and its
   MCP surface are deleted; the composition manifest carries the same

@@ -2,12 +2,14 @@
 
 The template never vendors rule prose: it emits `.daimonion.yml`
 (abstract `when` conditions, one per line in vocabulary order, each with a
-`# <which answers produced it>` provenance comment, plus the three
+:`# <which answers produced it>` provenance comment, plus the three
 commented hints for the non-derivable `jp` / `eu_market` / `ai_assisted`)
-and an EMPTY marker pair in AGENTS.md that `daimonion agents-md --write`
-fills in. Both `.daimonion.yml` and the composition manifest's `when:`
-derive from the single `_shared/daimonion-when.jinja` macro, so the two
-must agree.
+and an EMPTY marker pair in AGENTS.md that
+`daimonion --lang <agents_md_language> agents-md --write` fills in with the
+selected guidance sections in the questionnaire's language (`en` renders the
+sections' `en:` titles/summaries, `ja` the Japanese prose). Both
+`.daimonion.yml` and the composition manifest's `when:` derive from the
+single `_shared/daimonion-when.jinja` macro, so the two must agree.
 """
 
 from __future__ import annotations
@@ -25,17 +27,12 @@ if str(TOP) not in sys.path:
 from architekton.answers import BASE  # noqa: E402
 
 from support import render_answers  # noqa: E402
-from test_daimonion_parity import GUIDANCE_DIR  # noqa: E402
 from test_daimonion_parity import derive_when  # noqa: E402
-from test_daimonion_parity import kanon_applies  # noqa: E402
-from test_daimonion_parity import load_kanon  # noqa: E402
 
-# The template emits the legacy `ethics` empty pair, which daimonion still
-# reads (it writes the new `rules` markers on --write but accepts both).
-BEGIN = "<!-- daimonion:ethics:begin"
-END = "<!-- daimonion:ethics:end -->"
-SUMMARY = "### Rule summaries (English)"
-SUMMARY_PARTIAL = TOP / "_shared" / "ethics-summary-en.md.jinja"
+# The template emits the current `rules` empty pair; daimonion migrates a
+# legacy `ethics` pair in place on --write.
+BEGIN = "<!-- daimonion:rules:begin"
+END = "<!-- daimonion:rules:end -->"
 
 HINTS = (
     "#  - jp           # operates under Japanese law",
@@ -100,7 +97,9 @@ def test_agents_md_carries_empty_markers_and_no_prose(tmp_path: Path) -> None:
     assert guide.index(BEGIN) < guide.index(END), "begin must precede end"
     block = guide[guide.index(BEGIN) : guide.index(END)]
     assert "スクレイピングの適法性" not in block, "no vendored section prose may remain"
+    assert "Scraping legality" not in block, "no vendored section prose may remain"
     assert "ライセンス変動" not in guide, "no vendored section prose may remain"
+    assert "License drift" not in guide, "no vendored section prose may remain"
 
 
 def test_manifest_when_matches_config(tmp_path: Path) -> None:
@@ -111,47 +110,17 @@ def test_manifest_when_matches_config(tmp_path: Path) -> None:
     assert manifest["when"] == config["when"], "manifest and config when-lists must agree"
 
 
-def _summary_ids(guide: str) -> list[str]:
-    """Section ids listed in the English rule summaries (empty without them)."""
-    if SUMMARY not in guide:
-        return []
-    body = guide[guide.index(SUMMARY) : guide.index(BEGIN)]
-    return [line.split("(`", 1)[1].split("`)", 1)[0] for line in body.splitlines() if line.startswith("- **")]
+def test_agents_md_commands_carry_the_language(tmp_path: Path) -> None:
+    """The write/check commands in AGENTS.md name the questionnaire's language."""
+    en_guide = (_render(tmp_path, {"project_type": "cli"}) / "AGENTS.md").read_text(encoding="utf-8")
+    assert "daimonion --lang en agents-md --write" in en_guide
+    assert "daimonion --lang en agents-md --check" in en_guide
 
 
-@pytest.mark.skipif(not GUIDANCE_DIR.is_dir(), reason="law-map guidance checkout absent")
-@pytest.mark.parametrize("label,overrides", CASES, ids=[label for label, _ in CASES])
-def test_english_summaries_select_what_daimonion_selects(
-    tmp_path: Path, label: str, overrides: dict[str, object]
-) -> None:
-    """The default (en) guide summarises exactly the sections daimonion puts in the block."""
-    guide = (_render(tmp_path, overrides) / "AGENTS.md").read_text(encoding="utf-8")
-    assert guide.index(SUMMARY) < guide.index(BEGIN), f"{label}: summaries sit above the block"
-    conditions = derive_when({**BASE, **overrides})
-    expected = [s["id"] for s in load_kanon() if kanon_applies(s, conditions)]
-    assert _summary_ids(guide) == expected, f"{label}: English summaries drifted from guidance selection"
-
-
-def test_japanese_guide_has_no_english_summaries(tmp_path: Path) -> None:
-    """agents_md_language: ja keeps the Japanese marker block only."""
+def test_japanese_guide_names_the_language(tmp_path: Path) -> None:
+    """agents_md_language: ja threads --lang ja into the guide's commands."""
     root = _render(tmp_path, {"project_type": "library", "use_recommended_polish": False, "agents_md_language": "ja"})
     guide = (root / "AGENTS.md").read_text(encoding="utf-8")
-    assert SUMMARY not in guide
+    assert "daimonion --lang ja agents-md --write" in guide
+    assert "daimonion --lang ja agents-md --check" in guide
     assert BEGIN in guide and END in guide
-
-
-@pytest.mark.skipif(not GUIDANCE_DIR.is_dir(), reason="law-map guidance checkout absent")
-def test_english_summary_rows_mirror_guidance_manifest() -> None:
-    """Every agents_md guidance section has an English row with the manifest's `when`, in order."""
-    text = SUMMARY_PARTIAL.read_text(encoding="utf-8")
-    rows = [
-        (line.split("'id': '", 1)[1].split("'", 1)[0], line.split("'when': ", 1)[1].rstrip(","))
-        for line in text.splitlines()
-        if "'id': '" in line
-    ]
-    expected = [
-        (s["id"], repr(list(s["when"])))
-        for s in load_kanon()
-        if s["placement"] == "agents_md" and s["status"] == "active"
-    ]
-    assert rows == expected, "re-sync _shared/ethics-summary-en.md.jinja with the guidance manifest"

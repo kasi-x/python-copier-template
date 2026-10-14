@@ -71,7 +71,7 @@ reference a template flag":
 | --- | --- |
 | Section bodies (prose, triggers, `review_by` dates, sources) | `_shared/daimonion-when.jinja` — the single answer-to-condition derivation macro |
 | The `when:`/audience mapping (which abstract condition selects which section: the generated `guidance/sections/MANIFEST.yml`) | The emitted `.daimonion.yml` (the project's declared conditions, in the guidance `when` vocabulary) |
-| Section selection and block rendering (`daimonion agents-md --write`) | The empty marker pair in the generated `AGENTS.md` (`<!-- daimonion:ethics:begin -->` / `<!-- daimonion:ethics:end -->`) |
+| Section selection and block rendering (`daimonion --lang <agents_md_language> agents-md --write`) | The empty marker pair in the generated `AGENTS.md` (`<!-- daimonion:rules:begin -->` / `<!-- daimonion:rules:end -->`) |
 | Presence triggers and `check_ethics` matching | The composition manifest's `when:` list (the same macro, the public record `verify` reads) |
 | The enforcement level's L1/L2 machinery that reads prose | The L2 `license-check` gate (pip-licenses; needs no prose) and the `daimonion-config` render predicate that holds the `when` list |
 
@@ -133,20 +133,19 @@ hash-pinned PyPI release replaces the git URL once daimonion is published).
 An **empty block fails CI**: the post-gen fill only warns when offline, so
 the generated `ci.yml` runs `daimonion agents-md --check` as a required job.
 
-Guidance prose is Japanese-first with English `en:` blocks. The default
-`agents_md_language: en` renders English summaries of the selected
-sections above the marker block from `_shared/ethics-summary-en.md.jinja`, a
-translation of the pinned guidance revision's rule-summary lines (titles and
-the three rules, not the full sections). `ja` keeps the Japanese block only.
-`tests/test_daimonion_config.py` pins that partial's rows against the
-guidance manifest and its selection against guidance's `applies()`.
+Guidance prose carries both languages: the Japanese section text and the
+English `en:` title/summary/prohibited block. The questionnaire's
+`agents_md_language` picks which one daimonion renders into the marker
+block (`en` is the recommended default; `ja` keeps the Japanese prose).
+`tests/test_daimonion_config.py` pins the language threading (the guide's
+write/check commands name the questionnaire's language) and the empty marker
+pair with no vendored prose.
 
 ## Versioning
 
 A template release no longer ships a *known rule text* — it ships a known
 *derivation*. The prose a project carries is whatever guidance revision the
-user's linter run rendered, recorded in the marker block's `kanon=` stamp.
-(`kanon=` keeps its name: daimonion's marker format predates the merge.)
+user's linter run rendered, recorded in the marker block's `rulebook=` stamp.
 `copier update` between two template tags therefore shows only derivation
 changes (a condition added, removed, or re-derived); prose updates arrive
 through the linter, reviewable as a normal `agents-md --write` diff.

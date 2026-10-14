@@ -470,13 +470,13 @@ import_pkg:
 # with a hash (`daimonion==X --hash ...`) once daimonion is published.
 daimonion_spec:
     type: str
-    default: "git+https://github.com/politeuma/daimonion@f983e420c118f447c71660f0d9bae720f3b91460"
+    default: "git+https://github.com/politeuma/daimonion@5ec9539fd10cb5c5bb09539261e00b7e087dbd33"
     when: false
 
 # AGENTS.md effective setting. Every project ships the agent guide: the
 # library / cli / script bases, the web_api / data_science layers (including
 # combo opt-ins), ros2 / micropython (all types ship the guide, whose empty
-# ethics marker block `daimonion agents-md --write` fills from the guidance sections), and
+# rules marker block `daimonion agents-md --write` fills from the guidance sections), and
 # online_judge too — there the guide's AI wording defers to the contest:
 # Placed LAST so every internal it referenced must be earlier — the constant
 # keeps the position (copier evaluates when:false in definition order, and

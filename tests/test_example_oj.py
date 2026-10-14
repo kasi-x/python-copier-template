@@ -245,7 +245,7 @@ def test_template_agents_md_wording_follows_oj_allow_ai(tmp_path: Path):
         )
         guide = (project_path / "AGENTS.md").read_text()
         assert expected in guide, f"{oj_kind} {extra}: AGENTS.md lacks the {expected!r} wording"
-        assert "ライセンス変動" in guide, "the ethics appendix ships with the guide"
+        assert "License drift" in guide, "the rules block ships with the guide"
         readme = (project_path / "README.md").read_text()
         assert "AGENTS.md" in readme
 
@@ -256,9 +256,9 @@ def test_template_agents_md_ships_for_ros2_and_micropython(tmp_path: Path):
     ros2_path = tmp_path / "ros2"
     copy_project(ros2_path, project_type="ros2", pkg_language="python", ros_distro="humble", ros2_package_manager="apt")
     ros2_guide = (ros2_path / "AGENTS.md").read_text()
-    assert "PKIチェーン" not in ros2_guide
-    assert "ライセンス変動" in ros2_guide
+    assert "PKI chain changes" not in ros2_guide
+    assert "License drift" in ros2_guide
     micro_path = tmp_path / "micro"
     copy_project(micro_path, project_type="micropython", micropython_port="esp32")
     micro_guide = (micro_path / "AGENTS.md").read_text()
-    assert "PKIチェーン" in micro_guide
+    assert "PKI chain changes" in micro_guide

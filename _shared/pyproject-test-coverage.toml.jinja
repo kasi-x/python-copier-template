@@ -39,13 +39,15 @@ skip_empty = true
 # carry trigger-regex stems (`certificat`,
 # `advertis` — deliberate word-stem matches), proper nouns (`certifi` the
 # package, `HashiCorp`) and metric acronyms (`fpr`/`fnr` in its code
-# examples) that the spellchecker must not correct. typos is report-only
+# examples) that the spellchecker must not correct. The marker line's
+# `rulebook=<sha12>` stamp trips the `ba` correction, so the short hex stamp
+# is ignored too. typos is report-only
 # on purpose (no task runs `typos -w`: it applies single-correction
 # dictionary words inside identifiers too, silently) -- these lists are
 # what lets a legit acronym identifier pass that report instead of being
 # renamed away.
-extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
-extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
+extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr', '\b[0-9a-f]{12}\b']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr', '\b[0-9a-f]{12}\b']
 
 [tool.typos.files]
 # docs のビルド出力 (site/) はチェック対象外。

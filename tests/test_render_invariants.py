@@ -707,16 +707,21 @@ def _nav_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
 # markers in. The derivation (which answers imply which condition) lives in
 # tests/test_daimonion_parity.py's `derive_when`, the single spelling both
 # this predicate and the `.daimonion.yml` macro follow.
-BEGIN_MARKER = "<!-- daimonion:ethics:begin"
-END_MARKER = "<!-- daimonion:ethics:end -->"
+BEGIN_MARKER = "<!-- daimonion:rules:begin"
+END_MARKER = "<!-- daimonion:rules:end -->"
 
 # Guidance section prose must never be vendored into the render: a sample of h1
-# titles from the old appendix that would prove a stale include chain.
+# titles from the guidance sections (both languages) that would prove a stale
+# include chain. ("Contest rules" is excluded: the template's own oj AI
+# wording uses that phrase outside the marker block.)
 VENDORED_PROSE_NEEDLES = (
     "ライセンス変動",
     "スクレイピングの適法性",
     "コンテスト規約",
     "PKIチェーン",
+    "License drift",
+    "Scraping legality",
+    "PKI chain changes",
 )
 
 
@@ -738,7 +743,7 @@ def _daimonion_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]
     if guide.exists():
         text = guide.read_text(encoding="utf-8")
         if BEGIN_MARKER not in text or END_MARKER not in text:
-            problems.append(f"{leaf.id}: AGENTS.md lacks the empty ethics marker pair")
+            problems.append(f"{leaf.id}: AGENTS.md lacks the empty rules marker pair")
         problems.extend(
             f"{leaf.id}: AGENTS.md vendors guidance prose {needle!r}"
             for needle in VENDORED_PROSE_NEEDLES

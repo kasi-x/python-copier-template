@@ -110,15 +110,18 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
   are free-form.
 - CI runs lint, type-check, and tests on every push
 {% if docs %} plus a docs build{% endif %}; keep all of them green.
-{# Ethics block: filled by `daimonion agents-md --write` from the guidance sections (see .daimonion.yml); the markers must stay. #}
+{# Rules block: filled by `daimonion --lang <agents_md_language> agents-md
+   --write` from the guidance sections (see .daimonion.yml); the markers must stay. #}
 ## Field rules (ethics appendix)
 
 Field rules for this project kind live in the marker block below.
 
-The block is maintained by `daimonion agents-md --write` from the law-map guidance sections; edit `.daimonion.yml`, not the block.
-CI fails while the block is empty or stale (`daimonion agents-md --check`);
+The block is maintained by `daimonion --lang {{ agents_md_language | default('en') }} agents-md --write`
+from the law-map guidance sections; edit `.daimonion.yml`, not the block.
+CI fails while the block is empty or stale
+(`daimonion --lang {{ agents_md_language | default('en') }} agents-md --check`);
 fill it with the `ethics-block` task or
-`uvx --from {{ daimonion_spec }} daimonion agents-md --write`.
+`uvx --from {{ daimonion_spec }} daimonion --lang {{ agents_md_language | default('en') }} agents-md --write`.
 
 To mechanically verify changed files against these triggers before committing,
 run `uvx --from {{ daimonion_spec }} daimonion scan`
@@ -127,8 +130,5 @@ run `uvx --from {{ daimonion_spec }} daimonion scan`
 Market-triggered rules no questionnaire answer can route here live in
 `ethics/regions.yml` -- read the row for each region you ship to.
 {% endif %}
-{% if agents_md_language == 'en' -%}
-{% include "_shared/ethics-summary-en.md.jinja" %}
-{% endif -%}
-<!-- daimonion:ethics:begin -->
-<!-- daimonion:ethics:end -->
+<!-- daimonion:rules:begin -->
+<!-- daimonion:rules:end -->

@@ -157,11 +157,11 @@ def test_scraping_checklist_warns_about_contact_placeholder(tmp_path: Path, rend
 
 
 def test_checklist_does_not_touch_ethics_gates(tmp_path: Path, render_cache):
-    """The checklist coexists with the ethics appendix on gated leaves."""
+    """The checklist coexists with the rules block on gated leaves."""
     copy_project(tmp_path, project_type="cli", include_scraping=True)
     agents = _agents(tmp_path)
     assert SECTION in agents
-    assert "スクレイピングの適法性" in agents, "ethics appendix must be intact beside the checklist"
+    assert "Scraping legality" in agents, "rules block must be intact beside the checklist"
 
 
 def test_inventory_rows_are_backed_by_template_sources():
