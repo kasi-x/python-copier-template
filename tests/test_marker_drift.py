@@ -132,7 +132,11 @@ LEAF_BUDGET = 450
 # Commands that build a project virtualenv, and commands that need the wire.
 # The two are not the same set: `uv run` uses a project environment without
 # resolving anything new, `uvx` fetches a tool without building one, and the
-# installers do both.
+# installers do both. A literal is a command only for a callee that can
+# launch it: constructors hold data (`Pin(name="uvx cffconvert ...")` records
+# a pin name, it does not run uvx) and the TEXT_CALLS matchers consume a
+# pattern (`re.search(r"uvx nbstripout==..." ...)` in test_security_pins.py
+# reads a pin out of the workflow, offline).
 VENV_COMMANDS = (
     ("uv", "sync"),
     ("uv", "lock"),
@@ -158,6 +162,22 @@ NETWORK_COMMANDS = (
     ("git", "pull"),
     ("git", "ls-remote"),
 )
+# A call name that consumes text rather than runs it. `re`'s matchers take a
+# pattern, not an argv; the string dataclass-style constructors take fields.
+# `Popen` is the exception that keeps the rule honest: it is a constructor
+# that executes, so it is deliberately not listed under "constructor" below.
+TEXT_CALLS = {
+    "search",
+    "match",
+    "fullmatch",
+    "findall",
+    "finditer",
+    "sub",
+    "subn",
+    "escape",
+    "fnmatch",
+    "compile",
+}
 # A helper whose *name* says venv (``make_venv`` in tests/support.py, reached
 # from test_task_runners.py by import) is a venv build whatever it does inside.
 VENV_HELPER = re.compile(r"venv")
@@ -265,6 +285,11 @@ def _work_of_call(call: ast.Call, owner: str) -> Work:
             evidence.append(f"{owner} line {call.lineno}: fetches {text.strip()}")
         tokens = _split(text)
         if not tokens:
+            continue
+        # A literal command only counts where the callee can launch it: a
+        # text matcher reads a pattern, and a constructor (uppercase name)
+        # assembles data -- Popen is the one constructor that executes.
+        if name in TEXT_CALLS or (name is not None and name[:1].isupper() and name != "Popen"):
             continue
         if any((tuple(tokens[: len(pattern)]) == pattern) for pattern in VENV_COMMANDS):
             venv = True
@@ -570,6 +595,18 @@ def test_answers_file_is_not_a_fetch(tmp_path):
     (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/other/template.git\\n")
 
 
+def test_regex_is_not_a_command():
+    import re
+
+    hygiene = "run: uvx nbstripout==0.8.1 --help"
+    assert re.search(r"uvx nbstripout==([0-9][\\w.+-]*)", hygiene)
+
+
+def test_subprocess_literal_counts():
+    import subprocess
+
+    subprocess.run(["uvx", "nbstripout", "version"], check=False)
+
 def test_marked(monkeypatch):
     run_pipe("uvx twine check dist/*")
 """
@@ -598,6 +635,8 @@ def test_the_scan_judges_helpers_fixtures_and_data_not_network(tmp_path: Path) -
         "test_local_git_init": set(),
         "test_fake_hosts_are_not_a_fetch": set(),
         "test_answers_file_is_not_a_fetch": set(),
+        "test_regex_is_not_a_command": set(),
+        "test_subprocess_literal_counts": {MARKER_NETWORK},
         "test_marked": {MARKER_NETWORK},
     }, "the scan's classification of the probe module changed"
 
