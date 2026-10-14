@@ -1,4 +1,4 @@
-"""Tests for tools/adopt.py: adoption that can be undone.
+"""Tests for architekton/adopt.py: adoption that can be undone.
 
 The point of the driver is the guarantee, not the render: every test here
 either checks the plan (ref judgement, dry run), checks that a failed run
@@ -25,12 +25,12 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import adopt_cli  # noqa: E402
-from tools import adopt_report  # noqa: E402
-from tools import adopt_revision  # noqa: E402
-from tools import adopt_run  # noqa: E402
-from tools import adopt_types  # noqa: E402
-from tools import batch  # noqa: E402
+from architekton import adopt_cli  # noqa: E402
+from architekton import adopt_report  # noqa: E402
+from architekton import adopt_revision  # noqa: E402
+from architekton import adopt_run  # noqa: E402
+from architekton import adopt_types  # noqa: E402
+from architekton import batch  # noqa: E402
 
 
 def git(cwd: Path, *args: str) -> None:
@@ -79,8 +79,8 @@ def pre_existing(snapshot: dict[str, bytes], before: dict[str, bytes]) -> dict[s
 
 
 def run_cli(project: Path, *args: str, **env: str) -> subprocess.CompletedProcess[str]:
-    """tools/adopt.py as a subprocess, the way a user runs it (and dies)."""
-    command = [sys.executable, str(TOP / "tools" / "adopt.py"), str(project), *args]
+    """architekton/adopt.py as a subprocess, the way a user runs it (and dies)."""
+    command = [sys.executable, str(TOP / "architekton" / "adopt.py"), str(project), *args]
     return subprocess.run(command, capture_output=True, text=True, env={**os.environ, **env}, check=False, timeout=300)
 
 

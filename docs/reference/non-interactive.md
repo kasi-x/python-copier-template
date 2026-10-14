@@ -43,17 +43,17 @@ The inverse question comes up just as often: for the features you want, which
 answers produce them? The 248 witness leaves in `tests/matrix/witnesses.jsonl`
 each carry a full answer set whose render context copier has already computed,
 so "features -> answers" is an exact filter over verified configurations, not
-a guess — `tools/answers_for.py` is that filter:
+a guess — `architekton/answers_for.py` is that filter:
 
 ```bash
 # Name the features as constraints over any question or derived internal
-uv run --locked python tools/answers_for.py \
+uv run --locked python architekton/answers_for.py \
     --require use_gpu_effective=true --require kaggle=true
 
 # ...and prove the top match by rendering it: every constraint is checked
 # against the rendered tree (context pass over the render's recorded answers,
 # plus the artifacts the internals gate, e.g. Dockerfile.gpu)
-uv run --locked python tools/answers_for.py \
+uv run --locked python architekton/answers_for.py \
     --require zensical=true --require web_api=true --render --keep
 ```
 

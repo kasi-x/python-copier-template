@@ -1,4 +1,4 @@
-"""Tests for tools/answers_for.py -- the inverse template.
+"""Tests for architekton/answers_for.py -- the inverse template.
 
 The unit tests run on crafted render contexts (plain dicts), so the
 constraint language, the exact filtering, the diagnostics and the cache are
@@ -23,8 +23,8 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import answers_for  # noqa: E402
-from tools import predicates  # noqa: E402
+from architekton import answers_for  # noqa: E402
+from architekton import predicates  # noqa: E402
 
 KNOWN = frozenset({"docker", "mcp_effective", "docs_type", "sphinx", "project_type", "license", "license_effective"})
 

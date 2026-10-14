@@ -1,6 +1,6 @@
 # How to run a batch of generation requests
 
-`tools/batch.py` runs a list of copier requests and decides, itself, whether
+`architekton/batch.py` runs a list of copier requests and decides, itself, whether
 each one succeeded. You write the requests as JSONL (one JSON object per
 line); the runner renders each one with the real template, judges the
 `expect` block, and exits nonzero if anything failed. Nothing needs to be
@@ -79,7 +79,7 @@ cannot check out of a fresh clone. The runner therefore fails an `update`
 line before generating anything:
 
 ```
-- update-precondition: clean template tree: uncommitted: README.md, tools/batch.py
+- update-precondition: clean template tree: uncommitted: README.md, architekton/batch.py
   (an update cannot check out copier's synthetic dirty commit)
 ```
 

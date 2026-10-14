@@ -56,7 +56,7 @@ tasks:
 
   mcp:
     desc: 'Run the repo MCP server (CLI_ARGS="--transport streamable-http")'
-    cmd: uv run --locked python tools/mcp_server.py {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/mcp_server.py {{ .CLI_ARGS }}
 
   docs:
     desc: Run docs build with zensical
@@ -91,7 +91,7 @@ tasks:
 
   batch:
     desc: 'Run a JSONL batch of copier requests and verdict each line (FILE=... CLI_ARGS=...)'
-    cmd: uv run --locked python tools/batch.py {{ .FILE | default "batches/smoke.jsonl" }} {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/batch.py {{ .FILE | default "batches/smoke.jsonl" }} {{ .CLI_ARGS }}
 
   changelog:
     desc: 'Regenerate CHANGELOG.md with git-cliff (uvx git-cliff -o)'
@@ -102,21 +102,21 @@ tasks:
       Prove which witness leaves the working tree can affect (Layer A semantic diff
       narrows, Layer B re-renders only candidates; CLI_ARGS pass through, e.g.
       --audit 5)
-    cmd: uv run --locked python tools/render_delta.py {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/render_delta.py {{ .CLI_ARGS }}
 
   update-rehearsal:
     desc: >-
       Replay copier update for every witness leaf, release tag -> HEAD (CLI_ARGS
       pass through, e.g. --only ctf --jobs 8 --fresh; nightly rehearsal)
-    cmd: uv run --locked python tools/update_rehearsal.py {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/update_rehearsal.py {{ .CLI_ARGS }}
 
   witness:
     desc: 'Regenerate the 234 witness leaves and judge them all (JOBS=N, CLI_ARGS=...)'
     vars:
       JOBS: '{{ .JOBS | default numCPU }}'
     cmds:
-      - uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
-      - uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
+      - uv run --locked python architekton/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
+      - uv run --locked python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
 
   regen:
     desc: >-
@@ -126,25 +126,25 @@ tasks:
     vars:
       JOBS: '{{ .JOBS | default numCPU }}'
     cmds:
-      - uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
-      - uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
+      - uv run --locked python architekton/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
+      - uv run --locked python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
       - UPDATE_TIERS=1 uv run --locked pytest -q -m meta
-      - uv run --locked python tools/gen_docs.py --write
-      - uv run --locked python tools/predicates.py --json
+      - uv run --locked python architekton/gen_docs.py --write
+      - uv run --locked python architekton/predicates.py --json
 
   predicates:
     desc: >-
       Classify every condition site (question whens, internals, template body/filename ifs,
       _tasks whens) over the 234 witness leaves: classification tree, equivalence classes,
       unification candidates and shortcut suggestions (--json for the machine report)
-    cmd: uv run --locked python tools/predicates.py {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/predicates.py {{ .CLI_ARGS }}
 
   answers-for:
     desc: >-
       The inverse template: name the features, get the answers that produce them, e.g.
       --require use_gpu_effective=true --require kaggle=true (--render proves the top
       match by rendering it; --json for the machine report)
-    cmd: uv run --locked python tools/answers_for.py {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/answers_for.py {{ .CLI_ARGS }}
 
   question-graph:
     desc: >-
@@ -153,15 +153,15 @@ tasks:
       (the tests check this after the fact; a backward reference silently reads falsy), and
       a placement guide -- --where NAME [--refs A,B,C] answers where a new internal/question
       may live and what occupies that spot (--json for the machine report)
-    cmd: uv run --locked python tools/question_graph.py {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/question_graph.py {{ .CLI_ARGS }}
 
   detect:
     desc: 'Report what a target project already has and which mode fits (DIR=... CLI_ARGS=...)'
-    cmd: uv run --locked python tools/detect.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/detect.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
 
   adopt:
     desc: 'Adopt into an existing project, transactionally (DIR=... CLI_ARGS="--dry-run")'
-    cmd: uv run --locked python tools/adopt.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/adopt.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
 
   check:
     desc: Run all quality checks

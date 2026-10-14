@@ -79,10 +79,10 @@ import pytest
 import yaml
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_witness_matrix.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_witness_matrix.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import z3_witnesses  # noqa: E402
+from architekton import z3_witnesses  # noqa: E402
 
 TESTS = TOP / "tests"
 LEDGER = TESTS / "matrix" / "tiers.json"
@@ -115,7 +115,7 @@ MARKER_NETWORK = "network"
 # cited. The date is the one in the ledger's own `measured` column.
 STALENESS_DAYS = 30
 
-# The witness leaf space (tools/z3_witnesses.build(), rendered end to end by the
+# The witness leaf space (architekton/z3_witnesses.build(), rendered end to end by the
 # fast job of .github/workflows/witness.yml) has a declared ceiling, not just a
 # growth rate. The 2026-09-13 audit's law makes ordinary growth additive -- +76 leaves
 # per include layer, +22 per gate-off dimension -- but lifting include
@@ -1058,7 +1058,7 @@ def test_test_loop_doc_states_the_recorded_tier_sizes() -> None:
 
 
 def test_the_witness_leaf_space_stays_within_its_declared_budget() -> None:
-    """tools/z3_witnesses.py's leaf space must fit inside LEAF_BUDGET.
+    """architekton/z3_witnesses.py's leaf space must fit inside LEAF_BUDGET.
 
     Everything else in this module watches costs that already happened; this
     one watches the one growth that compounds. The 2026-09-13 audit's law makes

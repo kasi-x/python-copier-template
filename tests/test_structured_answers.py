@@ -30,7 +30,7 @@ import pytest
 from support import render_answers
 
 # The answer sets whose derived list matters, keyed by a readable name. Each
-# is a partial override on the shared Project Details (tools/answers.py BASE
+# is a partial override on the shared Project Details (architekton/answers.py BASE
 # reaches them through `render_answers`'s own defaults).
 CASES: dict[str, dict[str, Any]] = {
     "library": {"project_type": "library"},

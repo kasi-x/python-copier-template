@@ -1,7 +1,7 @@
-"""The tools/ dependency layers are declared, and no import points up.
+"""The architekton/ dependency layers are declared, and no import points up.
 
-tools/ grew past nineteen modules with an IMPLICIT layering: every cross-module
-import is spelled `from tools import x`, but nothing recorded which modules sit
+architekton/ grew past nineteen modules with an IMPLICIT layering: every cross-module
+import is spelled `from architekton import x`, but nothing recorded which modules sit
 where, so "may adopt.py use invariants?" was answerable only by reading all of
 them. The layering is now a declared contract, in the repo's registry idiom
 (tests/test_answer_fixtures.py's DEFAULT_REPEATS_ALLOWED, tests/matrix/
@@ -14,7 +14,7 @@ The layers, bottom up (the table also lives in docs/explanations/template-dev.md
 next to the other structural rules):
 
     standalone   maintenance/CI scripts that run on their own: they import
-                 nothing from tools/ (check_upstream, check_upstream_fork,
+                 nothing from architekton/ (check_upstream, check_upstream_fork,
                  check_questionnaire_diff, generate_license_template)
     foundations  the questionnaire model and shared primitives: the
                  questionnaire as data (questionnaire), its when-expressions
@@ -43,7 +43,7 @@ worth refactoring away is stated, not hidden. Both halves are stale-proofed
 the way DEFAULT_REPEATS_ALLOWED is: an undeclared upward import fails, and so
 does a declared exception whose edge has vanished or stopped pointing up.
 
-A new module under tools/ fails
+A new module under architekton/ fails
 `test_every_tool_module_is_declared_in_exactly_one_layer` until it is placed:
 pick the layer it belongs in, and the import-direction test tells you whether
 the guess was right.
@@ -55,14 +55,14 @@ import ast
 from pathlib import Path
 
 TOP = Path(__file__).resolve().parent.parent
-TOOLS = TOP / "tools"
+TOOLS = TOP / "architekton"
 
 # Layer -> (what it is, its modules). Order IS the ranking: earlier = lower =
 # importable by everything above it. A module appears in exactly one layer.
 LAYERS: dict[str, tuple[str, frozenset[str]]] = {
     "standalone": (
         (
-            "maintenance/CI scripts that import nothing from tools/"
+            "maintenance/CI scripts that import nothing from architekton/"
             " (a pristine checkout or a released tarball is their world)"
         ),
         frozenset(
@@ -159,7 +159,7 @@ def _placement() -> dict[str, str]:
 
 
 def _tools_modules() -> dict[str, Path]:
-    """Every tools/ module on disk, by its dotted name relative to tools/ (the
+    """Every architekton/ module on disk, by its dotted name relative to architekton/ (the
     discovery tests/test_qa.py uses for the same directory)."""
     return {
         str(p.relative_to(TOOLS)).removesuffix(".py").replace("/", "."): p
@@ -169,23 +169,23 @@ def _tools_modules() -> dict[str, Path]:
 
 
 def _tools_relative(dotted: str | None) -> str:
-    """`tools.x[.y...]` -> `x...`; anything else -> "" (not a tools/ import)."""
+    """`architekton.x[.y...]` -> `x...`; anything else -> "" (not a architekton/ import)."""
     if dotted is None:
         return ""
-    if dotted == "tools":
+    if dotted == "architekton":
         return ""
-    if dotted.startswith("tools."):
-        return dotted[len("tools.") :]
+    if dotted.startswith("architekton."):
+        return dotted[len("architekton.") :]
     return ""
 
 
 def _tool_imports(path: Path, declared: set[str]) -> set[str]:
-    """The declared tools/ modules one module's source imports (AST, no runtime).
+    """The declared architekton/ modules one module's source imports (AST, no runtime).
 
-    Absolute (`from tools import batch`, `import tools.questionnaire`) and
-    relative (`from . import batch` -- tools/ is a namespace package) forms
+    Absolute (`from architekton import batch`, `import architekton.questionnaire`) and
+    relative (`from . import batch` -- architekton/ is a namespace package) forms
     both resolve; the longest declared prefix of the dotted name wins, so
-    `from tools.questionnaire import Question` lands on `questionnaire`.
+    `from architekton.questionnaire import Question` lands on `questionnaire`.
     """
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     dotted: set[str] = set()
@@ -195,9 +195,9 @@ def _tool_imports(path: Path, declared: set[str]) -> set[str]:
         elif isinstance(node, ast.ImportFrom):
             if node.level == 0:
                 dotted.add(_tools_relative(node.module))
-                if node.module == "tools":  # `from tools import a, b` imports each name
+                if node.module == "architekton":  # `from architekton import a, b` imports each name
                     dotted.update(alias.name for alias in node.names)
-            else:  # relative: resolves inside tools/ itself
+            else:  # relative: resolves inside architekton/ itself
                 dotted.add(node.module.split(".")[0] if node.module else "")
                 if not node.module:
                     dotted.update(alias.name for alias in node.names)
@@ -217,7 +217,7 @@ def _rank() -> dict[str, int]:
 
 
 def test_every_tool_module_is_declared_in_exactly_one_layer() -> None:
-    """Every tools/ module sits in exactly one declared layer, and every
+    """Every architekton/ module sits in exactly one declared layer, and every
     declared module exists.
 
     A module on disk without a layer is an unplanned dependency surface; a
@@ -236,10 +236,10 @@ def test_every_tool_module_is_declared_in_exactly_one_layer() -> None:
     stale = sorted(set(placement) - set(on_disk))
     empty = [layer for layer, (_what, modules) in LAYERS.items() if not modules]
     assert not duplicated and not unknown and not stale and not empty, (
-        "the tools/ layer registry and the tools/ directory disagree:\n"
+        "the architekton/ layer registry and the architekton/ directory disagree:\n"
         + "".join(f"\n  declared twice: {module} -> {layers}" for module, layers in duplicated.items())
         + "".join(
-            f"\n  undeclared module: tools/{module}.py -- pick a layer in tests/test_tool_layers.py LAYERS"
+            f"\n  undeclared module: architekton/{module}.py -- pick a layer in tests/test_tool_layers.py LAYERS"
             for module in unknown
         )
         + "".join(f"\n  stale entry: {module} is declared in {placement[module]} but not on disk" for module in stale)
@@ -248,7 +248,7 @@ def test_every_tool_module_is_declared_in_exactly_one_layer() -> None:
 
 
 def test_no_tool_module_imports_from_a_higher_layer() -> None:
-    """Every tools -> tools import points down or sideways, never up.
+    """Every architekton -> architekton import points down or sideways, never up.
 
     The scan is structural: it reads the import statements' AST and resolves
     each to its declared layer. An upward import must either be fixed (move
@@ -265,7 +265,7 @@ def test_no_tool_module_imports_from_a_higher_layer() -> None:
         if target not in placement
     ]
     upward = [
-        f"tools/{module}.py ({placement[module]}) imports tools/{target}.py ({placement[target]}, above it)"
+        f"architekton/{module}.py ({placement[module]}) imports architekton/{target}.py ({placement[target]}, above it)"
         for module, generated_blocks in edges.items()
         for target in sorted(generated_blocks)
         if target in placement
@@ -273,7 +273,7 @@ def test_no_tool_module_imports_from_a_higher_layer() -> None:
         and (module, target) not in ALLOWED_UPWARD_IMPORTS
     ]
     assert not undeclared and not upward, (
-        "an import points up the tools/ layers:"
+        "an import points up the architekton/ layers:"
         + "".join(f"\n  {module} imports undeclared {target}" for module, target in undeclared)
         + "".join(
             f"\n  {line} -- move the code down a layer, or declare the edge in ALLOWED_UPWARD_IMPORTS"

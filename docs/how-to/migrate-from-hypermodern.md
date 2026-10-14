@@ -110,15 +110,15 @@ missing infrastructure (CI workflows, `.gitleaks.toml`, `renovate.json`,
 `AGENTS.md`, hygiene checks) is added, and the template's *dependencies* are
 merged into your `pyproject.toml` (never a requirement of yours). Task-runner
 files and `CHANGELOG.md` are never written in adopt mode, so your recipes and
-history stay put. The `tools/adopt.py` driver does the plan / apply / rollback
+history stay put. The `architekton/adopt.py` driver does the plan / apply / rollback
 for you:
 
 ```shell
-uv run --locked python tools/adopt.py . --dry-run
-uv run --locked python tools/adopt.py .
+uv run --locked python architekton/adopt.py . --dry-run
+uv run --locked python architekton/adopt.py .
 ```
 
-Run `tools/detect.py` first — it reports which operation fits your repo and
+Run `architekton/detect.py` first — it reports which operation fits your repo and
 prints the ready-to-run command. From then on, updates are the same
 `uvx copier update --trust` any generated project uses.
 

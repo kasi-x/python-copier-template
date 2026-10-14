@@ -1,7 +1,7 @@
 """The vendored license set is the one source three consumers must agree on.
 
-``tools/licenses/*.txt`` (+ ``_meta.json``) is the vendored
-choosealicense.com corpus; ``tools/generate_license_template.py`` turns it
+``architekton/licenses/*.txt`` (+ ``_meta.json``) is the vendored
+choosealicense.com corpus; ``architekton/generate_license_template.py`` turns it
 into the template's LICENSE if/elif chain, and the ``license:`` question
 offers the same set interactively. Nothing executed the generator
 end-to-end, so this module pins the three views
@@ -21,10 +21,10 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import generate_license_template as gen  # noqa: E402
-from tools import questionnaire  # noqa: E402
+from architekton import generate_license_template as gen  # noqa: E402
+from architekton import questionnaire  # noqa: E402
 
-LICENSES_DIR = TOP / "tools" / "licenses"
+LICENSES_DIR = TOP / "architekton" / "licenses"
 LICENSE_TEMPLATE = next((TOP / "template").glob("*LICENSE*.jinja"))
 # The two hand-written branches the generator itself appends (its docstring:
 # "Proprietary" and "Confidential" bodies are not vendored texts).
@@ -44,7 +44,7 @@ def _chain() -> list[str]:
     assert tags, f"the LICENSE template lost its if/elif chain: {LICENSE_TEMPLATE.name}"
     assert [tag for tag, _ in tags] == ["if"] + ["elif"] * (len(tags) - 1), (
         "the LICENSE chain must be a single `if` followed by `elif`s, exactly as"
-        " tools/generate_license_template.py renders it"
+        " architekton/generate_license_template.py renders it"
     )
     return [spdx for _, spdx in tags]
 
@@ -59,15 +59,15 @@ def test_license_chain_covers_exactly_the_vendored_set():
     chain = _chain()
     assert len(chain) == len(set(chain)), "a license renders twice in the LICENSE chain"
     assert set(chain) - RESERVED == _vendored(), (
-        "the LICENSE if/elif chain and tools/licenses/ disagree: the generator"
-        " (tools/generate_license_template.py) would regenerate a different chain"
+        "the LICENSE if/elif chain and architekton/licenses/ disagree: the generator"
+        " (architekton/generate_license_template.py) would regenerate a different chain"
     )
     assert set(chain) >= RESERVED, f"the reserved branches went missing: {sorted(RESERVED - set(chain))}"
 
 
 def test_license_question_offers_exactly_the_vendored_set():
     assert _offered() == _vendored() | RESERVED, (
-        "the license: question offers a value outside tools/licenses/ + the reserved"
+        "the license: question offers a value outside architekton/licenses/ + the reserved"
         " branches (or hides one): answering it would render a branch the generator"
         " cannot reproduce"
     )
@@ -83,6 +83,6 @@ def test_generator_regenerates_the_shipped_template_byte_for_byte():
     a file-read-only fast test.
     """
     assert gen.render_chain(gen.load_licenses()) == LICENSE_TEMPLATE.read_text(encoding="utf-8"), (
-        f"tools/generate_license_template.py no longer reproduces {LICENSE_TEMPLATE.name}"
+        f"architekton/generate_license_template.py no longer reproduces {LICENSE_TEMPLATE.name}"
         " byte for byte; run it and commit the regeneration (or fix the generator)"
     )

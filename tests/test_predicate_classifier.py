@@ -1,6 +1,6 @@
 """Rot-guard: every unconditionally-equivalent (site, internal) pair is accounted for.
 
-tools/predicates.py collects every boolean condition site on the render +
+architekton/predicates.py collects every boolean condition site on the render +
 question surface; the named boolean internals (`oj_bare`, `no_pkg`, the
 `*_effective` family) are its shortcuts. The predicate unification was done
 by hand against an inventory that could rot: a template condition quietly
@@ -10,7 +10,7 @@ guard tests pinned for the eight known sites, generalized to every site.
 This test is the space-wide version. A render-side site S and a named
 boolean internal I with definition D are *unconditionally* equivalent when
 they cannot disagree anywhere in the questionnaire's free space -- checked
-with tools/when_model.py's Z3 encoder on
+with architekton/when_model.py's Z3 encoder on
 `(S and not D) or (not S and D)` (unsatisfiable = equivalent), after
 `FreeSpace` substitutes every boolean internal by its definition
 recursively (cycle-guarded; string-valued internals have no variable in the
@@ -54,11 +54,11 @@ from pathlib import Path
 import z3
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_when_model.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_when_model.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import predicates  # noqa: E402
-from tools import when_model  # noqa: E402
+from architekton import predicates  # noqa: E402
+from architekton import when_model  # noqa: E402
 
 # The declared exceptions to (a)/(b): location -> internal -> the reason the
 # equivalence is intentional. Declared, not discovered -- like invariants.yml's

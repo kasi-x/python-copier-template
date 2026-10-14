@@ -1,4 +1,4 @@
-"""Tests for tools/questionnaire.py: the questionnaire as data.
+"""Tests for architekton/questionnaire.py: the questionnaire as data.
 
 Parsing is exercised against a synthetic config (so the include order and the
 field shapes are pinned exactly) plus a few assertions on the real
@@ -16,7 +16,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import questionnaire  # noqa: E402
+from architekton import questionnaire  # noqa: E402
 
 
 def write_config(tmp_path: Path) -> Path:
@@ -147,7 +147,7 @@ def test_real_questionnaire_reads_in_ask_order():
 def test_raw_view_agrees_with_copiers_loader():
     """The parser and copier's own loader resolve the same questions in the same order.
 
-    tools/questionnaire.py is the one parser (tools/when_model.load_questions
+    architekton/questionnaire.py is the one parser (architekton/when_model.load_questions
     delegates to its raw view), and copier's `load_template_config` is kept
     only as the differential oracle -- including here. A resolver drift (an
     `!include` one of the two sees differently, an order or value mismatch)

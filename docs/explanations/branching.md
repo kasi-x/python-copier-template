@@ -13,7 +13,7 @@ each stream first has real work.
 
 | Stream | Branch pattern | What lands here | Cadence |
 | --- | --- | --- | --- |
-| **Pure code** | `main` + `exp/<name>` | template sources, questions, tools, tests, CI | continuous; `exp/*` for work that might be thrown away |
+| **Pure code** | `main` + `exp/<name>` | template sources, questions, architekton, tests, CI | continuous; `exp/*` for work that might be thrown away |
 | **Vendored content** | `vendor/<source>` | any future vendored content (the ethics snapshot stream is retired: kanon prose is never vendored anymore) | on upstream drift only — the sync workflow opens the PR |
 | **Release** | tags on `main`, `release/<ver>` only if a hotfix line is ever needed | release tags (`6.1.0`), never long-lived branches | per release |
 

@@ -160,7 +160,7 @@ def test_template_online_judge_no_solutions_for_kaggle(tmp_path: Path):
 
 
 # The render inputs of test_template_data_governance_asked_on_recommended_path,
-# composed with tools/answers.py BASE at the call site: registered in
+# composed with architekton/answers.py BASE at the call site: registered in
 # tests/test_answer_fixtures.py like every other answer fixture.
 DATA_GOV_ANSWERS: dict[str, object] = {"project_type": "data_science"}
 
@@ -173,7 +173,7 @@ def test_template_data_governance_asked_on_recommended_path(tmp_path: Path, rend
     not an unseen question.
     """
 
-    from tools.answers import BASE
+    from architekton.answers import BASE
 
     render_cache.render(tmp_path, {**BASE, **DATA_GOV_ANSWERS})
     assert not (tmp_path / "data" / "DUO.md").exists()

@@ -40,10 +40,10 @@ import yaml
 import z3
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import when_model  # noqa: E402
+from architekton import when_model  # noqa: E402
 
 COPIER_YML = TOP / "copier.yml"
 QUESTIONNAIRE_DOC = TOP / "docs" / "reference" / "questionnaire.md"

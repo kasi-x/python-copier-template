@@ -16,7 +16,7 @@ TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import answers as answers_mod  # noqa: E402
+from architekton import answers as answers_mod  # noqa: E402
 
 from render_cache import render_cache as render_cache  # noqa: PLC0414  # session fixture, made visible here
 from support import copy_project  # noqa: E402

@@ -34,11 +34,11 @@ then `task test-fast`.
   copier's `{% if %}` conditionals) and the shared partials in `_shared/`;
   the generated task-runner model is `_tasks.jinja`
 - Template tooling (witnesses, batch runner, docs generator, MCP server,
-  CLI): `tools/`
+  CLI): `architekton/`
 - Tests: `tests/` (cost tiers are pytest markers; `tests/matrix/` holds the
   witness leaves, invariants and the tier ledger)
 - Docs: `README.md` and `docs/`. Blocks marked as generated come from
-  `tools/gen_docs.py --write`; edit their sources, not the output.
+  `architekton/gen_docs.py --write`; edit their sources, not the output.
 
 `notes/` is internal working material, not documentation: do not cite it
 from `docs/` or code.

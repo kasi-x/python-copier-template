@@ -114,7 +114,7 @@ Enforced by `test_question_references_are_forward_only` and
 `tests/test_copier_structure.py`.
 
 To see and plan the order instead of only checking it after the fact, run
-`task question-graph` (`tools/question_graph.py`): it prints the whole
+`task question-graph` (`architekton/question_graph.py`): it prints the whole
 dependency graph in definition order, grouped by fragment, with what each
 question/internal reads and feeds, recomputes the forward-reference rule
 (violations name both positions), and — with
@@ -211,7 +211,7 @@ render side cannot drift from.
 The condition surface is large — question `when:`s, the `when: false`
 internals, `{% if %}` gates in template file names and bodies, `_tasks`
 guards — and the predicate unification (the `oj_bare` / `no_pkg` inventory) was done
-by hand against a snapshot that could rot. `tools/predicates.py` keeps the
+by hand against a snapshot that could rot. `architekton/predicates.py` keeps the
 inventory alive: it collects every boolean condition site, evaluates each
 against all 272 witness leaves with copier's own machinery, and reports the
 classification tree (every `invariants.yml` row with its leaf count),
@@ -257,7 +257,7 @@ after touching any `when` / `choices` / genre list.
 
 Renovate tracks PyPI ranges, Action digests and lockfiles — but not release
 tags, CUDA indexes, distro codenames or image tags hardcoded in the
-template. Every such pin must be covered by `tools/check_upstream.py`
+template. Every such pin must be covered by `architekton/check_upstream.py`
 (run weekly by `.github/workflows/check-upstream.yml`, which opens an issue
 on drift):
 
@@ -330,7 +330,7 @@ misdiagnosed twice before the tag mechanism was confirmed via
 escape the trap. The detach removed the need.
 
 The one ref that stays pinned is `--vcs-ref=HEAD` (equivalently
-`tools/adopt.py --ref HEAD`), and it belongs only in this repository's own
+`architekton/adopt.py --ref HEAD`), and it belongs only in this repository's own
 local-iteration docs: it expands the working tree, uncommitted changes
 included, so it describes how to test a template edit — never how a user
 generates a project. Enforced by `tests/test_generation_docs.py`, which
@@ -400,10 +400,10 @@ leans on (`task predicates`, `task question-graph`, `task witness`), and
 the rule the machinery cannot check for you (mechanical equality is not
 intent). See [Extending the Questionnaire](extending.md).
 
-## Keep the `tools/` dependency layers declared
+## Keep the `architekton/` dependency layers declared
 
-`tools/` is nineteen modules, and their dependency direction was implicit:
-every cross-module import reads `from tools import x`, but nothing said which
+`architekton/` is nineteen modules, and their dependency direction was implicit:
+every cross-module import reads `from architekton import x`, but nothing said which
 modules sit where, so "may `adopt.py` use `invariants`?" was answerable only
 by reading all of them. The layering is now a declared contract — the repo's
 registry idiom again (cf. `DEFAULT_REPEATS_ALLOWED`,
@@ -412,7 +412,7 @@ up:
 
 | Layer | Modules | What it is |
 | --- | --- | --- |
-| `standalone` | `check_upstream`, `check_upstream_fork`, `check_questionnaire_diff`, `generate_license_template` | maintenance/CI scripts that import nothing from `tools/` (a pristine checkout or a released tarball is their world) |
+| `standalone` | `check_upstream`, `check_upstream_fork`, `check_questionnaire_diff`, `generate_license_template` | maintenance/CI scripts that import nothing from `architekton/` (a pristine checkout or a released tarball is their world) |
 | `foundations` | `answers`, `questionnaire`, `when_model`, `render_inputs`, `support_ledger` | the questionnaire model and shared primitives: data and meaning, no behavior on real trees |
 | `machinery` | `file_merge`, `pyproject_merge`, `invariants`, `z3_witnesses`, `gen_docs_model`, `gen_docs_prose`, `gen_docs_sections`, `gen_docs_graph`, `gen_docs_blocks` | pure transformations and verifiers over template/adoption artifacts |
 | `drivers` | `detect`, `batch`, `adopt`, `adopt_cli`, `adopt_confirm`, `adopt_crash`, `adopt_journal`, `adopt_merge`, `adopt_report`, `adopt_revision`, `adopt_run`, `adopt_tree`, `adopt_types`, `git`, `predicates`, `question_graph`, `render_delta`, `answers_for`, `update_rehearsal`, `suggest` | act on real trees with copier/subprocess; consume the machinery |
@@ -427,7 +427,7 @@ Rules:
   stale-proofed in both directions: an undeclared upward import fails, and so
   does a declared exception whose edge has vanished or stopped pointing up.
   (There are no exceptions today: no import points up.)
-- New module under `tools/`? Pick a layer and add it to `LAYERS` in the test —
+- New module under `architekton/`? Pick a layer and add it to `LAYERS` in the test —
   the test tells you if you guessed wrong: an unplaced module fails the
   membership check (so no module can sneak in undeclared), and a wrong guess
   fails the direction check.
@@ -438,7 +438,7 @@ docstring, and the two are meant to be edited together.
 
 ## Prove what a change can affect: the render twin
 
-`task verify-delta` (`tools/render_delta.py`) answers "which leaves did this
+`task verify-delta` (`architekton/render_delta.py`) answers "which leaves did this
 change touch?" mechanically. Layer A tabulates each leaf's render context (its
 answers and the internals derived from them) and
 every watched template byte, and diffs the two states: a leaf is a candidate

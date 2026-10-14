@@ -2,7 +2,7 @@
 
 The size block (`generated-size` in docs/reference/dependencies.md) is
 measured, not derived: the numbers live in tests/matrix/sizes.json and
-tools/gen_docs.py --check fails when the docs table differs. These tests
+architekton/gen_docs.py --check fails when the docs table differs. These tests
 pin the two halves that --check cannot see on its own: the ledger covers
 exactly the questionnaire's project_type choices x the preset set (plus the
 non-preset rows the table shows), and every committed number is a sane
@@ -19,8 +19,8 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import gen_docs  # noqa: E402
-from tools.answers import preset_names  # noqa: E402
+from architekton import gen_docs  # noqa: E402
+from architekton.answers import preset_names  # noqa: E402
 
 EXPECTED_NON_PRESET_ROWS = {"project_type=script", "row:oj_kaggle", "row:oj_ctf"}
 

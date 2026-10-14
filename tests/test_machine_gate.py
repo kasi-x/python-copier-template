@@ -26,9 +26,9 @@ from test_copier_structure import TOP
 from test_copier_structure import shared_files
 from test_copier_structure import template_files
 
-sys.path.insert(0, str(TOP))  # tests/test_marker_drift.py does the same to reach tools/
+sys.path.insert(0, str(TOP))  # tests/test_marker_drift.py does the same to reach architekton/
 
-from tools.render_inputs import render_input_paths  # noqa: E402
+from architekton.render_inputs import render_input_paths  # noqa: E402
 
 
 def test_all_jinja_sources_parse():
@@ -97,7 +97,7 @@ def test_shared_partials_are_all_consumed():
 # double-quoted literal target, optionally followed by static tag grammar
 # (`as NAME`, `with/without context`, `ignore missing`, an imported-name
 # list) -- words, whitespace and commas only. Kept in sync with
-# tools/render_inputs.py's INCLUDE_TAG, which this strengthens in one way the
+# architekton/render_inputs.py's INCLUDE_TAG, which this strengthens in one way the
 # regex itself cannot say: any operator or second quote after the literal
 # (`{% include "a" ~ b %}`) makes the target an expression that
 # INCLUDE_TAG happily prefix-matches while `resolve_include_target` then
@@ -110,7 +110,7 @@ VISIBLE_INCLUDE = re.compile(r'\{%-?\s+(?:include|import)\s+"[^"]+"[\w\s,-]*%}')
 def _untrackable_include_lines(text: str) -> list[tuple[int, str]]:
     """`(lineno, line)` for every include/import tag the include graph cannot see.
 
-    The graph (tools/render_inputs.py, shared by the render cache and the
+    The graph (architekton/render_inputs.py, shared by the render cache and the
     render twin) follows only tags whose target is a plain double-quoted
     literal; VISIBLE_INCLUDE above is that form, anchored at the tag's close.
     Jinja's own parse finds the tags (so
@@ -184,7 +184,7 @@ def test_include_and_import_targets_are_all_literals_the_graph_sees():
     tree as a hit. That is the one render input class the fingerprint cannot
     see, which is why this is guarded rather than supported: zero dynamic
     includes exist today, and adding one must be a loud decision (extend
-    tools/render_inputs.py's graph, not around it).
+    architekton/render_inputs.py's graph, not around it).
     """
     problems = []
     for path in render_input_paths(TOP):
@@ -244,7 +244,7 @@ def test_render_matrix_renders_and_parses(tmp_path: Path, render_cache: RenderCa
     """
     import tomllib
 
-    from tools.answers import BASE
+    from architekton.answers import BASE
 
     render_cache.render(tmp_path, {**BASE, **answers})
     assert not list(tmp_path.rglob("*.jinja")), "unrendered .jinja files left"

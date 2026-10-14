@@ -1,6 +1,6 @@
 """The adopt-time merge contracts, declared in tests/matrix/invariants.yml.
 
-Every merge kind tools/adopt.py can apply to an adopter's file makes promises
+Every merge kind architekton/adopt.py can apply to an adopter's file makes promises
 about its outcome. This module records those promises as an *artifact* -- the
 same oracle shape the render invariants use -- rather than as checks that live
 only inside the merge implementations, so that a new merge kind has to declare
@@ -8,7 +8,7 @@ its contract and a contract change has to be deliberate:
 
 - ``tests/matrix/invariants.yml``'s ``merges:`` section declares, per kind,
   the conditions that kind promises.
-- ``tools/invariants.py`` parses that section and refuses unknown shape; this
+- ``architekton/invariants.py`` parses that section and refuses unknown shape; this
   module owns the condition *implementations* (the same split the render
   predicates use) and holds the registry against the dispatch:
   a kind the code offers without a declared contract, or a declared contract
@@ -22,7 +22,7 @@ The conditions, in the vocabulary the registry uses:
 original_is_prefix
     The pre-merge content is still a byte prefix of the result: an adopter's
     own lines are never moved or rewritten. Checked with
-    tools/file_merge.py's own ``original_is_preserved`` so the implementation
+    architekton/file_merge.py's own ``original_is_preserved`` so the implementation
     and the contract cannot drift.
 idempotent
     Applying the merge a second time changes nothing: the source's entries are
@@ -51,8 +51,8 @@ TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import file_merge  # noqa: E402
-from tools import pyproject_merge  # noqa: E402
+from architekton import file_merge  # noqa: E402
+from architekton import pyproject_merge  # noqa: E402
 
 INVARIANTS = TOP / "tests" / "matrix" / "invariants.yml"
 

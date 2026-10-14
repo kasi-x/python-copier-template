@@ -34,7 +34,7 @@
 # the accounting stays total in both directions: a new include question can
 # appear (or an old one vanish, or a layer's `when` stop being templated)
 # only by declaring it here or in `layers` — the same declared-not-discovered
-# rule tools/z3_witnesses.py enforces for the leaf space.
+# rule architekton/z3_witnesses.py enforces for the leaf space.
 
 version: 1
 

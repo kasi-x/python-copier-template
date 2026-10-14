@@ -1,6 +1,6 @@
 """The constrained configuration assistant: propose presets, validate answers.
 
-`tools/suggest.py` never invents answers: `questionnaire_schema` publishes
+`architekton/suggest.py` never invents answers: `questionnaire_schema` publishes
 the questions a proposal may answer, `validate_answers` runs a proposal
 through copier's own questionnaire pass, and `suggest_presets` ranks the
 preset files by requirement keywords with no model. These tests pin the
@@ -19,9 +19,9 @@ import pytest
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
-from tools import cli  # noqa: E402
-from tools import questionnaire  # noqa: E402
-from tools import suggest  # noqa: E402
+from architekton import cli  # noqa: E402
+from architekton import questionnaire  # noqa: E402
+from architekton import suggest  # noqa: E402
 
 
 def _refused(answers: dict[str, Any]) -> list[dict[str, str]]:

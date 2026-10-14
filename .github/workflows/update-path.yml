@@ -51,7 +51,7 @@ jobs:
       - name: Guard the questionnaire against unmerged answer changes
         # Exits 1 with a [MISSING MIGRATION] line per removal/rename/default
         # change that has no _migrations entry yet.
-        run: uv run --locked python tools/check_questionnaire_diff.py
+        run: uv run --locked python architekton/check_questionnaire_diff.py
 
       - name: Replay copier update from the release tag to HEAD
         run: uv run --locked pytest -q tests/test_update_path.py

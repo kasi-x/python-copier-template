@@ -16,7 +16,7 @@ customisable area asks a single "use the recommended settings?" question first
 asking anything else; answer **no** and the detailed question(s) for that area
 are asked — [the questionnaire reference](questionnaire.md) lists every one.
 
-<!-- BEGIN GENERATED: features-areas (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: features-areas (architekton/gen_docs.py --write) -->
 | Area gate | Recommended default | Asked when |
 |---|---|---|
 | `use_recommended_agent` | yes — a plain library / CLI without agent tooling. | library / cli |
@@ -36,7 +36,7 @@ are asked — [the questionnaire reference](questionnaire.md) lists every one.
 The branches below follow the order the questions are actually asked in
 (`copier.yml`); each gate's Yes/No branches rejoin before the next gate:
 
-<!-- BEGIN GENERATED: features-mermaid (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: features-mermaid (architekton/gen_docs.py --write) -->
 ```mermaid
 flowchart TD
     Start([Start]) --> PT[project_type]
@@ -135,7 +135,7 @@ flowchart TD
 `task_runner` (and `task_runner_pixi` when `package_manager` is pixi) picks the
 runner every recipe goes through:
 
-<!-- BEGIN GENERATED: features-task-runner (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: features-task-runner (architekton/gen_docs.py --write) -->
 - A task runner of your choice ([Just](https://just.systems) (default) /
   [Task&nbsp;(go-task)](https://taskfile.dev) / [poethepoet](https://github.com/nat-n/poethepoet) /
   [Make](https://www.gnu.org/software/make/) / [pyinvoke](https://www.pyinvoke.org) /
@@ -229,8 +229,8 @@ element to a combinable base:
 
 - Recommended: **no** — a plain library / CLI without agent tooling.
 - Answer **no** to scaffold a runnable [pydantic-ai](https://ai.pydantic.dev)
-  example: a `prompts/agent.md` system prompt, a typed `tools/` package
-  (`tools/example.py`) and a module-level `agent` wired with `@agent.tool`.
+  example: a `prompts/agent.md` system prompt, a typed `architekton/` package
+  (`architekton/example.py`) and a module-level `agent` wired with `@agent.tool`.
   `python -m <package>.agent "..."` runs offline via pydantic-ai's
   `TestModel`; pass `--model openai:gpt-4o-mini` (with the matching API key in
   the environment) for a real model.
@@ -279,7 +279,7 @@ element to a combinable base:
   GPL/LGPL/AGPL, BSD variants, MPL-2.0, ISC, Unlicense, CC0, and more), plus a
   `Proprietary` / all-rights-reserved option. Sets the `LICENSE` file text,
   `pyproject.toml`'s PEP 639 `license`/`license-files`, and the README badge.
-  Regenerated from source via `tools/generate_license_template.py`.
+  Regenerated from source via `architekton/generate_license_template.py`.
 - **Changelog**: [git-cliff](https://git-cliff.org) generates `CHANGELOG.md`
   from [Conventional Commits](https://www.conventionalcommits.org); commit
   messages are enforced in CI (a conventional-commits check in the hygiene
@@ -350,7 +350,7 @@ element to a combinable base:
 
 ## Support tiers
 
-<!-- BEGIN GENERATED: support-table (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: support-table (architekton/gen_docs.py --write) -->
 **Supported** — executed end to end by CI:
 
 | combination | tier |

@@ -1,10 +1,10 @@
 """Differential test: the `when` model against copier's own Jinja evaluation.
 
-tools/when_model.py decides with Z3 whether a question's `when` can hold. That
+architekton/when_model.py decides with Z3 whether a question's `when` can hold. That
 is a re-implementation of Jinja semantics for a small grammar, so it is only
 as good as its agreement with Jinja itself — real Jinja is the oracle here.
-For every leaf of the declared witness space (tools/z3_witnesses.py: the same
-answers tools/batch.py renders), copier's own questionnaire machinery
+For every leaf of the declared witness space (architekton/z3_witnesses.py: the same
+answers architekton/batch.py renders), copier's own questionnaire machinery
 (`Worker._ask` + `Question.get_when`) answers every templated `when`, and the
 model is asked the same question at the same answers (its `pinned` mode).
 Every disagreement is a model bug — a projection hole that would otherwise
@@ -33,7 +33,7 @@ What this covers
 
 What this does not cover (a narrower claim beats an overstated one)
 - Only concrete assignments are compared, not the *abstract* satisfiability
-  the production callers ask for (tools/z3_witnesses.py checks whether a
+  the production callers ask for (architekton/z3_witnesses.py checks whether a
   branch is reachable at all). The two agree as long as pinning is sound,
   which is what the comparison below establishes; the abstract side is
   exercised by tests/test_copier_structure.py's sweeps (a typo'd
@@ -66,13 +66,13 @@ import pytest
 import z3
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
+from architekton import when_model  # noqa: E402
+from architekton import z3_witnesses  # noqa: E402
 from copier._main import Worker  # noqa: E402
 from copier._user_data import Question  # noqa: E402
-from tools import when_model  # noqa: E402
-from tools import z3_witnesses  # noqa: E402
 
 # Jinja keywords `when_model.jinja_identifiers` reports as identifiers; they
 # are operators in the grammar the encoder parses, not variables to pin.
@@ -198,7 +198,7 @@ def test_model_agrees_with_copier_on_every_leaf_and_probe():
 
     with tempfile.TemporaryDirectory() as dst:
         # vcs_ref=HEAD: the oracle is the checkout's own questionnaire (the
-        # same source tools/z3_witnesses.py enumerates), not the newest tag's
+        # same source architekton/z3_witnesses.py enumerates), not the newest tag's
         # -- a question added after the tag would otherwise never be seen by
         # copier here and the sweep would call it one-sided.
         worker = Worker(src_path=str(TOP), dst_path=Path(dst), defaults=True, quiet=True, vcs_ref="HEAD")

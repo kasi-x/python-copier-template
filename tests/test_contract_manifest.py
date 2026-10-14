@@ -22,12 +22,12 @@ import yaml
 from support import render_answers
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import cli  # noqa: E402
-from tools import verify  # noqa: E402
-from tools.answers import BASE  # noqa: E402
+from architekton import cli  # noqa: E402
+from architekton import verify  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 LIBRARY: dict[str, object] = {**BASE, "project_type": "library"}
 CLI: dict[str, object] = {**BASE, "project_type": "cli"}

@@ -21,7 +21,7 @@ otherwise leave at its default.
 Asked first, ahead of every area, because the toolchain and several later
 questions depend on it.
 
-<!-- BEGIN GENERATED: project-types (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: project-types (architekton/gen_docs.py --write) -->
 - **library** — a Python library/package.
 - **web_api** — a web API service (Docker included).
 - **cli** — a command-line tool.
@@ -134,7 +134,7 @@ their build or execution shape cannot be combined.
 
 ## Areas and their recommended defaults
 
-<!-- BEGIN GENERATED: areas (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: areas (architekton/gen_docs.py --write) -->
 Each area asks one gate question first: answering **Yes** configures it from the recommendation below, answering **No** reveals that area's detailed questions.
 
 | Area gate | Recommended default | Asked when |
@@ -177,7 +177,7 @@ An opt-in layer asks its own gate on top:
 
 ## The detailed questions
 
-<!-- BEGIN GENERATED: detailed-questions (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: detailed-questions (architekton/gen_docs.py --write) -->
 Answering **No** to a gate reveals that area's detailed questions:
 
 ### `use_recommended_agent`
@@ -400,7 +400,7 @@ Answer **No** to drop SECURITY.md, drop the license check, or add an OpenSSF Sco
 
 ## Project details
 
-<!-- BEGIN GENERATED: project-details (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: project-details (architekton/gen_docs.py --write) -->
 | Question | Default | Asked when | Prompt |
 |---|---|---|---|
 | `package_name` | `my_package` | all | Name of the python import package. Must be a valid python identifier, i.e. my_package. ASCII characters only (a-z, A-Z, 0-9, _). |

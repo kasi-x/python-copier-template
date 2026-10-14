@@ -2,8 +2,8 @@
 
 The design review judged Hypothesis the cheapest way to an executable specification
 of adoption, and this module puts it to work. The machine builds a random project
-tree, runs a random sequence of real adoptions against it (tools/adopt.py,
-copier through tools/batch.py, the real merges), and after *every* step asserts
+tree, runs a random sequence of real adoptions against it (architekton/adopt.py,
+copier through architekton/batch.py, the real merges), and after *every* step asserts
 the tree against a model that knows the contract rather than the code:
 
 - adoption adds and never rewrites: a file the model owns comes back byte for
@@ -28,7 +28,7 @@ the model and the driver disagree, the shrunk sequence is a finding about the
 driver -- not a reason to adjust the model.
 
 The template rendered here is a miniature one, built by the test, not
-`template/`: the subject is the protocol in tools/adopt.py, and a miniature
+`template/`: the subject is the protocol in architekton/adopt.py, and a miniature
 template turns a 1.6s adoption into ~50ms, which is what makes 100 sequences
 affordable in the edit loop (measured on 16 cores: ~13-19s of one worker's time
 for the 100, i.e. a second or so of the tier's wall, which is work-bound). No
@@ -60,12 +60,12 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import adopt_crash  # noqa: E402
-from tools import adopt_journal  # noqa: E402
-from tools import adopt_run  # noqa: E402
-from tools import adopt_types  # noqa: E402
-from tools import detect  # noqa: E402
-from tools import file_merge  # noqa: E402
+from architekton import adopt_crash  # noqa: E402
+from architekton import adopt_journal  # noqa: E402
+from architekton import adopt_run  # noqa: E402
+from architekton import adopt_types  # noqa: E402
+from architekton import detect  # noqa: E402
+from architekton import file_merge  # noqa: E402
 
 # --- the miniature template -------------------------------------------------
 
@@ -115,7 +115,7 @@ PYPROJECT = "pyproject.toml"
 GITIGNORE = ".gitignore"
 TASKFILE = "Taskfile.yml"
 
-# The files the merge step edits when both sides have them (tools/adopt.py's
+# The files the merge step edits when both sides have them (architekton/adopt.py's
 # MERGE_KINDS). The fixture ships these three, so an existing copy of one is the
 # only file of the adopter's a run may touch at all -- `toml` is the pyproject
 # merge (value-preserving), `prefix` the ones that may only grow. The Taskfile
@@ -150,7 +150,7 @@ def pyproject_text(*, dependencies: list[str], line_length: int | None) -> str:
 # well-formed one into it. The merge's input contract is a pyproject it can
 # parse; hand it something else and the whole run refuses and rolls back (the
 # two ways that goes wrong are reported with this test rather than modelled
-# here: tools/pyproject_merge.merge_problem calls an unparsable file "the merged
+# here: architekton/pyproject_merge.merge_problem calls an unparsable file "the merged
 # file does not parse", and a `[project].dependencies` that is not a list raises
 # AttributeError inside the merge).
 PYPROJECT_TEXT = st.builds(

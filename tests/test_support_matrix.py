@@ -3,7 +3,7 @@
 `support.yml` is the human-approved declaration; `tests/matrix/witnesses.json`
 is what the witness tiers actually ran. These tests keep the two honest:
 every `supported` combination must be a leaf the full tier executed and
-passed, `docs/reference/support.md` must be exactly what `tools/gen_docs.py`
+passed, `docs/reference/support.md` must be exactly what `architekton/gen_docs.py`
 renders from `support.yml` (the same `--check` gate CI runs), and the
 `tier: none` exclusion hook must never be used without a reason.
 """
@@ -19,8 +19,8 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import gen_docs  # noqa: E402
-from tools import support_ledger  # noqa: E402
+from architekton import gen_docs  # noqa: E402
+from architekton import support_ledger  # noqa: E402
 
 LEDGER = TOP / "tests" / "matrix" / "witnesses.json"
 SECTIONS = ("supported", "best_effort", "tier_policy")
@@ -33,7 +33,7 @@ def ledger() -> dict[str, dict[str, Any]]:
 
 
 def support() -> dict[str, Any]:
-    """The committed declaration, as tools/support_ledger.py reads it."""
+    """The committed declaration, as architekton/support_ledger.py reads it."""
     return support_ledger.load_support(support_ledger.SUPPORT_YML)
 
 
@@ -82,7 +82,7 @@ def test_support_doc_is_exactly_the_generator_output():
 
 
 def rehearsal_report(tmp_path: Path, *, failures: dict[str, list[str]] | None = None) -> Path:
-    """A fixture report in `tools/update_rehearsal.py --json`'s payload shape."""
+    """A fixture report in `architekton/update_rehearsal.py --json`'s payload shape."""
     report = tmp_path / "update-rehearsal.json"
     payload = {
         "base": "6.0.0",

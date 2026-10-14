@@ -1,7 +1,7 @@
 """The shipped entry point's dispatch: `architekton-py new <dir>`.
 
-`tools/cli.py` is the console script this template publishes (pyproject.toml
-`[project.scripts]`), and it is a *dispatcher*: the mode `tools/detect.py`
+`architekton/cli.py` is the console script this template publishes (pyproject.toml
+`[project.scripts]`), and it is a *dispatcher*: the mode `architekton/detect.py`
 reports picks one of three outcomes, two of which refuse. The tools it calls
 have their own tests (test_adopt.py, test_detect.py, test_batch.py); what only
 this module can check is the branch that picks between them, and the exit codes
@@ -24,17 +24,17 @@ from typing import Any
 import pytest
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_adopt.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_adopt.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import adopt_merge  # noqa: E402
-from tools import adopt_report  # noqa: E402
-from tools import adopt_revision  # noqa: E402
-from tools import adopt_run  # noqa: E402
-from tools import adopt_types  # noqa: E402
-from tools import batch  # noqa: E402
-from tools import cli  # noqa: E402
-from tools import detect  # noqa: E402
+from architekton import adopt_merge  # noqa: E402
+from architekton import adopt_report  # noqa: E402
+from architekton import adopt_revision  # noqa: E402
+from architekton import adopt_run  # noqa: E402
+from architekton import adopt_types  # noqa: E402
+from architekton import batch  # noqa: E402
+from architekton import cli  # noqa: E402
+from architekton import detect  # noqa: E402
 
 
 def _detection(mode: str, **overrides: Any) -> detect.Detection:
@@ -177,7 +177,7 @@ def test_new_update_refuses_with_exit_2(
 def test_new_adopt_goes_through_the_transaction(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ):
-    """`adopt` mode delegates to tools/adopt.py, never merges, and warns on collisions."""
+    """`adopt` mode delegates to architekton/adopt.py, never merges, and warns on collisions."""
     calls: list[dict[str, Any]] = []
 
     def fake_adopt(target: Path, **kwargs: Any) -> adopt_types.Adoption:
@@ -273,7 +273,7 @@ def test_main_parses_the_new_subcommand(tmp_path: Path, monkeypatch: pytest.Monk
 
 
 def test_main_dispatches_the_verify_subcommand(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """`main` routes `verify` to tools/verify.py with the directory and --against."""
+    """`main` routes `verify` to architekton/verify.py with the directory and --against."""
     seen: dict[str, Any] = {}
 
     def fake_verify(argv: list[str] | None) -> int:
@@ -291,7 +291,7 @@ def test_main_dispatches_the_verify_subcommand(tmp_path: Path, monkeypatch: pyte
 
 
 def test_main_dispatches_the_explain_subcommand(monkeypatch: pytest.MonkeyPatch):
-    """`main` routes `explain` to tools/explain.py with the preset/question/deviate flags."""
+    """`main` routes `explain` to architekton/explain.py with the preset/question/deviate flags."""
     seen: dict[str, Any] = {}
 
     def fake_explain(argv: list[str] | None) -> int:
@@ -311,7 +311,7 @@ def test_main_dispatches_the_explain_subcommand(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_main_dispatches_the_suggest_subcommand(monkeypatch: pytest.MonkeyPatch):
-    """`main` routes `suggest` to tools/suggest.py with the requirements/validate/json flags."""
+    """`main` routes `suggest` to architekton/suggest.py with the requirements/validate/json flags."""
     seen: dict[str, Any] = {}
 
     def fake_suggest(argv: list[str] | None) -> int:
@@ -328,8 +328,8 @@ def test_main_dispatches_the_suggest_subcommand(monkeypatch: pytest.MonkeyPatch)
 
 
 def test_main_dispatches_the_scaffold_subcommand(monkeypatch: pytest.MonkeyPatch):
-    """`main` routes `scaffold` to tools/scaffold.py with the subcommand and args."""
-    from tools import scaffold  # noqa: PLC0415
+    """`main` routes `scaffold` to architekton/scaffold.py with the subcommand and args."""
+    from architekton import scaffold  # noqa: PLC0415
 
     seen: dict[str, Any] = {}
 
@@ -384,8 +384,8 @@ def test_main_delegates_to_the_cached_checkout_and_propagates_the_exit_code(
     """An install without a checkout next to it runs the cached clone's CLI once."""
     calls: list[tuple[list[str], dict[str, str]]] = []
     cache = tmp_path / "cache" / "repo"
-    (cache / "tools").mkdir(parents=True)
-    (cache / "tools" / "cli.py").write_text("")
+    (cache / "architekton").mkdir(parents=True)
+    (cache / "architekton" / "cli.py").write_text("")
     monkeypatch.setattr(cli, "TOP", tmp_path / "no-checkout")  # no copier.yml: installed mode
     monkeypatch.setattr(cli, "_cache_dir", lambda: cache)
     monkeypatch.setattr(cli, "_refresh_checkout", lambda _cache: None)  # the clone already exists
@@ -399,7 +399,7 @@ def test_main_delegates_to_the_cached_checkout_and_propagates_the_exit_code(
     assert cli.main(["new", "proj", "--preset", "library"]) == 7
     assert len(calls) == 1  # one delegation, never a second
     argv, env = calls[0]
-    assert argv == [sys.executable, str(cache / "tools" / "cli.py"), "new", "proj", "--preset", "library"]
+    assert argv == [sys.executable, str(cache / "architekton" / "cli.py"), "new", "proj", "--preset", "library"]
     assert env[cli.DELEGATED_ENV] == "1"
 
 
@@ -445,8 +445,8 @@ def test_stale_cache_with_failed_fetch_still_delegates(
 
     calls: list[list[str]] = []
     cache = tmp_path / "cache" / "repo"
-    (cache / "tools").mkdir(parents=True)
-    (cache / "tools" / "cli.py").write_text("")
+    (cache / "architekton").mkdir(parents=True)
+    (cache / "architekton" / "cli.py").write_text("")
     monkeypatch.setattr(cli, "TOP", tmp_path / "no-checkout")
     monkeypatch.setattr(cli, "_cache_dir", lambda: cache)
 
@@ -458,7 +458,7 @@ def test_stale_cache_with_failed_fetch_still_delegates(
 
     assert cli.main(["new", "proj"]) == cli.OK
     assert "stale" in capsys.readouterr().err
-    assert calls and calls[0][:2] == [sys.executable, str(cache / "tools" / "cli.py")]
+    assert calls and calls[0][:2] == [sys.executable, str(cache / "architekton" / "cli.py")]
 
 
 def test_clone_losing_the_rename_race_keeps_the_existing_clone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

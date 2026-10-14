@@ -1,6 +1,6 @@
 """Execute the questionnaire's Z3 witness leaves (PLAN-improvements §W3, §C4, §C6).
 
-tools/z3_witnesses.py enumerates the leaf space of the questionnaire's
+architekton/z3_witnesses.py enumerates the leaf space of the questionnaire's
 ``use_recommended_*`` gates, include layers and project types, and writes it
 out as §C6 batch requests (tests/matrix/witnesses.jsonl, 272 leaves). This
 module *executes* that declaration in three tiers:
@@ -15,7 +15,7 @@ module *executes* that declaration in three tiers:
     a bounded sample of leaves additionally gets ``uv sync``, the generated
     project's own ``pytest``, ``basedpyright`` and its docs build.
 ``slow``
-    tools/batch.py runs the whole JSONL through the real §C6 runner, whose
+    architekton/batch.py runs the whole JSONL through the real §C6 runner, whose
     verdict -- not this module's -- is the judge for "every leaf ran and every
     expectation held".
 
@@ -41,7 +41,7 @@ questionnaire edit makes a declared leaf unreachable, e.g. forcing a gate's
 ``when`` to false. The first of the two is also the committed JSONL's
 staleness detection: each §C6 request pins ``ref: HEAD``, so
 the file carries no freshness of its own -- the check re-derives every leaf
-through tools/z3_witnesses.py's ``build()`` and fails with the regeneration
+through architekton/z3_witnesses.py's ``build()`` and fails with the regeneration
 command when the questionnaire has moved on. The exclusions are accounted
 for the same way: every name the leaf space keeps out is declared in
 tests/matrix/invariants.yml's ``excluded`` with a one-line reason, pinned to
@@ -73,12 +73,12 @@ import pytest
 import z3
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import batch  # noqa: E402
-from tools import when_model  # noqa: E402
-from tools import z3_witnesses  # noqa: E402
+from architekton import batch  # noqa: E402
+from architekton import when_model  # noqa: E402
+from architekton import z3_witnesses  # noqa: E402
 
 # Imported so pytest can inject the session render cache (it lives in
 # render_cache.py, not conftest.py: the template renders conftest.py into every
@@ -135,11 +135,11 @@ BATCH_TIMEOUT = 1800
 # The staleness failure's last line: exactly what `task witness` runs
 # (Taskfile.yml), so a stale witnesses.jsonl is one command from fresh.
 REGENERATE = (
-    "regenerate with: task witness (uv run --locked python tools/z3_witnesses.py"
-    f" --jsonl {WITNESSES} && uv run --locked python tools/batch.py {WITNESSES} --json)"
+    "regenerate with: task witness (uv run --locked python architekton/z3_witnesses.py"
+    f" --jsonl {WITNESSES} && uv run --locked python architekton/batch.py {WITNESSES} --json)"
 )
 
-# tools/batch.py --jobs for the whole-JSONL run: the requests are independent
+# architekton/batch.py --jobs for the whole-JSONL run: the requests are independent
 # (each renders into its own directory), so the 272-leaf verdict is bounded by
 # the slowest worker instead of the sum. Capped because this test is itself one
 # of pytest-xdist's `-n auto` workers: 8 keeps the runner at ~8x while leaving
@@ -164,7 +164,7 @@ class Witness:
 
 
 def _load_witnesses() -> list[Witness]:
-    """Parse tests/matrix/witnesses.jsonl with tools/batch.py's own validator."""
+    """Parse tests/matrix/witnesses.jsonl with architekton/batch.py's own validator."""
     requests = batch.load_requests([WITNESSES])
     return [Witness(id=request.id, answers=dict(request.answers), expect=dict(request.expect)) for request in requests]
 
@@ -302,7 +302,7 @@ def _run_python(args: list[str], *, timeout: int) -> subprocess.CompletedProcess
 @pytest.mark.fast
 @pytest.mark.full
 def test_witness_leaves_match_the_generator() -> None:
-    """The committed JSONL is exactly what tools/z3_witnesses.py enumerates.
+    """The committed JSONL is exactly what architekton/z3_witnesses.py enumerates.
 
     This is the committed file's staleness detection: its
     ``ref: HEAD`` request lines pin no commit, so the file carries no
@@ -392,7 +392,7 @@ def test_excluded_names_hold_against_the_questionnaire() -> None:
         if kind == "question" and key in z3_witnesses.INCLUDE_LAYERS:
             rotten.append(f"{name}: is excluded but also a leaf-space layer")
     # A question behind a gate can still be varied: the integrations-details
-    # derivation (tools/z3_witnesses.py's DETAIL_VARIANTS) answers include_mcp
+    # derivation (architekton/z3_witnesses.py's DETAIL_VARIANTS) answers include_mcp
     # for the web_api leaves whose integrations gate is off. The contract is
     # varied-or-excluded, so the declaration is held against the enumerated
     # leaves rather than trusted -- a variant that stops varying its question
@@ -400,7 +400,7 @@ def test_excluded_names_hold_against_the_questionnaire() -> None:
     varied_details = set(z3_witnesses.DETAIL_VARIANTS)
     unseen = sorted(name for name in varied_details if not any(leaf.answers.get(name) is True for leaf in LEAVES))
     rotten += [
-        f"{name}: declared varied by tools/z3_witnesses.py's DETAIL_VARIANTS but no enumerated leaf sets it"
+        f"{name}: declared varied by architekton/z3_witnesses.py's DETAIL_VARIANTS but no enumerated leaf sets it"
         for name in unseen
     ]
     unaccounted = sorted(
@@ -422,7 +422,7 @@ def test_excluded_names_hold_against_the_questionnaire() -> None:
 def test_the_coverage_output_accounts_for_both_numbers(capsys: pytest.CaptureFixture[str]) -> None:
     """The tool's accounting line states 'enumerated' and 'excluded' as numbers.
 
-    tools/z3_witnesses.py prints ``leaves: N enumerated, M excluded (...)`` on
+    architekton/z3_witnesses.py prints ``leaves: N enumerated, M excluded (...)`` on
     every run, on stderr so stdout stays one JSON document.
     This runs the tool's own ``main()`` and holds the line against the
     payload printed next to it, so both numbers are the enumeration's own,
@@ -508,7 +508,7 @@ def _ruff_bin() -> Path:
 
 
 def _expectation_problems(dest: Path, expect: dict[str, Any]) -> list[str]:
-    """Judge a render with tools/batch.py's own checkers (same verdicts, no drift)."""
+    """Judge a render with architekton/batch.py's own checkers (same verdicts, no drift)."""
     checks = batch.check_files(dest, [str(pattern) for pattern in expect.get("files", [])])
     checks += batch.check_absent(dest, [str(pattern) for pattern in expect.get("absent", [])])
     return [f"{check.name}: {check.detail}" for check in checks if not check.ok]
@@ -653,7 +653,7 @@ def test_witness_full_tier(leaf_id: str, tmp_path: Path, witness_results: Result
 @pytest.mark.full
 @pytest.mark.timeout(BATCH_TIMEOUT)
 def test_witness_batch_runner_executes_every_leaf(witness_results: ResultStore):
-    """tools/batch.py runs the JSONL and judges every leaf's expectations.
+    """architekton/batch.py runs the JSONL and judges every leaf's expectations.
 
     The runner is the §C6 judge, so this is the end-to-end proof that all 272
     requests render and that every `expect` (files/absent) holds. Its verdicts
@@ -661,7 +661,7 @@ def test_witness_batch_runner_executes_every_leaf(witness_results: ResultStore):
     ``-m full`` run records what the real engine saw.
     """
     proc = _run_python(
-        ["tools/batch.py", str(WITNESSES.relative_to(TOP)), "--json", "--jobs", str(BATCH_JOBS)],
+        ["architekton/batch.py", str(WITNESSES.relative_to(TOP)), "--json", "--jobs", str(BATCH_JOBS)],
         timeout=BATCH_TIMEOUT,
     )
     assert proc.returncode in (0, 1), (

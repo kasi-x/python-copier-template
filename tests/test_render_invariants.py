@@ -21,7 +21,7 @@ point at a page the render never wrote. This module adds the deterministic
 - every ``zensical.toml`` / ``mkdocs.yml`` nav target exists in the render.
 
 Which of those predicates a leaf must satisfy is declared per leaf class in
-tests/matrix/invariants.yml (`predicates:`), read through tools/invariants.py:
+tests/matrix/invariants.yml (`predicates:`), read through architekton/invariants.py:
 this module owns the implementations (one per id, ``PREDICATES`` below) and
 fails if the file's registry and that table drift apart.
 
@@ -62,13 +62,13 @@ import pytest
 import yaml
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import batch  # noqa: E402
-from tools import invariants  # noqa: E402
-from tools import z3_witnesses  # noqa: E402
-from tools.answers import BASE  # noqa: E402
+from architekton import batch  # noqa: E402
+from architekton import invariants  # noqa: E402
+from architekton import z3_witnesses  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 # The one source for which content predicates a leaf class must satisfy.
 INVARIANTS = invariants.load()
@@ -222,7 +222,7 @@ class Counters:
 
 
 def _declared_answers() -> dict[str, dict[str, object]]:
-    """The witness ledger's answers, read through tools/batch.py's validator."""
+    """The witness ledger's answers, read through architekton/batch.py's validator."""
     return {request.id: dict(request.answers) for request in batch.load_requests([WITNESSES])}
 
 
@@ -481,7 +481,7 @@ def _resolved_answers(root: Path, answers: dict[str, object]) -> dict[str, objec
     """The answers the render itself records, merged over the requested ones.
 
     The fixtures no longer pin the two names copier derives from
-    `package_name` (`repo_name` / `distribution_name` -- tools/answers.py), and
+    `package_name` (`repo_name` / `distribution_name` -- architekton/answers.py), and
     this is where the resolved truth lives: copier writes `.copier-answers.yml`
     into every render with its own answers, derived defaults included. Reading
     that file beats re-implementing the derivation here, which is the drift
@@ -840,7 +840,7 @@ def test_predicates_fire_on_injected_drift(tmp_path: Path, render_cache: RenderC
 # If a domain's contribution is independent of the others', then any larger
 # selection follows by induction, and a domain added later only has to hold
 # this one property. `domain_traits=` is the axis; the derived leaf set
-# (tools/z3_witnesses.py's DOMAIN_TRAIT_VARIANTS) supplies the solo and
+# (architekton/z3_witnesses.py's DOMAIN_TRAIT_VARIANTS) supplies the solo and
 # combined leaves so the check reads the same answers the witness sweep
 # renders.
 #

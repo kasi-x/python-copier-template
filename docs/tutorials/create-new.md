@@ -14,7 +14,7 @@ uvx --from git+https://github.com/politeuma/architekton-py.git \
 The installed CLI clones and caches the template repo on first use, so no
 checkout is needed. Inside a checkout of this repository the same two forms
 are `uv run architekton-py …` (the console script the package declares) and
-`uv run python -m tools.cli …`.
+`uv run python -m architekton.cli …`.
 
 `--preset library` answers the one question that defines the project family;
 every other question keeps copier's default. Drop `--preset` and copier asks

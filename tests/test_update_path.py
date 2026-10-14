@@ -31,7 +31,7 @@ The released-ref renders are cached (see ReleasedRenders), so a second run of
 this module -- or the same case selected twice, or another xdist worker -- does
 not pay for them again: only the merge on top of each render is repeated.
 
-The static half of the same protection, `tools/check_questionnaire_diff.py`,
+The static half of the same protection, `architekton/check_questionnaire_diff.py`,
 is exercised here too: it is what CI gates the update path on, and its only
 output is an exit code, so a throwaway repository walks it through the breaks a
 merge cannot replay and through the `_migrations` entry that clears them.
@@ -64,11 +64,11 @@ TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools.answers import BASE  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 # The guard's ref resolution is the one W0 fixed (copier's own tag order):
 # resolving it twice could disagree, so the matrix asks the guard.
-from tools.check_questionnaire_diff import release_tag  # noqa: E402
+from architekton.check_questionnaire_diff import release_tag  # noqa: E402
 
 # One fast-path case per single-type layout a user lands on by accepting every
 # recommendation. Picked out of test_recommended_path.py's own matrix (rather
@@ -245,7 +245,7 @@ def test_update_from_the_released_ref_to_head(
         # questionnaire did not have (e.g. an oj_kind added after the tag).
         # No user could have rendered this configuration at the released ref,
         # so there is nothing to update *from* -- skip, don't fail (the
-        # rehearsal in tools/update_rehearsal.py applies the same rule).
+        # rehearsal in architekton/update_rehearsal.py applies the same rule).
         pytest.skip(f"{case}: not renderable at the released ref ({exc})")
     metadata = _answers(project)
     # The update clones this path, so a render served from another checkout
@@ -284,7 +284,7 @@ def test_update_from_the_released_ref_to_head(
         except OSError:
             # copier's update renders into a TemporaryDirectory whose cleanup
             # races git's own .git writes ("Directory not empty").
-            # tools/update_rehearsal.py::_rehearse_job applies the same
+            # architekton/update_rehearsal.py::_rehearse_job applies the same
             # retry-once rule to this known-transient race.
             if attempt == 2:
                 raise
@@ -367,10 +367,10 @@ def _scratch_questionnaire(tmp_path: Path) -> tuple[Path, Callable[..., subproce
     """
     repo = tmp_path / "scratch"
     (repo / "questions").mkdir(parents=True)
-    (repo / "tools").mkdir()
+    (repo / "architekton").mkdir()
     (repo / "copier.yml").write_text(SCRATCH_CONFIG)
     (repo / "questions" / "extra.yml").write_text(SCRATCH_FRAGMENT)
-    shutil.copy(TOP / "tools" / "check_questionnaire_diff.py", repo / "tools")
+    shutil.copy(TOP / "architekton" / "check_questionnaire_diff.py", repo / "architekton")
     _out(repo, "init", "-q", "-b", "main")
     _out(repo, "add", "-A")
     _out(repo, "-c", "user.name=guard", "-c", "user.email=guard@example.com", "commit", "-qm", "questionnaire")
@@ -378,7 +378,7 @@ def _scratch_questionnaire(tmp_path: Path) -> tuple[Path, Callable[..., subproce
 
     def run(*args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
-            [sys.executable, "tools/check_questionnaire_diff.py", *args],
+            [sys.executable, "architekton/check_questionnaire_diff.py", *args],
             cwd=repo,
             capture_output=True,
             text=True,

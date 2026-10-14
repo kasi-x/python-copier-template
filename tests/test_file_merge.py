@@ -1,4 +1,4 @@
-"""Tests for tools/file_merge.py: append-only merges of line-oriented files.
+"""Tests for architekton/file_merge.py: append-only merges of line-oriented files.
 
 Every kind has the same contract — the adopter's own content is never
 rewritten — so each test checks the appended part *and* the preserved prefix.
@@ -15,7 +15,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import file_merge  # noqa: E402
+from architekton import file_merge  # noqa: E402
 
 CI_SOURCE = """\
 name: CI

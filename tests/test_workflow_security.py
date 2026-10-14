@@ -30,10 +30,10 @@ from render_cache import RenderCache
 from render_cache import render_cache as render_cache  # noqa: PLC0414
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/support.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/support.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools.answers import BASE  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 WORKFLOWS_DIR = TOP / ".github" / "workflows"
 
@@ -197,15 +197,15 @@ def test_uses_are_pinned_to_full_sha():
 # exactly there (exit 2, "no release tag in this repository") on the workflow
 # that forgot it, while its sibling update-path.yml carried `fetch-depth: 0`.
 TAG_RESOLVING_ENTRY_POINTS = {
-    "tools/check_questionnaire_diff.py": "the guard's default --base is the newest release tag",
-    "tools/update_rehearsal.py": "the rehearsal's default --base is the newest release tag",
+    "architekton/check_questionnaire_diff.py": "the guard's default --base is the newest release tag",
+    "architekton/update_rehearsal.py": "the rehearsal's default --base is the newest release tag",
     "tests/test_update_path.py": "the matrix renders at the released ref",
     "tests/test_update_rehearsal.py": "the rehearsal tests resolve the release tag",
 }
 """Entry point (a file this repo owns) -> why its job needs the tags."""
 
 TAG_RESOLVING_ALIASES = {
-    "task update-rehearsal": "tools/update_rehearsal.py",
+    "task update-rehearsal": "architekton/update_rehearsal.py",
 }
 """How a workflow invokes one of those entry points without naming its path.
 

@@ -3,9 +3,9 @@
 Aqua.jl tests the *quality* of a Julia package's metadata and public API:
 dependency integrity, absence of undefined imports, and public-API
 consistency. This repo is not a pip package — it is the copier template
-itself — so the same ideas apply to the maintenance tooling (``tools/``):
+itself — so the same ideas apply to the maintenance tooling (``architekton/``):
 
-- every module under ``tools/`` imports cleanly;
+- every module under ``architekton/`` imports cleanly;
 - those modules only import stdlib or dependencies declared in the repo's
   own ``pyproject.toml``.
 
@@ -26,15 +26,15 @@ from pathlib import Path
 TOP = Path(__file__).resolve().parent.parent
 PYPROJECT = TOP / "pyproject.toml"
 
-# Maintenance-script modules (tools/ has no __init__.py by design: it is a
+# Maintenance-script modules (architekton/ has no __init__.py by design: it is a
 # script directory, not a package. Import it via an explicit path hook so
-# tests can import tools.* without changing the shipped layout).
+# tests can import architekton.* without changing the shipped layout).
 
 # Modules that run as maintenance scripts.
 QA_MODULES = [
     *sorted(
         str(p.relative_to(TOP)).removesuffix(".py").replace("/", ".")
-        for p in (TOP / "tools").rglob("*.py")
+        for p in (TOP / "architekton").rglob("*.py")
         if p.name != "__init__.py"
     ),
 ]
@@ -54,7 +54,7 @@ def _declared_dev_deps() -> set[str]:
 
 
 def test_every_qa_module_imports() -> None:
-    """Every tools/ module must import cleanly."""
+    """Every architekton/ module must import cleanly."""
     if str(TOP) not in sys.path:
         sys.path.insert(0, str(TOP))
     for name in QA_MODULES:
@@ -70,10 +70,10 @@ def test_qa_modules_only_import_declared_or_stdlib() -> None:
     """
     declared = {name.lower() for name in _declared_dev_deps()}
     stdlib = set(sys.stdlib_module_names)
-    # tools/ modules import each other (`tools` is their namespace, and the
+    # architekton/ modules import each other (`architekton` is their namespace, and the
     # bare module names work when they are run as scripts): that is internal
     # wiring, not an undeclared dependency.
-    internal = {"tools", *(name.rsplit(".", 1)[-1].lower() for name in QA_MODULES)}
+    internal = {"architekton", *(name.rsplit(".", 1)[-1].lower() for name in QA_MODULES)}
     provided = {
         module: {d.replace("-", "_").lower() for d in dists} for module, dists in packages_distributions().items()
     }

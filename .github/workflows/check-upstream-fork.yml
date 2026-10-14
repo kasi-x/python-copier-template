@@ -29,7 +29,7 @@ jobs:
 
       - name: Check upstream fork for new commits
         id: check
-        run: python3 tools/check_upstream_fork.py
+        run: python3 architekton/check_upstream_fork.py
         # The checker exits 1 when upstream/main has commits not reachable
         # from HEAD.
 
@@ -39,7 +39,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
-          body=$(python3 tools/check_upstream_fork.py 2>&1 || true)
+          body=$(python3 architekton/check_upstream_fork.py 2>&1 || true)
           existing=$(gh issue list --search "Upstream has new commits" \
             --state open --json number --jq 'length')
           if [ "$existing" -eq 0 ]; then

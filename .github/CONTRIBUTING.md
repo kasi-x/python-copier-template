@@ -43,7 +43,7 @@ The cheapest real change an outsider can make: add or correct an ethics /
 regional / operational rule section in
 [kanon](https://github.com/politeuma/kanon)
 (copy its `sections/_template.md.jinja`, fill every field, run its
-`tools/validate.py`). It needs no knowledge of this template's questionnaire.
+`architekton/validate.py`). It needs no knowledge of this template's questionnaire.
 In this repo, the next-cheapest change is a docs fix — see the blast-radius table
 above.
 

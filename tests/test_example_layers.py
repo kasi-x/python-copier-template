@@ -33,12 +33,12 @@ from typing import Any
 import pytest
 
 TOP = Path(__file__).resolve().parent.parent
-if str(TOP) not in sys.path:  # tests/test_layer_matrix.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_layer_matrix.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
+from architekton import answers  # noqa: E402
+from architekton import when_model  # noqa: E402
 from copier._main import Worker  # noqa: E402
-from tools import answers  # noqa: E402
-from tools import when_model  # noqa: E402
 
 from support import copy_project  # noqa: E402
 from support import copy_project_capturing_stderr  # noqa: E402

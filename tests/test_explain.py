@@ -1,9 +1,9 @@
-"""`tools/explain.py`: preset and answer explanations from the questionnaire's own words.
+"""`architekton/explain.py`: preset and answer explanations from the questionnaire's own words.
 
 The explanations are assembled, not written: `questions/*.yml` help text,
 the questions' `choices` / `when` context, the preset files' leading
 comments, `support.yml`'s measured `why` lines, and the question graph's
-when/default edges (`tools/question_graph.py`). The parametrization reads
+when/default edges (`architekton/question_graph.py`). The parametrization reads
 `cli.available_presets()` so a new preset is covered the moment it exists.
 """
 
@@ -13,12 +13,12 @@ from pathlib import Path
 import pytest
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_cli.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_cli.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import cli  # noqa: E402
-from tools import explain  # noqa: E402
-from tools import question_graph  # noqa: E402
+from architekton import cli  # noqa: E402
+from architekton import explain  # noqa: E402
+from architekton import question_graph  # noqa: E402
 
 PRESETS = cli.available_presets()
 

@@ -7,18 +7,18 @@ it points at the implementation.
 
 ## Questionnaire to generated project
 
-`questions/` declares the gates, `tools/z3_witnesses.py` enumerates the leaf
-space, `tools/batch.py` renders each leaf through copier, and the invariant
+`questions/` declares the gates, `architekton/z3_witnesses.py` enumerates the leaf
+space, `architekton/batch.py` renders each leaf through copier, and the invariant
 layer checks the output. Details live in [Verification Architecture](verification.md).
 
 ```mermaid
 flowchart TD
-    Q["questions/*.yml<br/>(gates + layers)"] --> Z3["tools/z3_witnesses.py build()"]
+    Q["questions/*.yml<br/>(gates + layers)"] --> Z3["architekton/z3_witnesses.py build()"]
     Z3 --> WL["tests/matrix/witnesses.jsonl<br/>(272 leaves)"]
     WL --> TW["tests/test_witness_matrix.py<br/>(render each leaf via copier)"]
-    TW --> BR["tools/batch.py render()<br/>(skip_tasks=True, no venv)"]
+    TW --> BR["architekton/batch.py render()<br/>(skip_tasks=True, no venv)"]
     BR --> GP["generated project tree"]
-    GP --> IV["tools/invariants.py<br/>+ tests/matrix/invariants.yml"]
+    GP --> IV["architekton/invariants.py<br/>+ tests/matrix/invariants.yml"]
     IV --> TRI["tests/test_render_invariants.py<br/>(content predicates)"]
     TRI --> OK(["artifacts: src/, tests/,<br/>docs, CI, AGENTS.md"])
 ```
@@ -26,7 +26,7 @@ flowchart TD
 The render is a pure function of the template's git tree: the same commit
 produces the same output. Anything that would break that (network fetches,
 per-render stamps) is excluded or masked — see `mask_render_stamps` in
-`tools/batch.py`.
+`architekton/batch.py`.
 
 ## Adopt and update: the crash-safe transaction
 
@@ -50,9 +50,9 @@ stateDiagram-v2
 ```
 
 Two layers cover two failure classes: the in-process rollback
-(`_signals_roll_back` in `tools/adopt_crash.py`, plus `_roll_back` in
-`tools/adopt_tree.py`) handles failures the process survives; the journal
-(`JOURNAL_NAME` in `tools/adopt_types.py`) covers kills — while it exists,
+(`_signals_roll_back` in `architekton/adopt_crash.py`, plus `_roll_back` in
+`architekton/adopt_tree.py`) handles failures the process survives; the journal
+(`JOURNAL_NAME` in `architekton/adopt_types.py`) covers kills — while it exists,
 the run has not committed, so `--recover` can finish the undo. A stale
 journal blocks the next run (exit 4) until it is recovered.
 

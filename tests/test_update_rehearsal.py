@@ -1,6 +1,6 @@
 """The update rehearsal's verdicts, on crafted fixtures (the real run is nightly).
 
-tools/update_rehearsal.py replays a user's lifecycle per witness leaf --
+architekton/update_rehearsal.py replays a user's lifecycle per witness leaf --
 render at the released tag, commit, `copier update` to HEAD -- and checks
 tests/test_update_path.py's contract: no conflict residue, a whitespace-clean
 diff, and a recorded `_commit` that advanced. These tests pin the check
@@ -22,8 +22,8 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import update_rehearsal as ur  # noqa: E402
-from tools.check_questionnaire_diff import release_tag  # noqa: E402
+from architekton import update_rehearsal as ur  # noqa: E402
+from architekton.check_questionnaire_diff import release_tag  # noqa: E402
 
 
 def test_conflict_residue_names_markers_and_rej_files(tmp_path: Path):

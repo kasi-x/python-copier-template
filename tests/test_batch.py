@@ -1,4 +1,4 @@
-"""Tests for tools/batch.py: the JSONL batch runner's verdicts.
+"""Tests for architekton/batch.py: the JSONL batch runner's verdicts.
 
 The runner exists so a batch of copier requests can be judged without a
 human reading any output, so what matters here is that a *wrong* request
@@ -23,10 +23,10 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import answers  # noqa: E402
-from tools import batch  # noqa: E402
+from architekton import answers  # noqa: E402
+from architekton import batch  # noqa: E402
 
-# The shared Project Details (tools/answers.py) with this module's own package
+# The shared Project Details (architekton/answers.py) with this module's own package
 # name; repo_name/distribution_name are copier's derivation, not restated here.
 BASE_ANSWERS = {**answers.BASE, "package_name": "batch_example"}
 
