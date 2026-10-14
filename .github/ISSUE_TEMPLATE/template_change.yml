@@ -1,0 +1,51 @@
+name: Template change
+description: Propose a change to what the template renders
+title: "[CHANGE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For field-rule text (new sections, factual corrections) open the
+        change in [kanon](https://github.com/politeuma/kanon) instead — this
+        repo only owns the wiring. See
+        [the shortest path](https://github.com/politeuma/architekton-py/blob/main/docs/how-to/change-template.md).
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Background
+      description: |
+        What problem does this solve, and where did you meet it? Link the
+        generated repo (or render answers) where the current behaviour
+        matters — changes are evaluated against a real project, not an idea.
+      placeholder: |
+        In a generated <project_type> project with <answers>, ... shows ...
+        See <repo link>.
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to touch
+      description: |
+        Which template sources change (`template/...`, `_shared/...`,
+        `questions/...`, `tools/...`, `docs/...`)? Name the files, not the
+        feature. Leave blank for a docs-only fix outside those trees.
+      placeholder: "template/{% if ... %}...{% endif %}.jinja, tests/test_....py"
+    validations:
+      required: false
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Done criteria
+      description: |
+        How will the reviewer know this is complete? Name the proving
+        command (`task lint type-check`, `task verify-delta`, or
+        `task regen` + `task test-fast`) and the observable render change.
+      placeholder: |
+        `task verify-delta` exits 0; the <preset> render gains <file> with <content>.
+    validations:
+      required: true

@@ -3,7 +3,7 @@
 Explanations of how it works and why it works that way.
 
 - [Vision & Positioning](explanations/vision.md)
-- [Good-Future Charter](explanations/good-future.md)
+- [Why Rules Sit Next to Code](explanations/why-rules-next-to-code.md)
 - [Why Use This Template](explanations/why-use-template.md)
 - [Template Project Structure](explanations/structure.md)
 - [Authoring Template Sources](explanations/template-dev.md)

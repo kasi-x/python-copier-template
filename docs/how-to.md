@@ -1,6 +1,11 @@
 # How-to Guides
 
-Practical step-by-step guides for the more experienced user.
+Practical step-by-step guides for the more experienced user. In the site
+navigation these live under Reference; start with
+[The Shortest Path to Change the Template](how-to/change-template.md) if
+you are changing the template itself.
+
+- [The Shortest Path to Change the Template](how-to/change-template.md)
 
 - [Setup Repository](how-to/setup-repo.md)
 - [Developer Installation](how-to/dev-install.md)
