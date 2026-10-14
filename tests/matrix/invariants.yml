@@ -75,7 +75,7 @@ predicates:
   - id: docs-nav
     why: "every zensical.toml / mkdocs.yml nav target exists in the render"
   - id: daimonion-config
-    why: "the render's .daimonion.yml when list is exactly the kanon conditions the leaf's answers derive (library/cli/embedded on the project type; personal_data/face_recognition/medtech on the domain_traits; scraping/mcp/oj_code/web_api/data_science/kaggle on the effective flags and judges; commercial on the distribution), AGENTS.md carries the empty ethics marker pair, and no kanon prose is vendored"
+    why: "the render's .daimonion.yml when list is exactly the guidance conditions the leaf's answers derive (library/cli/embedded on the project type; personal_data/face_recognition/medtech on the domain_traits; scraping/mcp/oj_code/web_api/data_science/kaggle on the effective flags and judges; commercial on the distribution), AGENTS.md carries the empty ethics marker pair, and no guidance prose is vendored"
 
 # Names the witness leaf space deliberately keeps out, one line of reason
 # each ("enumerated" and "excluded" are both numbers). A
@@ -611,7 +611,7 @@ leaf_classes:
   # -- the domain traits -------------------------------------------------- #
   #
   # A `domain_traits` answer adds no artifact and changes no layout: it
-  # declares kanon conditions in `.daimonion.yml` and, for face-recognition,
+  # declares guidance conditions in `.daimonion.yml` and, for face-recognition,
   # a dependency. So these rows declare no `ships`/`absent` (what they add is
   # content inside an artifact another row owns) and their tier is `fast` --
   # the conditions' presence is the `daimonion-config` predicate's business, and
@@ -626,7 +626,7 @@ leaf_classes:
     predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the trait adds kanon conditions, no artifact of its own (support.yml tier_policy)"
+      why: "render + ruff: the trait adds guidance conditions, no artifact of its own (support.yml tier_policy)"
     why: "the personal-data domain trait: .daimonion.yml gains the personal_data condition (the linter renders the privacy section: minimise what you collect and log, give deletion a path, know what leaves the process). Biometric and health data are special categories of personal data, so the face-recognition and medtech traits select this row too -- the derivation spells that disjunction and the daimonion-config predicate mirrors it."
 
   - id: domain=face-recognition
@@ -636,7 +636,7 @@ leaf_classes:
     predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the trait adds kanon conditions and a dependency, no artifact of its own (support.yml tier_policy)"
+      why: "render + ruff: the trait adds guidance conditions and a dependency, no artifact of its own (support.yml tier_policy)"
     why: "the face-recognition domain trait: .daimonion.yml gains the face_recognition condition (the linter renders the biometric-identification section), plus personal_data, since biometric data is a special category of personal data."
 
   - id: domain=medtech
@@ -646,7 +646,7 @@ leaf_classes:
     predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the trait adds kanon conditions and, only where the data-science layout holds, the CARE sheet"
+      why: "render + ruff: the trait adds guidance conditions and, only where the data-science layout holds, the CARE sheet"
     why: "the medtech domain trait: .daimonion.yml gains the medtech condition (the linter renders the medical-SaMD section), plus personal_data (health data is a special category). questions/_internal.yml's `care` takes the trait as a second trigger but keeps the `data_science_layout` conjunct, so a clinical web service gets the conditions and no data/ sheet."
 
   # -- the distribution answers ------------------------------------------- #
@@ -663,7 +663,7 @@ leaf_classes:
     predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the answer adds a kanon condition, no artifact of its own (support.yml tier_policy)"
+      why: "render + ruff: the answer adds a guidance condition, no artifact of its own (support.yml tier_policy)"
     why: "the `commercial` distribution answer: .daimonion.yml gains the commercial condition (the linter renders the EU CRA section: 24-hour vulnerability reporting, SBOM, an explicit support period). Monetisation is what lifts the regulation's free-software exemption, which is why the condition is derived from this answer rather than from the project type."
 
   - id: distribution=oss

@@ -15,10 +15,11 @@ to add a log line.
 That is why every project this template generates ships an `AGENTS.md` with
 a `Field rules` block plus a `.daimonion.yml` declaring which rules match
 the project kind: the `daimonion` linter renders the matching sections from
-the reviewed [kanon](https://github.com/politeuma/kanon) corpus into the
-guide, and `daimonion diff` matches changed lines against their triggers
-before committing. The canonical picture — law-map as the rulebook, kanon
-as the prose, daimonion as the delivery, this template as one entry point —
+the reviewed [law-map guidance](https://github.com/politeuma/law-map/tree/main/guidance/sections)
+corpus into the guide, and `daimonion scan` matches changed lines against
+their triggers before committing. The canonical picture — law-map as the
+rulebook, its guidance tree as the prose, daimonion as the delivery, this
+template as one entry point —
 is the [politeuma architecture diagram](https://github.com/politeuma/.github/blob/main/profile/diagram.md).
 
 These are engineering guardrails with citations, not legal advice. Ask a

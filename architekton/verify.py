@@ -3,9 +3,8 @@
 
 The manifest (`.architekton-manifest.yml`, rendered from
 `template/.architekton-manifest.yml.jinja`) is the public record of a
-generation: the template ref, the answers file it describes, and the kanon
+generation: the template ref, the answers file it describes, and the guidance
 `when` conditions the render declared (the same list the generated
-`.daimonion.yml` carries) -- never answer values (those live in
 `.copier-answers.yml`, which copier already records). `verify` reads both
 files and checks the three claims the record makes:
 
@@ -128,7 +127,7 @@ def check_schema(manifest: dict[str, Any], report: Report) -> None:
 
 
 def _conditions(manifest: dict[str, Any]) -> list[str]:
-    """The declared kanon `when` conditions, in manifest order."""
+    """The declared guidance `when` conditions, in manifest order."""
     entries = manifest.get("when") or []
     return [str(entry) for entry in entries if isinstance(entry, str) and entry]
 

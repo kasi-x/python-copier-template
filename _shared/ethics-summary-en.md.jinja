@@ -1,21 +1,21 @@
 {# English rule summaries for the AGENTS.md ethics appendix (agents_md_language == 'en').
 
-   kanon's sections are Japanese-only, and daimonion renders them verbatim
-   into the marker block. Until kanon ships English text (memo KN-1), this
-   partial carries an English translation of each section's title and
-   `要約` (rule summary) lines, snapshot of kanon 2321063 -- the revision
-   the pinned daimonion (`daimonion_spec`) vendors. Rows mirror kanon's
-   `status=active`, `placement: agents_md` sections (draft sections never
-   reach the block) in sections/MANIFEST.yml order; `when` is the
-   manifest's any-of list (`always` applies to every project). Re-translate a row whenever
-   bumping `daimonion_spec` changes the vendored section's summary, and
-   delete this partial once daimonion renders English itself.
+   The sections' canonical English wording lives in law-map's guidance
+   tree (`guidance/sections/<tier>/<slug>.md` `en:` front-matter blocks,
+   CC BY 4.0). This partial mirrors each `status=active`,
+   `placement: agents_md` row's `en.title` plus the first three
+   `en.summary` lines, snapshot of law-map 8ba7170 — the rulebook revision
+   current when the guidance merge landed. Rows follow
+   `guidance/sections/MANIFEST.yml` order; `when` is the manifest's
+   any-of list (`always` applies to every project). Re-sync a row whenever
+   the guidance `en:` block changes; delete this partial once daimonion
+   renders English itself.
 
    The selection replays daimonion's `Section.applies` over the same derived
    condition set `.daimonion.yml` carries (`_shared/daimonion-when.jinja`),
    so the summaries name exactly the sections the block below holds.
    tests/test_daimonion_config.py pins both the rows and the selection
-   against the vendored kanon. -#}
+   against the guidance checkout. -#}
 {% import "_shared/daimonion-when.jinja" as dw with context -%}
 {% set when_set = ['always'] -%}
 {% for line in dw.daimonion_when().splitlines() if line.strip() -%}
@@ -23,69 +23,69 @@
 {% endfor -%}
 {% set sections = [
     {'id': 'baseline-copyright-ai', 'when': ['cli', 'data_science'],
-     'title': 'AI and copyright: fetching, training and RAG code must not break the non-enjoyment exception',
-     'rules': ['do not circumvent robots.txt or other crawl-refusal measures',
-               'do not design RAG that retrieves and re-emits the expression itself; extract facts and concepts only',
-               'do not overfit or fine-tune on a specific body of works in order to imitate it']},
+     'title': 'AI and copyright — scraping, training and RAG code must keep the non-enjoyment purpose intact',
+     'rules': ['Do not bypass robots.txt or other access-refusal measures',
+               'Do not design RAG that retrieves and re-emits the protected expression itself; extract facts and concepts',
+               'Do not overfit or fine-tune on a specific body of works in order to imitate it']},
     {'id': 'baseline-license-drift', 'when': ['always'],
-     'title': "License drift: track dependencies' current licenses and keep BSL/SSPL out",
-     'rules': ['check the current license when adding a dependency and match it against the allowlist',
-               'never pull in source-available licenses (BSL, SSPL, ...) unchecked',
-               'route fork migrations (Terraform to OpenTofu, ...) through the legitimate successor']},
+     'title': 'License drift — track each dependency\u2019s current license and keep BSL/SSPL out',
+     'rules': ['Check the current license when adding a dependency and match it against an allowlist',
+               'Do not let source-available licenses such as BSL/SSPL in without review',
+               'When a project forks (Terraform to OpenTofu, ...), move to the legitimate successor']},
     {'id': 'baseline-personal-data', 'when': ['personal_data', 'face_recognition', 'medtech'],
-     'title': 'Personal data: minimise before collecting, build the deletion path first',
-     'rules': ['ask "is this needed?" before collecting, and keep the defaults minimal',
-               'design deletion and correction paths from the start (retrofitting is expensive)',
-               'know what leaves the process (Sentry, cloud, external APIs) and reduce it before it leaves']},
+     'title': 'Personal data — minimise before collecting, and build the deletion path first',
+     'rules': ['Ask whether each item is needed before collecting it; default to the minimum',
+               'Include deletion and correction paths in the initial design; retrofitting is expensive',
+               'Know what leaves the process (error trackers, cloud, external APIs) and reduce it before it leaves']},
     {'id': 'baseline-pki-chain', 'when': ['embedded', 'cli', 'web_api'],
-     'title': 'PKI chain changes: never hard-code intermediate certificates or issuance chains',
-     'rules': ['do not bundle or pin intermediate certificates or issuance chains',
-               'verify against the OS/system trust store and keep a way to update it',
-               'when pinning, pin a public-key set plus backup keys, never a single key']},
+     'title': 'PKI chain changes — do not hard-code intermediate certificates or issuance chains',
+     'rules': ['Do not bundle or pin intermediate certificates or issuance chains',
+               'Verify against the OS/system trust store and keep a way to update it',
+               'If you pin, pin a set of public keys with a backup key, never a single key']},
     {'id': 'baseline-pqc-fips', 'when': ['library', 'cli', 'web_api'],
-     'title': 'PQC standards: new cryptographic choices use ML-KEM/ML-DSA, in hybrid mode',
-     'rules': ['use the standard names (ML-KEM / ML-DSA / SLH-DSA), not submission names such as Kyber, in new code',
-               'key exchange is ML-KEM; signatures default to ML-DSA with SLH-DSA as the conservative alternative; do not mix the roles',
-               'migrate in hybrid mode (X25519MLKEM768, ...) and adopt no classical-only scheme anew']},
+     'title': 'PQC standards — choose ML-KEM/ML-DSA and hybrids for new cryptography',
+     'rules': ['Use the standard names (ML-KEM, ML-DSA, SLH-DSA), not submission names such as Kyber',
+               'Key establishment uses ML-KEM; signatures default to ML-DSA with SLH-DSA as the conservative alternative; do not mix the roles',
+               'Migrate via hybrids (X25519MLKEM768, ...); do not adopt classical algorithms alone in new designs']},
     {'id': 'domain-contest-rules', 'when': ['oj_code'],
-     'title': "Contest rules: AI use differs per contest, and submissions are the participant's responsibility",
-     'rules': ['AI use is allowed or not per contest and period, so check the current rules before generating or submitting',
-               'treat unclear rules as a ban',
-               "submissions are the participant's own responsibility; multiple accounts and rating manipulation are banned on every judge"]},
+     'title': 'Contest rules — AI use differs per contest, and the submitter is responsible',
+     'rules': ['Whether AI may be used differs by contest and over time; check the current rules before generating or submitting',
+               'When the rules are unclear, treat AI use as prohibited',
+               'The submitter is responsible; multiple accounts and rating manipulation are banned on every judge']},
     {'id': 'domain-face-recognition', 'when': ['face_recognition'],
-     'title': 'Face recognition: biometric identification is an exception; confirm the use is lawful first',
-     'rules': ['confirm the use is lawful before implementing; for a prohibited use, write no code',
-               'keep biometric templates non-reversible, with consent and deletion paths',
-               'measure accuracy per demographic group; do not default to a single threshold']},
+     'title': 'Face recognition — biometric identification is an exception; confirm the use is lawful first',
+     'rules': ['Confirm the use is lawful before implementing; if it is a prohibited use, do not write the code',
+               'Handle biometric templates in a non-reversible form, with consent and deletion paths',
+               'Measure accuracy per demographic group; do not default to a single threshold']},
     {'id': 'domain-llm-appsec', 'when': ['mcp'],
-     'title': 'LLM apps and MCP: least privilege, human approval and output validation by default',
-     'rules': ['restrict tool permissions to a minimal allowlisted CRUD set',
-               'always insert a human approval step before destructive or irreversible operations',
-               'validate LLM output structurally before acting on it; never pass it straight to a shell']},
+     'title': 'LLM apps / MCP security — least privilege, human approval and output validation by default',
+     'rules': ['Restrict tool permissions to an allowlist of the minimum CRUD needed',
+               'Always insert a human approval step before destructive or irreversible operations',
+               'Validate LLM output structurally before acting on it; never pass it straight to a shell']},
     {'id': 'domain-ml-bias', 'when': ['data_science', 'kaggle'],
-     'title': 'ML bias: build per-group evaluation, explainability and human review into evaluation',
-     'rules': ['always report per-group performance, not just average accuracy',
-               'dropping a protected attribute does not by itself remove discrimination (handle proxies)',
-               'require human review for decisions that affect life opportunities']},
+     'title': 'ML bias — build per-group evaluation, explainability and human review into evaluation',
+     'rules': ['Always report per-group performance, not just average accuracy',
+               'Dropping protected attributes does not remove discrimination; handle proxies',
+               'Require human review for decisions that affect life opportunities']},
     {'id': 'domain-scraping-law', 'when': ['scraping'],
-     'title': 'Scraping legality: check rights, contracts and personal data before fetching',
-     'rules': ["settle whether fetching is allowed per site, from its terms and robots.txt, first",
-               'even public data can infringe other rights when a substantial part of a database is extracted or its expression redistributed',
-               'personal data is regulated both when fetched and when processed']},
+     'title': 'Scraping legality — check rights, contracts and personal data before fetching',
+     'rules': ["Settle whether you may fetch from each site\u2019s terms and robots.txt first",
+               'Even for public data, extracting a substantial part of a database or redistributing expression can infringe other rights',
+               'Personal data is regulated both when fetched and when processed']},
     {'id': 'region-eu-cra', 'when': ['commercial'],
-     'title': 'EU CRA: vulnerability reporting and SBOMs are no longer optional for commercial software',
-     'rules': ['report an actively exploited vulnerability within 24 hours of becoming aware of it',
-               'produce an SBOM and be able to explain where every dependency comes from',
-               'state the support period and ship security updates throughout it']},
+     'title': 'EU CRA — vulnerability reporting and SBOMs are no longer optional for commercial software',
+     'rules': ['Report actively exploited vulnerabilities within 24 hours of becoming aware',
+               'Produce an SBOM so you can account for where every dependency came from',
+               'State the support period and ship security updates throughout it']},
     {'id': 'sector-samd-regulatory', 'when': ['medtech'],
-     'title': 'Medical SaMD: continuous learning stays within the approved change limits, and humans make the call',
-     'rules': ['never swap a production model outside the approved change plan (PCCP / IDATEN, ...)',
-               'default to a structure where a human (a physician, ...) makes the final decision',
-               'build performance-drift monitoring and post-market surveillance into the initial design']},
+     'title': 'Medical SaMD — continuous learning stays inside approved change limits, and humans make the call',
+     'rules': ['Do not swap production models outside an approved change plan (PCCP, IDATEN, ...)',
+               'Default to a structure where a human (clinician) makes the final decision',
+               'Build performance-drift monitoring and post-market surveillance into the initial design']},
 ] -%}
 ### Rule summaries (English)
 
-English summaries of the kanon sections this project's `.daimonion.yml`
+English summaries of the guidance sections this project's `.daimonion.yml`
 selects. The full sections in the marker block below (facts, prohibited
 patterns, regex triggers) are written in Japanese; these summaries translate
 their rule lines. Not legal advice.

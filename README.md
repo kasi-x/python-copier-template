@@ -46,7 +46,7 @@ Each area of the questionnaire first asks "use the recommended settings?"
   chat bots (Discord / Slack / LINE / Gmail), polite web scraping, CTF
   tooling, cloud providers and Sentry.
 - **Field rules, not vibes** — every generated project ships an `AGENTS.md`
-  agent guide plus a `.daimonion.yml` declaring the kanon conditions matched
+  agent guide plus a `.daimonion.yml` declaring the guidance conditions matched
   to the project kind: dependency-license drift, post-quantum crypto
   standards, AI-and-copyright, PKI trust chains, personal data, EU CRA
   duties, medical-device software, face recognition, ML fairness and LLM/MCP

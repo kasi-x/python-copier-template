@@ -165,7 +165,7 @@ _tasks:
             p.mkdir(parents=True, exist_ok=True)
             (p / ".gitkeep").touch()' {{ src_dirs | map('quote') | join(' ') }}
       when: "{{ src_dirs }}"
-    # Fill the AGENTS.md ethics marker block from kanon right after render:
+    # Fill the AGENTS.md ethics marker block from the guidance sections right after render:
     # offline-tolerant on purpose (uvx fetches daimonion from git), so a
     # failure prints guidance and never fails generation; the generated CI's
     # ethics-block job (`daimonion agents-md --check`) then fails until the

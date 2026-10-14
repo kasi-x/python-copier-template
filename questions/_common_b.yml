@@ -50,9 +50,9 @@ agents_md_language:
     when: "{{ not use_recommended_polish }}"
     help: |
         Language of the AGENTS.md ethics rules.
-        - en: an English summary of each selected kanon section sits above
+        - en: an English summary of each selected guidance section sits above
           the ethics marker block; the full sections daimonion renders into
-          the block stay Japanese until kanon ships English text.
+          the block stay Japanese (English lives in the sections' `en:` front matter).
         - ja: the Japanese marker block only.
     choices:
         - en

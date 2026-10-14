@@ -511,8 +511,7 @@ existing answer set: the dependency list is pinned by
 
 Field rules (a retired public NTP, a telecom secrecy duty, a regional
 backbone's quiet hours) arrive one at a time and must not each move the
-questionnaire, the leaf space, or the witness matrix. Each is written as a
-section in [kanon](https://github.com/politeuma/kanon)
+section in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guidance/sections)
 (`baseline/`, `sector/`, `region/`, `domain/`), with a `MANIFEST.yml` row
 declaring its abstract `when` and `placement` (see
 [Ethics Content Lives in Kanon](ethics-external.md)). This repo derives the
@@ -533,7 +532,7 @@ does not move.
   exactly the derived conditions, the empty marker pair to its presence, and
   the guide to carrying no vendored prose.
 
-Enforced by `tests/test_daimonion_parity.py` (old gates vs kanon
+Enforced by `tests/test_daimonion_parity.py` (old gates vs guidance
 `applies()`, identical section-id sets over all 272 witness leaves) and
 `tests/test_daimonion_config.py` (preset renders pin the `when` list,
 manifest agreement, and the empty markers).

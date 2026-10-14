@@ -1,14 +1,13 @@
 name: E2E ecosystem
 
-# Full cross-repo pipeline: law-map export -> kanon
-# tools/validate.py -> architekton-py render -> daimonion fills the
-# generated AGENTS.md ethics block. The pairwise checks this complements
-# (law-map CI's `validate --kanon`, this repo's scheduled-check.yml
-# `law-map-review-by`) each pin one edge; a schema change that keeps both
-# edges green while breaking the handoff between them only shows here,
-# where the whole chain runs.
+# Full cross-repo pipeline: law-map validate (corpus + guidance) ->
+# architekton-py render -> daimonion fills the generated AGENTS.md rules
+# block. The pairwise checks this complements (law-map CI's own validate,
+# this repo's scheduled-check.yml `law-map-review-by`) each pin one edge; a
+# schema change that keeps both edges green while breaking the handoff
+# between them only shows here, where the whole chain runs.
 #
-# Weekly plus manual dispatch only: three checkouts and two `uv run` env
+# Weekly plus manual dispatch only: two checkouts and two `uv run` env
 # syncs are too heavy for push/PR. Staggered from the other scheduled
 # workflows (check-upstream.yml MON 06:00, check-upstream-fork.yml TUE 06:00,
 # scheduled-check.yml TUE 07:00, periodic.yml WED 08:00,
@@ -26,7 +25,7 @@ on:
 
 jobs:
   e2e:
-    name: law-map export, kanon validate, architekton-py render
+    name: law-map validate, architekton-py render
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -40,13 +39,6 @@ jobs:
           path: law-map
           persist-credentials: false
 
-      - name: Checkout kanon
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: politeuma/kanon
-          path: kanon
-          persist-credentials: false
-
       - name: Checkout architekton-py
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -58,38 +50,36 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Export law-map obligations as kanon skeletons
+      - name: Validate the law-map corpus and guidance tree
         working-directory: law-map
         run: |
           set -euo pipefail
-          uv run law-map export --out ../e2e-export
-          uv run law-map validate --kanon ../kanon
-          # validate --kanon proves every related_sections id resolves to
-          # sections/<tier>/<slug>.md.jinja in the kanon checkout; the
-          # assertion below proves the export skeletons themselves carry the
-          # kanon section header shape (a schema change that drops the header
-          # keeps validate green but breaks the kanon handoff).
+          # validate defaults to this repo's own guidance/ tree: every
+          # related_sections id must resolve to
+          # guidance/sections/<tier>/<slug>.md; the manifest check proves the
+          # generated MANIFEST.yml matches the section front matter.
+          uv run law-map validate
+          uv run law-map manifest --check
+          # The assertion below proves the guidance sections themselves carry
+          # the new shape (YAML front matter, not the old {# ethics: #}
+          # headers): a schema change that drops the front matter keeps
+          # validate green but breaks every downstream reader.
           python3 - <<'PY'
           import re
           from pathlib import Path
+          import yaml
 
-          out = Path("../e2e-export")
-          files = sorted(out.glob("*.md.jinja"))
-          assert files, "law-map export wrote no section skeletons"
-          header = re.compile(r"\{# ethics: id=\S+ version=\S+ status=\S+ triggers=\[.*?\] #\}")
-          bad = [p.name for p in files if not header.search(p.read_text(encoding="utf-8").splitlines()[0])]
-          assert not bad, f"export skeletons without a kanon ethics header: {bad}"
-          print(f"export ok: {len(files)} skeleton(s) with ethics headers")
+          root = Path("guidance/sections")
+          files = sorted(p for p in root.rglob("*.md") if not p.name.startswith("_"))
+          assert files, "guidance/sections holds no section files"
+          manifest = yaml.safe_load((root / "MANIFEST.yml").read_text(encoding="utf-8"))
+          assert manifest.get("schema") == 2, f"unexpected MANIFEST schema: {manifest.get('schema')}"
+          bad = [str(p) for p in files if not p.read_text(encoding="utf-8").startswith("---\n")]
+          assert not bad, f"guidance sections without YAML front matter: {bad}"
+          print(f"guidance ok: {len(files)} section(s) with front matter, MANIFEST schema 2")
           PY
 
-      - name: Validate the kanon corpus
-        working-directory: kanon
-        run: uv run --with pyyaml python architekton/validate.py
-        # Exits 1 on any structural drift (a section missing from MANIFEST,
-        # a malformed ethics header, an expired review_by, jinja leaking
-        # into a flag-agnostic body).
-
-      - name: Render one project, fill the ethics block, and check it
+      - name: Render one project, fill the rules block, and check it
         working-directory: architekton-py
         run: |
           set -euo pipefail
@@ -97,20 +87,24 @@ jobs:
           # --ref HEAD renders this checkout's working tree: the pipeline
           # tests today's template, not the newest release tag.
           #
-          # The render declares its kanon `when` conditions in .daimonion.yml;
-          # daimonion fills the AGENTS.md marker block from kanon, and
-          # --check proves the block is current. A derivation change that
-          # silently drops a condition from the render keeps both upstream
-          # checks green and fails here.
+          # The render declares its guidance `when` conditions in .daimonion.yml;
+          # daimonion fills the AGENTS.md marker block from the guidance
+          # sections, and --check proves the block is current. A derivation
+          # change that silently drops a condition from the render keeps both
+          # upstream checks green and fails here.
           test -f ../e2e-project/.daimonion.yml
           uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --write --repo ../e2e-project
           python3 - <<'PY'
           from pathlib import Path
 
           agents = Path("../e2e-project/AGENTS.md").read_text(encoding="utf-8")
-          assert "<!-- daimonion:ethics:begin" in agents, "the ethics block markers are missing"
-          assert "<!-- daimonion:ethics:end -->" in agents, "the ethics block end marker is missing"
-          print("render ok: the daimonion:ethics block is present in AGENTS.md")
+          assert "<!-- daimonion:rules:begin" in agents or "<!-- daimonion:ethics:begin" in agents, (
+              "the rules block markers are missing"
+          )
+          assert "<!-- daimonion:rules:end -->" in agents or "<!-- daimonion:ethics:end -->" in agents, (
+              "the rules block end marker is missing"
+          )
+          print("render ok: the daimonion rules block is present in AGENTS.md")
           PY
           uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --check --repo ../e2e-project
 
@@ -126,7 +120,7 @@ jobs:
           if [ "$existing" -eq 0 ]; then
             gh issue create \
               --title "E2E ecosystem pipeline failed (scheduled check)" \
-              --body "The weekly law-map export -> kanon validate -> architekton-py render pipeline broke with no repo changes involved: a schema or section-id change in one repo silently broke a downstream edge. See: $RUN_URL" \
+              --body "The weekly law-map validate -> architekton-py render pipeline broke with no repo changes involved: a schema or section-id change in one repo silently broke a downstream edge. See: $RUN_URL" \
               --label "documentation"
           else
             echo "An issue for this drift is already open; skipping."

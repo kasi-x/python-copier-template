@@ -1,6 +1,6 @@
-"""`.daimonion.yml` + empty ethics markers: the template's render-side contract.
+"""`.daimonion.yml` + empty rules markers: the template's render-side contract.
 
-The template no longer vendors kanon prose: it emits `.daimonion.yml`
+The template never vendors rule prose: it emits `.daimonion.yml`
 (abstract `when` conditions, one per line in vocabulary order, each with a
 `# <which answers produced it>` provenance comment, plus the three
 commented hints for the non-derivable `jp` / `eu_market` / `ai_assisted`)
@@ -25,11 +25,13 @@ if str(TOP) not in sys.path:
 from architekton.answers import BASE  # noqa: E402
 
 from support import render_answers  # noqa: E402
-from test_daimonion_parity import KANON_DIR  # noqa: E402
+from test_daimonion_parity import GUIDANCE_DIR  # noqa: E402
 from test_daimonion_parity import derive_when  # noqa: E402
 from test_daimonion_parity import kanon_applies  # noqa: E402
 from test_daimonion_parity import load_kanon  # noqa: E402
 
+# The template emits the legacy `ethics` empty pair, which daimonion still
+# reads (it writes the new `rules` markers on --write but accepts both).
 BEGIN = "<!-- daimonion:ethics:begin"
 END = "<!-- daimonion:ethics:end -->"
 SUMMARY = "### Rule summaries (English)"
@@ -117,7 +119,7 @@ def _summary_ids(guide: str) -> list[str]:
     return [line.split("(`", 1)[1].split("`)", 1)[0] for line in body.splitlines() if line.startswith("- **")]
 
 
-@pytest.mark.skipif(not KANON_DIR.is_dir(), reason="vendored kanon checkout absent")
+@pytest.mark.skipif(not GUIDANCE_DIR.is_dir(), reason="law-map guidance checkout absent")
 @pytest.mark.parametrize("label,overrides", CASES, ids=[label for label, _ in CASES])
 def test_english_summaries_select_what_daimonion_selects(
     tmp_path: Path, label: str, overrides: dict[str, object]
@@ -127,7 +129,7 @@ def test_english_summaries_select_what_daimonion_selects(
     assert guide.index(SUMMARY) < guide.index(BEGIN), f"{label}: summaries sit above the block"
     conditions = derive_when({**BASE, **overrides})
     expected = [s["id"] for s in load_kanon() if kanon_applies(s, conditions)]
-    assert _summary_ids(guide) == expected, f"{label}: English summaries drifted from kanon selection"
+    assert _summary_ids(guide) == expected, f"{label}: English summaries drifted from guidance selection"
 
 
 def test_japanese_guide_has_no_english_summaries(tmp_path: Path) -> None:
@@ -138,9 +140,9 @@ def test_japanese_guide_has_no_english_summaries(tmp_path: Path) -> None:
     assert BEGIN in guide and END in guide
 
 
-@pytest.mark.skipif(not KANON_DIR.is_dir(), reason="vendored kanon checkout absent")
-def test_english_summary_rows_mirror_kanon_manifest() -> None:
-    """Every agents_md kanon section has an English row with the manifest's `when`, in order."""
+@pytest.mark.skipif(not GUIDANCE_DIR.is_dir(), reason="law-map guidance checkout absent")
+def test_english_summary_rows_mirror_guidance_manifest() -> None:
+    """Every agents_md guidance section has an English row with the manifest's `when`, in order."""
     text = SUMMARY_PARTIAL.read_text(encoding="utf-8")
     rows = [
         (line.split("'id': '", 1)[1].split("'", 1)[0], line.split("'when': ", 1)[1].rstrip(","))
@@ -152,4 +154,4 @@ def test_english_summary_rows_mirror_kanon_manifest() -> None:
         for s in load_kanon()
         if s["placement"] == "agents_md" and s["status"] == "active"
     ]
-    assert rows == expected, "re-sync _shared/ethics-summary-en.md.jinja with the vendored kanon manifest"
+    assert rows == expected, "re-sync _shared/ethics-summary-en.md.jinja with the guidance manifest"

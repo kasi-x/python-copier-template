@@ -12,9 +12,9 @@ manifest_schema_version: 1
 template_ref: "{{ _copier_answers._commit }}"
 # The answers record this manifest describes.
 answers_file: "{{ _copier_conf.answers_file }}"
-# The kanon `when` conditions this render declares (the same list the
+# The guidance `when` conditions this render declares (the same list the
 # generated .daimonion.yml carries): the abstract project conditions
-# daimonion matches ethics sections against. `always` sections apply without
+# daimonion matches rule sections against. `always` sections apply without
 # being listed.
 when:
 {{ dw.daimonion_when() -}}

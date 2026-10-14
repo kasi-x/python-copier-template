@@ -19,12 +19,13 @@ The full blast-radius table (what CI gates per scope) is in
 ## Field rules live upstream
 
 Ethics / regional / operational rule text is not template content: it lives
-in [kanon](https://github.com/politeuma/kanon) (`sections/<tier>/<slug>.md`,
-plain Markdown with YAML front matter). This template only derives the
-abstract `when` conditions in `_shared/daimonion-when.jinja`. So a rule fix
-is a kanon pull request (copy `sections/_template.md`, run its
-`just manifest`); only a *new* condition extends the macro here — see
-[How to add an ethics section](ethics-section.md).
+in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guidance/sections)
+(`guidance/sections/<tier>/<slug>.md`, plain Markdown with YAML front
+matter; the generated index is `guidance/sections/MANIFEST.yml`). This
+template only derives the abstract `when` conditions in
+`_shared/daimonion-when.jinja`. So a rule fix is a law-map pull request
+(copy `guidance/sections/_template.md`, run `just manifest`); only a *new*
+condition extends the macro here — see [How to add an ethics section](ethics-section.md).
 
 ## The meta-tooling, in one paragraph
 

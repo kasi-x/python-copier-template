@@ -8,8 +8,8 @@ plumbing both runners share (`_output_tail`, `_build_pytest_command`,
 resources (`template://questionnaire`, `template://witnesses`,
 `template://support`). The tier tables (`WITNESS_MARKERS`,
 `WITNESS_TIMEOUTS`, `TIER_TASKS`, `TIER_LEDGER`, `TIER_TIMEOUTS`) live with
-the runners that read them. Ethics sections live in the `daimonion` linter's
-kanon corpus, not here.
+the runners that read them. Ethics sections live in the law-map guidance
+tree, not here.
 """
 
 # WHYNOT: the functions below are registered through

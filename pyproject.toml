@@ -330,10 +330,10 @@ max-string-length = 20
 ignore-fully-untyped = true
 
 [tool.typos.default]
-# The vendored kanon corpus (sibling repo) carries trigger-regex stems
+# The guidance sections (law-map sibling repo) carry trigger-regex stems
 # (`certificat`, `advertis` -- deliberate word-stem matches) and proper nouns
 # (`certifi` the package, `HashiCorp`) that the spellchecker must not correct.
-# `fpr`/`fnr` are the fairness-metrics acronyms kanon sections' code
+# `fpr`/`fnr` are the fairness-metrics acronyms guidance sections' code
 # examples use. typos is report-only in this repo's tasks for the same
 # reason as in generated ones (-w rewrites identifiers silently), so a
 # legit acronym identifier belongs in these ignore lists rather than in a

@@ -59,7 +59,7 @@ witness tiers run into minutes.
 | `run_batch` | a batch file's verdict (`architekton/batch.py` semantics, structured) | one render per line; `prepare=True` adds installs |
 | `run_witness` | a witness tier's verdict, one entry per executed test | `fast` a few seconds (272 renders, no venv), `slow` ~2 min, `full` adds venvs and network (tens of minutes) |
 | `run_tests` | the same verdict shape for the suite's own tiers: `fast` / `heavy` / `slow` / `meta` / `all` | the tier you name; the marker expression comes from the cost ledger |
-| `check_ethics` | which kanon rules the given text trips (matched by the linter's trigger index): each match carries the section's id and title — the generated `license-check` gate stays as the offline L2 enforcement | filesystem |
+| `check_ethics` | which guidance rules the given text trips (matched by the linter's trigger index): each match carries the section's id and title — the generated `license-check` gate stays as the offline L2 enforcement | filesystem |
 
 Two calls cover most of the loop:
 
@@ -86,7 +86,7 @@ nothing about the answers. Every other byte is compared as it is.
 | `template://questionnaire` | the full questionnaire as JSON, internal variables included |
 | `template://witnesses` | each witness leaf with its recorded tier and result, plus the ledger's coverage counters -- sorted and declaration-ordered, so it diffs between runs |
 | `template://support` | the declared support contract (`support.yml`): what CI promises to execute per combination and per leaf class, each entry with the measured `why` |
-| `template://ethics` | the kanon section index the linter matches against: one row per section with its id, title and triggers — `daimonion agents-md --write` renders the matching sections into the guide |
+| `template://ethics` | the guidance section index the linter matches against: one row per section with its id, title and triggers — `daimonion agents-md --write` renders the matching sections into the guide |
 
 ## The HTTP transport and its allowlist
 

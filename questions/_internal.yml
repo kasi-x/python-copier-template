@@ -436,7 +436,7 @@ care:
     # `medtech` domain trait. The trait alone is not enough: a medical web
     # service or a clinical MCP tool has no data/ tree and no CARE sheet --
     # the ethical substance it needs (human-in-the-loop, change envelopes,
-    # post-market monitoring) is the kanon SaMD section, which the linter renders
+    # post-market monitoring) is the guidance SaMD section, which the linter renders
     # for the `medtech` condition and needs no layout. That is why this is `or`
     # on the trigger and `and` on the layout, rather than routing medtech into CARE
     # itself.
@@ -476,7 +476,7 @@ daimonion_spec:
 # AGENTS.md effective setting. Every project ships the agent guide: the
 # library / cli / script bases, the web_api / data_science layers (including
 # combo opt-ins), ros2 / micropython (all types ship the guide, whose empty
-# ethics marker block `daimonion agents-md --write` fills from kanon), and
+# ethics marker block `daimonion agents-md --write` fills from the guidance sections), and
 # online_judge too — there the guide's AI wording defers to the contest:
 # Placed LAST so every internal it referenced must be earlier — the constant
 # keeps the position (copier evaluates when:false in definition order, and

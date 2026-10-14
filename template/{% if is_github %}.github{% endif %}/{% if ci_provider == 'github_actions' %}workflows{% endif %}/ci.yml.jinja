@@ -25,7 +25,7 @@ jobs:
 {% if agents_md_effective %}  # AGENTS.md's ethics marker block is filled after render by the copier
   # post-gen task (`daimonion agents-md --write`), which only warns when it
   # cannot run (offline). Fail here until the block is filled and matches
-  # the pinned daimonion's kanon snapshot.
+  # the pinned daimonion's guidance snapshot.
   ethics-block:
     runs-on: ubuntu-24.04
     timeout-minutes: 10

@@ -17,8 +17,8 @@ This template is a place to pull together agreed best practices from various sou
 
 ## Ethics / regional / operational rule sections
 
-The section texts live in [kanon](https://github.com/politeuma/kanon),
-which owns their content, sources, and review cadence. New sections and
+The section texts live in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guidance/sections)
+(CC BY 4.0), which owns their content, sources, and review cadence. New sections and
 corrections are pull requests there, not here; obligation-level changes go
 through [law-map](https://github.com/politeuma/law-map)'s Legal
 RFC issue. This repo owns only the wiring — the derived `when` conditions
@@ -41,12 +41,11 @@ blast radius, never the whole suite.
 
 The cheapest real change an outsider can make: add or correct an ethics /
 regional / operational rule section in
-[kanon](https://github.com/politeuma/kanon)
-(copy its `sections/_template.md`, fill every field, run its
+[law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guidance/sections)
+(copy its `guidance/sections/_template.md`, fill every field, run
 `just manifest`). It needs no knowledge of this template's questionnaire.
-Until the kanon→law-map merge lands, section file paths still end in
-`.md` (YAML front matter plus prose body); the `guidance/` layout named
-in the merge plan does not exist yet.
+Section files are `guidance/sections/<tier>/<slug>.md` (YAML front matter
+plus prose body); the generated index is `guidance/sections/MANIFEST.yml`.
 In this repo, the next-cheapest change is a docs fix — see the blast-radius table
 above.
 

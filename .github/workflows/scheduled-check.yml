@@ -185,11 +185,11 @@ jobs:
     name: law-map review_by drift
     # Obligation-graph freshness, not toolchain drift: every grounding in
     # politeuma/law-map carries a review_by date, and an expired
-    # one means the statute/citation needs human re-review. The kanon
-    # corpus now lives in politeuma/kanon (checked out below); `--kanon`
-    # validates related_sections ids resolve inside it
-    # (sections/<tier>/<slug>.md.jinja), alongside the review_by check --
-    # structural corpus validation itself is law-map's own ci.yml. A failure
+    # one means the statute/citation needs human re-review. The guidance
+    # tree lives inside politeuma/law-map itself now (the kanon merge);
+    # `law-map check` validates review_by dates and that related_sections
+    # ids resolve to guidance/sections/<tier>/<slug>.md -- structural
+    # section validation itself is law-map's own ci.yml. A failure
     # here names exactly one thing to fix.
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -204,20 +204,13 @@ jobs:
           path: law-map
           persist-credentials: false
 
-      - name: Checkout kanon
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: politeuma/kanon
-          path: kanon
-          persist-credentials: false
-
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
       - name: Check obligation review_by dates
         id: check
         working-directory: law-map
-        run: uv run law-map check --kanon ../kanon
+        run: uv run law-map check
         # Exits 1 only on EXPIRED groundings (due-within-horizon is a report,
         # not a failure) or on an unresolved related_sections id.
 

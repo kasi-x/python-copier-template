@@ -54,17 +54,17 @@ from `docs/` or code.
 
 Field rules for this project kind live in the marker block below.
 
-The block is maintained by `daimonion agents-md --write` from the kanon corpus; edit `.daimonion.yml`, not the block.
+The block is maintained by `daimonion agents-md --write` from the law-map guidance sections; edit `.daimonion.yml`, not the block.
 Fill or refresh it with
 `uvx --from git+https://github.com/politeuma/daimonion@b670aedf38ca33747b2693c1fad771b61a266e74 daimonion agents-md --write`.
 
 To mechanically verify changed files against these triggers before committing,
-run `uvx --from git+https://github.com/politeuma/daimonion@b670aedf38ca33747b2693c1fad771b61a266e74 daimonion diff`
-(or `... daimonion check <path>`).
+run `uvx --from git+https://github.com/politeuma/daimonion@b670aedf38ca33747b2693c1fad771b61a266e74 daimonion scan`
+(or `... daimonion scan <path>`).
 
 ### Rule summaries (English)
 
-English summaries of the kanon sections this project's `.daimonion.yml`
+English summaries of the guidance sections this project's `.daimonion.yml`
 selects. The full sections in the marker block below (facts, prohibited
 patterns, regex triggers) are written in Japanese; these summaries translate
 their rule lines. Not legal advice.
@@ -83,7 +83,7 @@ their rule lines. Not legal advice.
 Sections from [kanon](https://github.com/politeuma/kanon)
 that match this project's `.daimonion.yml` conditions. Each gives a rule summary and regex
 triggers up front; facts, prohibited patterns, and the change watch are folded in `<details>`.
-Before committing, run `daimonion diff` to match changed lines against these triggers.
+Before committing, run `daimonion scan` to match changed lines against these triggers.
 Sections are written in Japanese. Not legal advice.
 
 # AIと著作権 — 取得・学習・RAGコードは「非享受目的」を壊さない

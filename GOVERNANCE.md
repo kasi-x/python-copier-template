@@ -110,13 +110,13 @@ confidence the evidence does not provide.
 
 ## Ethics, regional, and operational rules
 
-The ethics sections live in the [`daimonion`](https://github.com/politeuma/daimonion)
-linter's kanon corpus ([`politeuma/kanon`](https://github.com/politeuma/kanon)),
-not in this repository: section texts, sources, and review cadence are pull
+The rule sections live in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guidance/sections)
+(CC BY 4.0), which the [`daimonion`](https://github.com/politeuma/daimonion)
+linter renders into guides: section texts, sources, and review cadence are pull
 requests there. This repo owns only the wiring — the derived `when`
 conditions the template emits into the generated `.daimonion.yml`
 (`_shared/daimonion-when.jinja`), which `daimonion agents-md --write` matches
-against kanon. The template states rules of thumb, it does not give legal advice.
+against the guidance sections. The template states rules of thumb, it does not give legal advice.
 
 ## Relationship to upstream
 

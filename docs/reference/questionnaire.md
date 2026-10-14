@@ -279,8 +279,9 @@ Answer **No** to change the layout, allow Japanese text, or keep the AGENTS.md e
 - **`allow_japanese`** (bool; default no) — Allow Japanese (multibyte) characters in comments and
   docstrings?
 - **`agents_md_language`** (str; default `en`) — Language of the AGENTS.md ethics rules.
-  - **`en`** — an English summary of each selected kanon section sits above the ethics marker block;
-    the full sections daimonion renders into the block stay Japanese until kanon ships English text.
+  - **`en`** — an English summary of each selected guidance section sits above the ethics marker
+    block; the full sections daimonion renders into the block stay Japanese (English lives in the
+    sections' `en:` front matter).
   - **`ja`** — the Japanese marker block only.
 
 ### `use_recommended_docs`

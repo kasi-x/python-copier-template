@@ -52,7 +52,7 @@ exit 2 instead of silently checking nothing.
 | `matches` | `[{path, regex}]` — the file text must match. |
 | `unmatches` | `[{path, regex}]` — the file text must not match. |
 | `toml` | `[{path, key, equals}]` — dotted-key lookup (integer segments index lists). |
-| `agents_md` | `[{present: [kanon-id], absent: [kanon-id]}]` — the generated AGENTS.md must carry/not carry the linter-rendered kanon section; ids resolve to section titles through kanon's `MANIFEST.yml`. |
+| `agents_md` | `[{present: [guidance-id], absent: [guidance-id]}]` — the generated AGENTS.md must carry/not carry the linter-rendered guidance section; ids resolve to section titles through guidance's `MANIFEST.yml`. |
 
 `expect` and `commands` are judged against the state *after* `update`, if
 that phase is present.

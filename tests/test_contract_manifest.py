@@ -2,7 +2,7 @@
 
 The manifest (`.architekton-manifest.yml`) is the public record of a
 generation -- the template ref, the answers file it describes, and the
-kanon `when` conditions the render declares (the same list `.daimonion.yml`
+guidance `when` conditions the render declares (the same list `.daimonion.yml`
 carries) -- never answer values. These tests render through
 tests/support.py's `render_answers` (the one render entry point) and pin the
 three claims `architekton-py verify` checks:

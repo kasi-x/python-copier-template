@@ -1,12 +1,12 @@
-"""Parity: old REGISTRY gates vs kanon `applies()` over the derived `when` set.
+"""Parity: old REGISTRY gates vs guidance `applies()` over the derived `when` set.
 
-The template stopped vendoring kanon prose into AGENTS.md: it now emits
+The template stopped vendoring rule prose into AGENTS.md: it now emits
 `.daimonion.yml` (abstract `when` conditions) and an empty marker block the
 `daimonion` linter fills in. This test proves the cutover changed nothing
 about *which* leaf gets *which* section: for every leaf in
 tests/matrix/witnesses.jsonl (272), the set of section ids selected by the
-old registry gates must equal the set selected by kanon's `applies()` over
-the derived `when` set.
+old registry gates must equal the set selected by law-map guidance's
+`applies()` over the derived `when` set.
 
 Two deliberate self-containments (the sibling slice deletes architekton/ethics.py
 and _shared/ethics/REGISTRY.yml, so neither may be imported here):
@@ -15,12 +15,13 @@ and _shared/ethics/REGISTRY.yml, so neither may be imported here):
   _shared/ethics/REGISTRY.yml `status==active` rows (verified 0 mismatches
   over all 272 leaves at derivation time), evaluated by a ~40-line
   restricted evaluator over a `leaf_context` mirror;
-- the kanon side is read from the vendored checkout's MANIFEST.yml plus
-  each section file's `{# ethics: ... status=... #}` header at
-  $DAIMONION_KANON_DIR (default: the sibling checkout), replicating
-  `Section.applies`: `status == 'active' and placement == 'agents_md' and
-  bool({'always', *conditions} & set(when))`, where `when` may be a string
-  or a list (any-of). Skipped when the checkout is absent.
+- the guidance side is read from law-map's `guidance/sections/MANIFEST.yml`
+  (schema 2) plus each section file's YAML front matter at
+  $DAIMONION_GUIDANCE_DIR (default: the sibling law-map checkout),
+  replicating `Section.applies`: `status == 'active' and
+  placement == 'agents_md' and bool({'always', *conditions} & set(when))`,
+  where `when` may be a string or a list (any-of). Skipped when the
+  checkout is absent.
 """
 
 from __future__ import annotations
@@ -28,22 +29,29 @@ from __future__ import annotations
 import ast
 import json
 import os
-import re
 from pathlib import Path
 
 import yaml
 
 TOP = Path(__file__).absolute().parent.parent
 WITNESSES = TOP / "tests" / "matrix" / "witnesses.jsonl"
-KANON_DIR = Path(
+# law-map guidance checkout (schema-2 MANIFEST + YAML front-matter sections).
+# Kept under the old DAIMONION_KANON_DIR name as a fallback so existing CI
+# env still resolves; prefer DAIMONION_GUIDANCE_DIR going forward.
+GUIDANCE_DIR = Path(
     os.environ.get(
-        "DAIMONION_KANON_DIR",
-        "/home/user/dev/ConstitutiveTemplates/daimonion/src/daimonion/kanon",
+        "DAIMONION_GUIDANCE_DIR",
+        os.environ.get(
+            "DAIMONION_KANON_DIR",
+            "/home/user/dev/ConstitutiveTemplates/law-map/guidance/sections",
+        ),
     )
 )
+# Backwards-compatible alias: test_daimonion_config imports KANON_DIR.
+KANON_DIR = GUIDANCE_DIR
 
 # Frozen copy of _shared/ethics/REGISTRY.yml `status==active` rows' gates
-# (id -> gate string). Verified identical to kanon applies() over the
+# (id -> gate string). Verified identical to guidance applies() over the
 # derived `when` set for all 272 leaves before the registry was deleted.
 FROZEN_GATES: dict[str, str] = {
     "baseline-license-drift": "true",
@@ -60,7 +68,7 @@ FROZEN_GATES: dict[str, str] = {
     "domain-contest-rules": "oj_code",
 }
 
-# Deterministic emission order (kanon vocabulary order; `always` never emitted).
+# Deterministic emission order (guidance vocabulary order; `always` never emitted).
 WHEN_ORDER: tuple[str, ...] = (
     "library",
     "cli",
@@ -173,43 +181,51 @@ def derive_when(answers: dict) -> list[str]:
     return [name for name in WHEN_ORDER if flags[name]]
 
 
-_HEADER_RE = re.compile(r"\A\{#\s*ethics:(?P<body>.*?)#\}", re.DOTALL)
-_FIELD_RE = re.compile(r"(\w+)=(\[.*?\]|\S+)", re.DOTALL)
-
-
-def _header_status(text: str) -> str:
-    match = _HEADER_RE.search(text)
-    if not match:
-        return "draft"
-    for key, value in _FIELD_RE.findall(match.group("body")):
-        if key == "status":
-            return value
-    return "draft"
+def _front_matter(text: str) -> dict:
+    """Split a guidance section file into its YAML front matter (between --- lines)."""
+    if not text.startswith("---\n"):
+        return {}
+    head, _, _ = text[len("---\n") :].partition("\n---\n")
+    return yaml.safe_load(head) or {}
 
 
 def load_kanon() -> list[dict]:
-    """Vendored kanon sections: id, when-tuple, placement, status."""
-    sections_dir = KANON_DIR / "sections"
+    """Guidance sections: id, when-tuple, placement, status.
+
+    Kept under the old name so test_daimonion_config keeps importing it.
+    Reads law-map's schema-2 MANIFEST.yml for the row order plus each
+    section file's YAML front matter for the authoritative status.
+    """
+    sections_dir = GUIDANCE_DIR if (GUIDANCE_DIR / "MANIFEST.yml").is_file() else GUIDANCE_DIR / "sections"
     manifest = yaml.safe_load((sections_dir / "MANIFEST.yml").read_text(encoding="utf-8"))
     out = []
     for row in manifest["sections"]:
         when = row.get("when", "always")
         when_t = (when,) if isinstance(when, str) else tuple(when)
-        status = _header_status((sections_dir / str(row["file"])).read_text(encoding="utf-8"))
+        front = _front_matter((sections_dir / str(row["file"])).read_text(encoding="utf-8"))
         out.append(
             {
                 "id": str(row["id"]),
                 "when": when_t,
-                "placement": str(row.get("placement", "agents_md")),
-                "status": status,
+                "placement": str(front.get("placement", row.get("placement", "agents_md"))),
+                "status": str(front.get("status", row.get("status", "draft"))),
             }
         )
     return out
 
 
+# Backwards-compatible alias for the new-format reader: the guidance tree is
+# the single rulebook, and this is its only section source.
+load_guidance = load_kanon
+
+
 def kanon_applies(section: dict, conditions: list[str]) -> bool:
     wanted = {"always", *conditions}
     return section["status"] == "active" and section["placement"] == "agents_md" and bool(wanted & set(section["when"]))
+
+
+# Backwards-compatible alias: same applies() over the guidance rows.
+guidance_applies = kanon_applies
 
 
 def _leaves() -> list[dict]:

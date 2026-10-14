@@ -168,7 +168,7 @@ combinable:
 # builds. A multiselect rather than one question per domain, because the
 # domains genuinely co-occur -- a face-recognition model that also touches
 # patient data selects both, and the emitted `.daimonion.yml` must then carry
-# both conditions. Each choice maps to a kanon `when` condition (see the
+# both conditions. Each choice maps to a guidance `when` condition (see the
 # derivation in `_shared/daimonion-when.jinja`) and, where it applies, to packages.
 #
 # Asked on every base rather than under data-science: the condition that fires

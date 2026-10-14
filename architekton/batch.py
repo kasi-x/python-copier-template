@@ -659,10 +659,10 @@ def toml_lookup(data: Any, key: str) -> Any:
 def check_agents_md(dest: Path, entries: list[dict[str, Any]]) -> list[Check]:
     """Daimonion-condition pins against the generated `.daimonion.yml`.
 
-    Each entry names kanon `when` conditions under `present`/`absent`; the
+    Each entry names guidance `when` conditions under `present`/`absent`; the
     condition is looked up in the rendered config's `when` list (the same
     list the manifest carries), so a batch line pins the *declared project
-    condition* rather than a section title that drifts when kanon rewords
+    condition* rather than a section title that drifts when guidance rewords
     its prose. `always` sections apply without being listed and are never
     pinned here.
     """

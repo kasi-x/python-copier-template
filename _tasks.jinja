@@ -118,10 +118,10 @@
 ] + ([{'name': 'license-check',
        'desc': 'Check dependency licenses comply with ' ~ license_effective ~ ' (needs network)',
        'run': [license_check_cmd]}] if license_check_effective else []) + ([{'name': 'legal-check',
-       'desc': 'Scan changed files with daimonion diff (warn-only; needs network)',
-       'run': ['uvx --from ' ~ daimonion_spec ~ ' daimonion diff']}] if agents_md_effective else []) %}
+       'desc': 'Scan changed files with daimonion scan (warn-only; needs network)',
+       'run': ['uvx --from ' ~ daimonion_spec ~ ' daimonion scan']}] if agents_md_effective else []) %}
 {# Post-render refresh for the AGENTS.md ethics marker block: `daimonion
-   agents-md --write` fills the markers from kanon using .daimonion.yml.
+   agents-md --write` fills the markers from the guidance sections using .daimonion.yml.
    Network-dependent like audit (uvx fetches daimonion from git), so it stays
    out of `check` (which must run offline) and never fails -- a failure
    prints guidance instead. #}
@@ -240,8 +240,7 @@
 {% set agent_cmd_specs = {'fix': 'auto-fix formatting and lint',
                          'lint': 'ruff format --check + ruff check (check-only)',
                          'test': 'pytest',
-                         'type-check': 'type checker + static analysis',
-                         'legal-check': 'daimonion diff over changed files, warn-only (needs network)',
+                         'legal-check': 'daimonion scan over changed files, warn-only (needs network)',
                          'ethics-block': 'daimonion agents-md --write to refresh the ethics block (warns offline)',
                          'check': 'everything above'} %}
 {% set agent_commented = ['fix', 'lint', 'test', 'type-check', 'check'] if task_runner_effective == 'task' else (['fix'] if task_runner_effective == 'just' else []) %}

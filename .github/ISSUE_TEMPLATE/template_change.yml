@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         For field-rule text (new sections, factual corrections) open the
-        change in [kanon](https://github.com/politeuma/kanon) instead — this
+        change in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guidance/sections) instead — this
         repo only owns the wiring. See
         [the shortest path](https://github.com/politeuma/architekton-py/blob/main/docs/how-to/change-template.md).
 

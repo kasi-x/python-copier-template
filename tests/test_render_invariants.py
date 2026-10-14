@@ -12,8 +12,7 @@ point at a page the render never wrote. This module adds the deterministic
   and each feature's dependencies are declared exactly when that feature's
   artifact is rendered;
 - the ``AGENTS.md`` command table names the runner this render ships and only
-  tasks that runner defines;
-- the render's ``.daimonion.yml`` ``when`` list is exactly the kanon
+- the render's ``.daimonion.yml`` ``when`` list is exactly the guidance
   conditions the leaf's answers derive (vocabulary order, provenance
   comments), and ``AGENTS.md`` carries the empty ethics marker pair with no
   vendored section prose;
@@ -703,15 +702,15 @@ def _nav_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
 
 
 # The `.daimonion.yml` `when` list and the AGENTS.md empty marker pair. The
-# template no longer vendors kanon prose: it emits the abstract conditions
-# (kanon's `when` vocabulary, in vocabulary order) and the linter fills the
+# template never vendors rule prose: it emits the abstract conditions
+# (the guidance `when` vocabulary, in vocabulary order) and the linter fills the
 # markers in. The derivation (which answers imply which condition) lives in
 # tests/test_daimonion_parity.py's `derive_when`, the single spelling both
 # this predicate and the `.daimonion.yml` macro follow.
 BEGIN_MARKER = "<!-- daimonion:ethics:begin"
 END_MARKER = "<!-- daimonion:ethics:end -->"
 
-# Kanon section prose must never be vendored into the render: a sample of h1
+# Guidance section prose must never be vendored into the render: a sample of h1
 # titles from the old appendix that would prove a stale include chain.
 VENDORED_PROSE_NEEDLES = (
     "ライセンス変動",
@@ -741,7 +740,7 @@ def _daimonion_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]
         if BEGIN_MARKER not in text or END_MARKER not in text:
             problems.append(f"{leaf.id}: AGENTS.md lacks the empty ethics marker pair")
         problems.extend(
-            f"{leaf.id}: AGENTS.md vendors kanon prose {needle!r}"
+            f"{leaf.id}: AGENTS.md vendors guidance prose {needle!r}"
             for needle in VENDORED_PROSE_NEEDLES
             if needle in text
         )

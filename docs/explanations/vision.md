@@ -17,7 +17,7 @@ every answer path's render tested, not just documented.**
 It is one adoption entry point into the wider politeuma rule distribution,
 not its end: the canonical picture is the
 [politeuma architecture diagram](https://github.com/politeuma/.github/blob/main/profile/diagram.md),
-where law-map is the rulebook, kanon renders the prose, and daimonion
+where law-map is the rulebook, its guidance tree holds the prose, and daimonion
 delivers the matching rules into any repository's `AGENTS.md`. This template
 is the way in for *new Python projects*; any existing repository, in any
 language, adopts the same rules through daimonion directly.

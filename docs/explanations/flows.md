@@ -65,13 +65,13 @@ of that chain — rendered here for one consumer (new Python projects), not
 the pipeline's end. The canonical org-wide picture, where this template is
 one adoption entry point beside any other repository via daimonion, is the
 [politeuma architecture diagram](https://github.com/politeuma/.github/blob/main/profile/diagram.md):
-law-map is the rulebook, kanon renders the prose, daimonion delivers it,
+law-map is the rulebook, its guidance tree holds the prose, daimonion delivers it,
 and architekton-py is one way in.
 
 ```mermaid
 flowchart LR
     OL["open-law<br/>(world legislation corpus)"] --> LM["law-map<br/>(THE RULEBOOK:<br/>obligation graph)"]
-    LM --> CX["kanon<br/>(reviewed prose,<br/>generated MANIFEST.yml)"]
+    LM --> CX["guidance/sections<br/>(reviewed prose,<br/>generated MANIFEST.yml)"]
     CX --> DW["_shared/daimonion-when.jinja<br/>(answers → when conditions)"]
     DW --> DC[".daimonion.yml<br/>(declared conditions)"]
     DC --> AM["daimonion agents-md --write<br/>(fills the marker block)"]

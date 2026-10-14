@@ -110,19 +110,19 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
   are free-form.
 - CI runs lint, type-check, and tests on every push
 {% if docs %} plus a docs build{% endif %}; keep all of them green.
-{# Ethics block: filled by `daimonion agents-md --write` from kanon (see .daimonion.yml); the markers must stay. #}
+{# Ethics block: filled by `daimonion agents-md --write` from the guidance sections (see .daimonion.yml); the markers must stay. #}
 ## Field rules (ethics appendix)
 
 Field rules for this project kind live in the marker block below.
 
-The block is maintained by `daimonion agents-md --write` from the kanon corpus; edit `.daimonion.yml`, not the block.
+The block is maintained by `daimonion agents-md --write` from the law-map guidance sections; edit `.daimonion.yml`, not the block.
 CI fails while the block is empty or stale (`daimonion agents-md --check`);
 fill it with the `ethics-block` task or
 `uvx --from {{ daimonion_spec }} daimonion agents-md --write`.
 
 To mechanically verify changed files against these triggers before committing,
-run `uvx --from {{ daimonion_spec }} daimonion diff`
-(or `... daimonion check <path>`).
+run `uvx --from {{ daimonion_spec }} daimonion scan`
+(or `... daimonion scan <path>`).
 {% if web_api %}
 Market-triggered rules no questionnaire answer can route here live in
 `ethics/regions.yml` -- read the row for each region you ship to.
