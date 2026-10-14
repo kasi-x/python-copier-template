@@ -1,0 +1,9 @@
+# daimonion project conditions, in kanon's `when` vocabulary.
+# `daimonion agents-md --write` renders the matching ethics sections into
+# AGENTS.md's marker block. This repo is a CLI (`architekton-py`) that also
+# serves an MCP server (tools/mcp_server.py).
+version: 1
+agents_md: AGENTS.md
+when:
+  - cli
+  - mcp

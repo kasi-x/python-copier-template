@@ -339,6 +339,7 @@ ignore-fully-untyped = true
 # legit acronym identifier belongs in these ignore lists rather than in a
 # rename.
 extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
 
 [tool.typos.files]
 # template/ は生成コード。生成先プロジェクト側でチェックされる。
