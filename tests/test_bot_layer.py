@@ -1,8 +1,8 @@
 """The bot layer's render contract and its real-execution proof.
 
 tests/test_example_layers.py owns the per-feature render assertions for the
-layers that predate the witness ledger; this module is the bot layer's own file
-(TODO.md §4). The fast tests pin the wiring on each base (scaffold iff
+layers that predate the witness ledger; this module is the bot layer's own
+file. The fast tests pin the wiring on each base (scaffold iff
 ``bot_discord_effective`` / ``bot_slack_effective`` / ``bot_line_effective`` /
 ``bot_gmail_effective``,
 the dependency / entry point / env-var gates, the leak check on the types that

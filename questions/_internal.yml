@@ -8,8 +8,7 @@
 
 # Platform identity. git_platform is asked in Project Details, so the raw
 # comparison cannot gate a question's `when` and render-side paths and bodies
-# used to re-spell it per site (TODO.md §28.5 R1, §28.4 item 4d — the same
-# comparison in three spellings). Defined FIRST so the effective settings
+# used to re-spell it per site. Defined FIRST so the effective settings
 # below can compose it.
 is_github:
     type: bool
@@ -137,10 +136,10 @@ bot_gmail_effective:
     default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'gmail' }}"
     when: false
 # The agent scaffold: pydantic-ai prompts/ + <pkg>.tools/ demo, rendered when
-# the recommended agent guide is declined on a library / cli base. TODO.md
-# §28.5 R1 (§28.4 item 4b) names the predicate that used to repeat across the
+# the recommended agent guide is declined on a library / cli base. It names
+# the predicate that used to repeat across the
 # pkg tree's agent gates, prompts/, tests/, the agent dependency and the
-# setuptools flat-layout guard (the §18 `oj_bare`/`no_pkg` pattern recurring
+# setuptools flat-layout guard (the `oj_bare`/`no_pkg` pattern recurring
 # for a predicate that had no internal yet).
 agent_scaffold:
     type: bool
@@ -150,8 +149,8 @@ agent_scaffold:
 # variables: the effective layers (web_api / mcp / scraping / bot), the
 # include_sentry leaf — raw by design (template-dev.md), which is why this
 # internal composes a raw answer with effective ones — or the agent scaffold.
-# TODO.md §28.5 R1 (§28.4 item 4c) un-names the ~130-char OR that repeated on
-# the file name and in the README body.
+# It un-names the ~130-char OR that repeated on the file name and in the
+# README body.
 needs_env_example:
     type: bool
     default: "{{ web_api or mcp_effective or scraping_effective or include_sentry or bot_effective or agent_scaffold }}"
@@ -196,7 +195,7 @@ data_science_layout:
 # dependencies (duckdb / pyarrow / polars / ipykernel / ...) gate on the same
 # union. Neither owner alone spells it: data_science_layout misses kaggle (an
 # online_judge genre that use_src_layout excludes), and kaggle misses the
-# data_science base (TODO.md §28.4 item 4h).
+# data_science base.
 ds_stack:
     type: bool
     default: "{{ data_science_layout or kaggle }}"
@@ -303,7 +302,7 @@ ros2_python:
 
 # Tree gates: one line each owns a whole subtree's policy, so child path
 # segments reference the name instead of re-spelling the parent condition
-# (TODO.md §28.5 R1, §28.4 items 4a/4e). pkg_scaffold is the pkg tree's parent
+#. pkg_scaffold is the pkg tree's parent
 # gate PLUS the ros2 exclusion its three inner `{% if project_type != 'ros2'
 # %}` file gates used to carry (ros2 walked the whole tree and rendered
 # nothing from it, so folding it into the parent is byte-identical). The
@@ -327,7 +326,7 @@ tests_scaffold:
 # composed with agent_scaffold, which alone would re-render the guide into a
 # protected project. Spelled as one named flag so the prompts/ path follows
 # the same convention as the pkg/tests trees: a tree gate references a name,
-# and the child path (agent.md) re-states nothing (TODO.md §28.4 item 4f).
+# and the child path (agent.md) re-states nothing.
 prompts_scaffold:
     type: bool
     default: "{{ (not existing_project or 'scaffold' not in adopt_protect) and agent_scaffold }}"
@@ -356,7 +355,7 @@ task_runner_effective:
     default: "{{ task_runner_pixi if package_manager == 'pixi' else task_runner }}"
     when: false
 
-# Package-manager shorthands (TODO.md §28.5 R1: the `package_manager == ...`
+# Package-manager shorthands (the `package_manager == ...`
 # ternaries repeated across the README / Dockerfile / pyproject / CI bodies).
 # Raw answers, not effective settings: the ROS environment's
 # ros2_package_manager is a different variable and keeps its own spelling.

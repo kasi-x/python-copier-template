@@ -12,8 +12,8 @@ maintainer: [kasi-x](https://github.com/kasi-x) (also the sole entry in
 
 - decides the roadmap and the scope boundaries (see the "What this is
   deliberately not" section of
-  [docs/explanations/vision.md](docs/explanations/vision.md) and the scope
-  rules in [TODO.md](TODO.md));
+  [docs/explanations/vision.md](docs/explanations/vision.md) and the
+  [design principles](docs/explanations/design-principles.md));
 - merges or rejects pull requests;
 - is, for now, the bus factor. This is a known risk and the reason the
   next section exists.

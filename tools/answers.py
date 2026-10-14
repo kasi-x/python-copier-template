@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Project Details every render fixture in this repo starts from.
 
-TODO §23.1: the same handful of values used to be literals in seven places --
+The same handful of values used to be literals in seven places --
 `tests/test_recommended_path.py`, `tests/test_mcp_server.py`,
 `tests/test_batch.py`, `test_example.py`'s `copy_project_recommended`
 (the split moved it to `tests/support.py`), `tools/z3_witnesses.py` (whose

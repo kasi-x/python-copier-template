@@ -16,7 +16,7 @@ test_template_include_scraping_httpx, test_template_agent_scaffold /
 test_template_agent_cli_only) and, over the whole witness leaf space, by the
 exact file-set expectations of tests/matrix/witnesses.jsonl. The former
 per-off-type render sweeps (ctf / scraping / mcp x3 / agent-scaffold placement)
-were the L2 spelling of the L1 table and are gone (TODO archive T12)."""
+were the L2 spelling of the L1 table and are gone."""
 
 import json
 import re
@@ -109,8 +109,8 @@ def _row(project_type: str, expected: frozenset[str], note: str = "", **answers:
     )
 
 
-# The declared truth table (TODO archive T12: "project_type x include_* ->
-# derived flag, verified over every combination"). One row per project_type
+# The declared truth table ("project_type x include_* -> derived flag,
+# verified over every combination"). One row per project_type
 # choice plus one per online-judge polarity the sweeps rendered; a new
 # project_type without a row fails the check, and so does any cell whose
 # resolved flag drifts from the declaration.
@@ -189,7 +189,7 @@ def _flag_table_problems(worker: Worker, table: tuple[FlagRow, ...], choices: Se
 
 
 def test_effective_flags_are_not_offered_outside_their_declared_bases(worker: Worker) -> None:
-    """L1 (TODO archive T12): each derived layer flag resolves True exactly on
+    """L1: each derived layer flag resolves True exactly on
     the bases that offer its question.
 
     The deleted render sweeps (test_template_include_{ctf,scraping}_not_offered_elsewhere,

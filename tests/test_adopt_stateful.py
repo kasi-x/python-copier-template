@@ -1,7 +1,7 @@
 """Model-based test of an adoption: the driver, checked against a reference model.
 
-TODO.md §25.3 judges Hypothesis the cheapest way to an executable specification
-of adoption, and §26.4 V4 puts it to work. The machine builds a random project
+The design review judged Hypothesis the cheapest way to an executable specification
+of adoption, and this module puts it to work. The machine builds a random project
 tree, runs a random sequence of real adoptions against it (tools/adopt.py,
 copier through tools/batch.py, the real merges), and after *every* step asserts
 the tree against a model that knows the contract rather than the code:

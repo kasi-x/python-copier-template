@@ -1,6 +1,6 @@
 name: E2E ecosystem
 
-# Full cross-repo pipeline (TODO §41-A2): law-map export -> kanon
+# Full cross-repo pipeline: law-map export -> kanon
 # tools/validate.py -> architekton-py render -> daimonion fills the
 # generated AGENTS.md ethics block. The pairwise checks this complements
 # (law-map CI's `validate --kanon`, this repo's scheduled-check.yml

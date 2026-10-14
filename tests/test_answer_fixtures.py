@@ -1,6 +1,6 @@
 """The answer fixtures the suite renders with cannot drift from the questionnaire.
 
-TODO §23.1. copier silently ignores an answer whose question does not exist --
+copier silently ignores an answer whose question does not exist --
 it renders that question's default instead -- so a renamed question or a typo
 in a fixture turns a render test into a test of nothing, while it keeps
 passing. Nothing compared the fixtures with the questionnaire; the shared
@@ -173,7 +173,7 @@ def test_every_fixture_answer_names_a_real_question():
 def test_every_fixture_choice_is_offered_by_its_question():
     """A value outside the declared choices cannot be produced by answering the questionnaire.
 
-    The same value-level reading holds against the default (TODO §23.1): each
+    The same value-level reading holds against the default: each
     fixture is defaults() plus its override diff, so a value equal to its
     question's default renders identically if dropped and the next editor
     cannot tell intent from boilerplate. example-answers.yml is exactly that

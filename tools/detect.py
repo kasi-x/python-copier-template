@@ -567,7 +567,7 @@ def _plain_part(part: str) -> str:
 def _internal_conditions() -> dict[str, str]:
     """`when: false` internal name -> its default expression, from the live questionnaire.
 
-    The protection clauses moved into derived flags (TODO §28.5 R1) live here
+    The protection clauses moved into derived flags live here
     rather than in the path conditions, so resolving a condition reads the same
     source the render will -- no hardcoded flag list to go stale.
     Questionnaire owns the shape; this caches the live read.

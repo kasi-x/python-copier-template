@@ -3,12 +3,12 @@
 A test module is not a library: these lived in test_example.py and sibling
 modules imported them from there (`from test_example import run_pipe`), which
 couples modules that only share plumbing and puts helpers on the import surface
-of a test module. Splitting test_example.py by topic (TODO.md §27.7-4) made that
+of a test module. Splitting test_example.py by topic made that
 acute -- every split module renders the example project, so `copy_project`,
 `copy_project_recommended`, `ci_requested_tasks` and `TOP` moved here with
 `run_pipe`/`make_venv` instead of one of the ten modules owning them.
 
-**Render semantics (TODO.md §28.2-2f/§28.6-D5): one entry point, explicit tasks.**
+**Render semantics: one entry point, explicit tasks.**
 Every render a test asks for goes through the render cache (tests/render_cache.py),
 which stores pure renders (`skip_tasks=True`). Whether copier's `_tasks` run is
 the explicit `run_tasks` argument of each helper below, and the default is the
@@ -142,7 +142,7 @@ def copy_project_recommended(project_path: Path, *, run_tasks: bool = True, **kw
 def render_answers(project_path: Path, answers: dict[str, object], *, run_tasks: bool = True) -> None:
     """Render an explicit answer set into `project_path` -- the generic copy_project.
 
-    The one render entry point (TODO.md §28.6-D5): the cache serves the pure
+    The one render entry point: the cache serves the pure
     render, and `_tasks` are replayed unless `run_tasks=False`; the
     destination is git-inited and the result git-added, exactly as in
     `copy_project`. The answers are the caller's instead of
@@ -248,7 +248,7 @@ def ci_requested_tasks(ci_path: Path) -> list[str]:
 # Zensical drives its one-shot `build` from a file watcher, and a watcher it
 # cannot start is silent: the monitor thread panics, the build's input channel
 # disconnects, and the command prints "Build finished" and exits 0 with the
-# empty `site/` directory it created -- the build never ran (TODO §27.7-8). The
+# empty `site/` directory it created -- the build never ran. The
 # trigger reproduced here is the machine's per-user inotify instance budget
 # (`fs.inotify.max_user_instances`, 128, shared with every other process on the
 # box) being exhausted, which a dev box running this suite next to anything

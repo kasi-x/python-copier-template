@@ -62,7 +62,7 @@ import pytest
 # z3-solver is a declared dev dependency (pyproject.toml): a missing z3 is a
 # broken environment, not an unsupported platform, so this imports it loudly
 # instead of skipping. The silent `pytest.importorskip("z3")` this replaces was
-# the open half of TODO §19's "network 系テストの扱いを見直す".
+# the open half of the "revisit how network tests are handled" item.
 import z3
 
 TOP = Path(__file__).absolute().parent.parent

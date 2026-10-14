@@ -110,8 +110,8 @@ to which it owes its original structure and CI backbone). It does not yet
 have the external track record the comparison table's other rows have
 earned over years. Becoming "the standard" is a claim to be earned through
 real generated projects surviving real `copier update` runs over years, not
-a badge to self-assign — the roadmap toward that is tracked in this
-repository's `TODO.md`.
+a badge to self-assign — the roadmap toward that is tracked in the
+repository's issues and the maintainers' internal notes.
 
 The most useful contribution right now is not a new `project_type` — see
 [Contributing](../how-to/contribute.md) — it's a bug report from an actual

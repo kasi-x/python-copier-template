@@ -1,7 +1,7 @@
 """The adopt-time merge contracts, declared in tests/matrix/invariants.yml.
 
 Every merge kind tools/adopt.py can apply to an adopter's file makes promises
-about its outcome. §25.5/V5 asks for those promises as an *artifact* -- the
+about its outcome. This module records those promises as an *artifact* -- the
 same oracle shape the render invariants use -- rather than as checks that live
 only inside the merge implementations, so that a new merge kind has to declare
 its contract and a contract change has to be deliberate:

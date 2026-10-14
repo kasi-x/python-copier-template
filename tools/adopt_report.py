@@ -133,8 +133,8 @@ def _merge_summary(adoption: Adoption) -> list[str]:
     """One line per file the merge step touched, for the review step.
 
     An adapter over `_merge_summary_from`, deliberately not a second rendering
-    of it: the two used to be twin implementations of the same lines (TODO.md
-    §28.5 R6), which is exactly the kind of drift a summary must not have. The
+    of it: the two used to be twin implementations of the same lines, which is
+    exactly the kind of drift a summary must not have. The
     fields an Adoption carries are the plan's dict shape under other names, so
     the adapter is the whole difference.
     """

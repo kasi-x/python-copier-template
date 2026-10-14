@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify a generated project's composition contract (TODO §42-A2).
+"""Verify a generated project's composition contract.
 
 The manifest (`.architekton-manifest.yml`, rendered from
 `template/.architekton-manifest.yml.jinja`) is the public record of a
@@ -75,7 +75,7 @@ def load_manifest(target: Path) -> dict[str, Any]:
     if not manifest.is_file():
         msg = (
             f"{manifest} not found -- this project was generated before the composition "
-            "contract existed (TODO §42-A2); regenerate it with `copier recopy --overwrite` "
+            "contract existed; regenerate it with `copier recopy --overwrite` "
             "to record one"
         )
         raise VerifyError(msg)

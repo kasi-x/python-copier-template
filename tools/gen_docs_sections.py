@@ -219,7 +219,7 @@ def render_tier_ledger(_model: Model) -> str:
     """`docs/explanations/verification.md`: the cost ledger as a table.
 
     The selector, the collected count, the budget and the measured wall are
-    the ledger's own numbers (TODO.md §28.6-D4), so this block is generated
+    the ledger's own numbers, so this block is generated
     from `tests/matrix/tiers.json` instead of a hand-copied table drifting
     from it -- the same "the docs repeat the data, the generator owns the
     region" treatment the questionnaire blocks get. The hand-written table

@@ -4,7 +4,7 @@
 choosealicense.com corpus; ``tools/generate_license_template.py`` turns it
 into the template's LICENSE if/elif chain, and the ``license:`` question
 offers the same set interactively. Nothing executed the generator
-end-to-end (TODO archive §19), so this module pins the three views
+end-to-end, so this module pins the three views
 together without running it: the chain cannot silently gain or lose a
 license, the questionnaire cannot offer one the chain would not render,
 and the two reserved (non-vendored) branches keep existing.

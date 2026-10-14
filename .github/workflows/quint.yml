@@ -1,6 +1,6 @@
 name: Quint models
 
-# TODO.md §27.7 item 3: the adopt protocol's Quint models (TODO §27.3, V2)
+# The adopt protocol's Quint models
 # live in models/ so CI can re-verify the crash-safety proof instead of
 # trusting the spike transcript.  Two runs, both load-bearing: the good model
 # must verify (TLC exhausts the 51-state graph), and the late-journal mutant

@@ -782,8 +782,8 @@ def test_renovate_actions_match_what_is_shipped(override: dict[str, Any], tmp_pa
             config_github_actions.update(rule.get("matchPackageNames", []))
     used_github_actions = set[str]()
     workflow_files = list((tmp_path / ".github" / "workflows").glob("*.yml"))
-    # The reusable workflows' shared setup lives in a composite action (TODO
-    # archive §19); renovate's github-actions manager extracts from
+    # The reusable workflows' shared setup lives in a composite action;
+    # renovate's github-actions manager extracts from
     # .github/actions/**/action.yml too, so the scanner must as well.
     workflow_files += list((tmp_path / ".github" / "actions").rglob("action.yml"))
     for workflow_file in workflow_files:

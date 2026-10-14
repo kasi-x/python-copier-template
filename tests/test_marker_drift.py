@@ -117,7 +117,7 @@ STALENESS_DAYS = 30
 
 # The witness leaf space (tools/z3_witnesses.build(), rendered end to end by the
 # fast job of .github/workflows/witness.yml) has a declared ceiling, not just a
-# growth rate. TODO.md §24.1's law makes ordinary growth additive -- +76 leaves
+# growth rate. The 2026-09-13 audit's law makes ordinary growth additive -- +76 leaves
 # per include layer, +22 per gate-off dimension -- but lifting include
 # exclusivity turns the layer multiplier into a combinatorial product:
 # exponential growth that would otherwise surface only as that job creeping
@@ -488,8 +488,8 @@ def _names(markers: set[str]) -> str:
 def test_the_randomized_tier_is_the_only_place_the_plugin_pays() -> None:
     """pytest-randomly is installed but inert everywhere except `task test-randomly`.
 
-    The plugin is a dev dependency for the nightly seed job alone (TODO §24.3,
-    §27.4: conditional adopt, the edit loop must not pay for the reshuffle), so
+    The plugin is a dev dependency for the nightly seed job alone (conditional
+    adopt, the edit loop must not pay for the reshuffle), so
     the addopts block it globally and exactly one task re-enables it on its own
     command line (later `-p` arguments unblock earlier `no:` ones). If a second
     task starts paying for it, that is a tier-budget change and belongs in the
@@ -1021,7 +1021,7 @@ def test_test_loop_doc_states_the_recorded_tier_sizes() -> None:
 
     The doc's wall times are measurements a human records; its test counts are
     the ledger's, and they are what this checks: a doc that promises a size the
-    tier does not have is the §23.2 drift that started this ledger. UPDATE_TIERS
+    tier does not have is the drift that started this ledger. UPDATE_TIERS
     writes these counts itself (``_update_doc_counts``, on the same row
     predicate this check reads); the check stays as the verifier of that
     rewrite, which is why it is skipped while the rewrite runs.
@@ -1053,7 +1053,7 @@ def test_test_loop_doc_states_the_recorded_tier_sizes() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# the leaf-space budget: §24.1's growth law, enforced at the enumerator.
+# the leaf-space budget: the audit's growth law, enforced at the enumerator.
 # --------------------------------------------------------------------------- #
 
 
@@ -1061,7 +1061,7 @@ def test_the_witness_leaf_space_stays_within_its_declared_budget() -> None:
     """tools/z3_witnesses.py's leaf space must fit inside LEAF_BUDGET.
 
     Everything else in this module watches costs that already happened; this
-    one watches the one growth that compounds. TODO.md §24.1's law makes
+    one watches the one growth that compounds. The 2026-09-13 audit's law makes
     ordinary growth additive -- one more include layer ≈ +76 leaves, one more
     gate-off dimension ≈ +22 -- but exponential if include exclusivity is
     lifted, and the witness fast job renders the whole space inside its
@@ -1075,7 +1075,7 @@ def test_the_witness_leaf_space_stays_within_its_declared_budget() -> None:
     count = len(leaves)
     assert count <= LEAF_BUDGET, (
         f"the witness leaf space grew to {len(leaves)} leaves, over the declared budget of "
-        f"{LEAF_BUDGET} (TODO.md §24.1: +1 include layer ≈ +76 leaves, +1 gate-off dimension ≈ +22, "
+        f"{LEAF_BUDGET} (+1 include layer ≈ +76 leaves, +1 gate-off dimension ≈ +22, "
         "and include exclusivity lifted makes the growth exponential; the witness fast job must "
         "render every leaf inside its 30-minute timeout). If the growth is deliberate, raise "
         "LEAF_BUDGET in tests/test_marker_drift.py and re-measure the witness job's wall time into "

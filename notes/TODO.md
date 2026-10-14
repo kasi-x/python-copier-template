@@ -1,5 +1,10 @@
 # TODO
 
+> **INTERNAL — maintainers' working plan, not documentation.** Moved here from
+> the repository root (2026-10-15). Nothing in `docs/`, the template, `tools/`
+> or `tests/` cites its section numbers any more; user-facing rationale lives
+> in `docs/`. See `notes/README.md`.
+
 > アーカイブ: §1–27 は `notes/archive/TODO-sections-01-27.md`(行番号は旧 TODO.md
 > と同一)、完了済み §28/§30–34/§38–39/§41–42/§44 は
 > `notes/archive/TODO-sections-28-44-done.md`(旧行番号は各節の `<!-- 旧 TODO.md Lx–Ly -->`

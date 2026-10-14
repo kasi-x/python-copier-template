@@ -210,7 +210,7 @@ render side cannot drift from.
 
 The condition surface is large — question `when:`s, the `when: false`
 internals, `{% if %}` gates in template file names and bodies, `_tasks`
-guards — and §18's unification (the `oj_bare` / `no_pkg` inventory) was done
+guards — and the predicate unification (the `oj_bare` / `no_pkg` inventory) was done
 by hand against a snapshot that could rot. `tools/predicates.py` keeps the
 inventory alive: it collects every boolean condition site, evaluates each
 against all 272 witness leaves with copier's own machinery, and reports the
@@ -243,7 +243,7 @@ space-wide version of the same rule: no template condition may duplicate a
 named internal unconditionally (proven in Z3 over the whole questionnaire
 space, not just the 272 leaves) without referencing it — unless the pair is
 declared in its `DECLARED_EQUIVALENCES` registry with a reason, as the
-`has_*` / `web_api` / `data_science` alias family from §18 is.
+`has_*` / `web_api` / `data_science` alias family is.
 
 ## Adding a question or project type: keep the Z3 reachability green
 

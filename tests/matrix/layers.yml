@@ -1,8 +1,8 @@
-# The layer availability matrix (TODO.md §28.6 D1 — the §28.4 1c remedy):
+# The layer availability matrix:
 # which opt-in layer can ride on which base. Each row declares,
 # machine-readably, the base project types that see an include question, the
 # non-base clauses its `when` reads, and WHY the availability set is what it
-# is. This is §10's rule ("増やしたい要求は必ず『既存の何の上に載るか』を答えて
+# is. This is the standing rule ("増やしたい要求は必ず『既存の何の上に載るか』を答えて
 # から設計" — a request to add something must first answer what existing thing
 # it layers on top of) made checkable: tests/test_layer_matrix.py holds this
 # file and the live `when` gates in BOTH directions, so neither can drift
@@ -110,7 +110,7 @@ layers:
       runnable process — the same reason include_mcp skips the bare library
       base — and the data_science analysis base has no long-running process
       or server for the bot to be (the audit's asymmetry). The include_web_api
-      ride is the §28.4 1b fix: a library that opted into the web_api layer
+      ride is the audit's fix: a library that opted into the web_api layer
       HAS an executable host (the app/ scaffold), so that effective
       configuration must be asked about the bot the same way it is asked
       about MCP.

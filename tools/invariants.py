@@ -3,8 +3,8 @@
 
 ``tests/matrix/invariants.yml`` is the single source for "what a leaf must
 satisfy": the artifacts it ships and must not ship, the content predicates
-that hold on them, its witness tier and the reason a question type is left out
-(TODO.md §26.4 item 4, §23.4 item 2). This module is the only reader of that
+that hold on them, its witness tier and the reason a question type is left out.
+This module is the only reader of that
 file, so the schema is enforced in one place and a typo cannot silently shrink
 a class's invariants:
 

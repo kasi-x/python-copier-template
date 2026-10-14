@@ -2,9 +2,9 @@
 
 tools/predicates.py collects every boolean condition site on the render +
 question surface; the named boolean internals (`oj_bare`, `no_pkg`, the
-`*_effective` family) are its shortcuts. TODO.md §18's unification was done
+`*_effective` family) are its shortcuts. The predicate unification was done
 by hand against an inventory that could rot: a template condition quietly
-re-spelling `oj_bare` without referencing it is exactly the drift the §18
+re-spelling `oj_bare` without referencing it is exactly the drift the earlier
 guard tests pinned for the eight known sites, generalized to every site.
 
 This test is the space-wide version. A render-side site S and a named
@@ -50,7 +50,7 @@ from pathlib import Path
 
 # z3-solver is a declared dev dependency (pyproject.toml): a missing z3 is a
 # broken environment, not an unsupported platform, so this imports it loudly
-# instead of skipping (the repo's rule since TODO §19).
+# instead of skipping (the repo's standing rule).
 import z3
 
 TOP = Path(__file__).absolute().parent.parent
@@ -67,14 +67,14 @@ from tools import when_model  # noqa: E402
 # the spelled-out predicate, and `web_api` / `data_science` /
 # `data_science_layout` are its named aliases (questions/_internal.yml:
 # "the effective booleans: the matching base project_type, or the
-# corresponding combo opt-in"). §18 item 4 audited exactly this trio and kept
+# corresponding combo opt-in"). An audit examined exactly this trio and kept
 # it as three deliberate layers -- so a definition site may not reference its
 # own alias by name; the alias IS the definition.
 DECLARED_EQUIVALENCES: dict[str, dict[str, str]] = {
     "_combo.yml:has_web_api": {
         "web_api": "alias by definition: `web_api` = has_web_api is the render vocabulary's name for this"
         " exact predicate (questions/_internal.yml), so the definition site is equivalent to the alias it"
-        " does not name -- the §18-recorded effective-layer idiom",
+        " does not name -- the recorded effective-layer idiom",
     },
     "_combo.yml:has_data_science": {
         "data_science": "same alias idiom: `data_science` = has_data_science by declaration (questions/_internal.yml)",

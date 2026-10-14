@@ -2,8 +2,8 @@
 
 tests/matrix/invariants.yml declares, per leaf class, the artifacts a render
 must ship and must not ship, the content predicates that hold, the witness tier
-the class runs at and why a question type is left out (TODO.md §26.4 item 4,
-§23.4 item 2). tools/invariants.py is its only reader; these tests hold the
+the class runs at and why a question type is left out. tools/invariants.py is
+its only reader; these tests hold the
 loader's contract and the migration it exists for:
 
 - the union of the rows a witness leaf's answers select reproduces that leaf's

@@ -3,7 +3,7 @@
 This page evaluates what part of this template's "reliable scaffolding" is
 Python-specific and what part is a language-independent contract, and how a
 small standalone prototype could test that contract before any second-language
-template is proposed (TODO §42-C). It is an evaluation, not a commitment to
+template is proposed. It is an evaluation, not a commitment to
 build another template.
 
 ## The three mechanisms
@@ -95,8 +95,8 @@ claims, and the port should not proceed.
 
 ## What this does NOT propose
 
-- No new supported language or project type in this template. Per §42-C:
-  evaluation first, and expanding Python's supported surface is out of scope.
+- No new supported language or project type in this template. Evaluation
+  first, and expanding Python's supported surface is out of scope.
 - No shared runtime. The reusable artifact is a *specification + a
   reference checker*, not a library the Python template would import — the
   existing `tools/` stack stays the Python implementation of record.

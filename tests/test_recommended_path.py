@@ -41,9 +41,8 @@ INVARIANTS = invariants.load()
 # Answers shared by every case: the required "Project Details" plus values
 # that keep generated content self-consistent (URLs, validators, ...). The one
 # literal lives in tools/answers.py, so the witness tool, the batch sample and
-# the render tests import it from there and cannot drift from one another
-# (TODO §23.1); tests/test_answer_fixtures.py checks its keys against the
-# questionnaire.
+# the render tests import it from there and cannot drift from one another;
+# tests/test_answer_fixtures.py checks its keys against the questionnaire.
 BASE = answers.BASE
 
 # One fast-path case per project_type reachable with every use_recommended_*

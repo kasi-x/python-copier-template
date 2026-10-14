@@ -2,10 +2,7 @@
 
 tests/matrix/layers.yml declares, for each opt-in layer, the base project
 types that see its include question, the non-base clauses its `when` reads,
-and the reason the availability set is what it is (TODO §28.6 D1 — the
-machine-readable completion of §10's "a request to add something must first
-answer what existing thing it layers on top of", and the standing remedy for
-§28.4's 1c unexplained asymmetries and 1b include_bot hole). The declaration
+and the reason the availability set is what it is. The declaration
 is held against the questionnaire in both directions, registry-test style
 (tests/test_support_matrix.py, tests/test_answer_fixtures.py): declared, not
 discovered, and stale-proof both ways.
@@ -233,7 +230,7 @@ def test_when_identifiers_are_exactly_the_declared_clauses() -> None:
 
 
 def test_every_row_and_exclusion_has_a_why():
-    """§28.6 D1 settles every availability set by written reason or removal."""
+    """Every availability set is settled by written reason or removal."""
     payload = matrix()
     unreasoned = [
         str(row.get("include"))
@@ -243,7 +240,7 @@ def test_every_row_and_exclusion_has_a_why():
     ]
     assert unreasoned == [], (
         f"layer matrix row(s) {unreasoned} carry no `why`: a row whose reason cannot be written must be "
-        "reworked into a shape that can, or withdrawn — that is the decision §28.6 D1 asks for"
+        "reworked into a shape that can, or withdrawn — that is the decision this test asks for"
     )
 
 

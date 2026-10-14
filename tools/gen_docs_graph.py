@@ -167,7 +167,7 @@ def _head_split(model: Model) -> tuple[list[Question], list[Question]]:
 
     The head gates are the leading run drawn straight off `project_type`; the
     rest chain behind the mid-sequence ask diamonds. Derived from the ask
-    order, not a count (TODO.md §28.5 R5): the head gates are the ones asked
+    order, not a count: the head gates are the ones asked
     before the first project-type branch that itself follows a gate (today,
     online_judge), so a new gate or a moved genre's questions reshape the
     graph without editing a hardcoded slice.

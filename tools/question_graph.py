@@ -8,7 +8,7 @@ in DEFINITION ORDER (the include chain over questions/, top-level key order
 within a fragment). A definition must therefore precede every reference: a
 backward reference silently reads Undefined (falsy) and picks the wrong
 branch. That bit twice (the docs_type -> micropython_pkg back-reference and
-the mcp_effective -> web_api ordering, TODO.md §13), and the two structure
+the mcp_effective -> web_api ordering), and the two structure
 tests (`test_question_references_are_forward_only`,
 `test_internal_variable_references_are_forward_only` in
 tests/test_copier_structure.py) now enforce it -- after the fact. As gates,

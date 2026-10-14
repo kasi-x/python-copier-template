@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Explain preset and answer choices from the questionnaire's own words (TODO §42-B2).
+"""Explain preset and answer choices from the questionnaire's own words.
 
 A first-time user should be able to judge one choice without reading the
 whole feature catalogue. The single source of the explanation is the

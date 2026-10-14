@@ -27,7 +27,7 @@ if str(TOP) not in sys.path:
 from tools import gen_docs  # noqa: E402
 from tools import questionnaire  # noqa: E402
 
-# Drift this generator exists to prevent (TODO.md: the Features / mermaid text
+# Drift this generator exists to prevent (the Features / mermaid text
 # vs the questionnaire): the questionnaire has these, the docs did not.
 CATALOGUE_GRAPH_MUST_MENTION = (
     "oj_category",

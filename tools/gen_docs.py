@@ -17,7 +17,7 @@ repeats that data, so none of it can silently drift again:
 - `docs/reference/support.md`: the full support matrix, prose included, also
   generated from `support.yml`.
 - `docs/explanations/verification.md`: the cost-ledger table (selector, tests,
-  budget, measured), generated from `tests/matrix/tiers.json` (§28.6-D4).
+  budget, measured), generated from `tests/matrix/tiers.json`.
 
 The support blocks are only generated when `support.yml` exists (W4 owns
 that file; no `support.yml`, no block).

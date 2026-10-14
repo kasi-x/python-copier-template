@@ -156,7 +156,7 @@ def test_a_pkg_dir_body_partial_is_recorded_and_invalidates(tmp_path: Path):
     rule: an exact-name match drops every pkg-tree body from the recorded
     inputs, and an edit to the _shared partial it includes (the real
     _shared/bot-*.py.jinja shape) then keeps serving a stale bot render.
-    Found while landing the gmail platform slice (TODO archive §4).
+    Found while landing the gmail platform slice .
     """
     tree = _scratch_tree(tmp_path / "tree")
     cache = RenderCache(root=tmp_path / "cache", template_root=tree)

@@ -15,7 +15,7 @@ layers (input space, render invariants, execution) the checks live in.
    design discussion, not an extension (see
    [Vision & Positioning](vision.md)'s scope rules).
 2. **How many leaves does it add?** Each gate dimension and each included
-   layer grows the witness leaf space (§24.1: +1 gate ≈ +22 leaves, +1 layer
+   layer grows the witness leaf space (+1 gate ≈ +22 leaves, +1 layer
    over all bases ≈ +76). The current budget is enforced by the
    `LEAF_BUDGET` assertion in the meta tier; exceeding it deliberately means
    raising the constant and re-measuring the witness job's wall time.

@@ -305,7 +305,7 @@ def test_the_tag_resolving_registry_names_real_entry_points():
 
 
 COMPOSITE = TOP / ".github" / "actions" / "setup-runner" / "action.yml"
-"""The shared setup the four reusable workflows call (TODO archive §19)."""
+"""The shared setup the four reusable workflows call."""
 
 COMPOSITE_USERS = ("_tasks.yml", "_test.yml", "_docs.yml", "_dist.yml")
 """The workflows whose duplicated setup block the composite replaced."""
@@ -357,7 +357,7 @@ def test_the_composite_does_not_check_the_repository_out():
     it, so `uses: actions/checkout` *inside* this composite can never run:
     the caller fails first with "Can't find 'action.yml' ... Did you forget
     to run actions/checkout before running your local action?" -- which is
-    exactly how the §19 extraction broke every reusable workflow on the
+    exactly how the extraction broke every reusable workflow on the
     first push that ran it (lint, test, test-meta and docs all died in
     "Set up the runner" before a single task ran).
 

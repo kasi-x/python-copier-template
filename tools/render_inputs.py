@@ -6,7 +6,7 @@ renders a *dirty* working tree as it finds it (it warns `DirtyLocalWarning`),
 which is exactly what the tests and the MCP tools want to key on.
 
 This module owns the render's file-level vocabulary, so the consumers cannot
-drift apart (TODO.md §28.3 3c / §28.5 R3): the test suite's on-disk render
+drift apart: the test suite's on-disk render
 cache (`tests/render_cache.py`, which namespaces its entries and records the
 consumed inputs) and the render twin (`tools/render_delta.py`, which narrows
 the re-render candidates) both read the watched-path list, the include graph

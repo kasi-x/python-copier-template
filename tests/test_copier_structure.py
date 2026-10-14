@@ -26,7 +26,7 @@ This module guards the questionnaire's shape:
   and no internal variable's derivation is contradictory (Z3-backed checks);
 - the three layout exclusion lists (`layout.when`, `use_src_layout`'s
   internal default, `log_library.when`) stay three deliberately different
-  sets — the TODO §18 "collapse them into one internal" refactor was
+  sets — the "collapse them into one internal" refactor was
   rejected, so each set is pinned exactly, rationale in the assertion.
 """
 
@@ -311,7 +311,7 @@ def test_no_dead_internal_variables():
 
 
 # ---------------------------------------------------------------------------
-# OJ predicate rot-guard (TODO §18 item 2).
+# OJ predicate rot-guard.
 #
 # The template used to re-derive two predicates inline at every consumer:
 # `online_judge and not kaggle` (now the `oj_bare` internal — the four
@@ -355,7 +355,7 @@ def _rot_guard_sources() -> list[str]:
 
 
 def test_oj_predicate_raw_forms_are_named_internals():
-    """The raw predicate forms §18 item 2 eliminated never reappear.
+    """The raw predicate forms the predicate unification eliminated never reappear.
 
     Nothing is allow-listed: after the unification there are zero occurrences
     outside questions/online_judge.yml, where the internals are defined.
@@ -443,7 +443,7 @@ def _project_type_exclusions(expression: str) -> set[str]:
 def test_layout_exclusion_lists_stay_deliberately_different():
     """The three "who gets a layout" exclusion lists are three lists, not one.
 
-    TODO §18 floated collecting them into one `needs_layout_choice` internal;
+    A past refactor floated collecting them into one `needs_layout_choice` internal;
     that was rejected because the lists only look alike — each excludes a
     different thing for a different reason, and one merged list would change
     who is offered what. Pin each set exactly (rationale in the assertion

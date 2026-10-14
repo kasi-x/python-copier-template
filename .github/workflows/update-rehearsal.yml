@@ -11,7 +11,7 @@ name: Update rehearsal
 # run's step summary, uploaded as an artifact, and on a schedule committed
 # through the auto PR below so `docs/data/update-rehearsal.json` -- the
 # "Update rehearsal" section of docs/reference/support.md -- tracks it.
-# Results land as a PR, never as a push to main (TODO.md: no direct pushes).
+# Results land as a PR, never as a push to main (no direct pushes).
 #
 # Weekly (the render-at-tag cache makes later runs cheap; the first run of a
 # new tag re-renders all leaves). Staggered from the other scheduled

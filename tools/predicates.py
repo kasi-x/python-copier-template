@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Classify every boolean condition site on the render + question surface.
 
-TODO.md §18's unification work (items 2/3/4) was done by hand: an inventory
+The predicate unification work was done by hand: an inventory
 classified every condition site, equivalent forms were named as internal
 variables (`oj_bare`, `no_pkg`), and rot-guards were written by hand. This
 module mechanizes that inventory as a permanent facility, built on machinery
@@ -82,7 +82,7 @@ from tools import z3_witnesses  # noqa: E402
 #: up at this many distinct sites or more. Below that, look-alike conditions
 #: are usually one-off phrasing rather than a concept worth naming; at three
 #: or more, the same predicate is being re-spelled often enough that the next
-#: edit can drift one copy -- the point where §18 named `oj_bare` / `no_pkg`.
+#: edit can drift one copy -- the point where `oj_bare` / `no_pkg` were named.
 SHORTCUT_MIN_SITES = 3
 
 #: Kinds of condition site (the `Site.kind` values, and the report's buckets).
@@ -679,7 +679,7 @@ def _classes(sites: list[Site], named: dict[str, tuple[bool, ...]]) -> list[dict
 def _unification_candidates(sites: list[Site], named: dict[str, tuple[bool, ...]], total: int) -> list[dict[str, Any]]:
     """Sites whose vector equals a named internal's while the site never references it.
 
-    Mechanical equality is not intent -- this is the *candidate* list (the §18
+    Mechanical equality is not intent -- this is the *candidate* list (the
     "use the shortcut" list), not an instruction; the guard test holds the
     stronger, space-wide version of the same question. Two restrictions keep
     the list about renaming and not about dead conditions: the site must

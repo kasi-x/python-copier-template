@@ -27,7 +27,7 @@
 # only says which moves are legitimate, so a removal is a policy
 # application rather than a silent scope cut.
 #
-# The triggers compose with the §40 layer-owner rule (GOVERNANCE.md "Layer
+# The triggers compose with the layer-owner rule (GOVERNANCE.md "Layer
 # ownership"): an ownerless layer whose leaves drop to `experimental` in
 # docs/reference/support.md is trigger 1 firing with the reviewer named as
 # the missing piece. Regaining `supported` needs the same thing in both
@@ -139,7 +139,7 @@ demotion:
       - "no CODEOWNERS row names an owner for the layer besides the maintainer (evidence: .github/CODEOWNERS)"
       - "the maintainer has stopped reviewing that layer's area (evidence: GOVERNANCE.md 'Ownerless-layer rule')"
     restore: "a named owner who reviews that layer's PRs (evidence: the CODEOWNERS row); the support.yml row moves back with the same edit"
-    why: "this is the §40 rule restated as a trigger: 'supported but not staffed' is honest only while the maintainer still reviews; otherwise the tier overclaims"
+    why: "this is the layer-owner rule restated as a trigger: 'supported but not staffed' is honest only while the maintainer still reviews; otherwise the tier overclaims"
   - trigger: "no execution evidence"
     moves: "supported -> best_effort, or best_effort -> none for an answer nobody renders"
     when:

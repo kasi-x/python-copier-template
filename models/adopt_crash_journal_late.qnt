@@ -1,6 +1,5 @@
-//! Repository copy of the V2 spike mutant (provenance: TODO.md §27.3; written
-//! during the §26.4 spike, TLC-checked 2026-09-14, adopted into the repo per
-//! §27.7 item 3).
+//! Repository copy of the V2 spike mutant (written during the design spike,
+//! TLC-checked 2026-09-14, adopted into the repo so CI re-checks it).
 //!
 //! EXPECTED TO FAIL -- this is the guard's guard.  With the journal written
 //! one step late, TLC (quint 0.32.0, `--backend=tlc`) finds a 3-state /
@@ -12,7 +11,7 @@
 //!
 //! VARIANT of `adopt_crash.qnt`: the journal write is late by one step.
 //!
-//! TODO §26.4 item 5: "the guard's guard".  Same skeleton, same property, one
+//! "The guard's guard".  Same skeleton, same property, one
 //! change -- the run may touch the tree before the journal is on disk, so the
 //! journal is written *after* the first mutation instead of before it:
 //!

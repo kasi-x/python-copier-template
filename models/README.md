@@ -2,10 +2,9 @@
 
 The crash-safety argument that backs the journal design in `tools/adopt.py`,
 kept as machine-checkable models instead of a prose claim.  Provenance: the
-models were written and verified during the §26.4 V2 spike on 2026-09-14
-(TODO.md §27.3); they were adopted into the repository per TODO.md §27.7
-item 3 so CI re-verifies them on every change instead of trusting the spike
-transcript (`.github/workflows/quint.yml`).
+models were written and verified during a design spike on 2026-09-14; they
+were adopted into the repository so CI re-verifies them on every change
+instead of trusting the spike transcript (`.github/workflows/quint.yml`).
 
 ## What the model abstracts
 

@@ -94,7 +94,7 @@ project_type:
 # feed template rendering.
 !include questions/_internal.yml
 ---
-# Structured answers (TODO.md §30): the dependency and src/ directory lists,
+# Structured answers: the dependency and src/ directory lists,
 # as asked questions with derived defaults. LAST: their defaults read the
 # internals above, and the forward-only rule (test_copier_structure.py) makes
 # that ordering mandatory.

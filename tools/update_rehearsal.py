@@ -96,7 +96,7 @@ def _read_leaves() -> dict[str, dict[str, Any]]:
 
     The loader validates the schema, the ids and the dests, so a drifted
     witness list is a loud SpecError instead of a quietly half-read ledger
-    (TODO.md §28.3 3c).
+    .
     """
     return {request.id: dict(request.answers) for request in batch.load_requests([WITNESSES])}
 

@@ -1,7 +1,8 @@
 # Design principles
 
 *English translation of the standing rules for adding, removing, and
-reorganising template options (previously only in `TODO.md` "設計原則").
+reorganising template options (previously kept only in the maintainers'
+internal notes, in Japanese).
 Proposals that contradict these principles are re-thought before they are
 scheduled — they are how the questionnaire stays maintainable.*
 
@@ -37,7 +38,7 @@ presence, and every variant carries "check the current contest rules
 before submitting". There is no per-project on/off question — the agent
 guide is part of the built-in baseline.
 
-This coupling is deliberate but reviewed (TODO §43-2): the file mixes agent
+This coupling is deliberate but reviewed: the file mixes agent
 commands/editing rules with the ethics appendix. Verified 2026-10-11 on real
 renders — a library carries license-drift + pqc-fips, an `online_judge`
 workspace carries the contest-integrity rules, micropython carries the PKI
@@ -58,7 +59,7 @@ behavior replaced the earlier `web_django` trap choice: out-of-scope
 stacks are rejected, never silently ignored or baited. Reinstating an
 out-of-scope name as a first-question candidate is considered only if a
 real user need exists and the rejected choice cannot be mistaken for a
-supported one (TODO §43).
+supported one.
 
 ## One recommended path + "No" for custom
 

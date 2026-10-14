@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A constrained configuration assistant: propose presets and answers, validate them mechanically.
 
-TODO §42-B1. A user (or an LLM agent) says what the project needs --
+A user (or an LLM agent) says what the project needs --
 "an internal API with Postgres on GitHub Actions" -- and proposes an answer
 set for the questionnaire. This module is the gate that proposal passes
 through, and it never invents answers of its own:

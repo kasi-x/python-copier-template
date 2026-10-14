@@ -164,8 +164,7 @@ def run_pytest_tier(
 ) -> dict[str, Any]:
     """Run one pytest selection in a subprocess and return the structured verdict.
 
-    The one body behind run_witness and run_tests (TODO.md §28.3 3e -- the two
-    tools were ~60 duplicated lines each): `expression` is the ``-m`` marker
+    The one body behind run_witness and run_tests: `expression` is the ``-m`` marker
     selection (None omits it), `tests` an optional file to run, `only` the
     ``-k`` narrowing. The verdict machinery (junit -> LineResult) is
     batch.junit_verdicts.

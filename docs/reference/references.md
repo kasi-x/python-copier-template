@@ -1,8 +1,7 @@
 # References
 
 External sources consulted during template design, kept to what actually
-shaped the output. Consulted-but-rejected sources are not listed — their
-verdicts live in `TODO.md` next to the decision.
+shaped the output. Consulted-but-rejected sources are not listed.
 
 ## MCP scaffold
 

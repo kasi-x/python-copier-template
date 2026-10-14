@@ -1,7 +1,7 @@
 """`copier.run_copy` is called in exactly one place: tools/batch.py's `render`.
 
 `render`'s docstring declares itself the one render-call convention for this
-repository's tools, and TODO.md's audit (§28.3 3b, §28.5 R2) found the
+repository's tools, and an internal audit found the
 convention was bypassed wherever a knob was missing: cli and update_rehearsal
 used to call copier directly. The knobs exist now, so the convention is
 physical: exactly one tool module may call `copier.run_copy`, and the
@@ -91,7 +91,7 @@ def test_only_sanctioned_tool_modules_call_copiers_run_verbs() -> None:
     )
 
 
-# The same convention on the test side (TODO.md §28.2-2f / §28.6-D5): every
+# The same convention on the test side: every
 # render a test asks for goes through the render cache (tests/render_cache.py,
 # via tests/support.py's explicit-tasks helpers or the `render_cache`
 # fixture). A direct `run_copy` re-pays copier's full render in the edit loop

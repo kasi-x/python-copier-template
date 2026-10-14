@@ -3,7 +3,7 @@
 `support.yml` is the human-approved declaration of which witness-leaf
 combinations this template keeps working, at which verification tier, and
 with what measured evidence (`why`). Two consumers read it, so the reading
-and the table rendering live in one place (TODO.md §28.5 R5): the docs
+and the table rendering live in one place: the docs
 generator (tools/gen_docs.py renders the catalogue's compact summary and the
 full `docs/reference/support.md` from it) and the MCP server (the
 `template://support` resource). tests/test_support_matrix.py keeps the

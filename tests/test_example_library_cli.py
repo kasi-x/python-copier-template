@@ -56,7 +56,7 @@ def test_template_script_type(tmp_path: Path):
 
 
 def test_template_library_dependencies_come_from_the_log_choice(tmp_path: Path):
-    """TODO §17 decision: library dependencies ARE the log_library question's output.
+    """Design decision: library dependencies ARE the log_library question's output.
 
     The audit asked whether the library's near-empty dependency set should be
     kept as a "start with zero deps" design or become a question. It already
@@ -79,7 +79,7 @@ def test_template_library_dependencies_come_from_the_log_choice(tmp_path: Path):
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert pyproject_toml["project"]["dependencies"] == [], (
         "`log_library: logging` is the standard-library zero-dep path -- the "
-        "'start with zero deps' option the §17 audit asked about already exists"
+        "'start with zero deps' option an earlier audit asked about already exists"
     )
 
 
@@ -105,7 +105,7 @@ def test_template_github_org_reflected(tmp_path: Path):
 
 
 def test_template_gitlab_urls(tmp_path: Path):
-    # TODO §18: a gitlab.com render used to emit the hardcoded github.com
+    # Regression: a gitlab.com render used to emit the hardcoded github.com
     # repo_url / docs_url even though github_org is never asked on GitLab
     # (gitlab_group is asked instead). Both internals are
     # platform-conditional now; assert the exact field bytes for one

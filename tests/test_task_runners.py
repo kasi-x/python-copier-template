@@ -17,7 +17,7 @@ serialization of `_tasks.jinja` — and in the workflows' own dispatch: every
 `case "$TASK_RUNNER"` switch in the shipped `_*.yml` files must handle every
 runner the questionnaire offers, because a missing branch is the runtime
 `Unknown task runner` failure that reached users through `_test.yml` and
-`_docs.yml` (TODO §19). At runtime `lint` executes on the runners whose CLIs
+`_docs.yml`. At runtime `lint` executes on the runners whose CLIs
 install from PyPI, `test` on make / invoke / duty — the task `_test.yml`
 drives — and `check` (lint + type-check + test) via poe. task and just
 execute in the `tests/test_example_toolchain.py` runtime tests; pixi is
@@ -217,7 +217,7 @@ def test_check_task_executes_on_poe(tmp_path: Path):
 # so a branch missing in one of them is a broken generated CI -- a runtime
 # `Unknown task runner` exit 1 that no render-only check sees. That is how
 # `_test.yml` and `_docs.yml` came to lack invoke/duty while `_tasks.yml` had
-# them (TODO §19).
+# them.
 RUNNER_SWITCH_WORKFLOWS = ("_tasks.yml", "_test.yml", "_docs.yml")
 
 

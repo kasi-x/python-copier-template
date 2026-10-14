@@ -220,7 +220,7 @@ that has not been made yet.
    rather than adds, the exclusivity question above must be answered first.
 3. **Which invariant row does it need?** Every file the leaf must (or must not)
    have, and every content predicate over it, belongs to the single invariant
-   source (TODO §23.4 / §24.4 T6) — never to a second hand-synced dict.
+   source — never to a second hand-synced dict.
 4. **Which tier runs it?** Pick from the tier table and check the budget it
    lands in. A check that builds a venv or touches the network carries `heavy`
    (and `network` when it talks to the network), no exceptions.
@@ -308,14 +308,14 @@ from it, and `--check` fails CI when those drift.
 |---|---|---|
 | 272 leaves, 146 with no include layer, 124 with exactly one, 2 with two (9 carry a derived detail: 3 the MCP integrations detail, 6 a bot platform) | `tests/matrix/witnesses.jsonl` (count of `include=` per leaf) | 2026-09-22, current tree (integrations-details and bot-platform variants) |
 | L1 model vs real Jinja: 10,128 comparisons (9,840 leaf verdicts + 6 probes × 48 expressions), both polarities asserted per expression | `uv run --no-sync pytest -q tests/test_when_model.py`; with the structure sweeps, `uv run --no-sync pytest -q tests/test_when_model.py tests/test_copier_structure.py` → 16 passed, 1 xfailed | 2026-09-14, this tree |
-| L2 ≈ 0.58 s/leaf at the 205-leaf tree of the 2026-09-13 audit (119 s ÷ 205; that tree's full render ≈ 11 s at 16 workers + cache) | the serial batch runner's `--durations` entry (119 s) in the 2026-09-13 audit | TODO §23.0 / §24.0 P4 / §24.1 |
-| L3 13–24 s/case; the 8-leaf sample 132–195 s | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m full` | TODO §24.0 P6 (PLAN §W9 top-5) |
-| L3 found 3 defects L2 missed, with L2 green on every leaf | same 8-leaf sample; `-m fast` for the render layer | TODO §24.0 P6 |
+| L2 ≈ 0.58 s/leaf at the 205-leaf tree of the 2026-09-13 audit (119 s ÷ 205; that tree's full render ≈ 11 s at 16 workers + cache) | the serial batch runner's `--durations` entry (119 s) in the 2026-09-13 audit | 2026-09-13 audit |
+| L3 13–24 s/case; the 8-leaf sample 132–195 s | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m full` | 2026-09-13 audit |
+| L3 found 3 defects L2 missed, with L2 green on every leaf | same 8-leaf sample; `-m fast` for the render layer | 2026-09-13 audit |
 | Edit loop 731 (of today's 732) tests in 47 s, load average 64; the same tree with the guard still in the selection, then 738 tests, took 46 s at load 85 | `uv run --no-sync pytest -q -m "not heavy and not slow and not meta"` | 2026-09-14, this tree — a dated observation; the current per-tier counts are the ledger row below |
 | Ledger guard: 7 tests, 10.5 s (six pytest startups: the membership check re-collects every tier) | `uv run --no-sync pytest -q -m meta` | 2026-09-14, this tree — the ledger row, measured with unrelated work on the machine |
 | Witness fast job: 278 tests (272 renders + six leaf-list checks), 4.5 s warm on the dev machine (5.1 s at the 234-leaf tree of 2026-09-18), against the job's 30-minute timeout | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | 2026-09-22, this tree — the ledger's `witness` row; a PR runner is always cold |
 | Per-tier counts, marker expressions, re-measure commands and wall times (task tiers and the witness fast job) | `tests/matrix/tiers.json`; re-collect with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, fill `wall_seconds`/`measured` by hand from a `time` run of the row's own `command` | 2026-09-14, this tree |
-| Growth table's +76 / +22 leaf increments and their second costs | derived in the 2026-09-13 audit from the ledger's leaf counts and the 0.58 s/leaf unit | TODO §24.1 |
-| Leaf-space ceiling: `LEAF_BUDGET` = 450 (landed at twice the then-225-leaf space) | `LEAF_BUDGET` in `tests/test_marker_drift.py`, checked against `tools/z3_witnesses.py`'s enumeration on every meta run | declared, citing §24.1 — the enforcement is the record |
-| Edit-loop budget of 30 s (a contract, not a measurement) | declared for the tiers in the 2026-09-13 audit | TODO §24.2 |
+| Growth table's +76 / +22 leaf increments and their second costs | derived in the 2026-09-13 audit from the ledger's leaf counts and the 0.58 s/leaf unit | 2026-09-13 audit |
+| Leaf-space ceiling: `LEAF_BUDGET` = 450 (landed at twice the then-225-leaf space) | `LEAF_BUDGET` in `tests/test_marker_drift.py`, checked against `tools/z3_witnesses.py`'s enumeration on every meta run | declared — the enforcement is the record |
+| Edit-loop budget of 30 s (a contract, not a measurement) | declared for the tiers in the 2026-09-13 audit | 2026-09-13 audit |
 | "all 272 leaves executed would be ~10 hours" | the `FULL_SAMPLE` rationale comment: 272 × (venv build + docs) at ~3 min | `tests/test_witness_matrix.py` |

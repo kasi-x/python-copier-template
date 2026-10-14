@@ -370,7 +370,7 @@ def test_plan_and_report_share_one_merge_summary(tmp_path: Path):
 
     `_merge_summary_from` (a plan dict, the prompt's view) and `_merge_summary`
     (an Adoption, the report's view) were two hand-rolled copies of the same
-    lines (TODO.md §28.5 R6) -- exactly the drift a summary exists to prevent.
+    lines -- exactly the drift a summary exists to prevent.
     The second is now an adapter over the first, and this pin holds both
     entrances to the same lines on a real plan.
     """

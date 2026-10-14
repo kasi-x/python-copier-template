@@ -139,8 +139,8 @@ RENDER_STAMPS = ("_commit", "_src_path")
 `_commit` names the template revision the render came from (for a *dirty*
 template, a synthetic commit copier creates per render), `_src_path` the
 absolute checkout. Two renders of identical answers can differ in both, so
-every comparison of renders takes them out first (TODO.md §28.3 3c / §28.5
-R3: this tuple is the one declaration -- a new stamp is a one-line edit here,
+every comparison of renders takes them out first (this tuple is the one
+declaration -- a new stamp is a one-line edit here,
 and the two readers below follow it)."""
 
 MANIFEST_FILE = ".architekton-manifest.yml"
@@ -808,7 +808,7 @@ def junit_verdicts(report: Path) -> tuple[list[LineResult], dict[str, int]]:
     """Turn a pytest JUnit XML report into one LineResult per executed test.
 
     The verdict machinery behind any "run a pytest tier, return structured
-    verdicts" caller (TODO.md §28.3 3e): a failure or error is a failed check
+    verdicts" caller: a failure or error is a failed check
     carrying pytest's message, a skip is an ok check named `skipped`, and the
     counts summarize the run. Line ids are `classname::name`, so they read
     like pytest's own node ids.

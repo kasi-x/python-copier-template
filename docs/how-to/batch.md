@@ -79,7 +79,7 @@ cannot check out of a fresh clone. The runner therefore fails an `update`
 line before generating anything:
 
 ```
-- update-precondition: clean template tree: uncommitted: TODO.md, tools/batch.py
+- update-precondition: clean template tree: uncommitted: README.md, tools/batch.py
   (an update cannot check out copier's synthetic dirty commit)
 ```
 

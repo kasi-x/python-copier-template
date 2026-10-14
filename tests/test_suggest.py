@@ -1,4 +1,4 @@
-"""The constrained configuration assistant (TODO §42-B1): propose presets, validate answers.
+"""The constrained configuration assistant: propose presets, validate answers.
 
 `tools/suggest.py` never invents answers: `questionnaire_schema` publishes
 the questions a proposal may answer, `validate_answers` runs a proposal

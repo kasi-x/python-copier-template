@@ -104,7 +104,7 @@ def _read_leaves(root: Path) -> dict[str, dict[str, Any]]:
 
     Parsed by batch.load_requests -- the one reader of the format -- so an
     invalid or drifted leaf list is a loud SpecError, not a quietly half-read
-    ledger (TODO.md §28.3 3c).
+    ledger.
     """
     return {
         request.id: dict(request.answers)

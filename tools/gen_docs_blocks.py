@@ -88,7 +88,7 @@ def generated_blocks(support: Path = SUPPORT_YML) -> list[GeneratedBlock]:
     `support.yml` exists: W4 owns that file, and its blocks (the catalogue's
     summary and the full `docs/reference/support.md` reference) appear with it.
     The tier-ledger block (docs/explanations/verification.md) is generated
-    from the cost ledger, not the questionnaire (TODO.md §28.6-D4), and the
+    from the cost ledger, not the questionnaire, and the
     generated-size block (docs/reference/dependencies.md) from the measured
     size ledger `tests/matrix/sizes.json`.
     """

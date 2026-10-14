@@ -1,5 +1,5 @@
 # What a render of the questionnaire must satisfy: one row per leaf class
-# (TODO.md §26.4 item 4, §23.4 item 2). This file is the single source the
+#. This file is the single source the
 # witness generator, the witness runner's content predicates and the fast-path
 # smoke test all read.
 #
@@ -78,7 +78,7 @@ predicates:
     why: "the render's .daimonion.yml when list is exactly the kanon conditions the leaf's answers derive (library/cli/embedded on the project type; personal_data/face_recognition/medtech on the domain_traits; scraping/mcp/oj_code/web_api/data_science/kaggle on the effective flags and judges; commercial on the distribution), AGENTS.md carries the empty ethics marker pair, and no kanon prose is vendored"
 
 # Names the witness leaf space deliberately keeps out, one line of reason
-# each (TODO.md §23.4: "enumerated" and "excluded" are both numbers). A
+# each ("enumerated" and "excluded" are both numbers). A
 # `project_type` entry is a non-goal the questionnaire must not offer again --
 # the generator subtracts it from the leaf domain and this file fails if the
 # questionnaire offers it anyway. A `question` entry is a question the
@@ -86,7 +86,7 @@ predicates:
 # keeps it at its copier default. The generator refuses an include question
 # that is neither a leaf-space layer nor declared here, so nothing can leave
 # the enumeration silently.
-# What each adopt-time merge kind promises about its outcome (TODO §25.5 V5).
+# What each adopt-time merge kind promises about its outcome.
 # This is the oracle the merge-contract tests read (tests/test_merge_contracts.py,
 # which owns the condition implementations and holds this registry against the
 # dispatch in tools/file_merge.py / tools/pyproject_merge.py): a kind the code

@@ -21,8 +21,7 @@
    grepping the requires-python expression in template/pyproject.toml.jinja
    (`else '>=3.11')`), while the value itself now lives in python_version()
    below — when tools/check_upstream.py is next touched (adding that pin was
-   deferred from TODO §18 item 6, which this extraction implements), point
-   its floor regex at this file.
+   deferred until this extraction), point its floor regex at this file.
 
    The experiment extra's dependencies live here for the same reason: they
    were written twice — `experiment = [...]` (PEP 508) and

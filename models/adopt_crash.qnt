@@ -1,6 +1,6 @@
-//! Repository copy of the V2 spike model (provenance: TODO.md §27.3; written
-//! during the §26.4 spike, TLC-verified 2026-09-14, adopted into the repo per
-//! §27.7 item 3 so CI -- .github/workflows/quint.yml -- can re-verify it).
+//! Repository copy of the V2 spike model (written during the design spike,
+//! TLC-verified 2026-09-14, adopted into the repo so CI --
+//! .github/workflows/quint.yml -- can re-verify it).
 //!
 //! What TLC proves (quint 0.32.0, `--backend=tlc`, exhaustive over the whole
 //! reachable graph: 51 distinct states, 0 left on queue): all three invariants
@@ -12,7 +12,7 @@
 //! Skeleton model of the adopt protocol in `tools/adopt.py` (V1: on-disk
 //! journal + `--recover`), written for the crash-safety question only.
 //!
-//! TODO §26.4 item 5 / §25.3 V2.  Non-goal: the render, the merges, copier,
+//! Non-goal: the render, the merges, copier,
 //! the journal's file format.  What is modelled is the order of the durable
 //! steps and what a crash in between them leaves behind:
 //!

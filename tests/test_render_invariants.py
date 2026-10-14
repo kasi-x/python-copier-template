@@ -1,4 +1,4 @@
-"""Content predicates for the rendered tree (TODO.md §23.4, item 3).
+"""Content predicates for the rendered tree.
 
 tests/test_witness_matrix.py asserts each leaf's declared *file set*: which
 paths a render must (and must not) contain. A file set says nothing about what
@@ -26,12 +26,12 @@ this module owns the implementations (one per id, ``PREDICATES`` below) and
 fails if the file's registry and that table drift apart.
 
 Every predicate is a pure function of the rendered bytes: no venv, no network,
-no execution (PLAN-improvements §24.1 puts those in L3). The module therefore
+no execution (those belong to L3). The module therefore
 carries no ``heavy``/``slow``/``network``/``full`` marker and lands in
 ``test-fast`` (``-m "not heavy and not slow and not meta and not network"``)
 by construction.
 
-Why this sample -- §24.1 measures L2 at 0.58s/leaf, so the sample is what
+Why this sample -- L2 measures 0.58s/leaf, so the sample is what
 bounds the cost. All ten recommended paths of tests/test_recommended_path.py
 (every ``use_recommended_*`` gate at its default, i.e. what a real user
 renders); eleven leaves of tests/matrix/witnesses.jsonl picked for the

@@ -39,7 +39,7 @@ question matrix. Two derived exceptions, both configurations no leaf on the
 projection's own axes carries: the integrations-details variant answers an
 off integrations gate's details for each web_api leaf (``DETAIL_VARIANTS``:
 docker and the MCP scaffold), because "docker + MCP" is a configuration the
-inverse template is asked for (TODO §18.8); and the bot-platform variant
+inverse template is asked for; and the bot-platform variant
 answers ``bot_platform`` for each leaf whose bot gate is off
 (``BOT_PLATFORM_VARIANTS``: the generated platforms other than the discord
 default), so every generated bot platform joins the nightly rehearsal and
@@ -50,7 +50,7 @@ the leaf space keeps out -- web_django, which aborts generation by design
 (`_tasks.jinja` exits 1 for it) and so cannot render, and the integration
 detail question include_sentry behind use_recommended_integrations, which is
 not a layer -- is declared in tests/matrix/invariants.yml's `excluded` with a
-one-line reason (TODO §23.4). That file is the single source for exclusions,
+one-line reason. That file is the single source for exclusions,
 as it is for every leaf class's invariants, and this tool accounts for the
 whole questionnaire: an include question that is neither a layer nor varied by
 the derivation nor declared excluded is an error, and every exclusion must
@@ -70,7 +70,7 @@ so the required Project Details stay fixed) and the render invariants of its
 declared layout: the artifact set that shape must produce, and no unrendered
 `*.jinja` left behind. Those invariants are not declared here -- they are read
 from tests/matrix/invariants.yml through tools/invariants.py, the one source
-for what a leaf class must satisfy (TODO.md §26.4 item 4), so this tool cannot
+for what a leaf class must satisfy, so this tool cannot
 drift from the runner that checks it.
 """
 
@@ -97,13 +97,13 @@ from tools.questionnaire import GATE_PREFIX  # noqa: E402
 from tools.questionnaire import INCLUDE_PREFIX  # noqa: E402
 
 # Every leaf's declared artifacts, its class's tier and the excluded question
-# types live in one file, read through its loader (TODO §26.4 item 4): this
+# types live in one file, read through its loader: this
 # tool is one of its consumers, not a second copy of the answer.
 INVARIANTS = invariants.load()
 
 # The Project Details every leaf pins, so fixtures stay self-consistent
 # (validators, URLs): the shared set from tools/answers.py, not a copy of
-# tests/test_recommended_path.py's (TODO §23.1).
+# tests/test_recommended_path.py's.
 BASE: dict[str, Any] = answers.BASE
 
 # The opt-in layers (questions/_combo.yml) that make up the include
@@ -145,7 +145,7 @@ BOT_PLATFORM_VARIANTS: tuple[str, ...] = ("slack", "line", "gmail")
 # dependency double-declared. The multiselect is exactly the shape that makes
 # "select both" a real configuration, so the space has to carry it.
 #
-# `together` is the additivity probe (TODO §30): the union of the solo leaves'
+# `together` is the additivity probe: the union of the solo leaves'
 # contributions must equal the combined leaf's. A single derived leaf is
 # enough for that check because the sections and dependencies are independent
 # per domain -- if the union of {face} and {medtech} equals {face, medtech},
@@ -271,7 +271,7 @@ def _check_includes(questions: dict[str, dict]) -> None:
     It is either a layer varied here, a detail question ``DETAIL_VARIANTS``
     varies on a derived leaf variant, or a declared exclusion
     (tests/matrix/invariants.yml's ``excluded``, which also names the excluded
-    project types), never a silent default (TODO §23.4).
+    project types), never a silent default.
     """
     # The projection keeps these out (their values derive from the answers, not
     # from the space); build()'s derivation varies them instead.
@@ -527,7 +527,7 @@ def exclusions() -> dict[str, str]:
 
 
 def completeness(leaf_space: dict[str, Any], leaves: list[Leaf]) -> str:
-    """The one-line accounting of the enumeration (TODO §23.4).
+    """The one-line accounting of the enumeration.
 
     "Enumerated" and "excluded" are both numbers a reader can trust: the
     leaves the projection produced, and the named exclusions it did not.
@@ -545,7 +545,7 @@ def _detail_variants(base_leaves: list[Leaf]) -> list[Leaf]:
 
     - docker + the MCP scaffold on the web_api leaf whose integrations gate is
       off -- the configuration the inverse template's flagship query matches
-      (TODO §18.8);
+     ;
     - one leaf per generated bot platform (slack / line / gmail) on each leaf
       whose bot gate is off, so every platform joins the nightly rehearsal and
       the render sweep instead of only the recommended discord.

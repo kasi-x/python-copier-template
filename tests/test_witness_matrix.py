@@ -39,7 +39,7 @@ Guard for the guard: test_witness_leaves_match_the_generator and
 test_witness_leaves_are_reachable fail -- naming the leaves -- when a
 questionnaire edit makes a declared leaf unreachable, e.g. forcing a gate's
 ``when`` to false. The first of the two is also the committed JSONL's
-staleness detection (TODO.md §23.4): each §C6 request pins ``ref: HEAD``, so
+staleness detection: each §C6 request pins ``ref: HEAD``, so
 the file carries no freshness of its own -- the check re-derives every leaf
 through tools/z3_witnesses.py's ``build()`` and fails with the regeneration
 command when the questionnaire has moved on. The exclusions are accounted
@@ -304,7 +304,7 @@ def _run_python(args: list[str], *, timeout: int) -> subprocess.CompletedProcess
 def test_witness_leaves_match_the_generator() -> None:
     """The committed JSONL is exactly what tools/z3_witnesses.py enumerates.
 
-    This is the committed file's staleness detection (TODO.md §23.4): its
+    This is the committed file's staleness detection: its
     ``ref: HEAD`` request lines pin no commit, so the file carries no
     freshness of its own and this check re-derives every leaf through the
     generator's ``build()``. A questionnaire edit that makes a projected
@@ -366,7 +366,7 @@ def test_excluded_names_hold_against_the_questionnaire() -> None:
     """Every exclusion the leaf space declares must still describe reality.
 
     tests/matrix/invariants.yml's ``excluded`` names what the enumeration
-    leaves out, one line of reason each (TODO.md §23.4). This pins every name
+    leaves out, one line of reason each. This pins every name
     to the live questionnaire so the list rots loudly instead of excluding
     nothing: an excluded project_type must be a genuine non-goal -- absent
     from the questionnaire's choices, so its return is a decision someone
@@ -423,7 +423,7 @@ def test_the_coverage_output_accounts_for_both_numbers(capsys: pytest.CaptureFix
     """The tool's accounting line states 'enumerated' and 'excluded' as numbers.
 
     tools/z3_witnesses.py prints ``leaves: N enumerated, M excluded (...)`` on
-    every run (TODO.md §23.4), on stderr so stdout stays one JSON document.
+    every run, on stderr so stdout stays one JSON document.
     This runs the tool's own ``main()`` and holds the line against the
     payload printed next to it, so both numbers are the enumeration's own,
     and pins the excluded names, so a change to the exclusions is deliberate.
@@ -640,7 +640,7 @@ def test_witness_full_tier(leaf_id: str, tmp_path: Path, witness_results: Result
             # The generated recipe runs first, exactly as the leaf's own CI runs
             # it; tests/support.py's helper retries it once without a file
             # watcher, so an empty site/ from this machine's exhausted inotify
-            # budget (TODO §27.7-8) cannot condemn the render.
+            # budget cannot condemn the render.
             build_docs(dest, functools.partial(_run, dest=dest, venv=dest / ".venv"), docs, leaf.id)
 
 

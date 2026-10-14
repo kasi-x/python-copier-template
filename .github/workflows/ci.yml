@@ -32,7 +32,7 @@ on:
 jobs:
   changes:
     name: detect docs-only pull request
-    # Docs-only gate for the render/test matrix below (TODO §23.2). This is a
+    # Docs-only gate for the render/test matrix below. This is a
     # job, NOT `on.pull_request.paths:`: a workflow skipped by path filtering
     # never reports its checks, so a required check would sit "Pending" and
     # block merging a docs-only PR (GitHub docs, "Troubleshooting required
@@ -134,7 +134,7 @@ jobs:
   # (`task test-randomly`, pytest-randomly). The plugin is installed as a dev
   # dependency but disabled everywhere by addopts' `-p no:randomly`; this job
   # is the only place that re-enables it, so no other tier pays for the
-  # reshuffle (TODO §27.4: conditional adopt, nightly seed job only). A fresh
+  # reshuffle (conditional adopt, nightly seed job only). A fresh
   # random seed every run is the point: the header prints it for reproduction.
   test-randomly:
     if: github.event_name == 'schedule'
