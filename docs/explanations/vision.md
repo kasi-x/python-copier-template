@@ -11,23 +11,27 @@ everything else in these docs answers "how do I use it", this page answers
 
 **One copier template that covers every shape of Python project a working
 developer actually meets — library, service, data pipeline, competitive
-programming, robotics, firmware — verified to the same standard a compiler
-holds itself to, not just documented to that standard.**
+programming, robotics, firmware — with its question logic machine-checked and
+every answer path's render tested, not just documented.**
 
 Most opinionated templates pick one project shape (usually "installable
 library") and do it well. This one treats "which shape of project" as a
 first-class, combinable axis (`project_type` + layers, see
-[Structure](structure.md)), and treats its own question logic as something
-to *prove* correct rather than merely test by example:
+[Structure](structure.md)), and checks its own question logic mechanically
+rather than only by example:
 
 - Every `when:` condition in the ~940-line (now fragmented, see
   [Authoring Template Sources](template-dev.md)) questionnaire is checked for
-  satisfiability with an SMT solver (Z3) — a dead branch or a typo'd variable
-  name is a test failure, not a support ticket six months later.
+  satisfiability with an SMT solver (Z3), and the solver enumerates every
+  answer leaf — a dead branch or a typo'd variable name is a test failure,
+  not a support ticket six months later. That is a statement about the input
+  space only: what each leaf renders is covered by output invariants over all
+  leaves and by executing a sample of them, and
+  [Verification](verification.md) states what each layer cannot prove.
 - Drift is tracked across five independent failure sources (template-source
   quality, rendered-output correctness, upstream toolchain aging, the
   DiamondLightSource fork relationship, and tooling accidents) crossed with
-  four detection timings (local `lint`/`fix` runs, PR CI, scheduled runs, and the Z3 proof
+  four detection timings (local `lint`/`fix` runs, PR CI, scheduled runs, and the Z3 check
   above) — see the MECE table this project keeps internally for the full
   matrix. A project can look correct on the day it's generated and silently
   rot when Ruff, basedpyright, or a pinned dependency releases something new
@@ -53,7 +57,7 @@ different things. As of 2026-09:
 
 | | Project-type coverage | Update mechanism | Correctness approach | Backing |
 |---|---|---|---|---|
-| **This template** | library / cli / web_api / data_science / online_judge (5 kinds) / script / ros2 / micropython, combinable via layers | `copier update` | Z3 satisfiability proof + scheduled drift detection across 5 sources | Solo maintainer, 7.0.0 upcoming |
+| **This template** | library / cli / web_api / data_science / online_judge (5 kinds) / script / ros2 / micropython, combinable via layers | `copier update` | Z3 satisfiability of question logic, render invariants over every leaf, sampled execution, scheduled drift detection across 5 sources | Solo maintainer, 7.0.0 upcoming |
 | [copier-uv](https://github.com/pawamoy/copier-uv) | Library, deliberately narrow | `copier update` | Example-based tests, mature and widely used | Solo maintainer (pawamoy), well-established |
 | [scientific-python/cookie](https://github.com/scientific-python/cookie) | Scientific libraries specifically | `copier update` | Example-based tests | Scientific Python community (NumFOCUS-adjacent), institutional |
 | [cookiecutter-hypermodern-python](https://github.com/cjolowicz/cookiecutter-hypermodern-python) | Library | None (cookiecutter, one-shot) | Example-based tests | Unmaintained since 2024-05 |

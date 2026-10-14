@@ -14,8 +14,11 @@ uvx copier copy --trust https://github.com/politeuma/architekton-py.git my-proje
 new project from it, update existing projects in line with it, and keep them
 in sync as it changes. One questionnaire covers libraries,
 web APIs, CLIs, data-science pipelines, competitive programming, ROS 2 packages
-and MicroPython firmware — and its logic is machine-verified (Z3 satisfiability
-over every question path) rather than only documented.
+and MicroPython firmware. Its question logic is machine-checked (Z3 shows every
+`when` condition is satisfiable and enumerates the answer leaves), every leaf's
+render is checked against declared file-set and content invariants, and a
+sample of leaves is executed for real; see
+[what each layer can and cannot prove](docs/explanations/verification.md).
 
 ## What you get
 
@@ -107,18 +110,18 @@ space (the same page's *Tell the template what you want*).
 The generated project drives lint, type-check, test and docs through the task
 runner you chose (`just` by default; `task`, `poe`, `invoke`, `duty`, `make` or
 pixi's native tasks are the alternatives — one shared task definition, invoked
-by CI too). Swap `task` for your runner; the task names are the same:
+by CI too). Swap `just` for your runner; the task names are the same:
 
 ```shell
-task lint        # ruff format --check + ruff check (check-only)
-task fix         # ruff --fix + format (typos stays report-only in type-check)
-task type-check  # basedpyright + pyrefly, vulture, deptry, typos
-task test        # pytest, with coverage at the recommended strictness
-task docs        # build the documentation site
-task check       # lint + type-check + test
+just lint        # ruff format --check + ruff check (check-only)
+just fix         # ruff --fix + format (typos stays report-only in type-check)
+just type-check  # basedpyright + pyrefly, vulture, deptry, typos
+just test        # pytest, with coverage at the recommended strictness
+just docs        # build the documentation site
+just check       # lint + type-check + test
 ```
 
-`task audit` and `task license-check` need the network and so stay out of
+`just audit` and `just license-check` need the network and so stay out of
 `check`.
 
 ## Where to go next
