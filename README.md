@@ -28,8 +28,17 @@ Each area of the questionnaire first asks "use the recommended settings?"
 - **Eight project types** — `library`, `web_api`, `cli`, `data_science`,
   `online_judge`, `script`, `ros2`, `micropython`, each with its own layout,
   CI and docs.
-- **A toolchain of your choice** — uv, pixi or poetry; just, Task, poethepoet,
-  Make, pyinvoke, duty or pixi's native tasks; zensical, Sphinx or great-docs.
+- **The recommended path: uv + just + zensical.** Answering "yes" to every
+  "use the recommended …?" gate renders this toolchain, and it is the only
+  combination CI executes end to end (`uv sync`, the generated pytest,
+  basedpyright, the docs build — the `full` tier in
+  [docs/reference/support.md](docs/reference/support.md)). Everything else
+  the questionnaire offers (pixi / poetry; Task / poe / invoke / duty / make
+  / pixi tasks; Sphinx / great-docs; ty; loguru / picologging; ros2; the
+  non-AtCoder judges) keeps rendering and is ruff-checked in the fast tier,
+  but is community-supported: regressions that only break install or run are
+  not caught by CI. Nothing is removed — pick what fits, knowing the
+  guarantee level.
 - **Quality gates** — ruff (ALL rules), basedpyright + pyrefly, typos, vulture,
   deptry, pip-audit, pytest + coverage + hypothesis, hardened CI with pinned
   actions, SECURITY.md and OpenSSF Scorecard.
@@ -107,10 +116,13 @@ space (the same page's *Tell the template what you want*).
 
 ## Everyday commands
 
-The generated project drives lint, type-check, test and docs through the task
-runner you chose (`just` by default; `task`, `poe`, `invoke`, `duty`, `make` or
-pixi's native tasks are the alternatives — one shared task definition, invoked
-by CI too). Swap `just` for your runner; the task names are the same:
+The recommended path renders `just` as the task runner; the commands below
+use it. Every other runner the questionnaire offers (`task`, `poe`,
+`invoke`, `duty`, `make`, pixi's native tasks) exposes the same task names —
+swap the runner word, nothing else — but those runners are
+community-supported (see [the recommended path](#what-you-get)).
+The generated project drives lint, type-check, test and docs through that
+runner (CI calls the same tasks, so local and CI cannot drift):
 
 ```shell
 just lint        # ruff format --check + ruff check (check-only)
@@ -126,18 +138,18 @@ just check       # lint + type-check + test
 
 ## Where to go next
 
-- **[Documentation site](https://politeuma.github.io/architekton-py)** — the full docs, in
-  [tutorials](docs/tutorials.md), [how-to guides](docs/how-to.md),
-  [explanations](docs/explanations.md) and [reference](docs/reference.md),
-  starting from the [docs index](docs/index.md).
+- **[Documentation site](https://politeuma.github.io/architekton-py)** — the full docs:
+  [tutorials](docs/tutorials.md) to start, [reference](docs/reference.md)
+  for the questionnaire and guarantees, [explanations](docs/explanations.md)
+  for why it works this way — starting from the [docs index](docs/index.md).
 - **New here** — the [installation tutorial](docs/tutorials/installation.md) and
   [create a new project](docs/tutorials/create-new.md).
 - **Already have a repo** — [adopt this template into it](docs/tutorials/adopt-existing.md), or
   [update an existing project](docs/how-to/update-template.md) that already uses it.
-- **Template internals** — [authoring template sources](docs/explanations/template-dev.md),
-  the [structure](docs/explanations/structure.md),
-  [how a change is verified](docs/explanations/verification.md) and
-  [how the template catches rot with no code changes](docs/explanations/drift-detection.md).
+- **Changing the template itself** — [the shortest path](docs/how-to/change-template.md):
+  one page, three change shapes, one proving command each. The meta-tooling
+  (`tools/`, the workflow fleet, the Quint specs) is deliberately not linked
+  here — it holds the render contract and you only meet it through that page.
 
 ## License, contributing and releases
 
