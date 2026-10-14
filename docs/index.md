@@ -1,6 +1,6 @@
 # architekton-py
 
-A Copier template for Python projects.
+A Copier template for Python projects. It scaffolds a full repo in one answer file.
 
 New here? Read [First 10 Minutes](tutorials/first-10-minutes.md), then
 [Why Rules Sit Next to Code](explanations/why-rules-next-to-code.md) for
