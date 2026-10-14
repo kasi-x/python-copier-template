@@ -158,10 +158,7 @@ __all__ = [
     "_unified",
     "_validate_diff_target",
     "_witness_inventory",
-    "adopt_project",
-    "build_pytest_command",
     "build_rendered_files_inventory",
-    "check_ethics",
     "checkout_stamp",
     "compare_shared_files",
     "compared",
@@ -260,7 +257,6 @@ suggest_config = _tool("suggest_config")
 validate_answers = _tool("validate_answers")
 inspect_project = _tool("inspect_project")
 template_status = _tool("template_status")
-check_ethics = _tool("check_ethics")
 adopt_project = _tool("adopt_project")
 render_project = _tool("render_project")
 list_batch_requests = _tool("list_batch_requests")

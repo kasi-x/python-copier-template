@@ -1,3 +1,4 @@
+{% import "_shared/daimonion-when.jinja" as dw with context -%}
 # The composition contract of this project: what generated it and which
 # rationale it carries. Machine-readable so `architekton-py verify` can say what
 # was chosen and which rationale changed -- the public record, not the
@@ -11,8 +12,9 @@ manifest_schema_version: 1
 template_ref: "{{ _copier_answers._commit }}"
 # The answers record this manifest describes.
 answers_file: "{{ _copier_conf.answers_file }}"
-# The rationale this render carries: the active registry sections whose gate
-# held, each as id + version (titles, files and scopes stay in the generated
-# appendix -- this list is the distribution record only).
-ethics_sections:
-{% include "_shared/contract-manifest-sections.yml.jinja" -%}
+# The kanon `when` conditions this render declares (the same list the
+# generated .daimonion.yml carries): the abstract project conditions
+# daimonion matches ethics sections against. `always` sections apply without
+# being listed.
+when:
+{{ dw.daimonion_when() -}}

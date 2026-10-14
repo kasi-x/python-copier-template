@@ -14,7 +14,7 @@ each stream first has real work.
 | Stream | Branch pattern | What lands here | Cadence |
 | --- | --- | --- | --- |
 | **Pure code** | `main` + `exp/<name>` | template sources, questions, tools, tests, CI | continuous; `exp/*` for work that might be thrown away |
-| **Vendored content** | `vendor/<source>` | `_shared/ethics/` snapshots from the external repo, any future vendored content | on upstream drift only — the sync workflow opens the PR |
+| **Vendored content** | `vendor/<source>` | any future vendored content (the ethics snapshot stream is retired: kanon prose is never vendored anymore) | on upstream drift only — the sync workflow opens the PR |
 | **Release** | tags on `main`, `release/<ver>` only if a hotfix line is ever needed | release tags (`6.1.0`), never long-lived branches | per release |
 
 `main` stays the integration branch and the only one CI gates hard. The
@@ -65,9 +65,7 @@ verification experiment. Rules:
 
 ## Relationship to the ethics split
 
-This model is what [Ethics as External Source](ethics-external.md) needs on
-the consuming side: the external repo owns content history, `vendor/ethics`
-PRs are the sync mechanism, and `main` never blocks on upstream's cadence.
-Until that split is implemented, `_shared/ethics/` edits land on `main`
-directly — the branch model is forward-looking, not a reason to route
-in-repo edits through a branch that has no upstream.
+This model is what [Ethics Content Lives in Kanon](ethics-external.md) needs on
+the consuming side: the external repo owns content history, and `main` never
+blocks on upstream's cadence — there is no sync PR anymore because nothing is
+vendored.

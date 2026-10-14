@@ -93,10 +93,6 @@ tasks:
     desc: 'Run a JSONL batch of copier requests and verdict each line (FILE=... CLI_ARGS=...)'
     cmd: uv run --locked python tools/batch.py {{ .FILE | default "batches/smoke.jsonl" }} {{ .CLI_ARGS }}
 
-  ethics-appendix:
-    desc: 'Regenerate _shared/ethics-appendix.jinja from REGISTRY.yml (CLI_ARGS="--check" verifies instead)'
-    cmd: uv run --locked python tools/gen_ethics_appendix.py {{ .CLI_ARGS }}
-
   changelog:
     desc: 'Regenerate CHANGELOG.md with git-cliff (uvx git-cliff -o)'
     cmd: uvx git-cliff -o CHANGELOG.md
@@ -125,7 +121,7 @@ tasks:
   regen:
     desc: >-
       One-command definition-of-done pipeline after a questionnaire change: witness
-      leaves -> batch verdicts -> tier ledger -> ethics appendix -> generated docs ->
+      leaves -> batch verdicts -> tier ledger -> generated docs ->
       predicate report (JOBS=N, CLI_ARGS=...)
     vars:
       JOBS: '{{ .JOBS | default numCPU }}'
@@ -133,7 +129,6 @@ tasks:
       - uv run --locked python tools/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
       - uv run --locked python tools/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
       - UPDATE_TIERS=1 uv run --locked pytest -q -m meta
-      - uv run --locked python tools/gen_ethics_appendix.py
       - uv run --locked python tools/gen_docs.py --write
       - uv run --locked python tools/predicates.py --json
 

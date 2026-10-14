@@ -17,14 +17,12 @@ This template is a place to pull together agreed best practices from various sou
 
 ## Ethics / regional / operational rule sections
 
-The section texts under `_shared/ethics/` are a vendored snapshot of
-[kanon](https://github.com/politeuma/kanon),
+The section texts live in [kanon](https://github.com/politeuma/kanon),
 which owns their content, sources, and review cadence. New sections and
 corrections are pull requests there, not here; obligation-level changes go
 through [law-map](https://github.com/politeuma/law-map)'s Legal
-RFC issue. This repo owns only the wiring — `REGISTRY.yml` rows, gates, and
-promotions — governed by [GOVERNANCE.md](../GOVERNANCE.md). The runbook is
-[docs/how-to/ethics-section.md](../docs/how-to/ethics-section.md).
+RFC issue. This repo owns only the wiring — the derived `when` conditions
+(`_shared/daimonion-when.jinja`) — governed by [GOVERNANCE.md](../GOVERNANCE.md).
 
 ## Blast radius
 
@@ -37,7 +35,7 @@ blast radius, never the whole suite.
 | --- | --- |
 | Docs only (`README.md`, `docs/*.md`) | `task lint type-check` — CI skips the render matrix for docs-only PRs, so typos and format debt must be caught locally |
 | Template payload (`template/`, `_shared/`, `questions/`) | `task test-fast` plus `task verify-delta` — the render twin proves which witness leaves the change can affect: a semantic diff narrows the candidate set, then only candidates are re-rendered from a baseline checkout and compared by manifest (file list + sha256, answers normalized); it exits 0 when every candidate is byte-identical |
-| Questionnaire (`copier.yml`, `questions/*.yml`) | `task regen` then `task test-fast` — regen is the one-command pipeline: witness leaves, batch verdicts, tier ledger, ethics appendix, generated docs, predicate report |
+| Questionnaire (`copier.yml`, `questions/*.yml`) | `task regen` then `task test-fast` — regen is the one-command pipeline: witness leaves, batch verdicts, tier ledger, generated docs, predicate report |
 
 ## Contributing 101
 
@@ -45,11 +43,10 @@ The cheapest real change an outsider can make: add or correct an ethics /
 regional / operational rule section in
 [kanon](https://github.com/politeuma/kanon)
 (copy its `sections/_template.md.jinja`, fill every field, run its
-`tools/validate.py`). It needs no knowledge of this template's questionnaire,
-and once merged the weekly `ethics-sync.yml` here reports it for vendoring
-(see [how-to/ethics-section.md](../docs/how-to/ethics-section.md)). In this
-repo, the next-cheapest change is a docs fix — see the blast-radius table
+`tools/validate.py`). It needs no knowledge of this template's questionnaire.
+In this repo, the next-cheapest change is a docs fix — see the blast-radius table
 above.
+
 
 ## Checking your changes before making a PR
 
@@ -69,4 +66,4 @@ However, this does not test whether processes like CI and docs work correctly. Y
 
 It is recommended that developers use a [vscode devcontainer](https://code.visualstudio.com/docs/devcontainers/containers). This repository contains configuration to set up a containerized development environment that suits its own needs.
 
-For more information on common tasks like setting up a developer environment, running the tests, and the lint workflow, see the [How-to guides](https://constitutivetemplates.github.io/architekton-py/main/how-to.html)
+For more information on common tasks like setting up a developer environment, running the tests, and the lint workflow, see the [How-to guides](https://politeuma.github.io/architekton-py/main/how-to.html)

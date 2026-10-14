@@ -139,7 +139,7 @@ def test_template_github_urls_unchanged(tmp_path: Path):
     # combos; this pins the same bytes on the example fixture).
     copy_project(tmp_path, project_type="library")
     repo_url = "https://github.com/politeuma/architekton-py-example"
-    docs_url = "https://constitutivetemplates.github.io/architekton-py-example"
+    docs_url = "https://politeuma.github.io/architekton-py-example"
     pyproject = (tmp_path / "pyproject.toml").read_text()
     assert f'urls.GitHub = "{repo_url}"' in pyproject
     zensical = (tmp_path / "zensical.toml").read_text()

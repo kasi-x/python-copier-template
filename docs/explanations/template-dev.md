@@ -507,96 +507,45 @@ existing answer set: the dependency list is pinned by
 `tests/test_structured_answers.py`, and the data-science sentinels by
 `tests/test_example_data_science.py`.
 
-## Accumulate ethics/regional/operational rules as sections first
+## Accumulate ethics/regional/operational rules as conditions first
 
 Field rules (a retired public NTP, a telecom secrecy duty, a regional
 backbone's quiet hours) arrive one at a time and must not each move the
 questionnaire, the leaf space, or the witness matrix. Each is written as a
 section in [kanon](https://github.com/politeuma/kanon)
-(`baseline/`, `sector/`, `region/`, `domain/`; `lang/` is reserved for
-the translation dictionaries) and vendored into `_shared/ethics/` (see
-[External ethics sections](ethics-external.md)); this repo registers it in
-`_shared/ethics/REGISTRY.yml` and leaves it `draft` until a bundle forms:
+(`baseline/`, `sector/`, `region/`, `domain/`), with a `MANIFEST.yml` row
+declaring its abstract `when` and `placement` (see
+[Ethics Content Lives in Kanon](ethics-external.md)). This repo derives the
+matching `when` conditions from its answers in
+`_shared/daimonion-when.jinja` — one macro both the generated
+`.daimonion.yml` and the composition manifest interpolate, so the derivation
+is spelled once. A new abstract condition (or a new answer implying an
+existing one) extends that macro; nothing is vendored, so the leaf space
+does not move.
 
-- The registry row is the single source: id, file, `YYYY-MM-DD.rev`
-  version, `effective` / `review_by` dates, primary-source URLs (no
-  statute pasted verbatim — one-line summary plus link), scope
-  (`jurisdiction` / `sector` / `category`), scale (`domestic` /
-  `regional` / `global`: who suffers vs who causes, in one line),
-  audience (minimal distribution list, e.g. `iot` / `cli` — a section
-  ships only where its triggers can fire), enforcement (`L0` doc /
-  `L1` presence assert / `L2` real gate), and lifecycle status
-  (`draft` → `active` → `kind`, with `superseded_by` naming the
-  successor). The file opens with the matching
-  `{# ethics: id=.. version=.. status=.. #}` header, states its scale
-  line and audience up front (so humans and LLMs route it without
-  reading the body), and repeats its `review_by` in the body.
-- Scale is the routing axis: `domestic` (rule and sufferer inside one
-  country), `regional` (one region's infrastructure), `global` (one
-  country suffers, the world causes — e.g. the retired Fukuoka NTP
-  drowned from 239 countries). Audience is the minimization axis:
-  the smallest project kinds that can trip the rule (IoT firmware and
-  CLI pollers for NTP hardcoding — not every project).
-- A draft section takes no copier context (`{{ }}`) and nothing includes
-  it — it is documentation only, so the leaf space does not move.
-- Promote `draft` → `active` (appendix into an existing conditional doc)
-  or `kind` (its own distribution condition) only when a bundle forms:
-  three sections sharing one distribution condition, or one section
-  needing a distinct code/test gate. A `kind` promotion names the
-  audience in its distribution condition (so the section keeps shipping
-  only where it applies). The promotion PR wires the questionnaire,
-  the witness leaves, `invariants.yml`, and the registry row together.
-  The first promotion (2026-09) is the AGENTS.md ethics appendix, five
-  sections gated on existing answers — no new question:
-  `license-drift` (every guide), `pqc-fips` (library/cli/web_api),
-  `copyright-ai` (cli, the data-science layout), `llm-appsec`
-  (`mcp_effective`), `ml-bias` (the data-science layout, kaggle). The
-  `ethics-appendix` content predicate in `tests/test_render_invariants.py`
-  holds the rendered guide to exactly those conditions. A section whose
-  audience outruns its channel stays draft. The first such case resolved
-  (2026-09-21) by growing the channel instead of the questionnaire:
-  `pki-chain` needed one that reaches micropython, so AGENTS.md now renders
-  for every project type (ros2 / micropython / online_judge included — there
-  the guide's AI wording defers to the contest rules, with `oj_allow_ai`
-  picking the sentence where the judge asks), and the section promotes onto
-  that channel.
+- The derivation macro is the single spelling of the leaf-selection
+  condition: the emitted `.daimonion.yml` `when` list and the test-side
+  predicate (`tests/test_daimonion_parity.py` `derive_when`) evaluate the
+  same mapping, so adding a condition edits the macro once and both sides
+  follow.
+- The `daimonion-config` content predicate in
+  `tests/test_render_invariants.py` holds each render's `when` list to
+  exactly the derived conditions, the empty marker pair to its presence, and
+  the guide to carrying no vendored prose.
 
-- Since 2026-10-01 the appendix include chain is generated, not hand-written:
-  `tools/gen_ethics_appendix.py` renders `_shared/ethics-appendix.jinja` from
-  each registry row's `status` and `gate`, and the AGENTS.md template just
-  includes it. The row's `gate` is therefore the single spelling of the
-  leaf-selection condition — the generated `{% if %}` and the test-side
-  predicate (`tools/ethics.py gate_holds`, the allowlisted-AST evaluator)
-  evaluate the same string, so adding a section edits the registry once and
-  both sides follow. A stale committed appendix fails
-  `test_the_generated_appendix_matches_the_registry`.
-
-Enforced by `tests/test_ethics_registry.py` (row shape incl. scale /
-audience, header agreement, body scale line, draft isolation, the
-parents a distributed row names actually including its file, the
-presence-trigger span every row documents, and the retired-identifier
-denylist the first section exists for).
+Enforced by `tests/test_daimonion_parity.py` (old gates vs kanon
+`applies()`, identical section-id sets over all 272 witness leaves) and
+`tests/test_daimonion_config.py` (preset renders pin the `when` list,
+manifest agreement, and the empty markers).
 
 The enforcement column is a ladder, and each rung has a consumer:
 
-- **L0 (doc)** — the section reaches a reader, nothing executes. The
-  draft rows sit here.
-- **L1 (presence assert)** — the trigger is machine-readable. Every
-  section's 運用チェック documents its `設定側トリガー` span (a backticked
-  `(?i)` regex); `tools/ethics.py` parses that span for every row, and
-  the MCP surface exposes it two ways: `check_ethics(text)` returns the
-  sections a piece of text trips, ranked gate-first (L2 → L1 → L0), each
-  match carrying the section's full markdown, and the `template://ethics`
-  resource serves the whole registry. Draft rows are matched too — a
-  retired identifier must warn even while its section ships nowhere —
-  and the entry's `status` says so. On the render side the L1 assert is
-  the `ethics-appendix` predicate: it fails a leaf whose guide is missing
-  a selected section *and* one that ships an unselected section.
-- **L2 (real gate)** — something fails the build. `license-drift` is the
-  first: the generated project ships a `license-check` task
+- **L0 (doc)** — the section reaches a reader through the linter-rendered
+  block, nothing executes.
+- **L2 (real gate)** — something fails the build. The `license-check` task
   (`pip-licenses --from=mixed --partial-match --fail-on=<derived>`),
   gated on `license_check_effective`, wired into CI's lint job beside
   type-check and kept out of `type-check`/`check` because it needs the
-  network. The fail-on policy is derived from the project's own license:
-  permissive → the GPL family, GPL/LGPL → AGPL, and AGPL itself gates
-  nothing further up.
+  network, stays: it needs no prose. The fail-on policy is derived from the
+  project's own license: permissive → the GPL family, GPL/LGPL → AGPL, and
+  AGPL itself gates nothing further up.

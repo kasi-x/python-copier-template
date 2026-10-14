@@ -288,10 +288,9 @@ def test_license_check_gate_is_armed_for_every_offered_license():
     be a membership list -- every license outside it (Proprietary,
     Confidential, MPL-2.0, Zlib, EPL-2.0, ...) silently rendered
     `pip-licenses --partial-match` with **no** `--fail-on`, i.e. a gate that
-    can never fail, while _shared/ethics/REGISTRY.yml reported the license
-    rule's enforcement as L2 (a real gate) for all of them. Proprietary and
-    Confidential are the worst of the set: absorbing copyleft into a
-    closed-source product is precisely what that gate is for.
+    can never fail. Proprietary and Confidential are the worst of the set:
+    absorbing copyleft into a closed-source product is precisely what that
+    gate is for.
 
     The policy expression is evaluated as the Jinja the renderer evaluates,
     against every choice the questionnaire offers -- not a Python restatement

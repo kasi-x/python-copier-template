@@ -67,8 +67,6 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
         ),
         frozenset(
             {
-                "check_ethics_contract",
-                "check_ethics_drift",
                 "check_questionnaire_diff",
                 "check_upstream",
                 "check_upstream_fork",
@@ -78,7 +76,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
     ),
     "foundations": (
         "the questionnaire model and shared primitives: data and meaning, no behavior on real trees",
-        frozenset({"answers", "ethics", "questionnaire", "render_inputs", "support_ledger", "when_model"}),
+        frozenset({"answers", "questionnaire", "render_inputs", "support_ledger", "when_model"}),
     ),
     "machinery": (
         "pure transformations and verifiers over template/adoption artifacts",
@@ -133,7 +131,6 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
                 "cli",
                 "explain",
                 "gen_docs",
-                "gen_ethics_appendix",
                 "mcp_project",
                 "mcp_questionnaire",
                 "mcp_render",

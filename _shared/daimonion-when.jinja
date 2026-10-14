@@ -1,0 +1,65 @@
+{# The derived daimonion `when` set, spelled once.
+
+   Both the generated `.daimonion.yml` (template/{% if agents_md_effective
+   %}.daimonion.yml{% endif %}.jinja) and the composition manifest
+   (template/.architekton-manifest.yml.jinja) interpolate the
+   `daimonion_when()` macro below, so the answer-to-condition derivation
+   exists in exactly one place. Each `{% if %}` is one kanon `when`
+   condition in vocabulary order, with a trailing `#` comment naming the
+   answers that produced it:
+
+     library            project_type == 'library'
+     cli                project_type == 'cli'
+     embedded           project_type == 'micropython'
+     personal_data      'personal-data' in domain_traits
+     face_recognition   'face-recognition' in domain_traits
+     medtech            'medtech' in domain_traits
+     scraping           scraping_effective
+     oj_code            oj_code
+     mcp                mcp_effective
+     data_science       data_science_layout (NOT ds_stack)
+     kaggle             project_type == 'online_judge' and oj_kind == 'kaggle'
+     web_api            web_api
+     commercial         'commercial' in distribution
+
+   `always` sections apply without being listed, so `always` is never
+   emitted. `jp`, `eu_market` and `ai_assisted` are not derivable from the
+   questionnaire; the config file emits them as commented hints instead.
+
+   The macro renders the `when:` list items (one `  - <condition>` line per
+   holding condition, each newline-terminated). Callers emit the `when:` key
+   and interpolate the macro beneath it with `-}}` so no blank line slips
+   between the items and whatever follows:
+
+       {% import "_shared/daimonion-when.jinja" as dw with context %}
+       when:
+       {{ dw.daimonion_when() -}}
+#}
+{% macro daimonion_when() -%}
+{% if project_type == 'library' %}  - library  # project_type == 'library'
+{% endif -%}
+{% if project_type == 'cli' %}  - cli  # project_type == 'cli'
+{% endif -%}
+{% if micropython_pkg %}  - embedded  # project_type == 'micropython'
+{% endif -%}
+{% if 'personal-data' in domain_traits %}  - personal_data  # 'personal-data' in domain_traits
+{% endif -%}
+{% if 'face-recognition' in domain_traits %}  - face_recognition  # 'face-recognition' in domain_traits
+{% endif -%}
+{% if 'medtech' in domain_traits %}  - medtech  # 'medtech' in domain_traits
+{% endif -%}
+{% if scraping_effective %}  - scraping  # scraping_effective
+{% endif -%}
+{% if oj_code %}  - oj_code  # oj_code
+{% endif -%}
+{% if mcp_effective %}  - mcp  # mcp_effective
+{% endif -%}
+{% if data_science_layout %}  - data_science  # data_science_layout
+{% endif -%}
+{% if kaggle %}  - kaggle  # project_type == 'online_judge' and oj_kind == 'kaggle'
+{% endif -%}
+{% if web_api %}  - web_api  # web_api
+{% endif -%}
+{% if 'commercial' in distribution %}  - commercial  # 'commercial' in distribution
+{% endif -%}
+{%- endmacro %}

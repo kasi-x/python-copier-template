@@ -13,9 +13,10 @@ point at a page the render never wrote. This module adds the deterministic
   artifact is rendered;
 - the ``AGENTS.md`` command table names the runner this render ships and only
   tasks that runner defines;
-- the ``AGENTS.md`` ethics appendix ships exactly the sections the render's
-  project kind selects (the gates mirror _shared/ethics/REGISTRY.yml's
-  active rows);
+- the render's ``.daimonion.yml`` ``when`` list is exactly the kanon
+  conditions the leaf's answers derive (vocabulary order, provenance
+  comments), and ``AGENTS.md`` carries the empty ethics marker pair with no
+  vendored section prose;
 - every relative ``README.md`` link resolves inside the render;
 - every ``zensical.toml`` / ``mkdocs.yml`` nav target exists in the render.
 
@@ -65,7 +66,6 @@ if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.p
     sys.path.insert(0, str(TOP))
 
 from tools import batch  # noqa: E402
-from tools import ethics  # noqa: E402
 from tools import invariants  # noqa: E402
 from tools import z3_witnesses  # noqa: E402
 from tools.answers import BASE  # noqa: E402
@@ -107,15 +107,15 @@ LEDGER_LEAVES: tuple[str, ...] = (
     "project_type=micropython/gate=recommended",
     # a second online judge: the same project_type, a different workspace
     "project_type=online_judge/gate=recommended/oj=competitive_coding/yukicoder",
-    # the domain traits: the co-occurrence answer (both sections, one each,
-    # no duplication) and each trait alone on a leaf with a data/ tree, where
+    # the domain traits: the co-occurrence answer (the union of the solo
+    # conditions) and each trait alone on a leaf with a data/ tree, where
     # medtech also lands the CARE sheet
     "project_type=data_science/gate=recommended/domain=all",
     "project_type=data_science/gate=recommended/domain=medtech",
     "project_type=data_science/gate=recommended/domain=face-recognition",
     # the distribution answers: the predicate must render one of each, or a
-    # dropped CRA gate (the section is the only thing `commercial` adds) is
-    # invisible to the ethics-appendix check
+    # dropped commercial derivation (the `commercial` condition is the only
+    # thing that answer adds) is invisible to the daimonion-config check
     "project_type=cli/gate=recommended/distribution=commercial",
     "project_type=cli/gate=recommended/distribution=oss",
     "project_type=cli/gate=recommended/distribution=commercial+oss",
@@ -215,7 +215,7 @@ class Counters:
     third_party_imports: int = 0
     agent_tables: int = 0
     readme_links: int = 0
-    ethics_appendices: int = 0
+    daimonion_configs: int = 0
     readme_relative: int = 0
     nav_files: int = 0
     nav_entries: int = 0
@@ -259,7 +259,7 @@ def counters() -> Iterator[Counters]:
         f"{reported.third_party_imports} third-party imports, {reported.agent_tables} AGENTS.md command tables, "
         f"{reported.readme_links} README links ({reported.readme_relative} relative), "
         f"{reported.nav_files} docs navs with {reported.nav_entries} entries, "
-        f"{reported.ethics_appendices} ethics appendices"
+        f"{reported.daimonion_configs} daimonion configs"
     )
 
 
@@ -702,51 +702,49 @@ def _nav_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
     return problems
 
 
-# The ethics appendix's section markers (each section's h1 title) and the
-# answers that select them. The conditions mirror AGENTS.md.jinja's gates,
-# which mirror _shared/ethics/REGISTRY.yml's active rows' audiences.
-#
-# Every condition goes through a named trait helper, never an inline
-# `project_type == ... or include_...` disjunction. The sections used to spell
-# the same idea three different ways (a bare `project_type == 'web_api'`, an
-# inline `or bool(include_web_api)`, and a helper), so adding a section meant
-# deciding which spelling to copy -- the drift this file's own docstring calls
-# out (TODO.md §28.3, "単一源の『コメント同期』の再発"). One spelling per trait.
-#
-# The leaf context (which answers imply which *_effective flag) lives in
-# tools/ethics.py next to the registry it serves: the appendix include chain
-# is generated from each row's `gate` string, and this predicate evaluates
-# the same string -- one spelling drives both sides.
+# The `.daimonion.yml` `when` list and the AGENTS.md empty marker pair. The
+# template no longer vendors kanon prose: it emits the abstract conditions
+# (kanon's `when` vocabulary, in vocabulary order) and the linter fills the
+# markers in. The derivation (which answers imply which condition) lives in
+# tests/test_daimonion_parity.py's `derive_when`, the single spelling both
+# this predicate and the `.daimonion.yml` macro follow.
+BEGIN_MARKER = "<!-- daimonion:ethics:begin"
+END_MARKER = "<!-- daimonion:ethics:end -->"
+
+# Kanon section prose must never be vendored into the render: a sample of h1
+# titles from the old appendix that would prove a stale include chain.
+VENDORED_PROSE_NEEDLES = (
+    "ライセンス変動",
+    "スクレイピングの適法性",
+    "コンテスト規約",
+    "PKIチェーン",
+)
 
 
-def _section_rows() -> list[dict[str, Any]]:
-    """The registry rows that can appear in the appendix: active, gated."""
-    return [row for row in ethics.load_registry() if row.get("status") == "active"]
+def _daimonion_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
+    """Predicate 5: `.daimonion.yml` `when` list vs the leaf's derived conditions."""
+    from test_daimonion_parity import derive_when  # noqa: PLC0415 -- single derivation spelling
 
-
-def _section_predicate(row: dict[str, Any]) -> Callable[[dict[str, object]], bool]:
-    """The gate evaluator bound to one registry row."""
-    return lambda answers: ethics.gate_holds(row, answers)
-
-
-ETHICS_SECTIONS: dict[str, tuple[str, Callable[[dict[str, object]], bool]]] = {
-    row["id"]: (ethics.section_title(row), _section_predicate(row)) for row in _section_rows()
-}
-
-
-def _ethics_problems(leaf: Leaf, root: Path, counters: Counters) -> list[str]:
-    """Predicate 5: the AGENTS.md ethics appendix vs the kind's selected sections."""
-    path = root / "AGENTS.md"
-    if not path.exists():  # defensive: agents_md_effective is a constant true today
+    config_path = root / ".daimonion.yml"
+    if not config_path.exists():  # defensive: agents_md_effective is a constant true today
         return []
-    counters.ethics_appendices += 1
-    text = path.read_text(encoding="utf-8")
+    counters.daimonion_configs += 1
+    payload = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     problems: list[str] = []
-    for section, (marker, selects) in ETHICS_SECTIONS.items():
-        if selects(leaf.answers) and marker not in text:
-            problems.append(f"{leaf.id}: the ethics appendix is missing its {section} section")
-        if not selects(leaf.answers) and marker in text:
-            problems.append(f"{leaf.id}: the ethics appendix ships the {section} section uninvited")
+    want = derive_when({**BASE, **leaf.answers})
+    got = [str(item) for item in (payload.get("when") or [])]
+    if got != want:
+        problems.append(f"{leaf.id}: .daimonion.yml when={got}, derived {want}")
+    guide = root / "AGENTS.md"
+    if guide.exists():
+        text = guide.read_text(encoding="utf-8")
+        if BEGIN_MARKER not in text or END_MARKER not in text:
+            problems.append(f"{leaf.id}: AGENTS.md lacks the empty ethics marker pair")
+        problems.extend(
+            f"{leaf.id}: AGENTS.md vendors kanon prose {needle!r}"
+            for needle in VENDORED_PROSE_NEEDLES
+            if needle in text
+        )
     return problems
 
 
@@ -759,7 +757,7 @@ PREDICATES: dict[str, Callable[[Leaf, Path, Counters], list[str]]] = {
     "agents-md": _agents_problems,
     "readme-links": _readme_problems,
     "docs-nav": _nav_problems,
-    "ethics-appendix": _ethics_problems,
+    "daimonion-config": _daimonion_problems,
 }
 
 
@@ -832,11 +830,10 @@ def test_predicates_fire_on_injected_drift(tmp_path: Path, render_cache: RenderC
 #
 # The `domain_traits` multiselect made co-occurrence a real configuration (a
 # face-recognition model over patient data selects both), and the failure it
-# invites is not "the wrong section" but "the right section twice, or one of
-# them dropped": two independent gates can both fire for the same section, and
-# two domains can both declare a dependency. Rather than enumerate every
-# combination -- which is N! for an open-ended list of domains -- this pins the
-# property that makes the enumeration unnecessary:
+# invites is not "the wrong condition" but "the right condition twice, or one
+# of them dropped". Rather than enumerate every combination -- which is N! for
+# an open-ended list of domains -- this pins the property that makes the
+# enumeration unnecessary:
 #
 #     contribution(A) ∪ contribution(B) == contribution(A and B)
 #
@@ -848,11 +845,10 @@ def test_predicates_fire_on_injected_drift(tmp_path: Path, render_cache: RenderC
 # renders.
 #
 # The two contributions compared:
-#   sections     the ethics section titles present in AGENTS.md
+#   conditions   the `.daimonion.yml` `when` entries the render declares
 #   requirements every declared distribution, by name
-# A section or requirement that appears twice under `all` shows up as a
-# *duplicate* in the combined side and fails; one that vanishes shows up as
-# missing.
+# A condition or requirement that vanishes under `all` shows up as missing;
+# one the combination invents shows up as unaccounted.
 
 
 def _domain_leaf_answers() -> dict[str, dict[str, object]]:
@@ -879,12 +875,13 @@ def _distribution_leaf_answers() -> dict[str, dict[str, object]]:
     return found
 
 
-def _section_titles(root: Path) -> list[str]:
-    """Every ethics section title in the render's AGENTS.md, in document order."""
-    path = root / "AGENTS.md"
+def _when_conditions(root: Path) -> list[str]:
+    """The `.daimonion.yml` `when` entries a render declares, in file order."""
+    path = root / ".daimonion.yml"
     if not path.exists():
         return []
-    return [marker for marker in ETHICS_SECTIONS.values() for marker in [marker[0]] if marker in path.read_text()]
+    payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return [str(item) for item in (payload.get("when") or [])]
 
 
 def _declared_distributions(root: Path) -> list[str]:
@@ -900,7 +897,7 @@ def test_the_domain_trait_leaves_cover_each_choice_and_the_combination():
     """The leaves the additivity check compares must all exist.
 
     A missing solo leaf would make the union side silently smaller than the
-    combined side (reporting a false "missing section"), and a missing
+    combined side (reporting a false "missing condition"), and a missing
     combined leaf would make the check vacuous -- so the axis, its labels and
     the ledger have to agree before any comparison runs.
     """
@@ -919,13 +916,12 @@ def test_the_domain_trait_leaves_cover_each_choice_and_the_combination():
 def test_domain_contributions_are_additive(
     label: str, tmp_path: Path, render_cache: RenderCache, counters: Counters
 ) -> None:
-    """Sections and requirements add up, with nothing doubled or dropped.
+    """Conditions and requirements add up, with nothing dropped or invented.
 
     The combined leaf's contribution must equal the union of the solo leaves'
-    contributions, and no section may appear twice in it. This is the
-    multi-select property stated once: a domain that silently re-declares
-    another's dependency, or whose gate overlaps another's section, fails
-    here rather than in a user's render.
+    contributions. This is the multi-select property stated once: a domain
+    that silently declares another's condition, or whose derivation overlaps
+    another's, fails here rather than in a user's render.
     """
     leaves = _domain_leaf_answers()
     recorded = leaves[label]["domain_traits"]
@@ -940,26 +936,20 @@ def test_domain_contributions_are_additive(
         counters.renders += 1
 
     combined = rendered[label]
-    combined_sections = _section_titles(combined)
+    combined_conditions = _when_conditions(combined)
     combined_requirements = _declared_distributions(combined)
 
     problems: list[str] = []
-    duplicated = sorted({title for title in combined_sections if combined_sections.count(title) > 1})
-    if duplicated:
-        problems.append(f"selecting {traits} renders these ethics sections more than once: {duplicated}")
-
-    # Direction 1: nothing a solo trait contributes may vanish. The solo
-    # contributions are collected first (rather than checked inside the loop)
-    # so direction 2 can reuse them as the "who selected this" set.
-    solo_sections: list[str] = []
+    # Direction 1: nothing a solo trait contributes may vanish.
+    solo_conditions: list[str] = []
     problems += [
-        f"selecting {trait} ships the {section!r} section, but selecting {traits} drops it"
+        f"selecting {trait} declares the {condition!r} condition, but selecting {traits} drops it"
         for trait in traits
-        for section in _section_titles(rendered[trait])
-        if section not in combined_sections
+        for condition in _when_conditions(rendered[trait])
+        if condition not in combined_conditions
     ]
     for trait in traits:
-        solo_sections += _section_titles(rendered[trait])
+        solo_conditions += _when_conditions(rendered[trait])
     problems += [
         f"selecting {trait} declares {requirement!r}, but selecting {traits} drops it"
         for trait in traits
@@ -967,15 +957,13 @@ def test_domain_contributions_are_additive(
         if requirement not in combined_requirements
     ]
 
-    # Direction 2: nothing the combination ships may be unaccounted for -- a
-    # section has to be selected by one of the chosen traits or by the
-    # unconditional row (license-drift), otherwise the combination is
-    # over-distributing.
-    unconditional = {marker for marker, selects in ETHICS_SECTIONS.values() if selects({})}
+    # Direction 2: nothing the combination declares may be unaccounted for --
+    # a condition has to come from one of the chosen traits, otherwise the
+    # combination is over-declaring.
     problems += [
-        f"selecting {traits} ships the {section!r} section, which none of {traits} selects alone"
-        for section in combined_sections
-        if section not in solo_sections and section not in unconditional
+        f"selecting {traits} declares the {condition!r} condition, which none of {traits} declares alone"
+        for condition in combined_conditions
+        if condition not in solo_conditions
     ]
 
     assert problems == [], "the domain contributions are not additive:\n  " + "\n  ".join(problems)
@@ -992,14 +980,15 @@ def test_the_distribution_leaves_cover_each_answer_and_the_combination():
 
 
 def test_distribution_contributions_are_additive(tmp_path: Path, render_cache: RenderCache, counters: Counters) -> None:
-    """`commercial` and `oss` combine without dropping or doubling anything.
+    """`commercial` and `oss` combine without dropping or inventing anything.
 
     The same property the domain traits are held to, on the axis that decides
-    whether a regulator cares: selecting both must ship what each ships alone
-    (the CRA duties come from `commercial`; `oss` adds nothing while it is not
-    commercial), and nothing may appear twice. The pair is the case EU
-    2024/2847 art. 24 turns on -- free software stops being exempt once it is
-    monetised -- so it is the one combination worth pinning here.
+    whether a regulator cares: selecting both must declare what each declares
+    alone (the `commercial` condition comes from `commercial`; `oss` adds
+    nothing while it is not commercial), and nothing may appear twice. The
+    pair is the case EU 2024/2847 art. 24 turns on -- free software stops
+    being exempt once it is monetised -- so it is the one combination worth
+    pinning here.
     """
     leaves = _distribution_leaf_answers()
     both = leaves["commercial+oss"]
@@ -1009,41 +998,36 @@ def test_distribution_contributions_are_additive(tmp_path: Path, render_cache: R
         render_cache.render(rendered[name], answers)
         counters.renders += 1
 
-    combined_sections = _section_titles(rendered["commercial+oss"])
+    combined_conditions = _when_conditions(rendered["commercial+oss"])
     problems: list[str] = []
-    duplicated = sorted({title for title in combined_sections if combined_sections.count(title) > 1})
-    if duplicated:
-        problems.append(f"selecting commercial+oss renders these sections more than once: {duplicated}")
     for name in ("commercial", "oss"):
         problems += [
-            f"selecting {name} ships the {section!r} section, but commercial+oss drops it"
-            for section in _section_titles(rendered[name])
-            if section not in combined_sections
+            f"selecting {name} declares the {condition!r} condition, but commercial+oss drops it"
+            for condition in _when_conditions(rendered[name])
+            if condition not in combined_conditions
         ]
-    # The combined answer must not invent a section neither answer selects.
-    unconditional = {marker for marker, selects in ETHICS_SECTIONS.values() if selects({})}
-    solo = {section for name in ("commercial", "oss") for section in _section_titles(rendered[name])}
+    # The combined answer must not invent a condition neither answer declares.
+    solo = {condition for name in ("commercial", "oss") for condition in _when_conditions(rendered[name])}
     problems += [
-        f"commercial+oss ships the {section!r} section, which neither answer selects alone"
-        for section in combined_sections
-        if section not in solo and section not in unconditional
+        f"commercial+oss declares the {condition!r} condition, which neither answer declares alone"
+        for condition in combined_conditions
+        if condition not in solo
     ]
     # And the substantive claim, in both directions: the combined answer is
-    # the commercial one's, and `oss` alone ships NO CRA section -- that is
-    # art. 24's exemption, and asserting only the combination would let a gate
-    # that fires on `oss` through (both sides would carry it).
-    commercial = _section_titles(rendered["commercial"])
-    if combined_sections != commercial:
+    # the commercial one's, and `oss` alone declares NO commercial condition
+    # -- that is art. 24's exemption, and asserting only the combination
+    # would let a derivation that fires on `oss` through.
+    commercial = _when_conditions(rendered["commercial"])
+    if combined_conditions != commercial:
         problems.append(
-            f"commercial+oss ships {combined_sections}, but commercial alone ships {commercial}: "
-            f"adding `oss` must not change the appendix (art. 24 exempts non-commercial free software, "
+            f"commercial+oss declares {combined_conditions}, but commercial alone declares {commercial}: "
+            f"adding `oss` must not change the conditions (art. 24 exempts non-commercial free software, "
             f"not commercial free software)"
         )
-    cra = ETHICS_SECTIONS["region-eu-cra"][0]
-    if cra in _section_titles(rendered["oss"]):
+    if "commercial" in _when_conditions(rendered["oss"]):
         problems.append(
-            f"selecting oss alone ships the {cra!r} section, but the CRA exempts free software while it is "
-            f"non-commercial (art. 24): only `commercial` may select it"
+            "selecting oss alone declares the 'commercial' condition, but the CRA exempts free software "
+            "while it is non-commercial (art. 24): only `commercial` may declare it"
         )
     assert problems == [], "the distribution contributions are not additive:\n  " + "\n  ".join(problems)
     # Guard the oracle: the leaves really differ, so the comparison is not vacuous.

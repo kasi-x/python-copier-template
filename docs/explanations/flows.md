@@ -66,23 +66,21 @@ pipeline.
 ```mermaid
 flowchart LR
     OL["open-law<br/>(world legislation corpus)"] --> LM["law-map<br/>(obligation graph,<br/>related_sections ids)"]
-    LM --> CX["kanon<br/>(reviewed prose,<br/>sections tier/slug,<br/>review_by dates)"]
-    CX --> VE["_shared/ethics/<br/>(vendored snapshot:<br/>MANIFEST.yml, FLAGS.yml,<br/>REGISTRY.yml, .ethics-vendored)"]
-    VE --> CC["tools/check_ethics_contract.py<br/>(MANIFEST vs FLAGS vs REGISTRY)"]
-    CC --> GA["tools/gen_ethics_appendix.py<br/>--check in CI"]
-    GA --> AJ["_shared/ethics-appendix.jinja<br/>(generated)"]
-    AJ --> AM["template AGENTS.md.jinja<br/>(ethics appendix,<br/>agents_md_effective gate)"]
-    AM --> ET["tools/ethics.py match()<br/>(MCP check_ethics,<br/>presence triggers)"]
+    LM --> CX["kanon<br/>(reviewed prose,<br/>MANIFEST.yml when + placement)"]
+    CX --> DW["_shared/daimonion-when.jinja<br/>(answers → when conditions)"]
+    DW --> DC[".daimonion.yml<br/>(declared conditions)"]
+    DC --> AM["daimonion agents-md --write<br/>(fills the marker block)"]
+    AM --> AG["AGENTS.md<br/>(empty markers + linter block)"]
 ```
 
-Watchers on the chain, each naming exactly one failure: `ethics-sync.yml`
-(prose drift vs. codex `main`, `tools/check_ethics_drift.py`),
+Watchers on the chain, each naming exactly one failure:
 `scheduled-check.yml` job `law-map-review-by` (expired `review_by`
 groundings, `law-map check --codex`), and the `e2e` job in
-`e2e-ecosystem.yml` (`law-map export` + codex validate + a render whose
-`AGENTS.md` must still carry the codex-derived sections). The generated
+`e2e-ecosystem.yml` (`law-map export` + kanon validate + a render whose
+`.daimonion.yml` declares the expected conditions). The generated
 project's own `legal-check` task (`_tasks.jinja`, `daimonion diff --strict`)
-is the downstream consumer, not a watcher.
+is the downstream consumer, not a watcher. There is no vendor-sync watcher
+anymore: nothing is vendored, so prose drift cannot happen here.
 
 ## CI at a glance: four lanes
 
@@ -123,7 +121,7 @@ flowchart TD
 ```
 
 Adjacent but separate: `pr.yml` (job `validate-pr-title`, conventional-commit
-titles), `ethics-sync.yml` (weekly codex drift), `e2e-ecosystem.yml` (weekly
-FRI cross-repo chain), `dependency-audit.yml` (weekly pip-audit),
-`security.yml` (zizmor workflow audit), and `update-rehearsal.yml` (the
-`copier update` path the adopt flow depends on).
+titles), `e2e-ecosystem.yml` (weekly FRI cross-repo chain),
+`dependency-audit.yml` (weekly pip-audit), `security.yml` (zizmor workflow
+audit), and `update-rehearsal.yml` (the `copier update` path the adopt flow
+depends on).

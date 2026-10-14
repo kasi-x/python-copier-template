@@ -675,7 +675,7 @@ PEP 541 要）、`uphold`（同名の暗号資産企業 Uphold が GitHub org �
       （旧ディレクトリは読まずに放置でよい。再 clone で済む。決定を cli.py の
       コメントに残す）
 - [x] URL の置換: `politeuma/foundry` → `politeuma/daimonion`、
-      `constitutivetemplates.github.io/foundry` → `.../daimonion`、
+      `politeuma.github.io/foundry` → `.../daimonion`、
       `foundry-example` → `daimonion-example`。対象（`git grep -il foundry` で
       74 ファイル / 266 箇所、2026-10-05 時点）: README.md, zensical.toml,
       CITATION.cff, codemeta.json, NOTICE, SECURITY.md, REUSE.toml, support.yml,

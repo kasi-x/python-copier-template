@@ -4,12 +4,32 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Features
+
+- ethics content moves to kanon; the template emits conditions, the
+  linter owns the wiring: the generated project now ships
+  `.daimonion.yml` (kanon's abstract `when` conditions derived from the
+  answers by the single `_shared/daimonion-when.jinja` macro, in
+  vocabulary order with provenance comments) and an empty
+  `<!-- daimonion:ethics:begin -->` /
+  `<!-- daimonion:ethics:end -->` marker block in `AGENTS.md` that
+  `daimonion agents-md --write` fills in. `_shared/ethics/`,
+  `REGISTRY.yml`, the appendix include chain, `tools/ethics.py` and its
+  MCP surface are deleted; the composition manifest carries the same
+  `when:` list (replacing `ethics_sections`); the L2 `license-check`
+  gate stays. Migration: a project generated before the move carries
+  appendix prose inline — its next `daimonion agents-md --write`
+  replaces the stale text with the linter-managed block; the
+  `_src_path` legacy-URL migration (old `politeuma/daimonion`
+  template URL → `politeuma/architekton-py`) is handled by the detect
+  path before `copier update` runs.
+
 ### Renames
 
 - rename the template daimonion -> architekton-py: repo
   `politeuma/architekton-py`, distribution and CLI command
   `architekton-py`, docs site
-  `https://constitutivetemplates.github.io/architekton-py`, contract
+  `https://politeuma.github.io/architekton-py`, contract
   manifest `.architekton-manifest.yml`, env vars `ARCHITEKTON_PY_*`,
   example project `architekton-py-example`, cache
   `~/.cache/architekton-py`, update branches

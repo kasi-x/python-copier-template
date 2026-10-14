@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Project surface: inspection, checkout status, ethics check, adoption.
+"""Project surface: inspection, checkout status, adoption.
 
 Responsibility: the tools that look at a project on disk or at this checkout
 -- `inspect_project` (what the target has, which operation fits),
 `template_status` (this checkout's own git + questionnaire state),
-`check_ethics` (registry match over caller-supplied text), `adopt_project`
-(the transactional adoption) -- plus the one helper (`_run_adoption`) that
-executes `adopt.adopt` inside stream isolation with error conversion.
+`adopt_project` (the transactional adoption) -- plus the one helper
+(`_run_adoption`) that executes `adopt.adopt` inside stream isolation with
+error conversion. Ethics matching lives in the `daimonion` linter, not here.
 """
 
 # WHYNOT: the functions below are registered through @server.tool()
@@ -29,7 +29,6 @@ from tools import adopt_run  # noqa: E402
 from tools import adopt_types  # noqa: E402
 from tools import batch  # noqa: E402
 from tools import detect  # noqa: E402
-from tools import ethics  # noqa: E402
 from tools import questionnaire  # noqa: E402
 
 
@@ -118,28 +117,6 @@ def register_project(server: Any) -> None:
             "commits_behind_latest_tag": int(behind) if behind.isdigit() else None,
             "dirty": bool(batch.git(top, "status", "--porcelain").stdout.strip()),
         }
-
-    @server.tool()
-    def check_ethics(text: str) -> dict[str, Any]:
-        """Match text against the ethics/regional rules and return the sections it trips.
-
-        Returns `{"count", "matched"}`; each match carries `id`, `title`, `status`
-        (draft / active / kind), `enforcement` (L0 doc, L1 presence assert, L2
-        gate), `scale`, `audience`, `version`, `review_by` and the section's full
-        markdown `body`. Matches sort gate-first (L2 before L1 before L0). A
-        `draft` hit still matters -- the kyushu denylist identifiers must warn
-        even while the section ships nowhere -- but it is not distributed, unlike
-        the active sections, which the generated AGENTS.md ethics appendix
-        carries (and whose gate, `license-check`, is the license rule's L2).
-
-        Filesystem only -- reads the registry and section files, no render, no
-        network (~ms). Feed it the code or config you are about to write: NTP
-        endpoints, TLS/crypto choices, dependency licenses, scraping/RAG,
-        LLM/MCP tool plumbing, model evaluation, cookie/analytics tags,
-        accessibility, medical claims.
-        """
-        matched = ethics.match(text)
-        return {"count": len(matched), "matched": matched}
 
     @server.tool()
     def adopt_project(

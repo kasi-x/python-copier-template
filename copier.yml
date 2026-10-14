@@ -165,10 +165,16 @@ _tasks:
             p.mkdir(parents=True, exist_ok=True)
             (p / ".gitkeep").touch()' {{ src_dirs | map('quote') | join(' ') }}
       when: "{{ src_dirs }}"
+    # Fill the AGENTS.md ethics marker block from kanon right after render:
+    # offline-tolerant on purpose (uvx fetches daimonion from git), so a
+    # failure prints guidance and never fails generation.
+    - command: |
+        uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --write || echo "WARNING: could not render the AGENTS.md ethics block (offline?); run 'uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --write' once network is available." >&2
+      when: "{{ agents_md_effective }}"
 
 _migrations:
     - version: 2.0.0
       before:
           - echo This update will require you to login to pypi.org and make changes before you can make a new release to PyPI. If you do not have time to do this now, press CTRL+C to abort this update.
       after:
-          - echo Visit https://constitutivetemplates.github.io/architekton-py/main/how-to/pypi.html to find out how to set up PyPI trusted publishing
+          - echo Visit https://politeuma.github.io/architekton-py/main/how-to/pypi.html to find out how to set up PyPI trusted publishing

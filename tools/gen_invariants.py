@@ -13,8 +13,8 @@ Inputs are all existing machinery (no new parser):
 - tools/predicates.py: collect_sites + evaluate (copier's own questionnaire
   pass over the witness leaves) -- the vectors every coverage check reads --
   plus leaf_contexts (copier's own pass, the source of per-leaf gate values).
-- tools/ethics.py: the REGISTRY gates (cross-check that no D file-set needs
-  ethics input; D rows carry no ethics-appendix predicate).
+- tools/predicates.py's site vectors (cross-check that no D file-set needs
+  daimonion input; D rows carry no when-condition predicate).
 - tools/z3_witnesses.py: build() leaves (the domain rows select over).
 - tools/invariants.py: the hand values (the diff's other side) and matching.
 
@@ -48,7 +48,6 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:  # tools/ is no root package (pyproject.toml)
     sys.path.insert(0, str(TOP))
 
-from tools import ethics  # noqa: E402
 from tools import invariants  # noqa: E402
 from tools import predicates  # noqa: E402
 from tools import questionnaire  # noqa: E402
@@ -261,8 +260,6 @@ class Model:
         self.facts = {leaf.id: self.inv.facts(leaf.answers) for leaf in self.leaves}
         self.rows = {row.id: row for row in self.inv.rows}
         self.contexts: dict[str, dict] = {}
-        self._ctx_vectors: dict[str, list[bool] | None] = {}
-        self.registry = ethics.load_registry()
 
     def members(self, row_id: str) -> list[bool]:
         row = self.rows[row_id]
@@ -667,17 +664,10 @@ def _check_origin_cover(model: Model, row_id: str, members: list[bool]) -> Findi
     )
 
 
-def _ethics_note(model: Model, row_id: str, _members: list[bool]) -> str:
+def _leaf_note(model: Model, row_id: str, _members: list[bool]) -> str:
     ids = model.member_ids(row_id)
-    firing: set[str] = set()
-    for section in model.registry:
-        for leaf_id in ids:
-            leaf = next(leaf for leaf in model.leaves if leaf.id == leaf_id)
-            if ethics.gate_holds(section, dict(leaf.answers)):
-                firing.add(str(section.get("id", section.get("file"))))
-                break
     preds = ",".join(model.rows[row_id].predicates) or "(none)"
-    return f"registry sections firing on row leaves: {len(firing)}; row predicates: {preds}"
+    return f"row leaves: {len(ids)}; row predicates: {preds}"
 
 
 _ALIAS_ROWS = frozenset({"include=include_data_science", "include=include_web_api"})
@@ -719,10 +709,7 @@ def main() -> int:
     unevaluable = sum(1 for site in model.sites if site.vector is None)
 
     _eprint("gen_invariants.py M0: D1-D5 file-set recomputation vs tests/matrix/invariants.yml (read-only)")
-    _eprint(
-        f"inputs: leaves={len(model.leaves)} sites={len(model.sites)} "
-        f"unevaluable={unevaluable} registry-sections={len(model.registry)}"
-    )
+    _eprint(f"inputs: leaves={len(model.leaves)} sites={len(model.sites)} unevaluable={unevaluable}")
     for note in _questionnaire_notes(model):
         _eprint(f"questionnaire: {note}")
     _eprint("")
@@ -744,7 +731,7 @@ def main() -> int:
             cause = CAUSES.get(row_id, "UNTRIAGED: generator misread suspected, needs template re-read")
             _eprint(f"CAUSE {row_id}: {cause}")
         else:
-            _eprint(f"OK {row_id}: empty diff (match) -- {_ethics_note(model, row_id, model.members(row_id))}")
+            _eprint(f"OK {row_id}: empty diff (match) -- {_leaf_note(model, row_id, model.members(row_id))}")
     _eprint("method: named gates read from copier's own rendered contexts (never re-parsed),")
     _eprint("so adopt-mode gates (pkg_scaffold/prompts_scaffold) evaluate instead of going unevaluable;")
     _eprint("a remaining UNKNOWN names its gate (plan R4: never silently dropped).")

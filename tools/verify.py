@@ -3,15 +3,16 @@
 
 The manifest (`.architekton-manifest.yml`, rendered from
 `template/.architekton-manifest.yml.jinja`) is the public record of a
-generation: the template ref, the answers file it describes, and the ethics
-sections the render distributed -- never answer values (those live in
+generation: the template ref, the answers file it describes, and the kanon
+`when` conditions the render declared (the same list the generated
+`.daimonion.yml` carries) -- never answer values (those live in
 `.copier-answers.yml`, which copier already records). `verify` reads both
 files and checks the three claims the record makes:
 
 (a) the manifest's schema version is one this tool knows;
 (b) the manifest's ref agrees with the answers file's `_commit` stamp;
 (c) optionally (`--against`), the composition drift between two trees: which
-    ref, answers, and distributed sections changed.
+    ref, answers, and declared conditions changed.
 
 Answer values are compared as a SET -- copier records only the asked
 questions, so a key present on one side and absent on the other is a
@@ -126,10 +127,10 @@ def check_schema(manifest: dict[str, Any], report: Report) -> None:
         )
 
 
-def _sections(manifest: dict[str, Any]) -> dict[str, str]:
-    """The distributed sections as id -> version."""
-    entries = manifest.get("ethics_sections") or []
-    return {str(entry.get("id")): str(entry.get("version")) for entry in entries if isinstance(entry, dict)}
+def _conditions(manifest: dict[str, Any]) -> list[str]:
+    """The declared kanon `when` conditions, in manifest order."""
+    entries = manifest.get("when") or []
+    return [str(entry) for entry in entries if isinstance(entry, str) and entry]
 
 
 def check_ref(manifest: dict[str, Any], answers: dict[str, Any], report: Report) -> None:
@@ -167,19 +168,12 @@ def _diff_lines(before: list[str], after: list[str]) -> list[str]:
     return list(difflib.unified_diff(before, after, lineterm=""))[2:]
 
 
-def _section_drift_lines(before: dict[str, str], after: dict[str, str], *, label: str) -> list[str]:
-    """Added, removed and changed ethics sections between two compositions, in words."""
-    lines = [
-        f"{label} ethics section {'added' if section in after else 'removed'}: "
-        f"{section} ({after.get(section, before.get(section))})"
-        for section in sorted(set(before) ^ set(after))
+def _condition_drift_lines(before: list[str], after: list[str], *, label: str) -> list[str]:
+    """Added and removed `when` conditions between two compositions, in words."""
+    return [
+        f"{label} condition {'added' if condition in after else 'removed'}: {condition}"
+        for condition in sorted(set(before) ^ set(after))
     ]
-    lines.extend(
-        f"{label} ethics section changed: {section} {before[section]} -> {after[section]}"
-        for section in sorted(set(before) & set(after))
-        if before[section] != after[section]
-    )
-    return lines
 
 
 def _answer_drift_lines(before: dict[str, Any], after: dict[str, Any]) -> list[str]:
@@ -200,17 +194,17 @@ def compare(before: dict[str, Any], after: dict[str, Any], *, label: str, report
     if before.get("template_ref") != after.get("template_ref"):
         report.say(f"{label} template ref: {before.get('template_ref')} -> {after.get('template_ref')}")
         drifted = True
-    section_lines = _section_drift_lines(_sections(before), _sections(after), label=label)
-    for line in section_lines:
+    condition_lines = _condition_drift_lines(_conditions(before), _conditions(after), label=label)
+    for line in condition_lines:
         report.say(line)
-    drifted = drifted or bool(section_lines)
+    drifted = drifted or bool(condition_lines)
     answer_diff = _answer_drift_lines(before, after)
     if answer_diff:
         report.say(f"{label} answers changed:")
         report.lines.extend(answer_diff)
         drifted = True
     if not drifted:
-        report.say(f"{label} no composition drift: same ref, answers and sections")
+        report.say(f"{label} no composition drift: same ref, answers and conditions")
 
 
 def verify(target: Path, *, against: Path | None = None) -> Report:
@@ -226,8 +220,8 @@ def verify(target: Path, *, against: Path | None = None) -> Report:
     check_schema(manifest, report)
     check_ref(manifest, answers, report)
     check_answers_pointer(manifest, target, report)
-    sections = _sections(manifest)
-    report.say(f"ethics sections: {len(sections)} distributed ({', '.join(sorted(sections)) or 'none'})")
+    conditions = _conditions(manifest)
+    report.say(f"when conditions: {len(conditions)} declared ({', '.join(conditions) or 'none'})")
     if against is not None:
         other_manifest = load_manifest(against)
         other_answers = load_answers(against)

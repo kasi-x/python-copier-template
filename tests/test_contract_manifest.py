@@ -2,9 +2,10 @@
 
 The manifest (`.architekton-manifest.yml`) is the public record of a
 generation -- the template ref, the answers file it describes, and the
-ethics sections the render distributed -- never answer values. These tests
-render through tests/support.py's `render_answers` (the one render entry
-point, TODO §28.6-D5) and pin the three claims `architekton-py verify` checks:
+kanon `when` conditions the render declares (the same list `.daimonion.yml`
+carries) -- never answer values. These tests render through
+tests/support.py's `render_answers` (the one render entry point, TODO
+§28.6-D5) and pin the three claims `architekton-py verify` checks:
 
 - the manifest ships in a real render with its required keys;
 - `verify` succeeds on it, and fails when the manifest no longer matches
@@ -30,7 +31,7 @@ from tools.answers import BASE  # noqa: E402
 
 LIBRARY: dict[str, object] = {**BASE, "project_type": "library"}
 CLI: dict[str, object] = {**BASE, "project_type": "cli"}
-REQUIRED_KEYS = ("manifest_schema_version", "template_ref", "answers_file", "ethics_sections")
+REQUIRED_KEYS = ("manifest_schema_version", "template_ref", "answers_file", "when")
 
 
 def _render(target: Path, answers: dict[str, object]) -> None:
@@ -49,11 +50,7 @@ def test_manifest_ships_with_the_required_keys(tmp_path: Path):
         assert key in payload, f"the manifest must carry {key!r}"
     assert payload["manifest_schema_version"] == 1
     assert payload["answers_file"] == ".copier-answers.yml"
-    assert isinstance(payload["ethics_sections"], list) and payload["ethics_sections"], (
-        "the library render distributes sections (license-drift at least)"
-    )
-    for entry in payload["ethics_sections"]:
-        assert set(entry) == {"id", "version"}, f"a section entry is id + version, got {entry!r}"
+    assert payload["when"] == ["library"], f"the library render declares its condition, got {payload['when']!r}"
 
 
 def test_manifest_records_no_answer_values(tmp_path: Path):
@@ -112,12 +109,12 @@ def test_verify_fails_on_an_unknown_schema(tmp_path: Path, capsys: pytest.Captur
 
 
 def test_verify_compares_two_compositions(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
-    """`--against` names what changed: the answers and the distributed sections."""
+    """`--against` names what changed: the answers and the declared conditions."""
     after, before = _rendered_pair(tmp_path, LIBRARY, CLI)
     assert cli.main(["verify", after, "--against", before]) == cli.OK
     out = capsys.readouterr().out
     assert "project_type" in out, "the changed answer must be named"
-    assert "ethics section" in out, "the redistributed sections must be named"
+    assert "condition" in out, "the redeclared conditions must be named"
 
 
 def test_verify_reports_an_identical_composition(tmp_path: Path, capsys: pytest.CaptureFixture[str]):

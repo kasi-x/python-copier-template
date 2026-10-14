@@ -74,8 +74,8 @@ predicates:
     why: "every relative README.md link resolves inside the render"
   - id: docs-nav
     why: "every zensical.toml / mkdocs.yml nav target exists in the render"
-  - id: ethics-appendix
-    why: "the AGENTS.md ethics appendix ships exactly the sections the render's project kind selects (license drift everywhere the guide ships; PQC on library/cli/web_api; AI-and-copyright on cli and the data-science layout; LLM/MCP security where mcp_effective holds; ML fairness on the data-science layout and kaggle; the scraping-law map where scraping_effective holds; contest rules on the oj_code judges), per _shared/ethics/REGISTRY.yml's active rows"
+  - id: daimonion-config
+    why: "the render's .daimonion.yml when list is exactly the kanon conditions the leaf's answers derive (library/cli/embedded on the project type; personal_data/face_recognition/medtech on the domain_traits; scraping/mcp/oj_code/web_api/data_science/kaggle on the effective flags and judges; commercial on the distribution), AGENTS.md carries the empty ethics marker pair, and no kanon prose is vendored"
 
 # Names the witness leaf space deliberately keeps out, one line of reason
 # each (TODO.md §23.4: "enumerated" and "excluded" are both numbers). A
@@ -130,12 +130,13 @@ leaf_classes:
       - .github/workflows/template-update.yml
       - CHANGELOG.md
       - .architekton-manifest.yml
+      - .daimonion.yml
     absent:
       - "**/*.jinja"
     markers:
       # The common layout is not a branch tell: every class ships it.
       ships: []
-    predicates: [pyproject, readme-links, ethics-appendix]
+    predicates: [pyproject, readme-links, daimonion-config]
     why: "the layout every leaf ships, recommended gates or not; `absent` catches a branch that was copied verbatim instead of rendered"
 
   # -- layout switches ---------------------------------------------------- #
@@ -333,7 +334,7 @@ leaf_classes:
     tier:
       name: fast
       why: "AtCoder carries the execution sample; leetcode / yukicoder / aoj / codeforces / kattis / other are render-only"
-    why: "competitive-programming judges ship a bare workspace: no package and no challenges. The agent guide ships since 2026-09-21; its AI wording defers to the contest (oj_allow_ai picks the sentence where it was asked, the check-the-rules wording where it was not), and the contest-rules ethics section renders on this leaf (gated on oj_code)"
+    why: "competitive-programming judges ship a bare workspace: no package and no challenges. The agent guide ships since 2026-09-21; its AI wording defers to the contest (oj_allow_ai picks the sentence where it was asked, the check-the-rules wording where it was not), and this leaf derives the oj_code condition (the linter renders the contest-rules section)"
 
   # -- opt-in layers ------------------------------------------------------ #
   - id: include=include_data_science
@@ -381,7 +382,7 @@ leaf_classes:
     tier:
       name: fast
       why: "the opt-in layers (ctf / data_science / scraping / web_api) are coverable by rendering: their artifacts are file-set invariants"
-    why: "the polite-fetching layer as a module plus its offline test, the data-collection charter, and the pre-crawl legal checklist (the scraping-law ethics section renders in AGENTS.md on this leaf, gated on scraping_effective)"
+    why: "the polite-fetching layer as a module plus its offline test, the data-collection charter, and the pre-crawl legal checklist (this leaf derives the scraping condition; the linter renders the scraping-law section)"
 
   - id: include=include_mcp
     # src/flat placements only: a web_api base carries the scaffold at the
@@ -610,10 +611,10 @@ leaf_classes:
   # -- the domain traits -------------------------------------------------- #
   #
   # A `domain_traits` answer adds no artifact and changes no layout: it
-  # selects ethics sections in AGENTS.md and, for face-recognition, a
-  # dependency. So these rows declare no `ships`/`absent` (what they add is
+  # declares kanon conditions in `.daimonion.yml` and, for face-recognition,
+  # a dependency. So these rows declare no `ships`/`absent` (what they add is
   # content inside an artifact another row owns) and their tier is `fast` --
-  # the section's presence is the `ethics-appendix` predicate's business, and
+  # the conditions' presence is the `daimonion-config` predicate's business, and
   # nothing about it needs a venv. `domain` is a select key like `include`:
   # a leaf carrying several traits matches every row that names any of them,
   # which is what makes the co-occurrence leaf (`domain: [face-recognition,
@@ -622,31 +623,31 @@ leaf_classes:
     select: {domain: [personal-data]}
     ships: []
     absent: []
-    predicates: [ethics-appendix]
+    predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the trait adds an ethics section, no artifact of its own (support.yml tier_policy)"
-    why: "the personal-data domain trait: AGENTS.md gains the privacy section (minimise what you collect and log, give deletion a path, know what leaves the process). Biometric and health data are special categories of personal data, so the face-recognition and medtech traits select this row too -- the AGENTS.md gate spells that disjunction and the ethics-appendix predicate mirrors it."
+      why: "render + ruff: the trait adds kanon conditions, no artifact of its own (support.yml tier_policy)"
+    why: "the personal-data domain trait: .daimonion.yml gains the personal_data condition (the linter renders the privacy section: minimise what you collect and log, give deletion a path, know what leaves the process). Biometric and health data are special categories of personal data, so the face-recognition and medtech traits select this row too -- the derivation spells that disjunction and the daimonion-config predicate mirrors it."
 
   - id: domain=face-recognition
     select: {domain: [face-recognition, personal-data]}
     ships: []
     absent: []
-    predicates: [ethics-appendix]
+    predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the trait adds an ethics section and a dependency, no artifact of its own (support.yml tier_policy)"
-    why: "the face-recognition domain trait: AGENTS.md gains the biometric-identification section (confirm the use is lawful, store templates irreversibly, measure per-group error rates), plus the privacy section, since biometric data is a special category of personal data."
+      why: "render + ruff: the trait adds kanon conditions and a dependency, no artifact of its own (support.yml tier_policy)"
+    why: "the face-recognition domain trait: .daimonion.yml gains the face_recognition condition (the linter renders the biometric-identification section), plus personal_data, since biometric data is a special category of personal data."
 
   - id: domain=medtech
     select: {domain: [medtech, personal-data]}
     ships: []
     absent: []
-    predicates: [ethics-appendix]
+    predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the trait adds an ethics section and, only where the data-science layout holds, the CARE sheet"
-    why: "the medtech domain trait: AGENTS.md gains the medical-SaMD section, plus the privacy section (health data is a special category). questions/_internal.yml's `care` takes the trait as a second trigger but keeps the `data_science_layout` conjunct, so a clinical web service gets the sections and no data/ sheet."
+      why: "render + ruff: the trait adds kanon conditions and, only where the data-science layout holds, the CARE sheet"
+    why: "the medtech domain trait: .daimonion.yml gains the medtech condition (the linter renders the medical-SaMD section), plus personal_data (health data is a special category). questions/_internal.yml's `care` takes the trait as a second trigger but keeps the `data_science_layout` conjunct, so a clinical web service gets the conditions and no data/ sheet."
 
   # -- the distribution answers ------------------------------------------- #
   #
@@ -654,16 +655,16 @@ leaf_classes:
   # keeps it at its default (`in-house`), and the variants in
   # tools/z3_witnesses.py vary it. What it changes is one section -- the EU
   # CRA duties on `commercial` -- and nothing else, so these rows declare no
-  # artifacts and carry the `ethics-appendix` predicate.
+  # artifacts and carry the `daimonion-config` predicate.
   - id: distribution=commercial
     select: {}
     ships: []
     absent: []
-    predicates: [ethics-appendix]
+    predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the answer adds an ethics section, no artifact of its own (support.yml tier_policy)"
-    why: "the `commercial` distribution answer: AGENTS.md gains the EU CRA section (24-hour vulnerability reporting, SBOM, an explicit support period). Monetisation is what lifts the regulation's free-software exemption, which is why the section is gated on this answer rather than on the project type."
+      why: "render + ruff: the answer adds a kanon condition, no artifact of its own (support.yml tier_policy)"
+    why: "the `commercial` distribution answer: .daimonion.yml gains the commercial condition (the linter renders the EU CRA section: 24-hour vulnerability reporting, SBOM, an explicit support period). Monetisation is what lifts the regulation's free-software exemption, which is why the condition is derived from this answer rather than from the project type."
 
   - id: distribution=oss
     select: {}

@@ -20,7 +20,7 @@ copier.yml @kasi-x
 /questions/data_science.yml /presets/data-science.yml /tests/test_example_data_science.py /template/*data_science*/ /template/*data_science_layout*/ @kasi-x
 /questions/web_api.yml /presets/web-api.yml /tests/test_example_web_api.py /template/*web_api*/ @kasi-x
 
-# Cross-cutting layers (ethics appendix, scraping, bot, mcp) share the
+# Cross-cutting layers (daimonion conditions, scraping, bot, mcp) share the
 # questionnaire fragments; ownership stays with the maintainer until a
 # second maintainer exists.
-/_shared/ethics/ /docs/explanations/ethics-external.md /docs/how-to/ethics-section.md @kasi-x
+/_shared/daimonion-when.jinja @kasi-x

@@ -443,9 +443,9 @@ NEW_SRC_PATH = "https://github.com/politeuma/architekton-py.git"
 #: Forms: https with and without `.git`, and copier's `gh:` shorthand.
 LEGACY_SRC_PATHS: frozenset[str] = frozenset(
     {
-        "https://github.com/ConstitutiveTemplates/daimonion",
-        "https://github.com/ConstitutiveTemplates/daimonion.git",
-        "gh:ConstitutiveTemplates/daimonion",
+        "https://github.com/politeuma/daimonion",
+        "https://github.com/politeuma/daimonion.git",
+        "gh:politeuma/daimonion",
     }
 )
 

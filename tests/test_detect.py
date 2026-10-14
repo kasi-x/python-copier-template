@@ -151,9 +151,9 @@ def test_other_template_is_foreign(tmp_path: Path):
 def test_legacy_template_url_is_detected_as_ours(tmp_path: Path):
     """The pre-rename URL still names this template (it soon belongs to the linter)."""
     for src in (
-        "https://github.com/ConstitutiveTemplates/daimonion.git",
-        "https://github.com/ConstitutiveTemplates/daimonion",
-        "gh:ConstitutiveTemplates/daimonion",
+        "https://github.com/politeuma/daimonion.git",
+        "https://github.com/politeuma/daimonion",
+        "gh:politeuma/daimonion",
     ):
         assert detect._src_is_ours(src), f"legacy URL must be ours: {src}"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: no public entry point; the legacy-URL identity is a contract.
         (tmp_path / ".copier-answers.yml").write_text(f"_src_path: {src}\n")
@@ -163,7 +163,7 @@ def test_legacy_template_url_is_detected_as_ours(tmp_path: Path):
 def test_legacy_src_path_is_rewritten_to_the_new_url(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """The update-path migration rewrites a legacy `_src_path` (with a notice)."""
     answers = tmp_path / ".copier-answers.yml"
-    answers.write_text("_src_path: https://github.com/ConstitutiveTemplates/daimonion.git\n_commit: abc\n")
+    answers.write_text("_src_path: https://github.com/politeuma/daimonion.git\n_commit: abc\n")
     assert detect.migrate_legacy_src(tmp_path) == [".copier-answers.yml"]
     assert "_src_path: https://github.com/politeuma/architekton-py.git" in answers.read_text()
     assert "rewriting legacy template URL" in capsys.readouterr().out

@@ -4,11 +4,12 @@
 Responsibility: the witness ledger (`list_witnesses`, `recommend_answers`,
 `run_witness`), the repository's own suite tiers (`run_tests`), the pytest
 plumbing both runners share (`_output_tail`, `_build_pytest_command`,
-`_format_pytest_tier_result`, `_run_pytest_tier`), and the four read-only
+`_format_pytest_tier_result`, `_run_pytest_tier`), and the three read-only
 resources (`template://questionnaire`, `template://witnesses`,
-`template://support`, `template://ethics`). The tier tables
-(`WITNESS_MARKERS`, `WITNESS_TIMEOUTS`, `TIER_TASKS`, `TIER_LEDGER`,
-`TIER_TIMEOUTS`) live with the runners that read them.
+`template://support`). The tier tables (`WITNESS_MARKERS`,
+`WITNESS_TIMEOUTS`, `TIER_TASKS`, `TIER_LEDGER`, `TIER_TIMEOUTS`) live with
+the runners that read them. Ethics sections live in the `daimonion` linter's
+kanon corpus, not here.
 """
 
 # WHYNOT: the functions below are registered through
@@ -35,7 +36,6 @@ if str(TOP) not in sys.path:
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 from tools import answers_for  # noqa: E402
 from tools import batch  # noqa: E402
-from tools import ethics  # noqa: E402
 from tools import questionnaire  # noqa: E402
 from tools import support_ledger  # noqa: E402
 from tools.mcp_shared import OUTPUT_LIMIT  # noqa: E402
@@ -374,16 +374,3 @@ def _register_mcp_resources(server: Any) -> None:
         the live declaration rather than a second reading of it.
         """
         return json.dumps(support_ledger.load_support(), indent=2, sort_keys=True)
-
-    @server.resource("template://ethics")
-    def ethics_resource() -> str:
-        """The ethics/regional rule registry (_shared/ethics/REGISTRY.yml) as JSON.
-
-        One row per accumulated rule section -- id, lifecycle (draft / active /
-        kind), enforcement (L0 doc, L1 presence assert, L2 gate), scale,
-        audience, scope, primary sources, review dates and the documented
-        presence trigger. The active rows are what the generated AGENTS.md
-        ethics appendix ships; `check_ethics` matches text against these same
-        triggers.
-        """
-        return json.dumps(ethics.inventory(), indent=2, sort_keys=True)

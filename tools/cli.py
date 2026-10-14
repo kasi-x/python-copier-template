@@ -309,7 +309,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 def _add_verify_command(subcommands: Any) -> None:
     """Register the `verify` subcommand: one directory, optionally diffed against another."""
     verify_command = subcommands.add_parser(
-        "verify", help="verify a generated project's composition contract (template ref, answers, ethics sections)"
+        "verify", help="verify a generated project's composition contract (template ref, answers, when conditions)"
     )
     verify_command.add_argument("dir", type=Path, help="generated project to verify")
     verify_command.add_argument(

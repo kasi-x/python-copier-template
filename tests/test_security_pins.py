@@ -14,6 +14,8 @@ import re
 import sys
 from pathlib import Path
 
+import pytest
+
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
@@ -30,6 +32,7 @@ def _pins() -> dict[str, cu.Pin]:
     return {pin.name: pin for pin in pins}
 
 
+@pytest.mark.network
 def test_security_tool_pins_are_extracted_offline():
     """Every security-sensitive pin resolves to its workflow value, not '?'."""
     hygiene = HYGIENE.read_text(encoding="utf-8")
@@ -62,6 +65,7 @@ def test_actionlint_digest_pin_is_extracted_offline():
     assert pins["actionlint image digest (_hygiene.yml)"].current == digest.group(1)[:12]
 
 
+@pytest.mark.network
 def test_uvx_drift_rule_distinguishes_behind_from_removed():
     """A floor/latest gap is [DRIFT]; a REMOVED floor stays [DRIFT] too, never [ok]."""
     behind = cu.Pin(

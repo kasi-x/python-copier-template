@@ -94,7 +94,7 @@
    the questionnaire offers resolves to a policy, and the only empty one is
    AGPL-3.0, where nothing stronger exists to fail on. A license that fell
    through to "no --fail-on" would ship a `license-check` task that can never
-   fail while the ethics registry calls the rule an L2 gate -- so this is an
+   fail while the generated project still needs the license gate -- so this is an
    if/else chain with no gap, not a membership list. #}
 {% set license_fail_on = '' if license_effective == 'AGPL-3.0' else ('AGPL' if license_effective in ['GPL-2.0', 'GPL-3.0', 'LGPL-2.1', 'LGPL-3.0'] else 'GPL') %}
 {% set license_check_cmd = run ~ 'pip-licenses --from=mixed --partial-match' ~ (' --fail-on=' ~ license_fail_on if license_fail_on else '') %}
@@ -118,8 +118,16 @@
 ] + ([{'name': 'license-check',
        'desc': 'Check dependency licenses comply with ' ~ license_effective ~ ' (needs network)',
        'run': [license_check_cmd]}] if license_check_effective else []) + ([{'name': 'legal-check',
-       'desc': 'Scan changed files against the AGENTS.md legal/ethics triggers (needs network)',
+       'desc': 'Scan changed files with daimonion diff (needs network)',
        'run': ['uvx --from git+https://github.com/politeuma/daimonion daimonion diff --strict']}] if agents_md_effective else []) %}
+{# Post-render refresh for the AGENTS.md ethics marker block: `daimonion
+   agents-md --write` fills the markers from kanon using .daimonion.yml.
+   Network-dependent like audit (uvx fetches daimonion from git), so it stays
+   out of `check` (which must run offline) and never fails -- a failure
+   prints guidance instead. #}
+{% set ethics_tasks = [{'name': 'ethics-block',
+                        'desc': 'Refresh the AGENTS.md ethics block via daimonion (warns offline, never fails)',
+                        'run': ["uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --write || echo 'WARNING: ethics block not refreshed (offline?); rerun this task once network is available' >&2"]}] %}
 {% set docs_tasks = [
     {'name': 'docs', 'desc': 'Build documentation', 'run': [run ~ docs_build_cmd]},
     {'name': 'docs-serve', 'desc': 'Serve documentation with live reload', 'run': [run ~ docs_serve_cmd]},
@@ -222,7 +230,7 @@
      'desc': 'Run tests' ~ (' with coverage' if strictness in ['recommended', 'full'] and not oj_code else ''),
      'run': [run ~ 'pytest'
              ~ (' --cov=' ~ ('firmware' if micropython_pkg else pkg_dir) ~ ' --cov-report term --cov-report xml:cov.xml' if strictness in ['recommended', 'full'] and not oj_code else '')]},
-] + (docs_tasks if docs else []) + (kaggle_tasks if kaggle else []) + (data_science_tasks if data_science else []) + (micropython_tasks if micropython_pkg else []) + (mcp_tasks if mcp_effective and docker else []) + (bot_tasks if bot_effective and docker else []) + [
+] + (docs_tasks if docs else []) + (kaggle_tasks if kaggle else []) + (data_science_tasks if data_science else []) + (micropython_tasks if micropython_pkg else []) + (mcp_tasks if mcp_effective and docker else []) + (bot_tasks if bot_effective and docker else []) + (ethics_tasks if agents_md_effective else []) + [
     {'name': 'check', 'desc': 'Run all quality checks',
      'deps': ['lint'] + (['type-check'] if strictness in ['recommended', 'full'] else []) + ['test']},
 ] %}
@@ -233,7 +241,8 @@
                          'lint': 'ruff format --check + ruff check (check-only)',
                          'test': 'pytest',
                          'type-check': 'type checker + static analysis',
-                         'legal-check': 'daimonion diff --strict over the AGENTS.md ethics triggers',
+                         'legal-check': 'daimonion diff --strict over changed files (needs network)',
+                         'ethics-block': 'daimonion agents-md --write to refresh the ethics block (warns offline)',
                          'check': 'everything above'} %}
 {% set agent_commented = ['fix', 'lint', 'test', 'type-check', 'check'] if task_runner_effective == 'task' else (['fix'] if task_runner_effective == 'just' else []) %}
 {% endif %}

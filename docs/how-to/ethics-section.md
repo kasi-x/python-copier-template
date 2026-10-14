@@ -3,28 +3,26 @@
 Field rules (a retired NTP server, a licensing drift, a jurisdiction's
 data rules) are prose sections owned by
 [kanon](https://github.com/politeuma/kanon).
-This repo vendors a pinned snapshot of them into `_shared/ethics/` and
-wires each one through a row in `_shared/ethics/REGISTRY.yml`. The split
-is content vs. wiring: the codex is responsible for what a section says
-and whether its sources are still right; this repo decides which
-generated projects carry it. The design goal: a new rule must not move
-the questionnaire, the witness leaf space, or anyone's render — it
-accumulates as documentation first and is promoted only when a
-distribution bundle forms. Who decides what goes in the generated
-projects is stated in
+This repo no longer vendors them: it maps questionnaire answers onto kanon's
+abstract `when` conditions in `_shared/daimonion-when.jinja`, emits the
+result as the generated project's `.daimonion.yml`, and leaves an empty
+marker block in `AGENTS.md` for `daimonion agents-md --write` to fill. The
+split is content vs. wiring: kanon is responsible for what a section says
+and whether its sources are still right; this repo decides which abstract
+conditions a generated project declares. Who decides what goes in the
+generated projects is stated in
 [GOVERNANCE.md](https://github.com/politeuma/architekton-py/blob/main/GOVERNANCE.md):
 contributors draft and research; the maintainer owns the defaults and
-the promotions. The vendor contract is explained in
-[External ethics sections](../explanations/ethics-external.md).
+the promotions. The architecture is explained in
+[Ethics Content Lives in Kanon](../explanations/ethics-external.md).
 
 ## Write or correct the section upstream
 
 Section text — new sections, factual corrections, dead source links —
 goes to kanon as a pull request, following its
-`CONTRIBUTING.md`. Do not edit the files under `_shared/ethics/` here:
-they are a vendored copy, and `tools/check_ethics_drift.py` (run weekly
-by `ethics-sync.yml`) fails when they differ from the snapshot recorded
-in `.ethics-vendored`. Obligation-level changes (which statute requires
+`CONTRIBUTING.md`. There is nothing to vendor here: when the kanon change
+is merged, projects pick it up by running `daimonion agents-md --write`.
+Obligation-level changes (which statute requires
 what) go through law-map's
 [Legal RFC](https://github.com/politeuma/law-map/issues/new?template=legal_rfc.yml).
 
@@ -34,114 +32,37 @@ not-legal-advice footer. Name concrete shapes in 禁止パターン and
 copy-pasteable settings in 推奨設定, not slogans — back the rule with at
 least one bad/good code-or-config pair, the way the active sections do.
 Keep snippets free of `{{ }}` / `{% %}`: the section file is rendered as
-jinja, so double braces would be evaluated, not printed. And keep
-` ```python ` examples ruff-format-clean: ruff 0.16+ formats Python code
-blocks inside markdown, so a stylistically-off example fails the
-generated project's `task check` (the registry test here catches this
-at vendor time, before any render — a "bad" example is bad semantically,
-not stylistically).
+jinja, so double braces would be evaluated, not printed.
 
-## Vendor it and register a draft row
+## Declare the condition here
 
-Once the codex change is merged, the weekly drift check reports codex
-`main` ahead of `.ethics-vendored`. The sync PR here then:
+If the new section's kanon `when` is one this template never derives
+(a new abstract condition, or a new answer that implies an existing one),
+extend the derivation macro `_shared/daimonion-when.jinja` once — both the
+generated `.daimonion.yml` and the composition manifest's `when:` list
+interpolate that macro, so one edit serves both. `jp`, `eu_market` and
+`ai_assisted` are deliberately not derived: the config emits them as
+commented hints for the user to decide.
 
-1. Re-vendors the snapshot, keeping the two consumer-owned files:
-   `rsync -a --delete --exclude FLAGS.yml --exclude REGISTRY.yml <codex>/sections/ _shared/ethics/`,
-   then writes the codex SHA to `.ethics-vendored`.
-2. For a new section, registers one row in `_shared/ethics/REGISTRY.yml`
-   with `status: draft` and `rendered_from: []`; for an edited one,
-   mirrors the new `version` and `sources`. Keep the id, version
-   (`YYYY-MM-DD.rev`), and status in agreement with the file header —
-   the guards check both directions.
-3. Checks the result:
+Then check the result:
 
-   ```shell
-   uv run python tools/check_ethics_drift.py
-   uv run --locked pytest tests/test_ethics_registry.py
-   ```
+```shell
+uv run --locked pytest tests/test_daimonion_parity.py tests/test_daimonion_config.py
+```
 
-   The guards pin: row shape (id, version, dates, primary sources,
-   scope, scale, audience, enforcement), header agreement, the body
-   naming its scale and every audience entry, a documented presence
-   trigger (`設定側トリガー`) that compiles and stays unique across
-   rows, and — for drafts — that no template file includes you.
-
-A draft is documentation only: nothing includes it, no render changes,
-and every guard accepts it without any other file being touched.
-
-## Promote a draft to active
-
-A draft promotes only when a bundle forms: three sections sharing one
-distribution condition, or one section needing a distinct code/test gate
-(enforcement L2). A promotion changes generated renders, so it wires the
-verification stack as it goes — each step below has a check that catches
-the omission:
-
-| # | Touchpoint | What catches the omission |
-| --- | --- | --- |
-| 1 | Registry row: bump `version`, set `status: active`, name the parent(s) in `rendered_from`, and write the `gate` expression (the single spelling of "which leaf carries this section") | `test_ethics_registry.py`: a distributed row must name parents and carry a gate; its gate must parse under the allowlisted evaluator and name only leaf-context flags |
-| 2 | `uv run python tools/gen_ethics_appendix.py` — regenerate `_shared/ethics-appendix.jinja` from the registry | `test_the_generated_appendix_matches_the_registry` — a stale committed file fails |
-| 3 | The generated include lands in the AGENTS.md appendix automatically — there is no hand-written chain left to edit | the `ethics-appendix` predicate in `tests/test_render_invariants.py` evaluates the same gate string per leaf and fails a leaf missing the section *or* shipping it uninvited |
-| 4 | `tests/matrix/invariants.yml`: name the `ethics-appendix` predicate on every row whose leaves select the section (content pairs for section markers are gone — the predicate is the pin) | the predicate registry fails a named row without it |
-| 5 | `task witness` + the fast tier | the ledger freshness and content checks |
-
-The audience in the registry row is the human-readable word for the gate
-(`iot` may map to `micropython`, as `baseline-pki-chain` does); the gate
-spells the mapping, the row keeps the word. A draft row may carry its
-intended `gate` at registration time — it is linted (safe AST) but not
-bound-checked until activation, so a promotion is a status flip plus the
-answer wiring the gate already names.
+The guards pin: the parity test (every witness leaf's derived `when` set
+selects the same kanon sections the old gates did), the config test (the
+`when` list order, provenance comments, manifest agreement, and the empty
+marker pair with no vendored prose), and the `daimonion-config` predicate
+in `tests/test_render_invariants.py` (every leaf class carrying a condition
+names it in `tests/matrix/invariants.yml`).
 
 ## Enforcement levels
 
 | Level | Meaning | Consumer |
 | --- | --- | --- |
-| `L0` | the section reaches a reader | the generated AGENTS.md appendix, the MCP tools |
-| `L1` | the presence trigger is machine-readable | `tools/ethics.py match()`, the MCP `check_ethics` tool, `template://ethics` |
-| `L2` | something fails the build | e.g. `baseline-license-drift`'s `license-check` task in generated CI |
-
-New sections start at `L0`. A `L1` lift is free — the trigger span is
-already parsed for every row; drafts warn through `check_ethics` even
-while they ship nowhere. A `L2` lift needs a real gate with an offline
-contract (see how `license-check` stays out of `type-check`/`check`).
-
-## The sections this template currently ships
-
-The full inventory lives in `_shared/ethics/REGISTRY.yml`; the two most
-recently promoted rows are:
-
-- `domain-scraping-law` — **L0**, gate `scraping_effective` (the AGENTS.md
-  include is `{% if scraping_effective %}`). The scraping-law map: copyright
-  and the EU database right (Directive 96/9/EC art. 7) sit beside the
-  contract question (ToS) and the unauthorized-access line (CFAA /
-  不正アクセス禁止法), and robots.txt is evidence of the operator's intent,
-  not an authorization (hiQ Labs v. LinkedIn, 9th Cir. 2022). Its generated
-  counterpart is `LEGAL.md` — the per-source pre-crawl checklist every
-  scraping layer ships, asserting what the toolchain enforces vs what stays
-  the operator's duty.
-- `domain-contest-rules` — **L0**, gate `oj_code` (the code-submission
-  judges; kaggle and ctf are deliberately outside it). Competition
-  integrity: AI-use rules differ per judge and change (AtCoder bans
-  generative AI during ABC/ARC/AGC except a whitelisted translation
-  prompt), the submission is the entrant's own responsibility, and rating
-  manipulation / multi-accounting are banned.
-
-Both are `status: active` with `rendered_from` naming the AGENTS.md
-appendix, and the `ethics-appendix` predicate in
-`tests/test_render_invariants.py` holds each to the leaf classes its gate
-selects — the mutation that drops a gate fails the render sweep, not a
-human review.
-
-## Structured data: the `lang/` dictionaries
-
-Rules whose substance is a table (protection terms per jurisdiction,
-per-country filing deadlines) keep the prose summary in the section and
-the data in `_shared/ethics/lang/<name>.yml` — see
-`copyright-terms.yml`, the first one. The table names the section it
-serves (`serves:`), matches its `review_by`, carries primary sources per
-row, and the section references it back; a guard in
-`tests/test_ethics_registry.py` holds the two together.
+| `L0` | the section reaches a reader | the linter-rendered AGENTS.md block |
+| `L2` | something fails the build | e.g. the `license-check` task in generated CI (pip-licenses; needs no prose) |
 
 ## Market-triggered rules: the regions table
 
@@ -149,25 +70,14 @@ Some rules have no questionnaire channel at all: whether Japan's
 third-party-transmission disclosure duty or the EU Accessibility Act
 applies depends on the markets a project ships to, and a
 `target_markets` question would add a leaf-space dimension for two
-sections. Those rules do not promote into the AGENTS.md appendix;
+sections. Those rules do not derive a `when` condition;
 instead the generated project ships `ethics/regions.yml` (web_api
 renders only — both current rules are frontend/UI duties), a per-rule
-summary table whose `serves:` entries point back at the registry draft
-the rule abbreviates. The AGENTS.md appendix links to the file rather
-than including the sections, so the draft isolation the registry test
-enforces stays intact.
-
-A `serves:` line in `regions.yml` is the one permitted reference to a
-draft section from a `template/` file — it names the file for the
-reader without distributing its body. A rule graduates out of the
-table the same way any draft does: three sections sharing one
-distribution condition, or one needing its own gate.
+summary table whose `serves:` entries point at the kanon section URLs.
+The AGENTS.md block links to the file rather than including the sections.
 
 ## Keeping sections alive
 
-Every row's `review_by` is the date its 制度変更ウォッチ items must be
-re-checked by. A passed date fails the registry test, so CI reddens
-until someone re-checks the primary sources, updates the body, and bumps
-the row's `version` and `review_by` (or supersedes the row via
-`superseded_by`). The re-check is a good first contribution; the bump is
-a one-line registry edit.
+Every kanon section's `review_by` is the date its 制度変更ウォッチ items
+must be re-checked by. That cadence lives upstream now — re-checks land as
+kanon pull requests, not template edits.

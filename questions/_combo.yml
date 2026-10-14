@@ -167,16 +167,16 @@ combinable:
 # The domain traits: what the project is ABOUT, as opposed to which layout it
 # builds. A multiselect rather than one question per domain, because the
 # domains genuinely co-occur -- a face-recognition model that also touches
-# patient data selects both, and the ethics appendix must then carry both
-# sections. Each choice maps to an ethics/REGISTRY.yml audience (see the
-# `ethics-domain-traits` mapping below) and, where it applies, to packages.
+# patient data selects both, and the emitted `.daimonion.yml` must then carry
+# both conditions. Each choice maps to a kanon `when` condition (see the
+# derivation in `_shared/daimonion-when.jinja`) and, where it applies, to packages.
 #
-# Asked on every base rather than under data-science: the section that fires
+# Asked on every base rather than under data-science: the condition that fires
 # is chosen by *purpose*, not by layout -- a FastAPI service that verifies
 # faces is in scope, and so is an MCP server that exposes a recognition tool.
-# The gates that distribute each section live in AGENTS.md.jinja; the
-# predicate that holds them to this answer lives in
-# tests/test_render_invariants.py (`_domain_traits`).
+# The derivation from this answer to the `when` list lives in
+# `_shared/daimonion-when.jinja`; the predicate that holds it to this answer
+# lives in tests/test_render_invariants.py (`_domain_traits`).
 domain_traits:
     type: str
     multiselect: true
@@ -235,7 +235,7 @@ domain_traits:
 # plus `commercial` is a contradiction the user can see and fix.
 #
 # Asked before the distribution questions it informs (`pypi`, `docker`), and
-# consumed by the ethics gates as a second signal next to `domain_traits`.
+# consumed by the daimonion `when` derivation as a second signal next to `domain_traits` (`commercial` derives the commercial condition).
 distribution:
     type: str
     multiselect: true

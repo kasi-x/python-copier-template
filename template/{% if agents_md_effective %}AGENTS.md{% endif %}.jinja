@@ -109,37 +109,19 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
   messages and the PR title.
 - CI runs lint, type-check, and tests on every push
 {% if docs %} plus a docs build{% endif %}; keep all of them green.
-{# The ethics appendix: the include chain is GENERATED from the registry
-   (_shared/ethics/REGISTRY.yml `status`/`gate` per row) by
-   tools/gen_ethics_appendix.py — adding or gating a section edits the
-   registry row once; this file and the render-invariants predicate both
-   follow the same spelling. Each section file carries exactly one trailing
-   newline (and starts with a jinja comment, whose newline is the blank line
-   between sections), so the rendered guide ends with a single newline for
-   every gate combination. #}
+{# Ethics block: filled by `daimonion agents-md --write` from kanon (see .daimonion.yml); the markers must stay. #}
 ## Field rules (ethics appendix)
 
-Field rules the generator matched to this project kind (crypto choices,
-dependency license drift, data-collection copyright, the scraping-law map,
-contest-integrity rules, PKI trust-chain
-hygiene, LLM/MCP tool security, model-evaluation fairness), plus the
-rules your `domain_traits`
-answer selected (personal data, biometric identification, medical device
-software), and the EU Cyber Resilience Act's duties where the project is
-sold or packaged as a product. Each section provides an immediate rule summary
-and regex triggers; detailed facts, case citations, and prohibited patterns are
-folded in `<details>` blocks so agents can inspect them on demand without
-cluttering context.
+Field rules for this project kind live in the marker block below.
+
+The block is maintained by `daimonion agents-md --write` from the kanon corpus; edit `.daimonion.yml`, not the block.
 
 To mechanically verify changed files against these triggers before committing,
 run `uvx --from git+https://github.com/politeuma/daimonion daimonion diff`
-(or `... daimonion check <path>`). Sections are written in Japanese.
+(or `... daimonion check <path>`).
 {% if web_api %}
-If this project ships a consumer-facing web frontend, `ethics/regions.yml`
-lists the market-triggered rules no questionnaire answer can route here --
-Japan's third-party-transmission disclosure duty and the EU Accessibility
-Act. Read the row for the regions you ship to and follow its source links;
-each `serves` entry names the full section draft in the template
-repository.
+Market-triggered rules no questionnaire answer can route here live in
+`ethics/regions.yml` -- read the row for each region you ship to.
 {% endif %}
-{% include "_shared/ethics-appendix.jinja" -%}
+<!-- daimonion:ethics:begin -->
+<!-- daimonion:ethics:end -->
