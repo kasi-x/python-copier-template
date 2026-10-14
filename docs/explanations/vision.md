@@ -14,6 +14,14 @@ developer actually meets — library, service, data pipeline, competitive
 programming, robotics, firmware — with its question logic machine-checked and
 every answer path's render tested, not just documented.**
 
+It is one adoption entry point into the wider politeuma rule distribution,
+not its end: the canonical picture is the
+[politeuma architecture diagram](https://github.com/politeuma/.github/blob/main/profile/diagram.md),
+where law-map is the rulebook, kanon renders the prose, and daimonion
+delivers the matching rules into any repository's `AGENTS.md`. This template
+is the way in for *new Python projects*; any existing repository, in any
+language, adopts the same rules through daimonion directly.
+
 Most opinionated templates pick one project shape (usually "installable
 library") and do it well. This one treats "which shape of project" as a
 first-class, combinable axis (`project_type` + layers, see
@@ -101,7 +109,18 @@ anything. Concretely, out of scope:
 If your use case falls in one of these gaps, this template will actively
 tell you so at generation time rather than generate something half-working.
 
-## Current status and how to help
+## The recommended path and its guarantees
+
+The questionnaire's recommended answers (uv + just + zensical, `recommended`
+strictness) are the only combination CI executes end to end — `uv sync`,
+the generated pytest, basedpyright, and the docs build on every witness
+sample leaf (the `full` tier in [Support Levels](../reference/support.md)).
+Every other option the questionnaire keeps (poetry / pixi, the other six
+task runners, Sphinx / great-docs, ty, ros2, the non-AtCoder judges) still
+renders and is ruff-checked, but is community-supported: it ships because
+someone uses it, and it stays because someone runs it — CI does not execute
+it. Reporting a break there with a reproducing render is the contribution
+that keeps it.
 
 This is a young, solo-maintained project (recently forked from and
 still diverging fast past

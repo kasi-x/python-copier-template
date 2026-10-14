@@ -56,31 +56,30 @@ Two layers cover two failure classes: the in-process rollback
 the run has not committed, so `--recover` can finish the undo. A stale
 journal blocks the next run (exit 4) until it is recovered.
 
-## Ethics and law distribution pipeline
+## Ethics and law distribution: this template is one entry point
 
 Legal content flows downstream through three external repositories before it
 reaches a generated `AGENTS.md`. The full contract is
-[Ethics as External Source](ethics-external.md); this is the same chain as a
-pipeline.
+[Ethics as External Source](ethics-external.md); this is the downstream end
+of that chain — rendered here for one consumer (new Python projects), not
+the pipeline's end. The canonical org-wide picture, where this template is
+one adoption entry point beside any other repository via daimonion, is the
+[politeuma architecture diagram](https://github.com/politeuma/.github/blob/main/profile/diagram.md):
+law-map is the rulebook, kanon renders the prose, daimonion delivers it,
+and architekton-py is one way in.
 
 ```mermaid
 flowchart LR
-    OL["open-law<br/>(world legislation corpus)"] --> LM["law-map<br/>(obligation graph,<br/>related_sections ids)"]
-    LM --> CX["kanon<br/>(reviewed prose,<br/>MANIFEST.yml when + placement)"]
+    OL["open-law<br/>(world legislation corpus)"] --> LM["law-map<br/>(THE RULEBOOK:<br/>obligation graph)"]
+    LM --> CX["kanon<br/>(reviewed prose,<br/>generated MANIFEST.yml)"]
     CX --> DW["_shared/daimonion-when.jinja<br/>(answers → when conditions)"]
     DW --> DC[".daimonion.yml<br/>(declared conditions)"]
     DC --> AM["daimonion agents-md --write<br/>(fills the marker block)"]
     AM --> AG["AGENTS.md<br/>(empty markers + linter block)"]
+    AM -.->|"same linter, other repos"| OTHER["any other repo<br/>(via daimonion)"]
 ```
 
 Watchers on the chain, each naming exactly one failure:
-`scheduled-check.yml` job `law-map-review-by` (expired `review_by`
-groundings, `law-map check --kanon`), and the `e2e` job in
-`e2e-ecosystem.yml` (`law-map export` + kanon validate + a render whose
-`.daimonion.yml` declares the expected conditions). The generated
-project's own `legal-check` task (`_tasks.jinja`, `daimonion diff --strict`)
-is the downstream consumer, not a watcher. There is no vendor-sync watcher
-anymore: nothing is vendored, so prose drift cannot happen here.
 
 ## CI at a glance: four lanes
 
