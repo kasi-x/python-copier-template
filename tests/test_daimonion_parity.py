@@ -8,7 +8,7 @@ tests/matrix/witnesses.jsonl (272), the set of section ids selected by the
 old registry gates must equal the set selected by kanon's `applies()` over
 the derived `when` set.
 
-Two deliberate self-containments (the sibling slice deletes tools/ethics.py
+Two deliberate self-containments (the sibling slice deletes architekton/ethics.py
 and _shared/ethics/REGISTRY.yml, so neither may be imported here):
 
 - the old side's active gates are a FROZEN constant copied from
@@ -117,7 +117,7 @@ def _combinable(answers: dict) -> bool:
 
 
 def leaf_context(answers: dict) -> dict:
-    """Mirror of tools/ethics.py `leaf_context` (questions/_internal.yml derived defaults)."""
+    """Mirror of architekton/ethics.py `leaf_context` (questions/_internal.yml derived defaults)."""
     project_type = str(answers.get("project_type") or "")
     combinable = _combinable(answers)
     web_api = project_type == "web_api" or (bool(answers.get("include_web_api")) and combinable)

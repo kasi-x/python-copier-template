@@ -7,7 +7,7 @@
 #
 #   ships / absent  the artifacts a render of that class must (not) contain.
 #                   This is the `expect` of a §C6 batch request:
-#                   tools/z3_witnesses.py builds tests/matrix/witnesses.jsonl
+#                   architekton/z3_witnesses.py builds tests/matrix/witnesses.jsonl
 #                   from it and tests/test_witness_matrix.py's fast tier
 #                   asserts it.
 #   predicates      the content predicates that must hold on the render.
@@ -39,7 +39,7 @@
 # its rows declare; the tier the witness ledger actually ran it at must be one
 # of them, which is what keeps this column and that ledger from drifting.
 # Every dimension value a leaf carries (project_type, oj_kind, an include
-# layer, a gate turned off) must be selected by some row: tools/invariants.py
+# layer, a gate turned off) must be selected by some row: architekton/invariants.py
 # reports the ones that are not, so a new question, layer or judge cannot be
 # added without saying what it renders.
 #
@@ -89,7 +89,7 @@ predicates:
 # What each adopt-time merge kind promises about its outcome.
 # This is the oracle the merge-contract tests read (tests/test_merge_contracts.py,
 # which owns the condition implementations and holds this registry against the
-# dispatch in tools/file_merge.py / tools/pyproject_merge.py): a kind the code
+# dispatch in architekton/file_merge.py / architekton/pyproject_merge.py): a kind the code
 # offers without a declared contract, a contract whose kind is gone, and a
 # condition name no checker implements all fail. Conditions:
 #   original_is_prefix  the adopter's pre-merge content is still a byte prefix
@@ -442,7 +442,7 @@ leaf_classes:
 
   # -- bot platforms chosen (the derived variants: gate off + platform) --- #
   # One row per generated platform the base leaves do not carry. The leaf
-  # space derives them (tools/z3_witnesses.py BOT_PLATFORM_VARIANTS) so the
+  # space derives them (architekton/z3_witnesses.py BOT_PLATFORM_VARIANTS) so the
   # nightly rehearsal and the render sweep cover every generated platform,
   # not just the recommended one.
   - id: include=include_bot/bot_platform=slack
@@ -653,7 +653,7 @@ leaf_classes:
   #
   # Like the domain traits, `distribution` is a derived axis: the projection
   # keeps it at its default (`in-house`), and the variants in
-  # tools/z3_witnesses.py vary it. What it changes is one section -- the EU
+  # architekton/z3_witnesses.py vary it. What it changes is one section -- the EU
   # CRA duties on `commercial` -- and nothing else, so these rows declare no
   # artifacts and carry the `daimonion-config` predicate.
   - id: distribution=commercial

@@ -162,4 +162,4 @@ conventional commits ([CHANGELOG.md](CHANGELOG.md)). Contributions are welcome
 — see [CONTRIBUTING.md](.github/CONTRIBUTING.md), the
 [contributing how-to](docs/how-to/contribute.md) and
 [GOVERNANCE.md](GOVERNANCE.md); report vulnerabilities as described in
-[SECURITY.md](SECURITY.md).
+[SECURITY.md](SECURITY.md). Pre-1.0 API: 0.x releases carry no compatibility guarantee.

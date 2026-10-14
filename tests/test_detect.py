@@ -1,4 +1,4 @@
-"""Tests for tools/detect.py: which mode fits a target, and what it has.
+"""Tests for architekton/detect.py: which mode fits a target, and what it has.
 
 The detection runs against synthetic trees (deterministic, offline) plus a
 few assertions on the real template/ tree, so the "what would the template
@@ -19,7 +19,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import detect  # noqa: E402
+from architekton import detect  # noqa: E402
 
 
 def git(cwd: Path, *args: str) -> None:

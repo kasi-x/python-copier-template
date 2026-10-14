@@ -19,7 +19,7 @@ Python-coupled implementation and a contract that names no Python:
   enumerate the reachable leaves, prove every leaf renders, and prove every
   rendered leaf is reachable.
 - **Python coupling**: the questionnaire is copier's YAML+Jinja format; the
-  encoder (`tools/when_model.py`, `tools/z3_witnesses.py`) parses Jinja
+  encoder (`architekton/when_model.py`, `architekton/z3_witnesses.py`) parses Jinja
   expressions and copier's merge semantics.
 - **Reusable minimum**: the *predicate algebra* — `and`/`or`/`not`,
   `==`/`!=`/`in` over a flat answer dictionary — plus the leaf-enumeration
@@ -99,7 +99,7 @@ claims, and the port should not proceed.
   first, and expanding Python's supported surface is out of scope.
 - No shared runtime. The reusable artifact is a *specification + a
   reference checker*, not a library the Python template would import — the
-  existing `tools/` stack stays the Python implementation of record.
+  existing `architekton/` stack stays the Python implementation of record.
 - No commitment. If the prototype shows the maintenance owner and cost are
   not clearly better than status quo, this page stands as the record of why
   the port was declined.

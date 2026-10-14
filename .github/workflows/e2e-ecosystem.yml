@@ -84,7 +84,7 @@ jobs:
 
       - name: Validate the kanon corpus
         working-directory: kanon
-        run: uv run --with pyyaml python tools/validate.py
+        run: uv run --with pyyaml python architekton/validate.py
         # Exits 1 on any structural drift (a section missing from MANIFEST,
         # a malformed ethics header, an expired review_by, jinja leaking
         # into a flag-agnostic body).
@@ -93,7 +93,7 @@ jobs:
         working-directory: architekton-py
         run: |
           set -euo pipefail
-          uv run --locked python -m tools.cli new ../e2e-project --preset web-api --ref HEAD
+          uv run --locked python -m architekton.cli new ../e2e-project --preset web-api --ref HEAD
           # --ref HEAD renders this checkout's working tree: the pipeline
           # tests today's template, not the newest release tag.
           #

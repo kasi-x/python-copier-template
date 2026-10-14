@@ -1,6 +1,6 @@
 """`presets/*.yml` are usable answers files: each renders end to end.
 
-`tools/cli.py`'s `--preset` path reads one of these files and makes the run
+`architekton/cli.py`'s `--preset` path reads one of these files and makes the run
 non-interactive (`--defaults`), so the shared Project Details plus the
 preset's few keys is exactly the answer set a user supplies. These tests
 render that set for real -- `copy_project_recommended` with the preset's
@@ -23,10 +23,10 @@ from pathlib import Path
 import pytest
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_cli.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_cli.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import cli  # noqa: E402
+from architekton import cli  # noqa: E402
 
 from support import copy_project_recommended  # noqa: E402
 
@@ -108,7 +108,7 @@ def test_every_preset_is_named_in_project_type_help():
     (copier.yml `help:` -- see notes/DESIGN-preset-guidance.md decision A).
     A preset added without updating the pointer would silently ship an
     invisible preset; this pins the advertisement to the preset list."""
-    from tools import when_model
+    from architekton import when_model
 
     questions, _ = when_model.load_questions()
     help_text = questions["project_type"]["help"]

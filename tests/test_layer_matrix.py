@@ -18,7 +18,7 @@ compare, so a `when` that changed meaning without changing shape still
 fails.
 
 Direction (b) — when -> matrix: the identifiers each `when` reads
-(tools/when_model.jinja_identifiers, Jinja operators subtracted) must be
+(architekton/when_model.jinja_identifiers, Jinja operators subtracted) must be
 exactly {project_type} plus the row's declared clauses. A future clause
 added to a `when` without updating the declaration fails here, and so does a
 declaration row naming a clause the `when` no longer has.
@@ -48,13 +48,13 @@ import pytest
 import yaml
 
 TOP = Path(__file__).resolve().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
+from architekton import answers  # noqa: E402
+from architekton import when_model  # noqa: E402
 from copier._main import Worker  # noqa: E402
 from copier._user_data import Question  # noqa: E402
-from tools import answers  # noqa: E402
-from tools import when_model  # noqa: E402
 
 MATRIX = TOP / "tests" / "matrix" / "layers.yml"
 
@@ -284,7 +284,7 @@ def test_matrix_rows_are_live_and_complete():
     A layer row naming a question that is gone (or whose `when` stopped being
     templated) is as stale as an include question that appeared without a
     declaration: the same declared-not-discovered rule
-    tools/z3_witnesses.py enforces for the leaf space, applied to the matrix.
+    architekton/z3_witnesses.py enforces for the leaf space, applied to the matrix.
     """
     questions, _order = when_model.load_questions()
     choices = set(when_model.static_str_choices(questions["project_type"]))

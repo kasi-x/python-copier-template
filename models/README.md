@@ -1,6 +1,6 @@
 # Formal models of the adopt protocol (Quint)
 
-The crash-safety argument that backs the journal design in `tools/adopt.py`,
+The crash-safety argument that backs the journal design in `architekton/adopt.py`,
 kept as machine-checkable models instead of a prose claim.  Provenance: the
 models were written and verified during a design spike on 2026-09-14; they
 were adopted into the repository so CI re-verifies them on every change

@@ -1,6 +1,6 @@
 # Use the template's own MCP server
 
-`tools/mcp_server.py` exposes **this repository's** tooling over MCP, so an
+`architekton/mcp_server.py` exposes **this repository's** tooling over MCP, so an
 agent editing the template calls `template_status`, `render_project`,
 `render_diff`, `run_witness` and friends instead of shelling out and parsing
 text. It is the maintenance-loop counterpart of
@@ -15,9 +15,9 @@ up as soon as you open the checkout.
 
 ```shell
 task mcp                                     # stdio -- what an MCP host launches
-uv run --locked python tools/mcp_server.py   # the same command, unpacked
+uv run --locked python architekton/mcp_server.py   # the same command, unpacked
 task mcp CLI_ARGS="--transport streamable-http"   # serve it on 127.0.0.1:8000
-uv run mcp dev tools/mcp_server.py           # MCP Inspector (needs npx)
+uv run mcp dev architekton/mcp_server.py           # MCP Inspector (needs npx)
 ```
 
 `.mcp.json` registers exactly that stdio command, which is also what `task mcp`
@@ -28,7 +28,7 @@ runs:
   "mcpServers": {
     "architekton-py": {
       "command": "uv",
-      "args": ["run", "--locked", "python", "tools/mcp_server.py"],
+      "args": ["run", "--locked", "python", "architekton/mcp_server.py"],
       "env": {}
     }
   }
@@ -56,7 +56,7 @@ witness tiers run into minutes.
 | `render_project` | render a set of answers, and report the files it produced (`{path, sha256}` per file; `diff_against` a previous render for a manifest diff) | one render; `prepare=True` adds an install (network on a cold cache) |
 | `render_diff` | two answer sets rendered and compared file by file | two renders, no install |
 | `lint_render` | render, then `ruff format --check` + `ruff check` under the generated config | one render + two ruff runs, no venv |
-| `run_batch` | a batch file's verdict (`tools/batch.py` semantics, structured) | one render per line; `prepare=True` adds installs |
+| `run_batch` | a batch file's verdict (`architekton/batch.py` semantics, structured) | one render per line; `prepare=True` adds installs |
 | `run_witness` | a witness tier's verdict, one entry per executed test | `fast` a few seconds (272 renders, no venv), `slow` ~2 min, `full` adds venvs and network (tens of minutes) |
 | `run_tests` | the same verdict shape for the suite's own tiers: `fast` / `heavy` / `slow` / `meta` / `all` | the tier you name; the marker expression comes from the cost ledger |
 | `check_ethics` | which kanon rules the given text trips (matched by the linter's trigger index): each match carries the section's id and title — the generated `license-check` gate stays as the offline L2 enforcement | filesystem |
@@ -112,7 +112,7 @@ allowed `Host` completing an `initialize` handshake at 200.
 
 Two MCP servers exist in this repository, and they stay separate on purpose:
 
-| | `tools/mcp_server.py` (this one) | `_shared/mcp_server.py.jinja` |
+| | `architekton/mcp_server.py` (this one) | `_shared/mcp_server.py.jinja` |
 | --- | --- | --- |
 | Serves | the template's maintenance loop | the generated project, after `include_mcp` |
 | Audience | an agent editing the template | the project's own users and their hosts |
@@ -132,7 +132,7 @@ repository declares `starlette` in its dev group and imports it directly.
 
 Fix a generated project's server in `_shared/mcp_server.py.jinja` (and
 [the MCP how-to](mcp.md) describes what it ships); add a maintenance tool to
-`tools/mcp_server.py` and the table above.
+`architekton/mcp_server.py` and the table above.
 
 ## Related
 

@@ -110,9 +110,9 @@ By default it builds the port you chose when generating the project
 (`micropython_port`). Build a different port or board explicitly:
 
 ```sh
-python tools/micropython/freeze.py --port rp2
-python tools/micropython/freeze.py --port esp32 --board ESP32_GENERIC_S3
-python tools/micropython/freeze.py --tag vX.Y.Z   # pin the MicroPython version
+python architekton/micropython/freeze.py --port rp2
+python architekton/micropython/freeze.py --port esp32 --board ESP32_GENERIC_S3
+python architekton/micropython/freeze.py --tag vX.Y.Z   # pin the MicroPython version
 ```
 
 | Port | Toolchain image | Default board | Artifact |

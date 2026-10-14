@@ -52,10 +52,10 @@ from copier._main import as_operation
 from copier._types import Phase
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools.answers import BASE  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 import render_cache  # noqa: E402  # the tests/ dir is on sys.path (pytest's rootless imports)
 
@@ -129,7 +129,7 @@ def copy_project_recommended(project_path: Path, *, run_tasks: bool = True, **kw
     an explicit value so it never exercises the `use_recommended_*` gates'
     own defaults -- copier uses a `data`-supplied value even for a question
     whose `when` is false. This starts from only the required "Project
-    Details" answers (tools/answers.py BASE), so `use_recommended_*` (true by
+    Details" answers (architekton/answers.py BASE), so `use_recommended_*` (true by
     default) actually drives the rest of the answer set via each question's
     own `default:`. Same render semantics as copy_project (tasks replayed
     unless `run_tasks=False`).
@@ -158,7 +158,7 @@ def render_answers(project_path: Path, answers: dict[str, object], *, run_tasks:
 
 # copier runs its questionnaire pass and task execution through private API
 # (Worker._ask / _execute_tasks) with no public alternative -- the
-# tools/predicates.py `leaf_contexts` oracle precedent in this repo.
+# architekton/predicates.py `leaf_contexts` oracle precedent in this repo.
 
 
 @functools.cache
@@ -208,7 +208,7 @@ def _resolved_answers(answers: dict[str, object]) -> Any:
     worker.data = dict(answers)
     worker.dst_path = _task_context_dir()
     worker.__dict__.pop("subproject", None)  # cached_property: rebind to the pristine dir
-    worker._ask()  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: copier's own pass, tools/predicates.py precedent.
+    worker._ask()  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: copier's own pass, architekton/predicates.py precedent.
     render_cache.shared_cache().store_answers(answers, worker.answers)
     return worker.answers
 

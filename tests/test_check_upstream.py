@@ -25,7 +25,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import check_upstream as cu  # noqa: E402
+from architekton import check_upstream as cu  # noqa: E402
 
 
 def _pin(upstream: str) -> cu.Pin:

@@ -1,10 +1,10 @@
-"""Tests for tools/scaffold.py: question, layer, and preset generator."""
+"""Tests for architekton/scaffold.py: question, layer, and preset generator."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from tools import scaffold
+from architekton import scaffold
 
 
 def test_validate_expression_satisfiable():
@@ -114,9 +114,9 @@ def test_scaffold_preset_rejects_unknown_base(capsys: Any):
 
 def test_scaffold_preset_base_choices_match_questionnaire():
     """Every committed preset's base is a live project_type choice (no drift)."""
-    from tools import answers  # noqa: PLC0415
-    from tools import questionnaire  # noqa: PLC0415
-    from tools import when_model  # noqa: PLC0415
+    from architekton import answers  # noqa: PLC0415
+    from architekton import questionnaire  # noqa: PLC0415
+    from architekton import when_model  # noqa: PLC0415
 
     questions, _order = when_model.load_questions()
     valid = questionnaire.static_str_choices(questions["project_type"])

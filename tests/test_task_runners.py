@@ -35,10 +35,10 @@ import pytest
 import yaml
 
 TOP = Path(__file__).resolve().parent.parent
-if str(TOP) not in sys.path:  # the tools/* modules are imported the same way in every test module
+if str(TOP) not in sys.path:  # the architekton/* modules are imported the same way in every test module
     sys.path.insert(0, str(TOP))
 
-from tools import questionnaire  # noqa: E402
+from architekton import questionnaire  # noqa: E402
 
 from support import copy_project  # noqa: E402
 from support import make_venv  # noqa: E402

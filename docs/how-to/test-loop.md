@@ -162,7 +162,7 @@ task test-fast CLI_ARGS="tests/test_example_web_api.py -k web_api"
 
 ## Investigating one combination
 
-`tools/batch.py` renders real projects from a JSONL request list
+`architekton/batch.py` renders real projects from a JSONL request list
 ([Run a Batch of Generation Requests](batch.md)). For investigation, run a
 single line and keep what it produced:
 
@@ -184,13 +184,13 @@ guard.
 
 ## The same capabilities over MCP
 
-`tools/mcp_server.py` exposes the tooling to an MCP host (an agent, an IDE,
+`architekton/mcp_server.py` exposes the tooling to an MCP host (an agent, an IDE,
 the MCP Inspector) so it does not have to shell out and parse text:
 
 ```shell
 task mcp                                  # stdio (how an MCP host launches it)
 task mcp CLI_ARGS="--transport streamable-http"
-uv run mcp dev tools/mcp_server.py        # MCP Inspector
+uv run mcp dev architekton/mcp_server.py        # MCP Inspector
 ```
 
 | Tool | What it answers |

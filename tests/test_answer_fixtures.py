@@ -4,7 +4,7 @@ copier silently ignores an answer whose question does not exist --
 it renders that question's default instead -- so a renamed question or a typo
 in a fixture turns a render test into a test of nothing, while it keeps
 passing. Nothing compared the fixtures with the questionnaire; the shared
-values themselves live in tools/answers.py, and these checks are the guard
+values themselves live in architekton/answers.py, and these checks are the guard
 that keeps the two apart.
 """
 
@@ -20,8 +20,8 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import answers  # noqa: E402
-from tools import questionnaire  # noqa: E402
+from architekton import answers  # noqa: E402
+from architekton import questionnaire  # noqa: E402
 
 import test_batch  # noqa: E402
 import test_bot_layer  # noqa: E402
@@ -51,7 +51,7 @@ GATE_PREFIX = "use_recommended_"
 # test below refuses an undeclared repeat, and refuses a declared key that has
 # stopped repeating (a stale entry is the same lie in the other direction).
 DEFAULT_REPEATS_ALLOWED: dict[str, dict[str, str]] = {
-    "tools/answers.py BASE": {
+    "architekton/answers.py BASE": {
         "git_platform": "BASE is what the committed tests/matrix/witnesses.json(l) leaves were derived"
         " from, so dropping the key would rewrite byte-frozen fixtures; it leaves only with a"
         " deliberate witness regeneration",
@@ -66,7 +66,7 @@ DEFAULT_REPEATS_ALLOWED: dict[str, dict[str, str]] = {
         "git_platform": "inherited from answers.BASE, which the witness bytes pin",
     },
     "test_recommended_path.FAST_PATHS": {
-        "project_type": "tools/invariants.facts refuses a case without a stated project_type, so the"
+        "project_type": "architekton/invariants.facts refuses a case without a stated project_type, so the"
         " dimension is named even at its default",
         "oj_category": "oj_kind's choices are resolved from oj_category (kaggle exists only under"
         " data_science), so the case declares the pair",
@@ -78,20 +78,20 @@ DEFAULT_REPEATS_ALLOWED: dict[str, dict[str, str]] = {
         "ros2_package_manager": "the case names the branch it renders; the value is the variant's subject",
     },
     "test_generated_lint.MANAGER_PATHS": {
-        "project_type": "tools/invariants.facts refuses a case without a stated project_type",
+        "project_type": "architekton/invariants.facts refuses a case without a stated project_type",
     },
     "test_generated_lint.LAYER_PATHS": {
-        "project_type": "tools/invariants.facts refuses a case without a stated project_type",
+        "project_type": "architekton/invariants.facts refuses a case without a stated project_type",
     },
     "test_generated_lint.JAPANESE_VARIANTS": {
         "allow_japanese": "the off state is the variant's subject (its sibling states True), so"
         " restating it is the variant, not drift",
     },
     "test_generated_typecheck.TYPECHECK_PATHS": {
-        "project_type": "tools/invariants.facts refuses a case without a stated project_type",
+        "project_type": "architekton/invariants.facts refuses a case without a stated project_type",
     },
     "test_machine_gate.RENDER_MATRIX": {
-        "project_type": "tools/invariants.facts refuses a case without a stated project_type",
+        "project_type": "architekton/invariants.facts refuses a case without a stated project_type",
         "oj_category": "oj_kind's choices are resolved from oj_category (kaggle exists only under"
         " data_science), so the case declares the pair",
         "micropython_port": "the case names the branch it renders; the value is the variant's subject",
@@ -134,7 +134,7 @@ def _fixtures() -> Mapping[str, Sequence[Mapping[str, Any]]]:
     would miss is still checked against the questionnaire.
     """
     return {
-        "tools/answers.py BASE": [answers.BASE],
+        "architekton/answers.py BASE": [answers.BASE],
         "example-answers.yml": [EXAMPLE_ANSWERS],
         "batches/base.yml": [BATCH_BASE],
         "test_recommended_path.FAST_PATHS": test_recommended_path.FAST_PATHS,
@@ -265,6 +265,6 @@ def test_agent_gate_stays_absent_from_the_example_fixture():
 def test_batch_sample_base_is_the_shared_answer_set():
     """batches/base.yml is documented as the same starting point the tests use."""
     assert BATCH_BASE == answers.BASE, (
-        "batches/base.yml and tools/answers.py BASE diverge, so `task batch` renders a different "
+        "batches/base.yml and architekton/answers.py BASE diverge, so `task batch` renders a different "
         f"project than the pytest fast paths:\n  batch: {BATCH_BASE}\n  tests: {answers.BASE}"
     )

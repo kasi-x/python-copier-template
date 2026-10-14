@@ -1,4 +1,4 @@
-"""`copier.run_copy` is called in exactly one place: tools/batch.py's `render`.
+"""`copier.run_copy` is called in exactly one place: architekton/batch.py's `render`.
 
 `render`'s docstring declares itself the one render-call convention for this
 repository's tools, and an internal audit found the
@@ -28,9 +28,9 @@ import ast
 from pathlib import Path
 
 TOP = Path(__file__).resolve().parent.parent
-TOOLS = TOP / "tools"
+TOOLS = TOP / "architekton"
 
-# The tools/ modules allowed to name copier's run_copy/run_update directly,
+# The architekton/ modules allowed to name copier's run_copy/run_update directly,
 # each with the one-line reason the bypass (or the update verb) stays.
 SANCTIONED: dict[str, str] = {
     "batch.py": "hosts the convention itself: render() wraps run_copy, and the per-request update phase calls run_update",
@@ -61,7 +61,7 @@ def _direct_copier_calls(path: Path) -> list[str]:
 
 
 def test_only_sanctioned_tool_modules_call_copiers_run_verbs() -> None:
-    """Every direct run_copy/run_update under tools/ sits in SANCTIONED -- and
+    """Every direct run_copy/run_update under architekton/ sits in SANCTIONED -- and
     every sanctioned module still earns its entry.
 
     The one direction keeps the convention from regressing (a knob-missing
@@ -76,13 +76,13 @@ def test_only_sanctioned_tool_modules_call_copiers_run_verbs() -> None:
     assert not unsanctioned and not stale, (
         "the single render-call convention is broken:"
         + "".join(
-            f"\n  tools/{name} calls copier's run verbs directly: {', '.join(found[name])}"
-            f" -- route renders through tools/batch.py:render (see its docstring for the knobs:"
+            f"\n  architekton/{name} calls copier's run verbs directly: {', '.join(found[name])}"
+            f" -- route renders through architekton/batch.py:render (see its docstring for the knobs:"
             f" defaults, skip_tasks, overwrite, skip_if_exists)"
             for name in unsanctioned
         )
         + "".join(
-            f"\n  tools/{name} is sanctioned ({SANCTIONED[name]}) but no longer calls"
+            f"\n  architekton/{name} is sanctioned ({SANCTIONED[name]}) but no longer calls"
             " copier's run verbs -- drop the stale entry from SANCTIONED (tests/test_render_convention.py)"
             for name in stale
         )

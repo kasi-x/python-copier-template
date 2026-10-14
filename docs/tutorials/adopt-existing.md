@@ -46,8 +46,8 @@ If you would rather not assemble the flags yourself, one command does the
 plan, the apply and the rollback:
 
 ```shell
-uv run --locked python tools/adopt.py /path/to/existing-project --dry-run
-uv run --locked python tools/adopt.py /path/to/existing-project
+uv run --locked python architekton/adopt.py /path/to/existing-project --dry-run
+uv run --locked python architekton/adopt.py /path/to/existing-project
 ```
 
 It skips the collisions for you, picks the revision (the latest tag only when
@@ -64,7 +64,7 @@ adoption / update of a project this template already generated), what your
 project already has, and the collisions above — as a ready-to-run command:
 
 ```shell
-uv run --locked python tools/detect.py /path/to/existing-project
+uv run --locked python architekton/detect.py /path/to/existing-project
 ```
 
 ```
@@ -78,7 +78,7 @@ COLLISIONS (exist and adopt mode would replace them -- keep them with --skip)
   renovate.json
 
 next (keep your files, add the rest):
-  python tools/detect.py <path> --answers answers.yml
+  python architekton/detect.py <path> --answers answers.yml
   copier copy --trust --defaults --vcs-ref=<ref> --data-file answers.yml \
     --skip .github/workflows/ci.yml --skip renovate.json <TEMPLATE_URL> <path>
 ```
@@ -161,7 +161,7 @@ instead of listing each `--skip`, and merges what the template generated into
 the files you kept — dependencies and `[tool.*]` lint settings in
 `pyproject.toml`, missing `.gitignore` patterns, missing Makefile/justfile
 recipes, and a `copier-ci.yml` beside your own workflow. The
-`tools/adopt.py` driver above wraps exactly that, plus the rollback; see
+`architekton/adopt.py` driver above wraps exactly that, plus the rollback; see
 [Adopt Into an Existing Project](../how-to/adopt.md) for what is merged and
 what is deliberately left to you.
 

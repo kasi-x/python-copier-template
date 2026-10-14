@@ -38,6 +38,11 @@ All notable changes to this project are documented in this file.
 
 ### Renames
 
+- BREAKING: rename the internal package `tools` -> `architekton`
+  (`architekton.cli:main` entry point, imports, `Taskfile.yml` tasks,
+  workflows, docs). The `architekton-py` console script name is unchanged.
+  No compatibility shim: 0.x releases carry no compatibility guarantee.
+
 - rename the template daimonion -> architekton-py: repo
   `politeuma/architekton-py`, distribution and CLI command
   `architekton-py`, docs site

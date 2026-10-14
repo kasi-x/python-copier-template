@@ -1,6 +1,6 @@
 name: Update rehearsal
 
-# The update rehearsal (tools/update_rehearsal.py) replays `copier update`
+# The update rehearsal (architekton/update_rehearsal.py) replays `copier update`
 # for every witness leaf: render at the newest release tag, commit the result
 # as a user's project, update to HEAD, and assert the merge is clean. A red
 # run here means a template edit broke the update path for some configuration
@@ -67,7 +67,7 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
-          uv run --locked python tools/update_rehearsal.py --jobs 4 --json | tee update-rehearsal.json
+          uv run --locked python architekton/update_rehearsal.py --jobs 4 --json | tee update-rehearsal.json
 
       - name: Append the rehearsal summary to the run
         # The counts on the run's front page, without downloading the
@@ -127,7 +127,7 @@ jobs:
           # The support page's generated section renders the report, so the
           # PR carries the regenerated page too -- without it gen_docs
           # --check would go red on main the moment the report merged.
-          uv run --locked python tools/gen_docs.py --write
+          uv run --locked python architekton/gen_docs.py --write
           git add docs/data/update-rehearsal.json docs/reference/support.md
           # "Differs from HEAD" is what makes this a no-op when the report
           # already merged (or a re-run produced the identical payload).

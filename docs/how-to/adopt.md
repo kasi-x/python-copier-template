@@ -1,6 +1,6 @@
 # How to adopt the template into an existing project
 
-`tools/adopt.py` is the reversible driver: it plans the adoption, applies it,
+`architekton/adopt.py` is the reversible driver: it plans the adoption, applies it,
 verifies what happened, and undoes what it did — whether it failed, was
 interrupted, or was killed outright.
 
@@ -35,7 +35,7 @@ state would be a plan about an accident.
 ```shell
 task adopt DIR=/path/to/project CLI_ARGS="--recover"
 # or, directly:
-python tools/adopt.py /path/to/project --recover
+python architekton/adopt.py /path/to/project --recover
 ```
 
 Recovery puts the recorded old bytes back, deletes every file that was not
@@ -46,13 +46,13 @@ exit 0, so a retry is always safe. `--json` prints the result (`found`,
 `applied`, `restored`, `removed`) instead of the report.
 
 ```console
-$ python tools/adopt.py /path/to/project --recover
+$ python architekton/adopt.py /path/to/project --recover
 target:  /path/to/project
 journal: /path/to/project/.copier-adopt-journal.json
 recovered: 1 file(s) restored, 45 removed
   nothing of the interrupted run is left; adopt again when you are ready
 
-$ python tools/adopt.py /path/to/project --recover      # nothing left to do
+$ python architekton/adopt.py /path/to/project --recover      # nothing left to do
 target:  /path/to/project
 journal: /path/to/project/.copier-adopt-journal.json
 nothing to recover: this project has no journal
@@ -82,7 +82,7 @@ Three failure modes, all measured against copier 9.18.1:
 
 The driver closes all three:
 
-1. **No collisions**: the collisions come from `tools/detect.py` and are passed
+1. **No collisions**: the collisions come from `architekton/detect.py` and are passed
    to copier as `skip_if_exists`, so your files are left alone and everything
    else is still added. Nothing is passed as `--overwrite`.
 2. **Rollback**: the run renders with `overwrite=False` and then verifies that
@@ -216,7 +216,7 @@ FAILED: InteractiveSessionError: Interactive session required: Consider using `-
 | `--yes` | Apply without the confirmation prompt. |
 | `--ask` | Confirm even when stdin is not a terminal. |
 | `--ref REF` | Revision to expand (default: judged from the tags). `HEAD` = this working tree. |
-| `--answers FILE` | Copier answers file — `tools/detect.py --answers` writes one for the target. |
+| `--answers FILE` | Copier answers file — `architekton/detect.py --answers` writes one for the target. |
 | `--data k=v` | Extra answer, repeatable; effective YAML value (`k=true`, `k=[a, b]`). |
 | `--skip PATH` | Path never to write over, repeatable. Default: the detected collisions. |
 | `--takeover` | Adopt over a foreign template's answers file (otherwise refused). |

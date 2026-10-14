@@ -21,7 +21,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import render_delta as rd  # noqa: E402
+from architekton import render_delta as rd  # noqa: E402
 
 
 def _state(  # noqa: PLR0913  WHYNOT: a fixture factory over the State's own fields.

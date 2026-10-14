@@ -19,8 +19,8 @@ TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import questionnaire  # noqa: E402
-from tools.answers import BASE  # noqa: E402
+from architekton import questionnaire  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 MICROPYTHON_DOC = TOP / "docs" / "how-to" / "micropython.md"
 
@@ -35,7 +35,7 @@ MICROPYTHON_ANSWERS: dict[str, object] = {"project_type": "micropython", "microp
 
 
 def run_checker(offline: bool = True) -> subprocess.CompletedProcess[str]:
-    cmd = [sys.executable, str(TOP / "tools" / "check_upstream.py"), "--only", "MicroPython,micropython"]
+    cmd = [sys.executable, str(TOP / "architekton" / "check_upstream.py"), "--only", "MicroPython,micropython"]
     if offline:
         cmd.append("--offline")
     return subprocess.run(cmd, capture_output=True, text=True, check=False)

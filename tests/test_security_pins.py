@@ -1,6 +1,6 @@
 """The security-tool pins the weekly upstream check must not lose.
 
-`tools/check_upstream.py` already tracked the gitleaks binary and the
+`architekton/check_upstream.py` already tracked the gitleaks binary and the
 actionlint digest; the zizmor cli/action pair and the three uvx tools in the
 hygiene workflow are the pins with the same blast radius (a stale secrets
 scanner, workflow linter or SAST gate fails open). These checks run the
@@ -20,7 +20,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import check_upstream as cu  # noqa: E402
+from architekton import check_upstream as cu  # noqa: E402
 
 HYGIENE = TOP / ".github" / "workflows" / "_hygiene.yml"
 SECURITY = TOP / ".github" / "workflows" / "security.yml"

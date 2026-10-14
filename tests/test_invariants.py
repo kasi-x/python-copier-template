@@ -2,7 +2,7 @@
 
 tests/matrix/invariants.yml declares, per leaf class, the artifacts a render
 must ship and must not ship, the content predicates that hold, the witness tier
-the class runs at and why a question type is left out. tools/invariants.py is
+the class runs at and why a question type is left out. architekton/invariants.py is
 its only reader; these tests hold the
 loader's contract and the migration it exists for:
 
@@ -34,12 +34,12 @@ import pytest
 import yaml
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import batch  # noqa: E402
-from tools import invariants  # noqa: E402
-from tools.answers import BASE  # noqa: E402
+from architekton import batch  # noqa: E402
+from architekton import invariants  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 from test_recommended_path import FAST_PATHS  # noqa: E402
 
@@ -47,7 +47,7 @@ INVARIANTS = invariants.load()
 WITNESSES = TOP / "tests" / "matrix" / "witnesses.jsonl"
 LEDGER = TOP / "tests" / "matrix" / "witnesses.json"
 
-# The declared witness leaves, read through tools/batch.py's own validator, so
+# The declared witness leaves, read through architekton/batch.py's own validator, so
 # this module checks exactly what the batch runner will render.
 LEAVES: dict[str, dict[str, Any]] = {
     request.id: {"answers": dict(request.answers), "expect": dict(request.expect)}

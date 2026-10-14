@@ -1,10 +1,10 @@
-"""Tests for tools/mcp_server.py: the tooling exposed over MCP.
+"""Tests for architekton/mcp_server.py: the tooling exposed over MCP.
 
 The in-process client below is the same pattern the generated MCP scaffold
 ships in its own tests (`mcp.Client` against the server object, no
 subprocess, no port), so this file also documents how to call the server from
 your own code. The HTTP tests at the end go the other way: they launch
-`tools/mcp_server.py` for real, so the Host allowlist and /health are checked
+`architekton/mcp_server.py` for real, so the Host allowlist and /health are checked
 by a running server rather than by a mock of it.
 """
 
@@ -37,11 +37,11 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import answers  # noqa: E402
-from tools import answers_for  # noqa: E402
-from tools import mcp_server  # noqa: E402
+from architekton import answers  # noqa: E402
+from architekton import answers_for  # noqa: E402
+from architekton import mcp_server  # noqa: E402
 
-# The shared Project Details (tools/answers.py) with this tool's own package
+# The shared Project Details (architekton/answers.py) with this tool's own package
 # name; repo_name/distribution_name are copier's derivation, not restated here.
 BASE_ANSWERS = {**answers.BASE, "package_name": "mcp_example"}
 
@@ -627,7 +627,7 @@ def test_mcp_json_registers_the_command_the_how_to_documents() -> None:
     entry = config["mcpServers"]["architekton-py"]
     command = " ".join([entry["command"], *entry["args"]])
 
-    assert command == "uv run --locked python tools/mcp_server.py", "the stdio command `task mcp` runs"
+    assert command == "uv run --locked python architekton/mcp_server.py", "the stdio command `task mcp` runs"
     assert (TOP / entry["args"][-1]).is_file(), "the registered script exists"
     assert "--transport" not in entry["args"], "a host launches stdio, the default"
     documented = (TOP / "docs" / "how-to" / "mcp-tools.md").read_text()
@@ -638,14 +638,14 @@ def test_mcp_json_registers_the_command_the_how_to_documents() -> None:
 # the HTTP transport: a real server, a real Host header
 # --------------------------------------------------------------------------- #
 #
-# These launch tools/mcp_server.py (the same command `task mcp` runs) on a
+# These launch architekton/mcp_server.py (the same command `task mcp` runs) on a
 # localhost port instead of mocking `_allowed_hosts`: a mock would only assert
 # that the settings object was built, and the defect this guards against -- the
 # SDK arming its DNS-rebinding protection only for a localhost bind, so a
 # public server accepts every Host header -- only exists at the socket. No venv
 # is built and nothing leaves 127.0.0.1, so the tests carry no cost marker.
 
-SERVER = str(TOP / "tools" / "mcp_server.py")
+SERVER = str(TOP / "architekton" / "mcp_server.py")
 ALLOWED_HOST = "mcp.example"
 FOREIGN_HOST = "attacker.example"
 ALLOWED_ORIGIN = "https://mcp.example"

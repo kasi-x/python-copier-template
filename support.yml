@@ -23,7 +23,7 @@
 # `best_effort` / `tier_policy`, and the tier_policy `none` row already
 # names the exclusion mechanism (tests/matrix/witnesses.json `tier: none` +
 # `reason`). A row that meets a trigger is moved by a normal support.yml
-# edit (the generated docs follow through tools/gen_docs.py); this section
+# edit (the generated docs follow through architekton/gen_docs.py); this section
 # only says which moves are legitimate, so a removal is a policy
 # application rather than a silent scope cut.
 #

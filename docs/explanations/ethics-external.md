@@ -146,7 +146,7 @@ through the linter, reviewable as a normal `agents-md --write` diff.
 ## Status
 
 The move is done: `_shared/ethics/`, its registry, and the appendix include
-chain are deleted; `tools/ethics.py` and its MCP surface are deleted with
+chain are deleted; `architekton/ethics.py` and its MCP surface are deleted with
 them. The remaining references:
 
 - **Section ids**: `law-map` obligations link prose via `related_sections`

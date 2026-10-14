@@ -2,7 +2,7 @@
 #
 # Each request in the batch merges its own inline `answers` on top of this
 # file, so a line only has to state what makes it different (project_type,
-# layer opt-ins, ...). Exactly the shared set in tools/answers.py that the
+# layer opt-ins, ...). Exactly the shared set in architekton/answers.py that the
 # pytest fixtures start from -- tests/test_answer_fixtures.py compares the two,
 # so the batch and the fast paths exercise the same questionnaire entries.
 # repo_name / distribution_name are not listed: copier derives both from

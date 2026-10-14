@@ -1,4 +1,4 @@
-<!-- BEGIN GENERATED: support-matrix (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: support-matrix (architekton/gen_docs.py --write) -->
 Every combination this template keeps working, the tier that guarantees
 it, and the measured evidence behind that tier.
 

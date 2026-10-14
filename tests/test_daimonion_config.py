@@ -22,7 +22,7 @@ TOP = Path(__file__).absolute().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools.answers import BASE  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 from support import render_answers  # noqa: E402
 from test_daimonion_parity import KANON_DIR  # noqa: E402

@@ -1,7 +1,7 @@
 """Guards that the generated docs are the questionnaire's, not a stale copy.
 
-`tools/gen_docs.py --check` is the gate: it renders every generated block from
-the questionnaire model (`tools/questionnaire.py`, i.e. `copier.yml` plus
+`architekton/gen_docs.py --check` is the gate: it renders every generated block from
+the questionnaire model (`architekton/questionnaire.py`, i.e. `copier.yml` plus
 `questions/*.yml`) and compares it with the committed text. These tests run
 that gate, and pin the three properties it depends on:
 
@@ -24,8 +24,8 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import gen_docs  # noqa: E402
-from tools import questionnaire  # noqa: E402
+from architekton import gen_docs  # noqa: E402
+from architekton import questionnaire  # noqa: E402
 
 # Drift this generator exists to prevent (the Features / mermaid text
 # vs the questionnaire): the questionnaire has these, the docs did not.

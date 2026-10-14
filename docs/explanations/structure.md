@@ -43,7 +43,7 @@ Two consequences follow from the convention:
   the linked bytes into each render. This is the point of the convention, but
   it means a "repo-only" change to those files is a template change and should
   be verified like one (the render-twin tooling and the suite both treat them
-  as template bytes; `tools/render_inputs.py` hashes through the links).
+  as template bytes; `architekton/render_inputs.py` hashes through the links).
 - **Only content-identical files may be linked.** A file the template must
   render differently per answer cannot be a symlink. The cautionary example is
   `.python-version`: it was linked once, which broke the ros2 distro pins

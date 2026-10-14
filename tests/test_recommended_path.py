@@ -27,11 +27,11 @@ from render_cache import RenderCache
 from render_cache import render_cache as render_cache  # noqa: PLC0414
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py, tests/test_witness_matrix.py do the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import answers  # noqa: E402
-from tools import invariants  # noqa: E402
+from architekton import answers  # noqa: E402
+from architekton import invariants  # noqa: E402
 
 # The one source for what a leaf class must ship, must not ship, and which
 # content it must have: tests/matrix/invariants.yml, read through its loader.
@@ -40,7 +40,7 @@ INVARIANTS = invariants.load()
 
 # Answers shared by every case: the required "Project Details" plus values
 # that keep generated content self-consistent (URLs, validators, ...). The one
-# literal lives in tools/answers.py, so the witness tool, the batch sample and
+# literal lives in architekton/answers.py, so the witness tool, the batch sample and
 # the render tests import it from there and cannot drift from one another;
 # tests/test_answer_fixtures.py checks its keys against the questionnaire.
 BASE = answers.BASE

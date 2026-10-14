@@ -24,7 +24,7 @@ from support import make_venv
 
 sys.path.insert(0, str(TOP))
 
-from tools import questionnaire  # noqa: E402
+from architekton import questionnaire  # noqa: E402
 
 
 def _renovate_rules(path: Path) -> list[dict]:
@@ -428,7 +428,7 @@ def test_template_gitleaks_blocks_deidentification_salt(tmp_path: Path):
 
 
 # The render inputs of test_template_author_orcid_validator, composed with
-# tools/answers.py BASE at the call site: registered in
+# architekton/answers.py BASE at the call site: registered in
 # tests/test_answer_fixtures.py like every other answer fixture, so a renamed
 # question cannot silently rot the validator probe.
 ORCID_INVALID_ANSWERS: dict[str, object] = {
@@ -441,7 +441,7 @@ ORCID_INVALID_ANSWERS: dict[str, object] = {
 
 def test_template_author_orcid_validator(tmp_path: Path):
     """A malformed ORCID iD is rejected at question time (validator)."""
-    from tools.answers import BASE
+    from architekton.answers import BASE
 
     with pytest.raises(ValueError) as excinfo:
         run_copy(
@@ -961,8 +961,8 @@ def test_readme_hides_type_check_below_recommended_strictness(tmp_path: Path):
 def test_derived_toolchain_flags_match_the_answers_they_rename():
     """The _internal.yml shorthands resolve exactly like the literals they
     replace (the byte-identical-render precondition for the R1 renames)."""
+    from architekton.answers import BASE  # noqa: E402
     from copier._main import Worker
-    from tools.answers import BASE  # noqa: E402
 
     with tempfile.TemporaryDirectory() as dst:
         worker = Worker(src_path=str(TOP), dst_path=Path(dst), defaults=True, quiet=True, vcs_ref="HEAD")

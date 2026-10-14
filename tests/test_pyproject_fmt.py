@@ -25,10 +25,10 @@ from render_cache import render_cache as render_cache  # noqa: PLC0414
 from test_generated_lint import RENDERED_PATHS  # same renders test_generated_lint lints
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/support.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/support.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools.answers import BASE  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 
 def _pyproject_fmt_bin() -> Path:

@@ -86,13 +86,13 @@ from copier._user_data import DEFAULT_DATA
 from copier._user_data import AnswersMap
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_batch.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools.render_inputs import include_graph  # noqa: E402
-from tools.render_inputs import output_name  # noqa: E402
-from tools.render_inputs import render_input_paths  # noqa: E402
-from tools.render_inputs import watched_relative_paths  # noqa: E402
+from architekton.render_inputs import include_graph  # noqa: E402
+from architekton.render_inputs import output_name  # noqa: E402
+from architekton.render_inputs import render_input_paths  # noqa: E402
+from architekton.render_inputs import watched_relative_paths  # noqa: E402
 
 CACHE_ROOT = TOP / ".cache" / "renders"
 
@@ -103,7 +103,7 @@ _KEEP_NAMESPACES = 2
 # goes into the namespace state (or how) must change the namespace itself, so
 # namespaces made by an older recipe are simply evicted by the keep-2 rule.
 # v3: the watched-file set (and so the recorded consumed inputs) moved to
-# tools/render_inputs.py, which descends directory symlinks the old rglob
+# architekton/render_inputs.py, which descends directory symlinks the old rglob
 # loop skipped -- entries recorded under v2 do not carry those files, so a
 # clean break re-renders them once under the complete watch.
 # v4: the consumed-input matching gained the suffix rule, so pkg-tree-owned
@@ -387,7 +387,7 @@ class RenderCache:
         # -- an exact `in outputs` never matches, and every pkg-tree-owned body
         # (_shared/bot-*.py.jinja, ...) would silently drop out of the recorded
         # inputs, so its edits stopped invalidating cached bot renders (found
-        # while landing the gmail slice). tools/render_delta.py matches the
+        # while landing the gmail slice). architekton/render_delta.py matches the
         # same way. Empty names (a path that strips to nothing) match nothing.
         matched = set()
         for rel in watched_relative_paths(self.template_root):

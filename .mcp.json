@@ -2,7 +2,7 @@
   "mcpServers": {
     "architekton-py": {
       "command": "uv",
-      "args": ["run", "--locked", "python", "tools/mcp_server.py"],
+      "args": ["run", "--locked", "python", "architekton/mcp_server.py"],
       "env": {}
     }
   }

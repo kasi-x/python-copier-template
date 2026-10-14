@@ -21,7 +21,7 @@ whatever upstream does.
   `tests/test_copier_structure.py::test_every_asked_question_has_a_default`
   checks that.
 - **Unsafe features on purpose.** The template uses `_tasks` and `_migrations`,
-  so every render needs `--trust`. The shipped CLI (`tools/cli.py`) passes it
+  so every render needs `--trust`. The shipped CLI (`architekton/cli.py`) passes it
   for the user.
 - **Tag-based releases.** `copier copy <url>` expands the newest tag, so the
   release tag *is* the user-facing version (see
@@ -105,7 +105,7 @@ rendered an old questionnaire, with no hint that the default
 branch had moved on. Our docs had to pin `--vcs-ref` everywhere until we
 deleted the inherited tags.
 
-**What we do locally:** the inherited tags are gone, and `tools/adopt.py` uses a
+**What we do locally:** the inherited tags are gone, and `architekton/adopt.py` uses a
 tag only when it carries the current questionnaire
 (`tests/test_adopt.py::test_resolve_ref_uses_a_tag_only_when_it_carries_the_questionnaire`).
 

@@ -106,7 +106,7 @@ confidence the evidence does not provide.
 - Template defaults and pins must respect the freshness policy
   ([docs/explanations/template-dev.md](docs/explanations/template-dev.md))
   and, where a value is hardcoded, the upstream-check tooling
-  (`tools/check_upstream.py`).
+  (`architekton/check_upstream.py`).
 
 ## Ethics, regional, and operational rules
 

@@ -14,12 +14,12 @@ from support import copy_project
 from support import make_venv
 from support import run_pipe
 
-sys.path.insert(0, str(TOP))  # tests/test_task_runners.py does the same to reach tools/
+sys.path.insert(0, str(TOP))  # tests/test_task_runners.py does the same to reach architekton/
 
-from tools.answers import BASE  # noqa: E402
+from architekton.answers import BASE  # noqa: E402
 
 # The answers of the publish-pipeline render (git init comes later): the
-# suite's shared "Project Details" (tools/answers.py BASE) carrying this
+# suite's shared "Project Details" (architekton/answers.py BASE) carrying this
 # scenario's own package name, description and sender identity. Registered in
 # tests/test_answer_fixtures.py like every other answer fixture.
 NOGIT_ANSWERS: dict[str, object] = dict(
@@ -84,7 +84,7 @@ def test_template_adopt_mode_update_interop(tmp_path: Path):
     # Render from a CLEAN clone of the template: copier commits a dirty local
     # template into a synthetic commit and records its describe in _commit;
     # that describe changes on every render, so copier judges the next update
-    # a downgrade (same rule tools/batch.py enforces as an update
+    # a downgrade (same rule architekton/batch.py enforces as an update
     # precondition). A clean clone has a stable, resolvable describe.
     clean_tpl = tmp_path / "tpl"
     run_pipe(f"git clone -q {str(TOP)!r} {clean_tpl}")

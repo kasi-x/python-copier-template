@@ -4,7 +4,7 @@ name: Witness matrix
 # judged by tests/test_witness_matrix.py. A PR runs the fast tier only (render
 # every leaf with skip_tasks + ruff; no venv), while the nightly run adds the
 # full tier (uv sync + generated pytest + basedpyright + docs build on a bounded
-# sample, plus tools/batch.py over the whole JSONL) -- that tier builds venvs,
+# sample, plus architekton/batch.py over the whole JSONL) -- that tier builds venvs,
 # so it is far too expensive for every push.
 
 permissions:

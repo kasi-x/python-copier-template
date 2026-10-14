@@ -33,13 +33,13 @@ from support import copy_project_recommended
 from support import make_venv
 
 TOP = Path(__file__).absolute().parent.parent
-if str(TOP) not in sys.path:  # tests/test_copier_structure.py does the same to reach tools/
+if str(TOP) not in sys.path:  # tests/test_copier_structure.py does the same to reach architekton/
     sys.path.insert(0, str(TOP))
 
-from tools import when_model  # noqa: E402
+from architekton import when_model  # noqa: E402
 
 # The package this file renders under: the shared "Project Details"
-# (tools/answers.py BASE) plus this name, with copier's own defaults driving
+# (architekton/answers.py BASE) plus this name, with copier's own defaults driving
 # everything else, so the use_recommended_* gates are exercised rather than
 # pinned (support.copy_project_recommended's docstring).
 BOT_PACKAGE = "bot_example"

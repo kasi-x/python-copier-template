@@ -1,4 +1,4 @@
-"""Tests for tools/pyproject_merge.py: adding to an adopter's pyproject.toml.
+"""Tests for architekton/pyproject_merge.py: adding to an adopter's pyproject.toml.
 
 The contract is what the merge must *not* do: touch an existing requirement,
 drop one, or reformat the rest of the file.
@@ -14,7 +14,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-from tools import pyproject_merge  # noqa: E402
+from architekton import pyproject_merge  # noqa: E402
 
 SOURCE = """\
 [project]

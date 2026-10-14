@@ -27,13 +27,13 @@ is a different axis again: [Drift Detection](drift-detection.md).)
 
 ### L1 — the input space (Z3)
 
-`tools/when_model.py` encodes each area gate's `when` expression for Z3 (the
+`architekton/when_model.py` encodes each area gate's `when` expression for Z3 (the
 tokenizer, `when_expr_satisfiable` and the string domains), and
 `tests/test_copier_structure.py` asks the model two questions of the
 questionnaire: is every `when` satisfiable, and does the sweep detect typo'd
 gates, self-contradictions and impossible genre combinations (the detectors
 have meta-tests that break them on purpose to prove they still detect).
-`tools/z3_witnesses.py` turns the same model into the leaf list
+`architekton/z3_witnesses.py` turns the same model into the leaf list
 (`tests/matrix/witnesses.jsonl`, 272 leaves), and
 `tests/test_witness_matrix.py::test_witness_leaves_match_the_generator` keeps
 the committed list equal to what the generator enumerates.
@@ -98,7 +98,7 @@ check moves between tiers, the budget moves with it.
 |---|---|---|---|
 | Edit loop | `task test-fast` | `-m "not heavy and not slow and not meta and not network"` | L1 + L2 + everything that neither builds a venv nor touches the network |
 | Cost ledger guard | `task test-meta` | `-m meta` | the guards in `tests/test_marker_drift.py`: the venv/network marker scan, the tier-membership check, the cost-staleness check and the leaf-space budget |
-| Slow | `task test-slow` | `-m slow` | the serial 272-leaf batch runner (`tools/batch.py` over `tests/matrix/witnesses.jsonl`) |
+| Slow | `task test-slow` | `-m slow` | the serial 272-leaf batch runner (`architekton/batch.py` over `tests/matrix/witnesses.jsonl`) |
 | Pre-push / nightly | `task test-heavy` | `-m heavy` | L3: `uv sync` + the generated project's pytest / type check / docs build (`network` follows where the case downloads) |
 | Witness render | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | `fast` | L2 over all 272 leaves |
 | Witness execution | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m full` | `full` | L3 over the 8-leaf sample (those tests are also `heavy` / `network`) |
@@ -127,7 +127,7 @@ The torch-free `data_science` leaf is already executed nightly by the
 witness `full` tier.
 
 The numbers themselves are not hand-copied into this page: the table below is
-a generated block (tools/gen_docs.py, the same generator that owns the
+a generated block (architekton/gen_docs.py, the same generator that owns the
 questionnaire and support tables), rendered from `tests/matrix/tiers.json`.
 When a number in it disagrees with the suite, the ledger wins:
 `tests/test_marker_drift.py` re-collects every tier and fails on drift, fails
@@ -138,7 +138,7 @@ re-records the collected sets — and the Tests column of the tier table in
 [test-loop.md](../how-to/test-loop.md), the hand-edited counts this used to
 leave behind — after a deliberate tier change.
 
-<!-- BEGIN GENERATED: tier-ledger (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: tier-ledger (architekton/gen_docs.py --write) -->
 | Ledger row | Selector | Tests | Budget | Measured |
 |---|---|---|---|---|
 | `test-fast` | `-m "not heavy and not slow and not meta and not network"` | 1201 | 30s (measured 18.6s) | 2026-09-20 |
@@ -196,7 +196,7 @@ The growth table is not the whole contract: the leaf space also has a declared
 ceiling. `LEAF_BUDGET` in `tests/test_marker_drift.py` — currently **450**
 (it landed at twice the then-225-leaf space; the space is 272 today) — fails
 the meta guard when
-`tools/z3_witnesses.py` enumerates more leaves than that. The additive
+`architekton/z3_witnesses.py` enumerates more leaves than that. The additive
 increments in the table fit several times over; what the budget turns away is
 the multiplicative case above (a lifted exclusivity, or a new axis that
 composes with everything already declared), which would otherwise surface only
@@ -298,7 +298,7 @@ future exclusion and is declared per leaf as `tier: none` plus a `reason` in
 `tests/matrix/witnesses.json`; no leaf uses it today, because every declared
 leaf has a recorded run.
 
-`support.yml` is the source, not the documentation: `tools/gen_docs.py --write`
+`support.yml` is the source, not the documentation: `architekton/gen_docs.py --write`
 renders [the support matrix](../reference/support.md) and the README summary
 from it, and `--check` fails CI when those drift.
 
@@ -316,6 +316,6 @@ from it, and `--check` fails CI when those drift.
 | Witness fast job: 278 tests (272 renders + six leaf-list checks), 4.5 s warm on the dev machine (5.1 s at the 234-leaf tree of 2026-09-18), against the job's 30-minute timeout | `uv run --no-sync pytest -q tests/test_witness_matrix.py -m fast` | 2026-09-22, this tree — the ledger's `witness` row; a PR runner is always cold |
 | Per-tier counts, marker expressions, re-measure commands and wall times (task tiers and the witness fast job) | `tests/matrix/tiers.json`; re-collect with `UPDATE_TIERS=1 uv run --no-sync pytest -q tests/test_marker_drift.py`, fill `wall_seconds`/`measured` by hand from a `time` run of the row's own `command` | 2026-09-14, this tree |
 | Growth table's +76 / +22 leaf increments and their second costs | derived in the 2026-09-13 audit from the ledger's leaf counts and the 0.58 s/leaf unit | 2026-09-13 audit |
-| Leaf-space ceiling: `LEAF_BUDGET` = 450 (landed at twice the then-225-leaf space) | `LEAF_BUDGET` in `tests/test_marker_drift.py`, checked against `tools/z3_witnesses.py`'s enumeration on every meta run | declared — the enforcement is the record |
+| Leaf-space ceiling: `LEAF_BUDGET` = 450 (landed at twice the then-225-leaf space) | `LEAF_BUDGET` in `tests/test_marker_drift.py`, checked against `architekton/z3_witnesses.py`'s enumeration on every meta run | declared — the enforcement is the record |
 | Edit-loop budget of 30 s (a contract, not a measurement) | declared for the tiers in the 2026-09-13 audit | 2026-09-13 audit |
 | "all 272 leaves executed would be ~10 hours" | the `FULL_SAMPLE` rationale comment: 272 × (venv build + docs) at ~3 min | `tests/test_witness_matrix.py` |

@@ -27,7 +27,7 @@ jobs:
 
       - name: Check template pins against upstream
         id: check
-        run: python3 tools/check_upstream.py
+        run: python3 architekton/check_upstream.py
         # The checker exits 1 on any [DRIFT] line.
 
       - name: Open drift issue
@@ -36,7 +36,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
         run: |
-          body=$(python3 tools/check_upstream.py 2>&1 || true)
+          body=$(python3 architekton/check_upstream.py 2>&1 || true)
           # File only on real drift: a [warn] run means an upstream lookup
           # failed transiently, and a red run is the signal to re-run, not to
           # open a "pins are behind upstream" issue about nothing.

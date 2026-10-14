@@ -45,14 +45,14 @@ new type):
 | agent scaffold (`use_recommended_agent=No`, `library`/`cli`) | `pydantic-ai`, `pydantic-settings` |
 | `sphinx` docs | dev: `pydata-sphinx-theme`, `myst-parser`, `sphinx-autobuild`, `sphinx-copybutton`, `sphinx-design` |
 
-## Generated size (`tools/gen_docs.py --write`)
+## Generated size (`architekton/gen_docs.py --write`)
 
 How big each rendered project is (files, text lines, runtime deps), measured
 from real renders. A template change that grows or shrinks a family must
 re-measure `tests/matrix/sizes.json` and rewrite this table; `--check` fails
 in between.
 
-<!-- BEGIN GENERATED: generated-size (tools/gen_docs.py --write) -->
+<!-- BEGIN GENERATED: generated-size (architekton/gen_docs.py --write) -->
 | Row | Files | Lines | Runtime deps |
 |---|---|---|---|
 | `preset:bare` | 35 | 2454 | 1 |
@@ -87,7 +87,7 @@ in between.
   the `fastapi` / `uvicorn[standard]` its webhook server runs on, which a
   `web_api` base already declares) with `bot_platform=line` — and the matching
   `bot-discord-<name>` / `bot-slack-<name>` / `bot-line-<name>` entry point.
-  Every floor is checked against PyPI by `tools/check_upstream.py` ("PyPI
+  Every floor is checked against PyPI by `architekton/check_upstream.py` ("PyPI
   floor [bot] discord.py", "PyPI floor [bot] slack-bolt", "PyPI floor [bot]
   line-bot-sdk"); `fastapi` / `uvicorn` are pinned by its "PyPI floor
   [web_api]" rows, which read the same declarations.
@@ -127,7 +127,7 @@ the workflows.
 The generated `[tool.ruff]` / `[tool.basedpyright]` / `[tool.pytest]`
 sections intentionally differ from this repo's own `pyproject.toml`:
 different lint targets (generated `pkg_dir` + `tests` vs this repo's
-`tests` + `tools`) and different jobs (generated
+`tests` + `architekton`) and different jobs (generated
 projects ship a library; this repo ships a template). Shared choices stay
 in sync: ruff `ALL` + preview rules, line-length 120, single-line isort,
 `pyproject-fmt` keep-full-version, typos 3-letter ignore. If you change a
