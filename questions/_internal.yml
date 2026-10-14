@@ -470,7 +470,7 @@ import_pkg:
 # with a hash (`daimonion==X --hash ...`) once daimonion is published.
 daimonion_spec:
     type: str
-    default: "git+https://github.com/politeuma/daimonion@b670aedf38ca33747b2693c1fad771b61a266e74"
+    default: "git+https://github.com/politeuma/daimonion@f983e420c118f447c71660f0d9bae720f3b91460"
     when: false
 
 # AGENTS.md effective setting. Every project ships the agent guide: the

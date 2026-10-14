@@ -56,10 +56,10 @@ Field rules for this project kind live in the marker block below.
 
 The block is maintained by `daimonion agents-md --write` from the law-map guidance sections; edit `.daimonion.yml`, not the block.
 Fill or refresh it with
-`uvx --from git+https://github.com/politeuma/daimonion@b670aedf38ca33747b2693c1fad771b61a266e74 daimonion agents-md --write`.
+`uvx --from git+https://github.com/politeuma/daimonion@f983e420c118f447c71660f0d9bae720f3b91460 daimonion agents-md --write`.
 
 To mechanically verify changed files against these triggers before committing,
-run `uvx --from git+https://github.com/politeuma/daimonion@b670aedf38ca33747b2693c1fad771b61a266e74 daimonion scan`
+run `uvx --from git+https://github.com/politeuma/daimonion@f983e420c118f447c71660f0d9bae720f3b91460 daimonion scan`
 (or `... daimonion scan <path>`).
 
 ### Rule summaries (English)
