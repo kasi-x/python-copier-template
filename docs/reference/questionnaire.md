@@ -11,7 +11,7 @@ that area are asked.
 
 Every answer can also come from a file instead of the prompt —
 [Non-interactive Generation](non-interactive.md) covers the flags — and
-[`example-answers.yml`](https://github.com/ConstitutiveTemplates/architekton-py/blob/main/example-answers.yml)
+[`example-answers.yml`](https://github.com/politeuma/architekton-py/blob/main/example-answers.yml)
 at the template root is a ready-made starting point: it turns every area gate
 off, so it spells out each detailed question that the recommended path would
 otherwise leave at its default.

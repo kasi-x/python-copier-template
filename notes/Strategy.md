@@ -180,7 +180,7 @@ SQLAlchemy 等）の進化で生成物が壊れることがある。今のCIは 
 ## ② 上流フォーク追従（D）
 
 ### 目的
-`ConstitutiveTemplates/architekton-py`（このリポジトリ、`origin`。旧 `kasi-x/python-copier-template`）は
+`politeuma/architekton-py`（このリポジトリ、`origin`。旧 `kasi-x/python-copier-template`）は
 `DiamondLightSource/python-copier-template`（`upstream`）のフォークで、大きく発展・分岐している
 （web_api再設計、online_judge、scraping、CTF等、本家に無い機能が多数）。本家がバグ修正や
 セキュリティ修正をmainに積んだとき、それに気づく仕組みが現状ゼロ。

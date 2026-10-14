@@ -125,7 +125,7 @@ def test_answers_are_not_guessed_for_shape_questions(tmp_path: Path):
 
 def test_generated_project_is_update(tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text(
-        "_commit: 5.4.0-1-gabcdef\n_src_path: https://github.com/ConstitutiveTemplates/architekton-py.git\n"
+        "_commit: 5.4.0-1-gabcdef\n_src_path: https://github.com/politeuma/architekton-py.git\n"
         "project_type: library\n"
     )
     assert detect.detect(tmp_path).mode == "update"
@@ -165,7 +165,7 @@ def test_legacy_src_path_is_rewritten_to_the_new_url(tmp_path: Path, capsys: pyt
     answers = tmp_path / ".copier-answers.yml"
     answers.write_text("_src_path: https://github.com/ConstitutiveTemplates/daimonion.git\n_commit: abc\n")
     assert detect.migrate_legacy_src(tmp_path) == [".copier-answers.yml"]
-    assert "_src_path: https://github.com/ConstitutiveTemplates/architekton-py.git" in answers.read_text()
+    assert "_src_path: https://github.com/politeuma/architekton-py.git" in answers.read_text()
     assert "rewriting legacy template URL" in capsys.readouterr().out
 
 
@@ -181,7 +181,7 @@ def test_non_legacy_foreign_url_is_untouched(tmp_path: Path) -> None:
 
 def test_answers_file_refused_for_update(tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text(
-        "_src_path: https://github.com/ConstitutiveTemplates/architekton-py.git\n"
+        "_src_path: https://github.com/politeuma/architekton-py.git\n"
     )
     out = tmp_path / "answers.yml"
     assert detect.main([str(tmp_path), "--answers", str(out)]) == 2

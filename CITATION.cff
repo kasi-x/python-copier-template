@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: If you use this software, please cite it using this metadata.
 title: "architekton-py"
 abstract: A Copier template for Python projects, with recommended settings for tooling, CI, and research-software metadata.
-repository-code: "https://github.com/ConstitutiveTemplates/architekton-py"
+repository-code: "https://github.com/politeuma/architekton-py"
 license: "Apache-2.0"
 keywords:
   - copier

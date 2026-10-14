@@ -57,7 +57,7 @@ library shape:
 ```shell
 uvx copier copy --trust --defaults \
     --data-file presets/library.yml \
-    https://github.com/ConstitutiveTemplates/architekton-py.git scratch/
+    https://github.com/politeuma/architekton-py.git scratch/
 ```
 
 (or the shipped CLI: `architekton-py new scratch --preset library`). This answers
@@ -99,7 +99,7 @@ protecting the files you already have:
 uvx copier copy --trust \
     --data existing_project=true \
     --skip .github/workflows/ci.yml --skip renovate.json \
-    https://github.com/ConstitutiveTemplates/architekton-py.git .
+    https://github.com/politeuma/architekton-py.git .
 git diff        # delete what you do not want, keep your files
 git commit -m "chore: adopt architekton-py"
 ```

@@ -184,7 +184,7 @@ jobs:
   law-map-review-by:
     name: law-map review_by drift
     # Obligation-graph freshness, not toolchain drift: every grounding in
-    # ConstitutiveTemplates/law-map carries a review_by date, and an expired
+    # politeuma/law-map carries a review_by date, and an expired
     # one means the statute/citation needs human re-review. Different corpus
     # from ethics-sync.yml (which diffs the vendored prose SHA against
     # kanon) and from check-upstream*.yml (upstream template
@@ -201,14 +201,14 @@ jobs:
       - name: Checkout law-map
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ConstitutiveTemplates/law-map
+          repository: politeuma/law-map
           path: law-map
           persist-credentials: false
 
       - name: Checkout kanon
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ConstitutiveTemplates/kanon
+          repository: politeuma/kanon
           path: kanon
           persist-credentials: false
 
@@ -234,7 +234,7 @@ jobs:
           if [ "$existing" -eq 0 ]; then
             gh issue create \
               --title "law-map review_by expired (scheduled check)" \
-              --body "The weekly obligation-freshness check found expired review_by groundings in ConstitutiveTemplates/law-map (or an unresolved related_sections id). Re-review the cited statute/guidance and bump review_by. See: $RUN_URL" \
+              --body "The weekly obligation-freshness check found expired review_by groundings in politeuma/law-map (or an unresolved related_sections id). Re-review the cited statute/guidance and bump review_by. See: $RUN_URL" \
               --label "documentation"
           else
             echo "An issue for this drift is already open; skipping."

@@ -28,7 +28,7 @@ merge step off (use `tools/adopt.py --merge` when you want the template's
 dependencies and runner recipes added to your own files).
 
 The command works both from a clone of the template repo and installed
-(`uvx --from git+https://github.com/ConstitutiveTemplates/architekton-py.git
+(`uvx --from git+https://github.com/politeuma/architekton-py.git
 architekton-py`, or a pip wheel): when TOP (this file's parent's
 parent) carries no copier.yml, there is no checkout next to the package, and
 `main` delegates to a cached clone of the template repo under
@@ -392,7 +392,7 @@ def _add_scaffold_command(subcommands: Any) -> None:
 # it keeps every TOP-relative resolution version-matched to the template ref
 # it renders.
 
-DEFAULT_REMOTE = "https://github.com/ConstitutiveTemplates/architekton-py.git"
+DEFAULT_REMOTE = "https://github.com/politeuma/architekton-py.git"
 REMOTE_URL_ENV = "ARCHITEKTON_PY_TEMPLATE_URL"  # override for mirrors / local test clones
 DELEGATED_ENV = "ARCHITEKTON_PY_DELEGATED"  # recursion guard for the delegated run
 

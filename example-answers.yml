@@ -17,10 +17,10 @@ use_recommended_integrations: false
 use_recommended_security: false
 author_email: kashimiya.exe@gmail.com
 author_name: kashi-x
-description: An expanded https://github.com/ConstitutiveTemplates/architekton-py to illustrate how it looks with all the options enabled.
-distribution_name: ConstitutiveTemplates-architekton-py-example
+description: An expanded https://github.com/politeuma/architekton-py to illustrate how it looks with all the options enabled.
+distribution_name: politeuma-architekton-py-example
 docker: true
-github_org: ConstitutiveTemplates
+github_org: politeuma
 gitlab_group: mygroup
 package_name: architekton_py_example
 package_manager: uv

@@ -7,7 +7,7 @@ is a new project or an existing one, picks the release to expand, warns about
 the files both the target and the template have, and then renders.
 
 ```shell
-uvx --from git+https://github.com/ConstitutiveTemplates/architekton-py.git \
+uvx --from git+https://github.com/politeuma/architekton-py.git \
     architekton-py new my-project --preset library
 ```
 
@@ -40,7 +40,7 @@ the family, so adding a preset of your own is a two-line YAML file. See the
 [Presets Reference](../reference/presets.md) for the exact questions and answers
 pinned by each preset (and what each declines). For a
 fixture that sets every option instead, copy
-[`example-answers.yml`](https://github.com/ConstitutiveTemplates/architekton-py/blob/main/example-answers.yml)
+[`example-answers.yml`](https://github.com/politeuma/architekton-py/blob/main/example-answers.yml)
 from the template root — it turns every area gate off (so every detailed
 question is answered) on a `data_science` base, it is what the template's own
 CI renders, and it works as a `copier copy --data-file` answers file.
@@ -72,7 +72,7 @@ also drive copier directly:
 git init --initial-branch=main /path/to/my-project
 # $_ resolves to /path/to/my-project
 uvx copier copy --trust \
-    https://github.com/ConstitutiveTemplates/architekton-py.git $_
+    https://github.com/politeuma/architekton-py.git $_
 ```
 
 No `--vcs-ref` is needed here either: copier then expands this fork's **newest

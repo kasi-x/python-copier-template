@@ -3,7 +3,7 @@ name: Ethics sync
 on:
   workflow_dispatch:
   schedule:
-    # Vendor drift from ConstitutiveTemplates/kanon: the canonical
+    # Vendor drift from politeuma/kanon: the canonical
     # section texts move on their own review cadence (OWASP / FIPS / regional
     # law), independent of this repo's commits. Weekly, after the Tuesday
     # fork check so the two drift reports don't land in the same hour.

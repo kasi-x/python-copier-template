@@ -25,7 +25,7 @@ about — or protects — the files the target already has. No `--vcs-ref` or ot
 needed:
 
 ```shell
-uvx --from git+https://github.com/ConstitutiveTemplates/architekton-py.git architekton-py --help
+uvx --from git+https://github.com/politeuma/architekton-py.git architekton-py --help
 ```
 
 The installed CLI clones and caches the template repo on first use. Inside a

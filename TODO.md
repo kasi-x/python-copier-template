@@ -476,7 +476,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 1. **Showcase（採用実績）の構築**:
    - 自分のプロジェクト（MCPサーバー、CLIツール、競プロリポジトリ）を本テンプレートで生成し、`README.md` に「採用例」として掲載。
    - 外部ユーザーのリポジトリに「Adopt」を提案する PR（またはサンプルリポジトリ）を作成し、感謝とともに Showcase への掲載許可を得る。
-   - `[![Built with foundry](https://img.shields.io/badge/built%20with-foundry-blue)](https://github.com/ConstitutiveTemplates/foundry)]` バッジの配布。
+   - `[![Built with foundry](https://img.shields.io/badge/built%20with-foundry-blue)](https://github.com/politeuma/foundry)]` バッジの配布。
 2. **初動の Issue / PR 体制と contributor ladder**:
    - 新規スターやフォーク、Issue が立った際は 24時間以内に丁寧に応答。
    - `good first issue`（倫理ドラフトの追加、タイポ修正、ドキュメント改善）に最初の貢献があった場合、即座にレビューして merge し、`CONTRIBUTORS.md` に記載してリテンションを高める。
@@ -674,13 +674,13 @@ AI エージェントのコンテキストウィンドウ圧迫と過剰反応�
 - **背景**: §47 で AGENTS.md を軽量化したが、エージェントが「どのセクションが
   自分の変更に関係するか」を判断する手段は文書読解に委ねられていた。
   差分を機械的に grep して該当ルールを報告する独立 Linter を新設。
-- **リポジトリ**: `ConstitutiveTemplates/law-lint`（新規公開、CI 緑、
+- **リポジトリ**: `politeuma/law-lint`（新規公開、CI 緑、
   zizmor 適合・SHA pin 済み）。依存は `pyyaml` のみ。
 - **コマンド**: `law-lint diff`（git diff 対象のトリガー検出）、
   `law-lint check <path>`（ファイル/ディレクトリ走査）、`--strict`（L2 で exit 1）、
   `list-rules`。`--rules` で architekton-py の `REGISTRY.yml` や codex YAML を直接ロード可能。
 - **architekton-py 側の連携**:
-  - `AGENTS.md.jinja`: 「コミット前に `uvx --from git+https://github.com/ConstitutiveTemplates/daimonion daimonion diff`」を追記
+  - `AGENTS.md.jinja`: 「コミット前に `uvx --from git+https://github.com/politeuma/daimonion daimonion diff`」を追記
   - `_tasks.jinja`: `legal-check` タスクを `quality_tasks` に追加
     （`agents_md_effective` ゲート、audit/license-check と同じネットワーク依存 one-off）
   - `.github-org` プロフィールの Repositories 表に law-lint を追加

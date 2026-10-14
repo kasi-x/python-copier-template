@@ -44,10 +44,7 @@ than what to build. That is exactly this template's posture: it never tells
 you *what* to build (the questionnaire is yours to answer); it only refuses,
 aborts, and warns when a render path would be unsound.
 
-The project was formerly named daimonion, after Socrates' inner voice that,
-by his own account, never told him what to do, only when to stop. *Like
-Socrates' daimonion, it never tells you what to build — only when to stop.*
-— that name now belongs to the daimonion linter.
+*Architekton* — the master builder who works from a plan.
 
 ## Where this fits among the alternatives
 
@@ -115,6 +112,6 @@ repository's `TODO.md`.
 The most useful contribution right now is not a new `project_type` — see
 [Contributing](../how-to/contribute.md) — it's a bug report from an actual
 generated project, or a link to a real repo demonstrating a behavior you
-want changed (per [CONTRIBUTING](https://github.com/ConstitutiveTemplates/architekton-py/blob/main/.github/CONTRIBUTING.md),
+want changed (per [CONTRIBUTING](https://github.com/politeuma/architekton-py/blob/main/.github/CONTRIBUTING.md),
 this template treats "show me the repo where this matters" as the way
 changes get evaluated).

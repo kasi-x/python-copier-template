@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Report drift between vendored ethics sections and kanon.
 
-_shared/ethics/ is a vendored snapshot of ConstitutiveTemplates/kanon
+_shared/ethics/ is a vendored snapshot of politeuma/kanon
 (the canonical section texts of the Good-future charter). This script is the
 consumer-side half of the sync contract in docs/explanations/ethics-external.md:
 it diffs the vendored tree against the codex at the SHA recorded in
@@ -24,7 +24,7 @@ from datetime import datetime
 from pathlib import Path
 
 TOP = Path(__file__).resolve().parent.parent
-CODEX_URL = "https://github.com/ConstitutiveTemplates/kanon.git"
+CODEX_URL = "https://github.com/politeuma/kanon.git"
 MARKER = TOP / ".ethics-vendored"
 VENDORED = TOP / "_shared" / "ethics"
 

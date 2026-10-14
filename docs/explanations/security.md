@@ -19,10 +19,10 @@ each Scorecard check to the mechanism that satisfies it.
 ## Scorecard score, tracked weekly
 
 Measured 2026-10-14 via the [public Scorecard API](https://api.scorecard.dev)
-(`GET /projects/github.com/ConstitutiveTemplates/architekton-py`, Scorecard
+(`GET /projects/github.com/politeuma/architekton-py`, Scorecard
 v5.5.0, commit `3185c0e6`): **5.2 / 10**. The API refreshes on each call —
 re-measure with `curl -s
-https://api.scorecard.dev/projects/github.com/ConstitutiveTemplates/architekton-py`
+https://api.scorecard.dev/projects/github.com/politeuma/architekton-py`
 and update the table below, not the prose around it. The weekly
 `scorecard.yml` run (push to `main` + Saturdays 01:30 UTC,
 `publish_results: true`) keeps the published result current; the weekly

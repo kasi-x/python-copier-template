@@ -543,7 +543,7 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       週次 dependency-audit.yml（木曜 07:00）で実施
 - [x] v1.0 公開のタイミングで fork を解除し、履歴を新規にして独立リポジトリとして
       公開し直す（2026-09 方針確定。GitHub Support への detach 依頼はしない）
-      → **完了（2026-10-04）**: delete+recreate で `ConstitutiveTemplates/foundry`
+      → **完了（2026-10-04）**: delete+recreate で `politeuma/foundry`
       として独立公開（詳細は HUMAN_TODO.md と TODO.md §37-38。ブランド名
       `foundry` 確定、全リネーム・NOTICE・リポジトリメタデータ復元済み）
       → 手順: 作業クローンで `git checkout --orphan` + 単一初期コミットを作成し、
@@ -619,11 +619,11 @@ test_example / test_generated_lint / test_recommended_path が生成物を実走
       digest PR が担う。初回実行で pinning/digest PR が開くのを確認する）
       → **初回確認済み（2026-10-04）**: renovate は生成物の renovate.json で
       pin/digest 追従を担う設計（`test_renovate_baseline_matches_generated_template`
-      で固定）。ConstitutiveTemplates org への renovate app 連携自体は
+      で固定）。politeuma org への renovate app 連携自体は
       人間判断のため HUMAN_TODO に残す
 - [x] example リポジトリを copier update で再生成し、test_example_repo_updates
       のパリティを通す（main push で _example.yml が自動実行）
-      → **org 移行済み（2026-10-04）**: `ConstitutiveTemplates/foundry-example`
+      → **org 移行済み（2026-10-04）**: `politeuma/foundry-example`
       を新設、全参照を移行、初期 render 済み。旧 kasi-x 名の原文は当時の記録
 - [x] リポジトリ公開後に Scorecard のスコア・バッジを確認（private では機能しない）
       → **確認済み（2026-10-04）**: workflow 成功 + api.securityscorecards.dev で
@@ -792,7 +792,7 @@ Strategy.md ①②③④ は commit a82f9a46 で実装済み。当日の push �
       → リポジトリを新規作成（public）+ 現 HEAD から生成して初期 push +
       書き込み可能 deploy key を登録 + `EXAMPLE_DEPLOY_KEY` secret を設定。
       テストがローカルで pass することまで確認済み
-      → **再発（2026-10-04、org 移行時）**: `ConstitutiveTemplates/foundry-example`
+      → **再発（2026-10-04、org 移行時）**: `politeuma/foundry-example`
       を新設し `_example.yml`・example-answers・README・example テストを移行、
       初期 render を force-push 済み。ただし **org リポは設定で deploy key が
       無効** のため `_example.yml` の `peaceiris/actions-gh-pages` publish 経路が
@@ -1023,7 +1023,7 @@ copier 公式ドキュメントには GitHub topic ベースのテンプレー�
       会話で混同され続ける。detach 後の rename は星・被リンクの再蓄積を
       引き起こすため、名前は detach 前に確定させる(候補の軸: 多ジャンル対応/
       Z3 検証済み/という差別化点を表す語。決めるのは開発者自身の裁量)
-      → **完了（2026-10-04）**: `foundry` に確定（`ConstitutiveTemplates/foundry`）
+      → **完了（2026-10-04）**: `foundry` に確定（`politeuma/foundry`）
 - [x] detach 後、README・CITATION.cff・codemeta.json・新設予定の NOTICE 相当に
       DiamondLightSource 由来である旨を明記する(正統性の担保と礼儀。既存の
       `docs/explanations/why-use-template.md` が python3-pip-skeleton 由来を

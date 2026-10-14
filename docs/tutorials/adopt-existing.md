@@ -107,7 +107,7 @@ Later updates: `copier update --trust` and review the diff (see
 If you have a python3-pip-skeleton based project then it is best to adopt the *first* release of this template (`6.0.0`, the tag the fork detach creates), then `copier update` to get to the latest. This is because `copier update` will try and merge file changes across renames done between releases, while `copier copy` cannot. This looks like:
 
 ```shell
-uvx copier copy https://github.com/ConstitutiveTemplates/architekton-py.git --trust --vcs-ref=6.0.0 /path/to/existing-project
+uvx copier copy https://github.com/politeuma/architekton-py.git --trust --vcs-ref=6.0.0 /path/to/existing-project
 git diff
 # Examine the changes, put back anything you want to keep
 git commit -m "Adopt architekton-py 6.0.0"
@@ -127,7 +127,7 @@ them):
 ```shell
 uvx copier copy --trust --data existing_project=true \
     --skip .github/workflows/ci.yml --skip renovate.json \
-    https://github.com/ConstitutiveTemplates/architekton-py.git /path/to/existing-project
+    https://github.com/politeuma/architekton-py.git /path/to/existing-project
 git diff
 # Examine the changes, put back anything you want to keep
 git commit -m "Adopt architekton-py x.x.x"
@@ -146,7 +146,7 @@ and `.gitignore`, protect them with `--skip`:
 ```shell
 uvx copier copy --trust \
     --skip README.md --skip LICENSE --skip pyproject.toml --skip .gitignore \
-    https://github.com/ConstitutiveTemplates/architekton-py.git /path/to/existing-project
+    https://github.com/politeuma/architekton-py.git /path/to/existing-project
 git diff
 git commit -m "chore: adopt architekton-py (infra only)"
 ```

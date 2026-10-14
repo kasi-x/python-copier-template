@@ -1,6 +1,6 @@
 # Security Policy
 
-The [architekton-py](https://github.com/ConstitutiveTemplates/architekton-py)
+The [architekton-py](https://github.com/politeuma/architekton-py)
 is a [copier](https://copier.readthedocs.io) template that generates Python
 projects. Its security-sensitive surface is the generated CI/CD (`.github/`)
 and the template logic in `template/` and `copier.yml`.
@@ -10,7 +10,7 @@ and the template logic in `template/` and `copier.yml`.
 Please **do not** open a public issue for security vulnerabilities. Instead,
 report them privately through GitHub's Security Advisory workflow:
 
-1. Go to <https://github.com/ConstitutiveTemplates/architekton-py/security/advisories/new>
+1. Go to <https://github.com/politeuma/architekton-py/security/advisories/new>
 2. Provide a clear description of the vulnerability, including:
    - the affected file(s) / generated output;
    - the impact (e.g. secrets exposed in generated CI, command injection in a

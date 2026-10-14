@@ -3,7 +3,7 @@
   "@type": "SoftwareSourceCode",
   "name": "architekton-py",
   "description": "An opinionated Copier template for Python projects, with recommended settings for tooling, CI, and research-software metadata.",
-  "codeRepository": "https://github.com/ConstitutiveTemplates/architekton-py",
+  "codeRepository": "https://github.com/politeuma/architekton-py",
   "license": "https://spdx.org/licenses/Apache-2.0",
   "version": "0.0.0",
   "programmingLanguage": {

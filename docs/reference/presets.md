@@ -148,5 +148,5 @@ To create a custom preset for your organization or team:
 3. Use your preset when rendering:
    ```shell
    uvx copier copy --data-file presets/my-preset.yml \
-       https://github.com/ConstitutiveTemplates/architekton-py.git my-app
+       https://github.com/politeuma/architekton-py.git my-app
    ```

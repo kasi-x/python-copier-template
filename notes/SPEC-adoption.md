@@ -137,7 +137,7 @@ git init --initial-branch=main /path/to/existing-project   # 既存 repo の場�
 cd /path/to/existing-project
 uvx copier copy --trust --vcs-ref=main \
   --skip README.md --skip LICENSE --skip pyproject.toml --skip .gitignore \
-  https://github.com/ConstitutiveTemplates/architekton-py.git .
+  https://github.com/politeuma/architekton-py.git .
 git add -A && git commit -m "chore: adopt architekton-py (infra only)"
 ```
 
@@ -146,7 +146,7 @@ git add -A && git commit -m "chore: adopt architekton-py (infra only)"
 ```sh
 uvx copier copy --trust --vcs-ref=main \
   --data existing_project=true \
-  https://github.com/ConstitutiveTemplates/architekton-py.git /path/to/existing-project
+  https://github.com/politeuma/architekton-py.git /path/to/existing-project
 ```
 
 ### 採用後の更新

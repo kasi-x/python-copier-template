@@ -434,7 +434,7 @@ def _is_empty(target: Path) -> bool:
     return not any(entry.name != ".git" for entry in target.iterdir())
 
 
-NEW_SRC_PATH = "https://github.com/ConstitutiveTemplates/architekton-py.git"
+NEW_SRC_PATH = "https://github.com/politeuma/architekton-py.git"
 """The canonical template URL recorded into fresh answers files."""
 
 #: The old URL this repository lived at. It will soon belong to a different

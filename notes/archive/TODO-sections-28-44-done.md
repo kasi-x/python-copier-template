@@ -597,7 +597,7 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
 ---
 
 <!-- 旧 TODO.md L1067–L1109 -->
-## §38 展開: 法務エコシステムの ConstitutiveTemplates 組織への分離（2026-10-04）
+## §38 展開: 法務エコシステムの politeuma 組織への分離（2026-10-04）
 
 §37 の拡大戦略に基づき、法律・コンプライアンス層をこのリポジトリから組織レベルの
 専門リポジトリへ分離した。法律自体の「整理（オントロジー化）」は追従不能な
@@ -605,7 +605,7 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
 
 - **`open-law`（公開済み）**: 世界中の公式立法ソース（uk, jp, eu, kr, bd,
   np, la）の Polite スクレイパー。`kasi-x/open-law` から
-  `ConstitutiveTemplates/open-law` へ移管・初期公開。Akoma Ntoso 対応の
+  `politeuma/open-law` へ移管・初期公開。Akoma Ntoso 対応の
   統一 Law モデル + トピック対応表（correspond）。
 - **`law-map`（新規作成）**: 機能的等価（Zweigert & Kötz）に基づく
   機械可読の「義務グラフ」。条文・判例・ガイダンスを 1 つの義務ノードに
@@ -648,7 +648,7 @@ startup_failure を直した途端、週次チェックが本来の仕事（ド�
 
 **決定**: プロジェクト名を `daimonion` に変更する。`foundry` は PyPI で取得済み
 （`uvx foundry` 不可）、かつ Ethereum の Foundry / Palantir Foundry と検索衝突するため。
-org 名 `ConstitutiveTemplates` は変えない。
+org 名 `politeuma` は変えない。
 
 **由来（README / vision.md に書く物語）**: ソクラテスの daimonion は「何をせよ」とは
 言わず、過ちの手前で「やめよ」とだけ告げる内なる声。ethics セクションの警告・
@@ -674,7 +674,7 @@ PEP 541 要）、`uphold`（同名の暗号資産企業 Uphold が GitHub org �
 - [x] CLI キャッシュディレクトリ `~/.cache/foundry` → `~/.cache/daimonion`
       （旧ディレクトリは読まずに放置でよい。再 clone で済む。決定を cli.py の
       コメントに残す）
-- [x] URL の置換: `ConstitutiveTemplates/foundry` → `ConstitutiveTemplates/daimonion`、
+- [x] URL の置換: `politeuma/foundry` → `politeuma/daimonion`、
       `constitutivetemplates.github.io/foundry` → `.../daimonion`、
       `foundry-example` → `daimonion-example`。対象（`git grep -il foundry` で
       74 ファイル / 266 箇所、2026-10-05 時点）: README.md, zensical.toml,
@@ -714,7 +714,7 @@ GitHub の "Latest" 表示も 7.0.0 にする（2026-10-05 時点で Latest は 
 ---
 
 <!-- 旧 TODO.md L1211–L1273 -->
-## §41 検討: ConstitutiveTemplates エコシステム横断の改善点（2026-10-09 レビュー）
+## §41 検討: politeuma エコシステム横断の改善点（2026-10-09 レビュー）
 
 4 リポ（open-law → law-map → good-future-codex → daimonion）を横断で見た指摘。
 §38（分離）/ §40（メンテ体制）と重複しないもののみ。優先順。人間作業の
@@ -887,7 +887,7 @@ scout 4 本による現行コード調査で特定した改善を、リポ別 8 
 - CONTRIBUTING/README: kasi-x 残骸を全除去 + blast-radius 表。
 
 ### .github-org
-- org profile は公開済み(repo=ConstitutiveTemplates/.github)が判明、daimonion 側で週次 lychee 監視に接続。
+- org profile は公開済み(repo=politeuma/.github)が判明、daimonion 側で週次 lychee 監視に接続。
 
 ### 検証
 - law-map: validate 0 errors、`--warnings` は L0/spec-less の宣言的警告のみ、check --sources 0 flagged、84 passed。

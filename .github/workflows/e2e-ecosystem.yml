@@ -36,14 +36,14 @@ jobs:
       - name: Checkout law-map
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ConstitutiveTemplates/law-map
+          repository: politeuma/law-map
           path: law-map
           persist-credentials: false
 
       - name: Checkout kanon
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ConstitutiveTemplates/kanon
+          repository: politeuma/kanon
           path: kanon
           persist-credentials: false
 

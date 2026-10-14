@@ -1,14 +1,14 @@
 # Contribute to the template
-Contributions and issues are most welcome! All issues and pull requests are handled through [GitHub](https://github.com/ConstitutiveTemplates/architekton-py/issues). Also, please check for any existing issues before filing a new one. If you have a great idea but it involves big changes, please file a ticket before making a pull request! We want to make sure you don't spend your time coding something that might not fit the scope of the project.
+Contributions and issues are most welcome! All issues and pull requests are handled through [GitHub](https://github.com/politeuma/architekton-py/issues). Also, please check for any existing issues before filing a new one. If you have a great idea but it involves big changes, please file a ticket before making a pull request! We want to make sure you don't spend your time coding something that might not fit the scope of the project.
 
 ## Security
 
 Please do not open a public issue for security vulnerabilities. Report them
-privately via the [Security Advisory workflow](https://github.com/ConstitutiveTemplates/architekton-py/security/advisories/new) — see [SECURITY.md](../SECURITY.md) for details.
+privately via the [Security Advisory workflow](https://github.com/politeuma/architekton-py/security/advisories/new) — see [SECURITY.md](../SECURITY.md) for details.
 
 ## Issue or Discussion?
 
-Github also offers [discussions](https://github.com/ConstitutiveTemplates/architekton-py/discussions) as a place to ask questions and share ideas. If your issue is open ended and it is not obvious when it can be "closed", please raise it as a discussion instead.
+Github also offers [discussions](https://github.com/politeuma/architekton-py/discussions) as a place to ask questions and share ideas. If your issue is open ended and it is not obvious when it can be "closed", please raise it as a discussion instead.
 
 ## Getting changes into the template
 
@@ -18,10 +18,10 @@ This template is a place to pull together agreed best practices from various sou
 ## Ethics / regional / operational rule sections
 
 The section texts under `_shared/ethics/` are a vendored snapshot of
-[kanon](https://github.com/ConstitutiveTemplates/kanon),
+[kanon](https://github.com/politeuma/kanon),
 which owns their content, sources, and review cadence. New sections and
 corrections are pull requests there, not here; obligation-level changes go
-through [law-map](https://github.com/ConstitutiveTemplates/law-map)'s Legal
+through [law-map](https://github.com/politeuma/law-map)'s Legal
 RFC issue. This repo owns only the wiring — `REGISTRY.yml` rows, gates, and
 promotions — governed by [GOVERNANCE.md](../GOVERNANCE.md). The runbook is
 [docs/how-to/ethics-section.md](../docs/how-to/ethics-section.md).
@@ -43,7 +43,7 @@ blast radius, never the whole suite.
 
 The cheapest real change an outsider can make: add or correct an ethics /
 regional / operational rule section in
-[kanon](https://github.com/ConstitutiveTemplates/kanon)
+[kanon](https://github.com/politeuma/kanon)
 (copy its `sections/_template.md.jinja`, fill every field, run its
 `tools/validate.py`). It needs no knowledge of this template's questionnaire,
 and once merged the weekly `ethics-sync.yml` here reports it for vendoring
@@ -61,7 +61,7 @@ The template has tests for:
 
 However, this does not test whether processes like CI and docs work correctly. You can ensure that these are checked by:
 
-- Making your changes on a branch of <https://github.com/ConstitutiveTemplates/architekton-py>
+- Making your changes on a branch of <https://github.com/politeuma/architekton-py>
 - Running `uvx copier update --vcs-ref=<branch_name>` in the repo where you would like to demonstrate the behaviour
 - Linking to that demonstration repo in the PR
 

@@ -57,8 +57,8 @@ def test_template_with_extra_code_and_api_docs(tmp_path: Path):
             "from architekton_py_example import extra_pkg\n\n__version__: str\ntry:",
         )
         .replace(
-            'version("ConstitutiveTemplates-architekton-py-example")\n\n__all__ = ["__version__"]',
-            'version("ConstitutiveTemplates-architekton-py-example")\n\n\nclass TopCls:\n    """A top level class."""\n\n\n__all__ = ["TopCls", "__version__", "extra_pkg"]',
+            'version("politeuma-architekton-py-example")\n\n__all__ = ["__version__"]',
+            'version("politeuma-architekton-py-example")\n\n\nclass TopCls:\n    """A top level class."""\n\n\n__all__ = ["TopCls", "__version__", "extra_pkg"]',
         )
     )
     extra_pkg = tmp_path / "src" / "architekton_py_example" / "extra_pkg"
@@ -487,7 +487,7 @@ def test_template_fair_metadata(tmp_path: Path):
     cff = (tmp_path / "CITATION.cff").read_text()
     assert "cff-version: 1.2.0" in cff
     assert 'title: "architekton-py-example"' in cff
-    assert 'repository-code: "https://github.com/ConstitutiveTemplates/architekton-py-example"' in cff
+    assert 'repository-code: "https://github.com/politeuma/architekton-py-example"' in cff
     assert 'license: "Apache-2.0"' in cff
     assert 'orcid: "https://orcid.org/0000-0002-1825-0099"' in cff
     reuse_toml = (tmp_path / "REUSE.toml").read_text()
@@ -588,7 +588,7 @@ def test_template_scorecard_opt_in(tmp_path: Path):
     assert (tmp_path / "SECURITY.md").exists()
     assert (tmp_path / ".github" / "workflows" / "scorecard.yml").exists()
     readme = (tmp_path / "README.md").read_text()
-    assert "api.scorecard.dev/projects/github.com/ConstitutiveTemplates/architekton-py-example/badge" in readme
+    assert "api.scorecard.dev/projects/github.com/politeuma/architekton-py-example/badge" in readme
 
 
 def test_template_readme_badges(tmp_path: Path):

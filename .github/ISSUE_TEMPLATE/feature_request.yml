@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to suggest a feature! Please check the
-        [design principles](https://github.com/ConstitutiveTemplates/architekton-py/blob/main/docs/reference/questionnaire.md)
+        [design principles](https://github.com/politeuma/architekton-py/blob/main/docs/reference/questionnaire.md)
         before proposing a new option — not every idea should become a
         project type or a questionnaire toggle.
 

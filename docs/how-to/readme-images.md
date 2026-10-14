@@ -47,7 +47,7 @@ This is placed below a comment:
 ```markdown
 <!-- README only content. Anything below this line won't be included in index.md -->
 
-[example-image]: https://raw.githubusercontent.com/ConstitutiveTemplates/architekton-py/main/docs/images/example.png
+[example-image]: https://raw.githubusercontent.com/politeuma/architekton-py/main/docs/images/example.png
 ```
 
 The absolute URL is used to allow PyPI to render the image. If PyPI is not
@@ -75,7 +75,7 @@ is used for the documentation rather than an image on a branch.
 Note that if using a `raw.githubusercontent.com` URL pointing to an image on a
 branch, e.g:
 ```
-https://raw.githubusercontent.com/ConstitutiveTemplates/architekton-py/main/docs/images/example.png
+https://raw.githubusercontent.com/politeuma/architekton-py/main/docs/images/example.png
 ```
 it is possible that the image will be removed or change over time. This would
 affect the content displayed on PyPI, even for releases already made.
@@ -83,11 +83,11 @@ affect the content displayed on PyPI, even for releases already made.
 To mitigate this it may be desired to point to fixed versions of such assets,
 via a commit hash or a tag URL. For example an image at a specific tag:
 ```
-https://raw.githubusercontent.com/ConstitutiveTemplates/architekton-py/5.4.0/docs/images/example.png
+https://raw.githubusercontent.com/politeuma/architekton-py/5.4.0/docs/images/example.png
 ```
 or an image at a specific commit:
 ```
-https://raw.githubusercontent.com/ConstitutiveTemplates/architekton-py/7bbc94e0d61da2a4ce4de6a1285c4cc0e4ba67f2/docs/images/example.png
+https://raw.githubusercontent.com/politeuma/architekton-py/7bbc94e0d61da2a4ce4de6a1285c4cc0e4ba67f2/docs/images/example.png
 ```
 This may incur a prohibitive maintenance cost, in constantly updating references
 when releases are made, so use of these fixed images is left as a per-project
@@ -103,7 +103,7 @@ Given that the `README.md` layout has not been drastically changed from the
 template, the following HTML image style code may be placed at the very top of
 `README.md`:
 ```html
-<img src="https://raw.githubusercontent.com/ConstitutiveTemplates/architekton-py/main/docs/images/example-logo.svg"
+<img src="https://raw.githubusercontent.com/politeuma/architekton-py/main/docs/images/example-logo.svg"
      style="background: none" width="120px" height="120px" align="right">
 ```
 

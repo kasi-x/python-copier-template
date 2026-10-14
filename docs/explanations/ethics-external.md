@@ -92,7 +92,7 @@ which is what keeps a surprise upstream edit out of a user's `copier update`.
 ## Status
 
 The split is done: `kanon` is live under the
-[ConstitutiveTemplates](https://github.com/ConstitutiveTemplates)
+[politeuma](https://github.com/politeuma)
 organization alongside `open-law` (legislation scraping) and `law-map`
 (the obligation graph). For a single consumer the vendor machinery would be
 cost without benefit; the codex now has two consumers (this template and
