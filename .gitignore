@@ -136,6 +136,9 @@ lockfiles/
 .pi/
 .zcode/
 
+# Lattice Docs working state (docs-i18n pipeline)
+.lattice/works/**/segments/
+
 # Local environment variables (see .env.example)
 .env
 .envs/
@@ -175,4 +178,3 @@ challenges/**/flag*
 # credentials
 test/
 .kattisrc
-.lattice/works/**/segments/
