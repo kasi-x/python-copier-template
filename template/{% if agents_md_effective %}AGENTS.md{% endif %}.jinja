@@ -63,8 +63,8 @@ and lint fixes, then `{{ task_runner_effective }} check` (or `lint` + `test`
 {% else %}Run `{{ task_runner_effective }} check` (or its steps — `lint`, `build`, `test` —
 individually) before finishing a change.
 {% endif %}
-The repo-hygiene checks (secrets, workflow linting, YAML validity,
-conventional commit messages) run in CI, not as local hooks — the lint and
+The repo-hygiene checks (secrets, workflow linting, YAML validity, the
+conventional PR title) run in CI, not as local hooks — the lint and
 fix tasks work anywhere, including outside a git repository.
 {% if 'type-check' in (_t.tasks | map(attribute='name')) %}
 Type checking uses basedpyright plus `{{ type_checker }}`; `deptry`,
@@ -105,8 +105,9 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
 ## Commits and CI
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/)
-  (`feat:`, `fix:`, ...); the repository's hygiene CI enforces it on commit
-  messages and the PR title.
+  (`feat:`, `fix:`, ...) in the PR title — hygiene CI checks the title
+  only, and pull requests land via squash-merge. Individual commit messages
+  are free-form.
 - CI runs lint, type-check, and tests on every push
 {% if docs %} plus a docs build{% endif %}; keep all of them green.
 {# Ethics block: filled by `daimonion agents-md --write` from kanon (see .daimonion.yml); the markers must stay. #}

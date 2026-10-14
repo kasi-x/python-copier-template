@@ -12,7 +12,7 @@ $ task lint
 
 (or `just lint`, `poe lint`, ... depending on your task runner).
 
-Repository hygiene checks are not run locally: they run in CI via the repository hygiene workflow, which covers secret scanning (gitleaks), workflow linting (actionlint), YAML validity, missing end-of-file newlines, conflict markers, oversized files, conventional commit messages, REUSE lint and CITATION.cff validation.
+Repository hygiene checks are not run locally: they run in CI via the repository hygiene workflow, which covers secret scanning (gitleaks), workflow linting (actionlint), YAML validity, missing end-of-file newlines, conflict markers, oversized files, the conventional PR title (individual commit messages are free-form; PRs land via squash-merge), REUSE lint and CITATION.cff validation.
 
 ## Fixing issues
 
