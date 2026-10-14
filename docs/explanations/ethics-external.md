@@ -16,12 +16,17 @@ move, superseding the old vendor-snapshot design below only where it
 describes vendoring (the "why not fetch at render time" property still
 holds, restated for the new shape).
 
-Kanon is itself one layer of a larger legal pipeline:
+Kanon is itself one layer of a larger legal distribution chain (the canonical
+picture is the [politeuma architecture diagram](https://github.com/politeuma/.github/blob/main/profile/diagram.md),
+where law-map is the rulebook and this template is one adoption entry point
+among others — any existing repository adopts the same rules through daimonion):
 
 ```text
 open-law            law-map                 kanon      daimonion
-world legislation   obligation graph         reviewed prose   rendered block
--> unified corpus -> jurisdiction groundings -> AGENTS.md sections -> agent guide
+world legislation   THE RULEBOOK            reviewed prose   rendered block
+-> unified corpus -> obligation graph     -> AGENTS.md sections -> agent guide
+                                              (any repo via      (this template:
+                                               daimonion)        new Python projects)
 ```
 
 `open-law` fetches statutes, `law-map` organizes them as machine-readable
@@ -60,15 +65,16 @@ reference a template flag":
 | Moved to kanon + daimonion | Stays here |
 | --- | --- |
 | Section bodies (prose, triggers, `review_by` dates, sources) | `_shared/daimonion-when.jinja` — the single answer-to-condition derivation macro |
-| The `when:`/audience mapping (which abstract condition selects which section: kanon's `MANIFEST.yml`) | The emitted `.daimonion.yml` (the project's declared conditions, in kanon's `when` vocabulary) |
+| The `when:`/audience mapping (which abstract condition selects which section: kanon's generated `MANIFEST.yml`) | The emitted `.daimonion.yml` (the project's declared conditions, in kanon's `when` vocabulary) |
 | Section selection and block rendering (`daimonion agents-md --write`) | The empty marker pair in the generated `AGENTS.md` (`<!-- daimonion:ethics:begin -->` / `<!-- daimonion:ethics:end -->`) |
 | Presence triggers and `check_ethics` matching | The composition manifest's `when:` list (the same macro, the public record `verify` reads) |
 | The enforcement level's L1/L2 machinery that reads prose | The L2 `license-check` gate (pip-licenses; needs no prose) and the `daimonion-config` render predicate that holds the `when` list |
 
-Kanon holds **flag-agnostic content**: each section is a file with an
-`{# ethics: ... #}` header (`id`, `version`, `status`) and a prose body,
-plus a `MANIFEST.yml` row declaring its abstract `when` (a string, or a
-list meaning "any of") and its `placement`. It never names a template flag.
+Kanon holds **flag-agnostic content**: each section is `sections/<tier>/<slug>.md`
+(plain Markdown with YAML front matter — `id`, `version`, `status`, `when`,
+`placement`, `triggers`, `sources`, `obligations`), and `sections/MANIFEST.yml`
+is generated from that front matter by kanon's `tools/manifest.py` (never edited
+by hand). It never names a template flag.
 This repo maps its answers onto kanon's abstract vocabulary once, in
 `_shared/daimonion-when.jinja`:
 
@@ -89,10 +95,10 @@ This repo maps its answers onto kanon's abstract vocabulary once, in
 ```text
 kanon (source of truth)                 this template              generated project
 ┌──────────────────────────┐         ┌─────────────────────┐         ┌────────────────────┐
-│ sections/*.md.jinja       │  read   │ .daimonion.yml       │ linter  │ AGENTS.md            │
+│ sections/*.md             │  read   │ .daimonion.yml       │ linter  │ AGENTS.md            │
 │  flag-agnostic prose      │ ──────► │ (declared when list) │ ──────► │ (filled marker block)│
-│  MANIFEST.yml (when +     │   at    │ manifest when:       │ agents- │ `daimonion agents-md │
-│   placement)              │ render  │ (same macro)         │ md      │  --write`            │
+│  MANIFEST.yml (generated  │   at    │ manifest when:       │ agents- │ `daimonion agents-md │
+│   from front matter)      │ render  │ (same macro)         │ md      │  --write`            │
 └──────────────────────────┘         └─────────────────────┘         └────────────────────┘
         ▲ own review cadence              ▲ render-pure                    ▲ prose enters here,
         (OWASP / FIPS / LE watch)         (no network)                     on the user's machine
@@ -145,9 +151,13 @@ them. The remaining references:
 
 - **Section ids**: `law-map` obligations link prose via `related_sections`
   ids of the form `<tier>-<slug>`, which resolve to
-  `sections/<tier>/<slug>.md.jinja` in kanon. Unchanged by this move.
-- **`daimonion diff --strict`** stays the generated project's `legal-check`
-  task: it matches changed lines against the rendered block's triggers.
+  `sections/<tier>/<slug>.md` in kanon (plain Markdown with YAML front
+  matter; `MANIFEST.yml` is generated from it). Unchanged by this move.
+- **`daimonion diff`** (no `--strict`) stays the generated project's
+  `legal-check` task: it matches changed lines against the rendered block's
+  triggers and only reports — the adoption-mode default, so the first week
+  never goes red on findings. Pass `--strict` explicitly when a finding
+  should fail the run.
 - **Migration**: a project generated before the move carries appendix prose
   inline. Its next `daimonion agents-md --write` replaces the stale text
   with the linter-managed block; the `_src_path` legacy-URL migration

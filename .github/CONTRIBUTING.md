@@ -42,8 +42,11 @@ blast radius, never the whole suite.
 The cheapest real change an outsider can make: add or correct an ethics /
 regional / operational rule section in
 [kanon](https://github.com/politeuma/kanon)
-(copy its `sections/_template.md.jinja`, fill every field, run its
-`tools/validate.py`). It needs no knowledge of this template's questionnaire.
+(copy its `sections/_template.md`, fill every field, run its
+`just manifest`). It needs no knowledge of this template's questionnaire.
+Until the kanon→law-map merge lands, section file paths still end in
+`.md` (YAML front matter plus prose body); the `guidance/` layout named
+in the merge plan does not exist yet.
 In this repo, the next-cheapest change is a docs fix — see the blast-radius table
 above.
 
