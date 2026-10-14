@@ -9,8 +9,10 @@ use_recommended_polish:
     help: |
         Use the recommended layout & repo polish?
         Recommended: src/ layout (library/cli), no Japanese (multibyte)
-        characters in comments/docstrings.
-        Answer No to change the layout or allow Japanese text.
+        characters in comments/docstrings, English AGENTS.md rule
+        summaries.
+        Answer No to change the layout, allow Japanese text, or keep the
+        AGENTS.md ethics rules Japanese-only.
 
 layout:
     type: str
@@ -42,6 +44,20 @@ allow_japanese:
         If true, ruff's line-length and max-doc-length are relaxed so that
         wide multibyte characters do not trigger E501/D rules.
     default: false
+
+agents_md_language:
+    type: str
+    when: "{{ not use_recommended_polish }}"
+    help: |
+        Language of the AGENTS.md ethics rules.
+        - en: an English summary of each selected kanon section sits above
+          the ethics marker block; the full sections daimonion renders into
+          the block stay Japanese until kanon ships English text.
+        - ja: the Japanese marker block only.
+    choices:
+        - en
+        - ja
+    default: en
 
 use_recommended_docs:
     type: bool

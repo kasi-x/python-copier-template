@@ -22,7 +22,7 @@ are asked — [the questionnaire reference](questionnaire.md) lists every one.
 | `use_recommended_agent` | yes — a plain library / CLI without agent tooling. | library / cli |
 | `use_recommended_toolchain` | uv (package manager) + just (task runner). | not ros2 + `ros2_package_manager` = pixi |
 | `use_recommended_data_science` | GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer). | the data_science layer is present |
-| `use_recommended_polish` | src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings. | all |
+| `use_recommended_polish` | src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings, English AGENTS.md rule summaries. | all |
 | `use_recommended_docs` | zensical (Zensical, an MkDocs fork with mkdocstrings). | all |
 | `use_recommended_quality` | basedpyright (primary) + pyrefly (additional static analysis), strictness "recommended" (ruff ALL rules, typos/vulture/deptry/pip-audit). | all |
 | `use_recommended_license` | MIT license, no FAIR research-software metadata (CITATION.cff / REUSE). | all |
@@ -82,7 +82,7 @@ flowchart TD
     G_data_science_no --> G_polish
     G_polish{"use_recommended_polish?"}
     G_polish -->|Yes| G_polish_yes["src/ layout (library/cli), no Japanese"]
-    G_polish -->|No| G_polish_no["ask: layout, allow_japanese"]
+    G_polish -->|No| G_polish_no["ask: layout, allow_japanese, agents_md_language"]
     G_polish_yes --> G_docs
     G_polish_no --> G_docs
     G_docs{"use_recommended_docs?"}

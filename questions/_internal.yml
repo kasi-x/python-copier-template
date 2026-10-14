@@ -464,6 +464,16 @@ import_pkg:
     default: "{{ 'app' if web_api else package_name }}"
     when: false
 
+# The daimonion linter every generated project runs through uvx (the copier
+# post-gen task, the ethics-block / legal-check tasks, the CI ethics-block
+# job, the AGENTS.md hint), pinned to one commit so a render never executes
+# whatever lands on daimonion's main. Move this to a PyPI release pinned
+# with a hash (`daimonion==X --hash ...`) once daimonion is published.
+daimonion_spec:
+    type: str
+    default: "git+https://github.com/politeuma/daimonion@b670aedf38ca33747b2693c1fad771b61a266e74"
+    when: false
+
 # AGENTS.md effective setting. Every project ships the agent guide: the
 # library / cli / script bases, the web_api / data_science layers (including
 # combo opt-ins), ros2 / micropython (all types ship the guide, whose empty

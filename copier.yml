@@ -167,9 +167,13 @@ _tasks:
       when: "{{ src_dirs }}"
     # Fill the AGENTS.md ethics marker block from kanon right after render:
     # offline-tolerant on purpose (uvx fetches daimonion from git), so a
-    # failure prints guidance and never fails generation.
+    # failure prints guidance and never fails generation; the generated CI's
+    # ethics-block job (`daimonion agents-md --check`) then fails until the
+    # block is filled. daimonion is pinned to a commit via `daimonion_spec`
+    # (questions/_internal.yml) -- move to a hash-pinned PyPI release once
+    # daimonion is published.
     - command: |
-        uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --write || echo "WARNING: could not render the AGENTS.md ethics block (offline?); run 'uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --write' once network is available." >&2
+        uvx --from {{ daimonion_spec }} daimonion agents-md --write || echo "WARNING: could not render the AGENTS.md ethics block (offline?); run 'uvx --from {{ daimonion_spec }} daimonion agents-md --write' once network is available." >&2
       when: "{{ agents_md_effective }}"
 
 _migrations:

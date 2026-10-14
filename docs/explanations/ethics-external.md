@@ -112,6 +112,22 @@ macro plus two tests:
   `.daimonion.yml` `when` list, the manifest agreement, and the empty marker
   pair with no vendored prose.
 
+Two guards close the gaps this shape leaves. The linter is **pinned**: the
+`daimonion_spec` internal (`questions/_internal.yml`) names one daimonion
+commit, and every generated `uvx --from` call uses it, so the prose a render
+gets is fixed by the template tag rather than by daimonion's `main` (a
+hash-pinned PyPI release replaces the git URL once daimonion is published).
+An **empty block fails CI**: the post-gen fill only warns when offline, so
+the generated `ci.yml` runs `daimonion agents-md --check` as a required job.
+
+kanon's prose is Japanese-only. Until kanon ships English text, the default
+`agents_md_language: en` renders English summaries of the selected
+sections above the marker block from `_shared/ethics-summary-en.md.jinja`, a
+translation of the pinned kanon revision's rule-summary lines (titles and
+the three rules, not the full sections). `ja` keeps the Japanese block only.
+`tests/test_daimonion_config.py` pins that partial's rows against kanon's
+manifest and its selection against kanon's `applies()`.
+
 ## Versioning
 
 A template release no longer ships a *known ethics text* — it ships a known

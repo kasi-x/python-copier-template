@@ -22,7 +22,23 @@ on:
   merge_group:
 {% endraw %}
 jobs:
-{% if ros2_pkg %}{% if ros2_package_manager == 'pixi' %}
+{% if agents_md_effective %}  # AGENTS.md's ethics marker block is filled after render by the copier
+  # post-gen task (`daimonion agents-md --write`), which only warns when it
+  # cannot run (offline). Fail here until the block is filled and matches
+  # the pinned daimonion's kanon snapshot.
+  ethics-block:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - name: AGENTS.md ethics block is filled and current
+        run: uvx --from {{ daimonion_spec }} daimonion agents-md --check
+{% endif %}{% if ros2_pkg %}{% if ros2_package_manager == 'pixi' %}
   build-and-test:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -206,7 +222,7 @@ jobs:
 {% endif %}
   required-checks-passed:
     name: all required checks passed
-    needs: [hygiene, lint, test{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}{% if micropython_pkg %}, firmware{% elif online_judge %}{% elif not micropython_pkg %}, dist{% endif %}]
+    needs: [hygiene, lint, test{% if agents_md_effective %}, ethics-block{% endif %}{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}{% if micropython_pkg %}, firmware{% elif online_judge %}{% elif not micropython_pkg %}, dist{% endif %}]
 {% raw %}
     if: always()
     runs-on: ubuntu-24.04

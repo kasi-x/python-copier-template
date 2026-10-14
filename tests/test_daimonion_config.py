@@ -25,10 +25,12 @@ if str(TOP) not in sys.path:
 from tools.answers import BASE  # noqa: E402
 
 from support import render_answers  # noqa: E402
-from test_daimonion_parity import derive_when  # noqa: E402
+from test_daimonion_parity import KANON_DIR, derive_when, kanon_applies, load_kanon  # noqa: E402
 
 BEGIN = "<!-- daimonion:ethics:begin"
 END = "<!-- daimonion:ethics:end -->"
+SUMMARY = "### Rule summaries (English)"
+SUMMARY_PARTIAL = TOP / "_shared" / "ethics-summary-en.md.jinja"
 
 HINTS = (
     "#  - jp           # operates under Japanese law",
@@ -102,3 +104,49 @@ def test_manifest_when_matches_config(tmp_path: Path) -> None:
     manifest = yaml.safe_load((root / ".architekton-manifest.yml").read_text(encoding="utf-8"))
     config = yaml.safe_load((root / ".daimonion.yml").read_text(encoding="utf-8"))
     assert manifest["when"] == config["when"], "manifest and config when-lists must agree"
+
+
+def _summary_ids(guide: str) -> list[str]:
+    """Section ids listed in the English rule summaries (empty without them)."""
+    if SUMMARY not in guide:
+        return []
+    body = guide[guide.index(SUMMARY) : guide.index(BEGIN)]
+    return [line.split("(`", 1)[1].split("`)", 1)[0] for line in body.splitlines() if line.startswith("- **")]
+
+
+@pytest.mark.skipif(not KANON_DIR.is_dir(), reason="vendored kanon checkout absent")
+@pytest.mark.parametrize("label,overrides", CASES, ids=[label for label, _ in CASES])
+def test_english_summaries_select_what_daimonion_selects(
+    tmp_path: Path, label: str, overrides: dict[str, object]
+) -> None:
+    """The default (en) guide summarises exactly the sections daimonion puts in the block."""
+    guide = (_render(tmp_path, overrides) / "AGENTS.md").read_text(encoding="utf-8")
+    assert guide.index(SUMMARY) < guide.index(BEGIN), f"{label}: summaries sit above the block"
+    conditions = derive_when({**BASE, **overrides})
+    expected = [s["id"] for s in load_kanon() if kanon_applies(s, conditions)]
+    assert _summary_ids(guide) == expected, f"{label}: English summaries drifted from kanon selection"
+
+
+def test_japanese_guide_has_no_english_summaries(tmp_path: Path) -> None:
+    """agents_md_language: ja keeps the Japanese marker block only."""
+    root = _render(tmp_path, {"project_type": "library", "use_recommended_polish": False, "agents_md_language": "ja"})
+    guide = (root / "AGENTS.md").read_text(encoding="utf-8")
+    assert SUMMARY not in guide
+    assert BEGIN in guide and END in guide
+
+
+@pytest.mark.skipif(not KANON_DIR.is_dir(), reason="vendored kanon checkout absent")
+def test_english_summary_rows_mirror_kanon_manifest() -> None:
+    """Every agents_md kanon section has an English row with the manifest's `when`, in order."""
+    text = SUMMARY_PARTIAL.read_text(encoding="utf-8")
+    rows = [
+        (line.split("'id': '", 1)[1].split("'", 1)[0], line.split("'when': ", 1)[1].rstrip(","))
+        for line in text.splitlines()
+        if "'id': '" in line
+    ]
+    expected = [
+        (s["id"], repr(list(s["when"])))
+        for s in load_kanon()
+        if s["placement"] == "agents_md" and s["status"] == "active"
+    ]
+    assert rows == expected, "re-sync _shared/ethics-summary-en.md.jinja with the vendored kanon manifest"

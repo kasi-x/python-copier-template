@@ -115,13 +115,19 @@ Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
 Field rules for this project kind live in the marker block below.
 
 The block is maintained by `daimonion agents-md --write` from the kanon corpus; edit `.daimonion.yml`, not the block.
+CI fails while the block is empty or stale (`daimonion agents-md --check`);
+fill it with the `ethics-block` task or
+`uvx --from {{ daimonion_spec }} daimonion agents-md --write`.
 
 To mechanically verify changed files against these triggers before committing,
-run `uvx --from git+https://github.com/politeuma/daimonion daimonion diff`
+run `uvx --from {{ daimonion_spec }} daimonion diff`
 (or `... daimonion check <path>`).
 {% if web_api %}
 Market-triggered rules no questionnaire answer can route here live in
 `ethics/regions.yml` -- read the row for each region you ship to.
 {% endif %}
+{% if agents_md_language == 'en' -%}
+{% include "_shared/ethics-summary-en.md.jinja" %}
+{% endif -%}
 <!-- daimonion:ethics:begin -->
 <!-- daimonion:ethics:end -->

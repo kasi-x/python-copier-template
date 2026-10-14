@@ -6,6 +6,18 @@ All notable changes to this project are documented in this file.
 
 ### Features
 
+- the generated project's daimonion is pinned: every `uvx --from` call
+  (copier post-gen task, `ethics-block` / `legal-check` tasks, the AGENTS.md
+  hint, CI) uses the `daimonion_spec` internal, a commit-pinned git URL,
+  instead of daimonion's moving `main`.
+- generated CI gains an `ethics-block` job (`daimonion agents-md --check`,
+  required by `required-checks-passed`), so an AGENTS.md whose marker block
+  stayed empty because the post-gen task ran offline fails CI instead of
+  shipping silently.
+- new `agents_md_language` question (polish gate; `en` by default, `ja`
+  available): `en` adds English summaries of the selected kanon sections
+  above the Japanese marker block, from `_shared/ethics-summary-en.md.jinja`
+  (a translation of kanon 2321063's rule summaries).
 - ethics content moves to kanon; the template emits conditions, the
   linter owns the wiring: the generated project now ships
   `.daimonion.yml` (kanon's abstract `when` conditions derived from the

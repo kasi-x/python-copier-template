@@ -119,7 +119,7 @@
        'desc': 'Check dependency licenses comply with ' ~ license_effective ~ ' (needs network)',
        'run': [license_check_cmd]}] if license_check_effective else []) + ([{'name': 'legal-check',
        'desc': 'Scan changed files with daimonion diff (needs network)',
-       'run': ['uvx --from git+https://github.com/politeuma/daimonion daimonion diff --strict']}] if agents_md_effective else []) %}
+       'run': ['uvx --from ' ~ daimonion_spec ~ ' daimonion diff --strict']}] if agents_md_effective else []) %}
 {# Post-render refresh for the AGENTS.md ethics marker block: `daimonion
    agents-md --write` fills the markers from kanon using .daimonion.yml.
    Network-dependent like audit (uvx fetches daimonion from git), so it stays
@@ -127,7 +127,7 @@
    prints guidance instead. #}
 {% set ethics_tasks = [{'name': 'ethics-block',
                         'desc': 'Refresh the AGENTS.md ethics block via daimonion (warns offline, never fails)',
-                        'run': ["uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --write || echo 'WARNING: ethics block not refreshed (offline?); rerun this task once network is available' >&2"]}] %}
+                        'run': ["uvx --from " ~ daimonion_spec ~ " daimonion agents-md --write || echo 'WARNING: ethics block not refreshed (offline?); rerun this task once network is available' >&2"]}] %}
 {% set docs_tasks = [
     {'name': 'docs', 'desc': 'Build documentation', 'run': [run ~ docs_build_cmd]},
     {'name': 'docs-serve', 'desc': 'Serve documentation with live reload', 'run': [run ~ docs_serve_cmd]},
