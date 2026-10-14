@@ -3,7 +3,7 @@ requires = ["setuptools>=64", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "daimonion"
+name = "architekton-py"
 dynamic = ["version"]
 requires-python = ">=3.11"
 # The installed entry point (uvx --from git+..., pip wheel) imports copier,
@@ -13,7 +13,7 @@ requires-python = ">=3.11"
 dependencies = ["copier>=9,<10", "jinja2>=3.1,<4", "pyyaml>=6.0,<7", "tomlkit>=0.13,<1"]
 
 [project.scripts]
-daimonion = "tools.cli:main"
+architekton-py = "tools.cli:main"
 
 [dependency-groups]
 dev = [
@@ -47,7 +47,7 @@ dev = [
 [tool.setuptools]
 # This repo is the copier template itself, not a library: there is no
 # importable Python at the root (generation no longer needs custom Jinja
-# extensions). `tools` is listed explicitly so the `daimonion`
+# extensions). `tools` is listed explicitly so the `architekton-py`
 # entry point resolves in an installed environment (tools/ is a namespace
 # package: it has no __init__.py, and tests import it via the explicit
 # sys.path hook in tests/test_qa.py). Nothing else is listed: flat-layout
@@ -363,7 +363,7 @@ ignore_decorators = ["*tool*", "*resource*", "*route*", "*fixture*", "@rule", "@
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage|pytest-randomly,DEP003=daimonion,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
+per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage|pytest-randomly,DEP003=architekton-py,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
 # tests/ は pytest の暗黙パッケージ import (support, test_recommended_path) があり依存検査と相性が悪い。
 # .cache/ は tests/render_cache.py が置くレンダ済みプロジェクト（生成コード）で、

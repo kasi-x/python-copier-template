@@ -512,7 +512,7 @@ existing answer set: the dependency list is pinned by
 Field rules (a retired public NTP, a telecom secrecy duty, a regional
 backbone's quiet hours) arrive one at a time and must not each move the
 questionnaire, the leaf space, or the witness matrix. Each is written as a
-section in [good-future-codex](https://github.com/ConstitutiveTemplates/good-future-codex)
+section in [kanon](https://github.com/ConstitutiveTemplates/kanon)
 (`baseline/`, `sector/`, `region/`, `domain/`; `lang/` is reserved for
 the translation dictionaries) and vendored into `_shared/ethics/` (see
 [External ethics sections](ethics-external.md)); this repo registers it in

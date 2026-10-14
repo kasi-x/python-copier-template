@@ -434,13 +434,70 @@ def _is_empty(target: Path) -> bool:
     return not any(entry.name != ".git" for entry in target.iterdir())
 
 
+NEW_SRC_PATH = "https://github.com/ConstitutiveTemplates/architekton-py.git"
+"""The canonical template URL recorded into fresh answers files."""
+
+#: The old URL this repository lived at. It will soon belong to a different
+#: repository (the linter), so copier must never fetch it: it is recognised
+#: as "this template" only to steer existing projects onto the new URL.
+#: Forms: https with and without `.git`, and copier's `gh:` shorthand.
+LEGACY_SRC_PATHS: frozenset[str] = frozenset(
+    {
+        "https://github.com/ConstitutiveTemplates/daimonion",
+        "https://github.com/ConstitutiveTemplates/daimonion.git",
+        "gh:ConstitutiveTemplates/daimonion",
+    }
+)
+
+
 def _normalised_template_ref(value: str) -> str:
     return re.sub(r"\.git$", "", value.strip().rstrip("/"))
 
 
+def _legacy_identities() -> set[str]:
+    """Normalised forms of every legacy template URL."""
+    return {_normalised_template_ref(p) for p in LEGACY_SRC_PATHS}
+
+
+def is_legacy_src(src: str) -> bool:
+    """True when a recorded _src_path names the template's pre-rename URL."""
+    return _normalised_template_ref(src) in _legacy_identities()
+
+
+def migrate_legacy_src(target: Path) -> list[str]:
+    """Rewrite a legacy `_src_path` to the new URL before `copier update` runs.
+
+    Returns the answers-file names that were rewritten. Prints a one-line
+    notice per rewrite so the URL change is never silent.
+    """
+    rewritten: list[str] = []
+    for answers in sorted(target.glob(".copier-answers*.yml")):
+        try:
+            data = read_yaml_mapping(answers)
+        except (yaml.YAMLError, OSError, TypeError, ValueError):
+            continue
+        src = data.get("_src_path")
+        if not isinstance(src, str) or not is_legacy_src(src):
+            continue
+        try:
+            text = answers.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        updated = text.replace(src, NEW_SRC_PATH, 1)
+        if updated == text:
+            continue
+        try:
+            answers.write_text(updated, encoding="utf-8")
+        except OSError:
+            continue
+        print(f"notice: rewriting legacy template URL {src} to {NEW_SRC_PATH} in {answers.name}")
+        rewritten.append(answers.name)
+    return rewritten
+
+
 def _own_identities() -> set[str]:
     """Names and URLs that mean "this template" (for _src_path matching)."""
-    identities = {TOP.name, str(TOP)}
+    identities = {TOP.name, str(TOP), _normalised_template_ref(NEW_SRC_PATH), Path(NEW_SRC_PATH).name}
     remote = _git(TOP, "remote", "get-url", "origin")
     if remote:
         identities.add(_normalised_template_ref(remote))
@@ -451,7 +508,7 @@ def _own_identities() -> set[str]:
 def _src_is_ours(src: str) -> bool:
     """True when a recorded _src_path names this repository (URL, path or clone)."""
     normalised = _normalised_template_ref(src)
-    if normalised in _own_identities():
+    if normalised in _own_identities() or normalised in _legacy_identities():
         return True
     path = Path(normalised)
     if path.exists():
@@ -462,7 +519,7 @@ def _src_is_ours(src: str) -> bool:
         origin = _git(path, "remote", "get-url", "origin")
         if origin and _normalised_template_ref(origin) in _own_identities():
             return True
-    return "daimonion" in normalised
+    return False
 
 
 def answers_owner(target: Path) -> tuple[str | None, str | None]:

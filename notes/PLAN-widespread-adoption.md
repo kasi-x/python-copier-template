@@ -1,6 +1,6 @@
 # PLAN: このOSSが広く普及・愛用されるための拡大戦略と実践ロードマップ
 
-対象リポジトリ: `ConstitutiveTemplates/daimonion`（2026-10-04 策定。旧 `kasi-x/python-copier-template`）
+対象リポジトリ: `ConstitutiveTemplates/architekton-py`（2026-10-04 策定。旧 `kasi-x/python-copier-template`）
 関連ドキュメント: `TODO.md` (§36, §37)、`notes/Strategy.md`、`notes/SPEC-adoption.md`、`docs/explanations/vision.md`、内部 `HUMAN_TODO.md`（人間作業のチェックリスト — 2026-10-13 に kasi-x/daimonion-internal へ移設）
 
 ---
@@ -38,7 +38,7 @@
 ### P2. 導入体験（UX）の極小摩擦化（Zero-Friction Onboarding）
 - **ゼロインストール・ワンライナーの前面化**:
   - `git clone` 前提の手順を即時廃止。README 先頭を `uvx copier copy --trust gh:<org>/<repo> my-project` に刷新。
-  - CLI（`daimonion`）のパッケージ構成を整理し、`uvx --from git+... daimonion new my-project --preset library` を可能に。
+  - CLI（`architekton-py`）のパッケージ構成を整理し、`uvx --from git+... architekton-py new my-project --preset library` を可能に。
 - **プリセット主導の「3秒スタート」体験**:
   - 質問票の第1問目で「推奨プリセットから選ぶ（Web API / CLI / Data Science / Library / Minimal Bare）」を案内し、1回のリターンキーで即座に走る体験を提供。
 - **既存プロジェクト近代化ツール（Adopt）のワンライナー化**:
@@ -185,7 +185,7 @@
 1. **Showcase（採用実績）の構築**:
    - 自分のプロジェクト（MCPサーバー、CLIツール、競プロリポジトリ）を本テンプレートで生成し、`README.md` に「採用例」として掲載。
    - 外部ユーザーのリポジトリに「Adopt」を提案する PR（またはサンプルリポジトリ）を作成し、感謝とともに Showcase への掲載許可を得る。
-   - `[![Built with daimonion](https://img.shields.io/badge/built%20with-daimonion-blue)](https://github.com/ConstitutiveTemplates/daimonion)]` バッジの配布。
+   - `[![Built with architekton-py](https://img.shields.io/badge/built%20with-architekton--py-blue)](https://github.com/ConstitutiveTemplates/architekton-py)]` バッジの配布。
 2. **初動の Issue / PR 体制と contributor ladder**:
    - 新規スターやフォーク、Issue が立った際は 24時間以内に丁寧に応答。
    - `good first issue`（倫理ドラフトの追加、タイポ修正、ドキュメント改善）に最初の貢献があった場合、即座にレビューして merge し、`CONTRIBUTORS.md` に記載してリテンションを高める。
@@ -197,6 +197,6 @@
 | フェーズ | 期間目安 | 主要マイルストーン | 完了基準 |
 |---|---|---|---|
 | **Phase 1: 摩擦の撤廃** | 1〜2日 | README 刷新（`uvx` 前面化）、`task regen`、CI docs-only 狭隘化 | ✅ 2026-10-04 実施: README の TL;DR/`new`/`adopt` を `uvx` ワンライナー化、`task regen` 新設、lint/hygiene は既に常時実行と確認、CONTRIBUTING に blast-radius 表と Contributing 101 追加、CLI リモート delegation（`uvx --from` 対応・runtime deps 追加）実装済み |
-| **Phase 2: 独立・リブランディング** | 1週間 | リポジトリ detach / 新設、v1.0.0 リリース、CLI 配布対応 | 部分実施（2026-10-04）: `ConstitutiveTemplates/daimonion` として独立公開・ブランド名 `daimonion` 確定・全リネーム統一・NOTICE 新設済み。残: v1.0.0・Scorecard/branch protection・実 `uvx` 検証（人間作業） |
+| **Phase 2: 独立・リブランディング** | 1週間 | リポジトリ detach / 新設、v1.0.0 リリース、CLI 配布対応 | 部分実施（2026-10-04）: `ConstitutiveTemplates/architekton-py` として独立公開・ブランド名 `architekton-py` 確定・全リネーム統一・NOTICE 新設済み。残: v1.0.0・Scorecard/branch protection・実 `uvx` 検証（人間作業） |
 | **Phase 3: 対外発信・エバンジェリズム** | 2〜4週間 | HN/Reddit/Zenn 記事公開、Awesome 系 PR、移行ガイド | 部分実施: `docs/how-to/migrate-from-hypermodern.md` 新設済み。記事執筆・投稿・awesome PR は人間作業 |
 | **Phase 4: コミュニティ定着・機能拡充** | 継続 | Showcase 開設、`preset: mcp-server`、Marimo 統合 | 部分実施: `presets/mcp-server.yml` + sentinel、`good first issue` 5件起票（#4-8）。marimo は既存レイヤーと判明（experiment extra + `task marimo`）。Showcase・GIF は未着手 |

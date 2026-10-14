@@ -218,7 +218,7 @@ def released_rev(released_ref: str) -> str:
 @pytest.fixture(scope="session")
 def released_renders(released_ref: str, released_rev: str) -> Iterator[ReleasedRenders]:
     cache = ReleasedRenders(
-        Path(tempfile.gettempdir()) / "daimonion-update-path",
+        Path(tempfile.gettempdir()) / "architekton-py-update-path",
         released_ref,
         released_rev,
         copier.__version__,

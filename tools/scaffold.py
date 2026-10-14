@@ -249,7 +249,7 @@ def scaffold_check() -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="daimonion scaffold",
+        prog="architekton-py scaffold",
         description="Scaffold and validate additions to questionnaire, layers, and presets.",
     )
     sub = parser.add_subparsers(dest="subcommand", required=True)

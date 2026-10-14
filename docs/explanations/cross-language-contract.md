@@ -8,7 +8,7 @@ build another template.
 
 ## The three mechanisms
 
-daimonion's trust claims rest on three mechanisms. Each decomposes into a
+architekton-py's trust claims rest on three mechanisms. Each decomposes into a
 Python-coupled implementation and a contract that names no Python:
 
 ### 1. Configuration-space verification (Z3)

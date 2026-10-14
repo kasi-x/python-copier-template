@@ -19,4 +19,4 @@ you will not get the option to edit the release notes.
 
 A new release will be made and the wheel and sdist uploaded to PyPI.
 
-[release]: https://github.com/ConstitutiveTemplates/daimonion/releases
+[release]: https://github.com/ConstitutiveTemplates/architekton-py/releases

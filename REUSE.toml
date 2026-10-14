@@ -1,8 +1,8 @@
 version = 1
 
-SPDX-PackageName = "daimonion"
+SPDX-PackageName = "architekton-py"
 SPDX-PackageSupplier = "kasi-x <kashimiya.exe@gmail.com>"
-SPDX-PackageDownloadLocation = "https://github.com/ConstitutiveTemplates/daimonion"
+SPDX-PackageDownloadLocation = "https://github.com/ConstitutiveTemplates/architekton-py"
 
 # Project-wide default: every file inherits the project license and
 # copyright. Individual exceptions (e.g. vendored third-party assets) are

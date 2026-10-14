@@ -23,7 +23,7 @@ def test_template_web_api_sphinx_docs(tmp_path: Path):
     conf = (tmp_path / "docs" / "conf.py").read_text()
     assert "import app" in conf
     assert "release = app.__version__" in conf
-    assert "import daimonion_example" not in conf
+    assert "import architekton_py_example" not in conf
     # The switcher probe must not break offline docs builds
     assert "except requests.RequestException" in conf
     api_rst = (tmp_path / "docs" / "_api.rst").read_text()
@@ -199,7 +199,7 @@ def test_web_api_not_offered_to_other_types(tmp_path: Path):
     assert not any("fastapi" in d for d in deps)
     assert not any("slowapi" in d for d in deps)
     assert not any("prometheus" in d for d in deps)
-    assert not (tmp_path / "src" / "daimonion_example" / "app").exists()
+    assert not (tmp_path / "src" / "architekton_py_example" / "app").exists()
     assert not (tmp_path / "alembic").exists()
     assert not (tmp_path / "tests" / "test_app.py").exists()
 

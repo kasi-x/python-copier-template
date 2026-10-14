@@ -16,7 +16,7 @@
   },
   "packageRules": [
     {
-      "description": "Disable python version as that is managed by daimonion",
+      "description": "Disable python version as that is managed by architekton-py",
       "matchManagers": [
         "pyenv"
       ],

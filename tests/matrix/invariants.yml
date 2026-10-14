@@ -129,7 +129,7 @@ leaf_classes:
       - .github/workflows/ci.yml
       - .github/workflows/template-update.yml
       - CHANGELOG.md
-      - .daimonion-manifest.yml
+      - .architekton-manifest.yml
     absent:
       - "**/*.jinja"
     markers:

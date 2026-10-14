@@ -1,10 +1,10 @@
 """The composition contract: the manifest renders, and `verify` judges it.
 
-The manifest (`.daimonion-manifest.yml`) is the public record of a
+The manifest (`.architekton-manifest.yml`) is the public record of a
 generation -- the template ref, the answers file it describes, and the
 ethics sections the render distributed -- never answer values. These tests
 render through tests/support.py's `render_answers` (the one render entry
-point, TODO §28.6-D5) and pin the three claims `daimonion verify` checks:
+point, TODO §28.6-D5) and pin the three claims `architekton-py verify` checks:
 
 - the manifest ships in a real render with its required keys;
 - `verify` succeeds on it, and fails when the manifest no longer matches
@@ -89,7 +89,7 @@ def _rendered_pair(
 
 
 def test_verify_succeeds_on_a_fresh_render(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
-    """`daimonion verify` accepts what the template just rendered."""
+    """`architekton-py verify` accepts what the template just rendered."""
     _render(tmp_path, LIBRARY)
     assert cli.main(["verify", str(tmp_path)]) == cli.OK
     assert "verify: ok" in capsys.readouterr().out

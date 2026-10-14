@@ -24,7 +24,7 @@
 #   (Settings > Variables > Actions). Until then every run — schedule
 #   included — skips the job with success, so generating this file changes
 #   nothing until the user asks for it. No new copier question is involved.
-# - The trial runs on a `daimonion/update-<ref>` branch. The existing CI
+# - The trial runs on a `architekton-py/update-<ref>` branch. The existing CI
 #   runs on the PR by GitHub's default (a PR opening fires ci.yml), so this
 #   workflow never calls it.
 # - Nothing is ever merged automatically: the PR body says so, and no step
@@ -94,7 +94,7 @@ jobs:
           fi
           # A branch name no template ref can break out of.
           SLUG=$(printf '%s' "$REF" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-64)
-          BRANCH="daimonion/update-$SLUG"
+          BRANCH="architekton-py/update-$SLUG"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
           git switch -C "$BRANCH"
@@ -155,11 +155,11 @@ jobs:
             echo
             echo "## Manifest"
             echo
-            echo "Compare \`.daimonion-manifest.yml\` against \`main\` for the rationale"
+            echo "Compare \`.architekton-manifest.yml\` against \`main\` for the rationale"
             echo "this update carries (the template ref above plus the ethics sections):"
             echo
             echo '```'
-            git diff "main...$BRANCH" -- .daimonion-manifest.yml | head -100
+            git diff "main...$BRANCH" -- .architekton-manifest.yml | head -100
             echo '```'
             if [ "$CONFLICT" = "true" ]; then
               echo

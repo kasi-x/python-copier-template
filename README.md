@@ -1,15 +1,15 @@
-[![CI](https://github.com/ConstitutiveTemplates/daimonion/actions/workflows/ci.yml/badge.svg)](https://github.com/ConstitutiveTemplates/daimonion/actions/workflows/ci.yml) [![Update rehearsal](https://github.com/ConstitutiveTemplates/daimonion/actions/workflows/update-rehearsal.yml/badge.svg)](https://github.com/ConstitutiveTemplates/daimonion/actions/workflows/update-rehearsal.yml) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ConstitutiveTemplates/daimonion/badge)](https://scorecard.dev/viewer/?uri=github.com/ConstitutiveTemplates/daimonion) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![CI](https://github.com/ConstitutiveTemplates/architekton-py/actions/workflows/ci.yml/badge.svg)](https://github.com/ConstitutiveTemplates/architekton-py/actions/workflows/ci.yml) [![Update rehearsal](https://github.com/ConstitutiveTemplates/architekton-py/actions/workflows/update-rehearsal.yml/badge.svg)](https://github.com/ConstitutiveTemplates/architekton-py/actions/workflows/update-rehearsal.yml) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0) [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/ConstitutiveTemplates/architekton-py/badge)](https://scorecard.dev/viewer/?uri=github.com/ConstitutiveTemplates/architekton-py) [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-# daimonion
+# architekton-py
 
 ## TL;DR
 Prerequisites: [uv](https://docs.astral.sh/uv) (its `uvx` shim runs everything below) and [git](https://git-scm.com). No clone of this repository is needed; every command expands this fork's **newest release tag**:
 ```shell
-uvx --from git+https://github.com/ConstitutiveTemplates/daimonion.git daimonion new my-project --preset library   # shipped CLI: picks the release, renders, records the answers (clones+caches the template on first use)
-uvx copier copy --trust https://github.com/ConstitutiveTemplates/daimonion.git my-project   # or drive copier directly
+uvx --from git+https://github.com/ConstitutiveTemplates/architekton-py.git architekton-py new my-project --preset library   # shipped CLI: picks the release, renders, records the answers (clones+caches the template on first use)
+uvx copier copy --trust https://github.com/ConstitutiveTemplates/architekton-py.git my-project   # or drive copier directly
 ```
 
-**daimonion** (formerly *foundry*, originally *python-copier-template*) is an opinionated
+**architekton-py** (formerly *daimonion* and *foundry*, originally *python-copier-template*) is an opinionated
 [copier](https://copier.readthedocs.io) template for Python projects: create a
 new project from it, update existing projects in line with it, and keep them
 in sync as it changes. One questionnaire covers libraries,
@@ -48,7 +48,7 @@ question, and the [support tiers reference](docs/reference/support.md) says
 which combinations CI executes end to end. For the comparison with the upstream
 template and the alternatives, see
 [Vision & Positioning](docs/explanations/vision.md); the template in action is
-the [example project](https://github.com/ConstitutiveTemplates/daimonion-example).
+the [example project](https://github.com/ConstitutiveTemplates/architekton-py-example).
 Fifteen seconds of it, end to end:
 
 ![demo: render the cli preset, then run the generated project's checks](docs/assets/demo.gif)
@@ -61,8 +61,8 @@ the files the target already has. Installed via `uvx` it clones and caches
 the template repo on first use, so no checkout of this repository is needed:
 
 ```shell
-uvx --from git+https://github.com/ConstitutiveTemplates/daimonion.git \
-    daimonion new my-project --preset library
+uvx --from git+https://github.com/ConstitutiveTemplates/architekton-py.git \
+    architekton-py new my-project --preset library
 ```
 
 `--preset library` answers the one question that defines the project family
@@ -80,7 +80,7 @@ without it copier generates nothing and exits with status 4:
 
 ```shell
 git init --initial-branch=main /path/to/my-project
-uvx copier copy --trust https://github.com/ConstitutiveTemplates/daimonion.git /path/to/my-project
+uvx copier copy --trust https://github.com/ConstitutiveTemplates/architekton-py.git /path/to/my-project
 ```
 
 Both paths expand this fork's newest release tag. Pointing `new` at an
@@ -91,7 +91,7 @@ the files you already have stay byte-identical
 
 ```shell
 cd /path/to/existing-project
-uvx --from git+https://github.com/ConstitutiveTemplates/daimonion.git daimonion new .
+uvx --from git+https://github.com/ConstitutiveTemplates/architekton-py.git architekton-py new .
 ```
 
 [Create a new project](docs/tutorials/create-new.md) covers the flags, the
@@ -123,7 +123,7 @@ task check       # lint + type-check + test
 
 ## Where to go next
 
-- **[Documentation site](https://constitutivetemplates.github.io/daimonion)** — the full docs, in
+- **[Documentation site](https://constitutivetemplates.github.io/architekton-py)** — the full docs, in
   [tutorials](docs/tutorials.md), [how-to guides](docs/how-to.md),
   [explanations](docs/explanations.md) and [reference](docs/reference.md),
   starting from the [docs index](docs/index.md).
@@ -139,9 +139,9 @@ task check       # lint + type-check + test
 ## License, contributing and releases
 
 Licensed under [Apache-2.0](LICENSE). This repository is the template's own
-source (not a generated project): [source](https://github.com/ConstitutiveTemplates/daimonion) ·
-[docs site](https://constitutivetemplates.github.io/daimonion) ·
-[releases](https://github.com/ConstitutiveTemplates/daimonion/releases), whose
+source (not a generated project): [source](https://github.com/ConstitutiveTemplates/architekton-py) ·
+[docs site](https://constitutivetemplates.github.io/architekton-py) ·
+[releases](https://github.com/ConstitutiveTemplates/architekton-py/releases), whose
 notes are generated by [git-cliff](https://git-cliff.org) from the tag's
 conventional commits ([CHANGELOG.md](CHANGELOG.md)). Contributions are welcome
 — see [CONTRIBUTING.md](.github/CONTRIBUTING.md), the

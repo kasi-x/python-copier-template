@@ -125,7 +125,7 @@ def test_answers_are_not_guessed_for_shape_questions(tmp_path: Path):
 
 def test_generated_project_is_update(tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text(
-        "_commit: 5.4.0-1-gabcdef\n_src_path: https://github.com/ConstitutiveTemplates/daimonion.git\n"
+        "_commit: 5.4.0-1-gabcdef\n_src_path: https://github.com/ConstitutiveTemplates/architekton-py.git\n"
         "project_type: library\n"
     )
     assert detect.detect(tmp_path).mode == "update"
@@ -148,8 +148,41 @@ def test_other_template_is_foreign(tmp_path: Path):
     assert detect.detect(tmp_path).mode == "foreign"
 
 
+def test_legacy_template_url_is_detected_as_ours(tmp_path: Path):
+    """The pre-rename URL still names this template (it soon belongs to the linter)."""
+    for src in (
+        "https://github.com/ConstitutiveTemplates/daimonion.git",
+        "https://github.com/ConstitutiveTemplates/daimonion",
+        "gh:ConstitutiveTemplates/daimonion",
+    ):
+        assert detect._src_is_ours(src), f"legacy URL must be ours: {src}"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: no public entry point; the legacy-URL identity is a contract.
+        (tmp_path / ".copier-answers.yml").write_text(f"_src_path: {src}\n")
+        assert detect.detect(tmp_path).mode == "update", f"legacy URL must detect update: {src}"
+
+
+def test_legacy_src_path_is_rewritten_to_the_new_url(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """The update-path migration rewrites a legacy `_src_path` (with a notice)."""
+    answers = tmp_path / ".copier-answers.yml"
+    answers.write_text("_src_path: https://github.com/ConstitutiveTemplates/daimonion.git\n_commit: abc\n")
+    assert detect.migrate_legacy_src(tmp_path) == [".copier-answers.yml"]
+    assert "_src_path: https://github.com/ConstitutiveTemplates/architekton-py.git" in answers.read_text()
+    assert "rewriting legacy template URL" in capsys.readouterr().out
+
+
+def test_non_legacy_foreign_url_is_untouched(tmp_path: Path) -> None:
+    """A foreign `_src_path` is neither ours nor rewritten."""
+    answers = tmp_path / ".copier-answers.yml"
+    answers.write_text("_src_path: https://github.com/other/template.git\n")
+    assert not detect._src_is_ours("https://github.com/other/template.git")  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: same as above.
+    assert detect.migrate_legacy_src(tmp_path) == []
+    assert answers.read_text() == "_src_path: https://github.com/other/template.git\n"
+    assert detect.detect(tmp_path).mode == "foreign"
+
+
 def test_answers_file_refused_for_update(tmp_path: Path):
-    (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/ConstitutiveTemplates/daimonion.git\n")
+    (tmp_path / ".copier-answers.yml").write_text(
+        "_src_path: https://github.com/ConstitutiveTemplates/architekton-py.git\n"
+    )
     out = tmp_path / "answers.yml"
     assert detect.main([str(tmp_path), "--answers", str(out)]) == 2
     assert not out.exists()

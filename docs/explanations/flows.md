@@ -66,7 +66,7 @@ pipeline.
 ```mermaid
 flowchart LR
     OL["open-law<br/>(world legislation corpus)"] --> LM["law-map<br/>(obligation graph,<br/>related_sections ids)"]
-    LM --> CX["good-future-codex<br/>(reviewed prose,<br/>sections tier/slug,<br/>review_by dates)"]
+    LM --> CX["kanon<br/>(reviewed prose,<br/>sections tier/slug,<br/>review_by dates)"]
     CX --> VE["_shared/ethics/<br/>(vendored snapshot:<br/>MANIFEST.yml, FLAGS.yml,<br/>REGISTRY.yml, .ethics-vendored)"]
     VE --> CC["tools/check_ethics_contract.py<br/>(MANIFEST vs FLAGS vs REGISTRY)"]
     CC --> GA["tools/gen_ethics_appendix.py<br/>--check in CI"]
@@ -81,7 +81,7 @@ Watchers on the chain, each naming exactly one failure: `ethics-sync.yml`
 groundings, `law-map check --codex`), and the `e2e` job in
 `e2e-ecosystem.yml` (`law-map export` + codex validate + a render whose
 `AGENTS.md` must still carry the codex-derived sections). The generated
-project's own `legal-check` task (`_tasks.jinja`, `law-lint diff --strict`)
+project's own `legal-check` task (`_tasks.jinja`, `daimonion diff --strict`)
 is the downstream consumer, not a watcher.
 
 ## CI at a glance: four lanes

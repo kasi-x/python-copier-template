@@ -38,7 +38,7 @@ def test_template_defaults(tmp_path: Path):
 def test_template_script_type(tmp_path: Path):
     copy_project(tmp_path, project_type="script")
     # Minimal: flat package at repo root (no src/), no notebooks
-    pkg = tmp_path / "daimonion_example"
+    pkg = tmp_path / "architekton_py_example"
     assert (pkg / "__init__.py").exists()
     assert not (tmp_path / "src").exists()
     assert not (tmp_path / "notebooks").exists()
@@ -115,8 +115,8 @@ def test_template_gitlab_urls(tmp_path: Path):
     # e.g. the ruff badge, are out of scope: see template-dev.md's
     # "GitLab scope").
     copy_project(tmp_path, project_type="library", git_platform="gitlab.com", gitlab_group="example-group")
-    repo_url = "https://gitlab.com/example-group/daimonion-example"
-    docs_url = "https://example-group.gitlab.io/daimonion-example"
+    repo_url = "https://gitlab.com/example-group/architekton-py-example"
+    docs_url = "https://example-group.gitlab.io/architekton-py-example"
     answers = yaml.safe_load((tmp_path / ".copier-answers.yml").read_text())
     assert answers["gitlab_group"] == "example-group"
     assert "github_org" not in answers, "github_org must not be asked (or recorded) on gitlab.com"
@@ -138,8 +138,8 @@ def test_template_github_urls_unchanged(tmp_path: Path):
     # byte-identically against a pre-change baseline over six render
     # combos; this pins the same bytes on the example fixture).
     copy_project(tmp_path, project_type="library")
-    repo_url = "https://github.com/ConstitutiveTemplates/daimonion-example"
-    docs_url = "https://constitutivetemplates.github.io/daimonion-example"
+    repo_url = "https://github.com/ConstitutiveTemplates/architekton-py-example"
+    docs_url = "https://constitutivetemplates.github.io/architekton-py-example"
     pyproject = (tmp_path / "pyproject.toml").read_text()
     assert f'urls.GitHub = "{repo_url}"' in pyproject
     zensical = (tmp_path / "zensical.toml").read_text()

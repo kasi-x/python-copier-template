@@ -2,7 +2,7 @@
 
 Field rules (a retired NTP server, a licensing drift, a jurisdiction's
 data rules) are prose sections owned by
-[good-future-codex](https://github.com/ConstitutiveTemplates/good-future-codex).
+[kanon](https://github.com/ConstitutiveTemplates/kanon).
 This repo vendors a pinned snapshot of them into `_shared/ethics/` and
 wires each one through a row in `_shared/ethics/REGISTRY.yml`. The split
 is content vs. wiring: the codex is responsible for what a section says
@@ -12,7 +12,7 @@ the questionnaire, the witness leaf space, or anyone's render — it
 accumulates as documentation first and is promoted only when a
 distribution bundle forms. Who decides what goes in the generated
 projects is stated in
-[GOVERNANCE.md](https://github.com/ConstitutiveTemplates/daimonion/blob/main/GOVERNANCE.md):
+[GOVERNANCE.md](https://github.com/ConstitutiveTemplates/architekton-py/blob/main/GOVERNANCE.md):
 contributors draft and research; the maintainer owns the defaults and
 the promotions. The vendor contract is explained in
 [External ethics sections](../explanations/ethics-external.md).
@@ -20,7 +20,7 @@ the promotions. The vendor contract is explained in
 ## Write or correct the section upstream
 
 Section text — new sections, factual corrections, dead source links —
-goes to good-future-codex as a pull request, following its
+goes to kanon as a pull request, following its
 `CONTRIBUTING.md`. Do not edit the files under `_shared/ethics/` here:
 they are a vendored copy, and `tools/check_ethics_drift.py` (run weekly
 by `ethics-sync.yml`) fails when they differ from the snapshot recorded

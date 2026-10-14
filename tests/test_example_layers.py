@@ -253,7 +253,7 @@ def test_template_include_sentry(tmp_path: Path):
     copy_project(tmp_path, include_sentry=True)
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("sentry-sdk") for d in pyproject_toml["project"]["dependencies"])
-    main_file = tmp_path / "src" / "daimonion_example" / "__main__.py"
+    main_file = tmp_path / "src" / "architekton_py_example" / "__main__.py"
     assert "sentry_sdk.init" in main_file.read_text()
 
 
@@ -261,11 +261,11 @@ def test_template_include_mcp(tmp_path: Path):
     copy_project(tmp_path, project_type="cli", include_mcp=True)
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("mcp[cli]") for d in pyproject_toml["project"]["dependencies"])
-    pkg_dir = tmp_path / "src" / "daimonion_example"
+    pkg_dir = tmp_path / "src" / "architekton_py_example"
     assert (pkg_dir / "mcp_server.py").exists()
     assert (tmp_path / "tests" / "test_mcp_server.py").exists()
     scripts = pyproject_toml["project"]["scripts"]
-    assert "mcp-server-daimonion-example" in scripts
+    assert "mcp-server-architekton-py-example" in scripts
     # mcp_server.py is covered by the type checkers (v2 SDK ships stubs) and
     # the scaffold uses the v2 API with safe-by-default HTTP serving.
     mcp_server = (pkg_dir / "mcp_server.py").read_text()
@@ -286,19 +286,19 @@ def test_template_mcp_docker_task(tmp_path: Path):
     copy_project(tmp_path, project_type="cli", include_mcp=True, docker=True)
     taskfile = (tmp_path / "Taskfile.yml").read_text()
     assert "mcp-serve" in taskfile
-    assert "mcp-server-daimonion-example" in taskfile
+    assert "mcp-server-architekton-py-example" in taskfile
     assert "MCP_ALLOWED_HOSTS" in taskfile
     # The Dockerfile exposes the MCP port and documents the run command.
     dockerfile = (tmp_path / "Dockerfile").read_text()
     assert "EXPOSE 8000" in dockerfile
-    assert "mcp-server-daimonion-example" in dockerfile
+    assert "mcp-server-architekton-py-example" in dockerfile
     # .env.example documents the allowlist variable.
     env_example = (tmp_path / ".env.example").read_text()
     assert "MCP_ALLOWED_HOSTS" in env_example
     # .mcp.json points the host at the stdio command (zero-config registration).
     mcp_json = json.loads((tmp_path / ".mcp.json").read_text())
-    server = mcp_json["mcpServers"]["daimonion-example"]
-    assert server["args"] == ["run", "mcp-server-daimonion-example"]
+    server = mcp_json["mcpServers"]["architekton-py-example"]
+    assert server["args"] == ["run", "mcp-server-architekton-py-example"]
     # README advertises the registration path.
     assert ".mcp.json" in (tmp_path / "README.md").read_text()
 
@@ -366,7 +366,7 @@ def test_template_mcp_flat_layout(tmp_path: Path):
     copy_project(tmp_path, project_type="cli", layout="flat", include_mcp=True)
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("mcp[cli]") for d in pyproject_toml["project"]["dependencies"])
-    assert (tmp_path / "daimonion_example" / "mcp_server.py").exists()
+    assert (tmp_path / "architekton_py_example" / "mcp_server.py").exists()
     assert (tmp_path / "tests" / "test_mcp_server.py").exists()
 
 
@@ -408,7 +408,7 @@ def test_template_include_scraping_httpx(tmp_path: Path):
     with scraping off ships none of it."""
     copy_project(tmp_path, project_type="cli", include_scraping=True)
     assert (tmp_path / "CHARTER.md").exists()
-    pkg_dir = tmp_path / "src" / "daimonion_example"
+    pkg_dir = tmp_path / "src" / "architekton_py_example"
     assert (pkg_dir / "fetcher.py").exists()
     assert (pkg_dir / "pipeline.py").exists()
     assert (pkg_dir / "storage.py").exists()
@@ -438,7 +438,7 @@ def test_template_include_scraping_httpx(tmp_path: Path):
     # Off: a cli render without the layer ships no fetcher and no scrape mode.
     off_path = tmp_path / "off"
     copy_project(off_path, project_type="cli")
-    off_pkg = off_path / "src" / "daimonion_example"
+    off_pkg = off_path / "src" / "architekton_py_example"
     assert not (off_pkg / "fetcher.py").exists()
     assert not (off_pkg / "pipeline.py").exists()
     assert not (off_pkg / "storage.py").exists()
@@ -456,7 +456,7 @@ def test_template_include_scraping_runs(tmp_path: Path):
     copy_project(tmp_path, project_type="cli", include_scraping=True)
     run = make_venv(tmp_path)
     run("uv run --locked pytest tests/test_scraping.py tests/test_pipeline.py -q")
-    run("uv run --locked python -m daimonion_example scrape --help")
+    run("uv run --locked python -m architekton_py_example scrape --help")
     run("uv run --locked ruff check src tests/test_scraping.py tests/test_pipeline.py")
 
 
@@ -502,7 +502,7 @@ def test_template_scraping_engine_choices(tmp_path: Path):
             use_recommended_scraping=False,
             scraping_engine=engine,
         )
-        pkg_dir = project_path / "src" / "daimonion_example"
+        pkg_dir = project_path / "src" / "architekton_py_example"
         for module in modules:
             assert (pkg_dir / module).exists(), f"{engine}: missing {module}"
         for test in tests:
@@ -551,9 +551,9 @@ def test_template_agent_scaffold(tmp_path: Path):
     copy_project(tmp_path, project_type="library", use_recommended_agent=False)
     # prompt, typed tools package and the runnable agent module
     assert (tmp_path / "prompts" / "agent.md").exists()
-    assert (tmp_path / "src" / "daimonion_example" / "tools" / "__init__.py").exists()
-    assert (tmp_path / "src" / "daimonion_example" / "tools" / "example.py").exists()
-    assert (tmp_path / "src" / "daimonion_example" / "agent.py").exists()
+    assert (tmp_path / "src" / "architekton_py_example" / "tools" / "__init__.py").exists()
+    assert (tmp_path / "src" / "architekton_py_example" / "tools" / "example.py").exists()
+    assert (tmp_path / "src" / "architekton_py_example" / "agent.py").exists()
     assert (tmp_path / "tests" / "test_agent.py").exists()
     pyproject_toml = tomllib.loads((tmp_path / "pyproject.toml").read_text())
     assert any(d.startswith("pydantic-ai") for d in pyproject_toml["project"]["dependencies"])
@@ -612,7 +612,7 @@ def test_template_agent_cli_only(tmp_path: Path):
     # cli also offers the agent gate
     copy_project(tmp_path, project_type="cli", use_recommended_agent=False)
     assert (tmp_path / "prompts" / "agent.md").exists()
-    assert (tmp_path / "src" / "daimonion_example" / "agent.py").exists()
+    assert (tmp_path / "src" / "architekton_py_example" / "agent.py").exists()
 
 
 def test_combo_data_science_with_web_api(tmp_path: Path):

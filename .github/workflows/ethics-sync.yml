@@ -3,7 +3,7 @@ name: Ethics sync
 on:
   workflow_dispatch:
   schedule:
-    # Vendor drift from ConstitutiveTemplates/good-future-codex: the canonical
+    # Vendor drift from ConstitutiveTemplates/kanon: the canonical
     # section texts move on their own review cadence (OWASP / FIPS / regional
     # law), independent of this repo's commits. Weekly, after the Tuesday
     # fork check so the two drift reports don't land in the same hour.
@@ -42,7 +42,7 @@ jobs:
             --state open --json number --jq 'length')
           if [ "$existing" -eq 0 ]; then
             gh issue create \
-              --title "Ethics sections drifted from good-future-codex" \
+              --title "Ethics sections drifted from kanon" \
               --body "$body"
           else
             echo "An issue for this drift is already open; skipping."

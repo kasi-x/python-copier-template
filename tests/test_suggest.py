@@ -139,7 +139,7 @@ def test_suggest_is_deterministic_and_empty_without_signal():
 
 
 def test_suggest_main_suggests_and_validates(tmp_path: Path, capsys: pytest.CaptureFixture[str]):
-    """The `daimonion suggest` entry point: prose by default, exit 2 on rejection."""
+    """The `architekton-py suggest` entry point: prose by default, exit 2 on rejection."""
     assert suggest.main(["api"]) == 0
     assert "web-api" in capsys.readouterr().out
     answers = tmp_path / "answers.yml"

@@ -29,7 +29,7 @@ def test_template_kaggle_competition(tmp_path: Path):
     assert (tmp_path / "Dockerfile.gpu").exists()
     assert (tmp_path / ".devcontainer" / "devcontainer.gpu.json").exists()
     # no standard package dir
-    assert not (tmp_path / "src" / "daimonion_example").exists()
+    assert not (tmp_path / "src" / "architekton_py_example").exists()
     # Taskfile exists
     assert (tmp_path / "Taskfile.yml").exists()
     # pyproject references utils and the competition deps
@@ -97,7 +97,7 @@ def test_template_data_science_layout(tmp_path: Path):
     log = (tmp_path / "data" / "sharing" / "TRANSFER_LOG.csv").read_text()
     assert log.startswith("date,recipient")
     # Package is src/<package_name>
-    assert (tmp_path / "src" / "daimonion_example" / "__init__.py").exists()
+    assert (tmp_path / "src" / "architekton_py_example" / "__init__.py").exists()
     # GPU + Quarto always included for data_science
     assert (tmp_path / "Dockerfile.gpu").exists()
     assert (tmp_path / "paper" / "paper.qmd").exists()

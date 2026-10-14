@@ -5,7 +5,7 @@
 
 ## 現状
 
-- プリセットは `presets/<name>.yml`（回答ファイル）。`daimonion new --preset
+- プリセットは `presets/<name>.yml`（回答ファイル）。`architekton-py new --preset
   <name>` または `copier copy --data-file` で使う。対話レンダ時には一切
   表示されない。
 - `project_type`（`copier.yml` 先頭の質問）は `help:` に 8 選択肢の説明を
@@ -24,7 +24,7 @@
 8 選択肢の説明の末尾に「同じ構成が `presets/<name>.yml` として出荷されて
 いるもの: library/bare/cli/mcp-server/web-api/data-science/ros2/
 micropython/online-judge-{atcoder,codeforces,kattis}。非対話なら
-`daimonion new --preset <name>`」の 1〜2 行を足す。
+`architekton-py new --preset <name>`」の 1〜2 行を足す。
 
 - **blast radius: ほぼゼロ**。`help:` は answer でも `when:` 条件でもない
   ため Z3 witness の葉空間（`tests/matrix/witnesses.json`、234 葉基準）
@@ -71,7 +71,7 @@ micropython/online-judge-{atcoder,codeforces,kattis}。非対話なら
 ## 決定（2026-10-05）
 
 **A + 構造テスト、採用済み**（C は未着手 — 生成側に実装が要るため別途）。
-`project_type.help` に全 11 プリセット名の列挙と `daimonion new --preset`
+`project_type.help` に全 11 プリセット名の列挙と `architekton-py new --preset`
 導線を追加し、`test_every_preset_is_named_in_project_type_help`
 （tests/test_presets.py）でプリセット名 ↔ help の一致を機械化した。
 leaf 空間非接触を確認済み。

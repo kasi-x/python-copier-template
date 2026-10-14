@@ -1,4 +1,4 @@
-"""The shipped entry point's dispatch: `daimonion new <dir>`.
+"""The shipped entry point's dispatch: `architekton-py new <dir>`.
 
 `tools/cli.py` is the console script this template publishes (pyproject.toml
 `[project.scripts]`), and it is a *dispatcher*: the mode `tools/detect.py`
@@ -482,7 +482,7 @@ def test_clone_losing_the_rename_race_keeps_the_existing_clone(tmp_path: Path, m
 def test_remote_url_defaults_to_the_shipped_repo(monkeypatch: pytest.MonkeyPatch):
     """The fallback remote is the canonical template repo, overridable by env."""
     monkeypatch.delenv(cli.REMOTE_URL_ENV, raising=False)
-    assert cli._remote_url() == "https://github.com/ConstitutiveTemplates/daimonion.git"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: no public entry point; the fallback remote is a contract.
+    assert cli._remote_url() == "https://github.com/ConstitutiveTemplates/architekton-py.git"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: no public entry point; the fallback remote is a contract.
     monkeypatch.setenv(cli.REMOTE_URL_ENV, "https://example.com/x.git")
     assert cli._remote_url() == "https://example.com/x.git"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: same as above.
 
@@ -490,4 +490,4 @@ def test_remote_url_defaults_to_the_shipped_repo(monkeypatch: pytest.MonkeyPatch
 def test_cache_dir_follows_xdg_and_defaults_to_home(monkeypatch: pytest.MonkeyPatch):
     """The cache lives under $XDG_CACHE_HOME (or ~/.cache) + the template name."""
     monkeypatch.setenv("XDG_CACHE_HOME", "/tmp/xdg-cache")
-    assert cli._cache_dir() == Path("/tmp/xdg-cache") / "daimonion" / "repo"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: no public entry point; the documented cache location is a contract.
+    assert cli._cache_dir() == Path("/tmp/xdg-cache") / "architekton-py" / "repo"  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]  WHYNOT: no public entry point; the documented cache location is a contract.

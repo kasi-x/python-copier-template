@@ -52,6 +52,7 @@ TOP = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(TOP))
 
 from tools import batch  # noqa: E402
+from tools import detect as detect_mod  # noqa: E402
 from tools import git  # noqa: E402
 from tools.check_questionnaire_diff import release_tag  # noqa: E402
 from tools.render_inputs import digest_bytes  # noqa: E402
@@ -360,6 +361,9 @@ def rehearse_leaf(  # noqa: PLR0913  WHYNOT: the arguments are the replay's own 
     if skip_reason is not None:
         return LeafVerdict(leaf_id=leaf_id, ok=True, failed=[], convergence=[], skipped=skip_reason)
 
+    # Same legacy-URL guard as the batch update path (see tools/batch.py):
+    # a legacy `_src_path` must be rewritten before copier fetches anything.
+    detect_mod.migrate_legacy_src(project)
     copier.run_update(
         dst_path=project,
         vcs_ref="HEAD",

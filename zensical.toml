@@ -1,12 +1,12 @@
 [project]
-site_name = "daimonion"
+site_name = "architekton-py"
 site_description = "A Copier template for Python projects"
 site_author = "kasi-x"
-repo_url = "https://github.com/ConstitutiveTemplates/daimonion"
-repo_name = "ConstitutiveTemplates/daimonion"
+repo_url = "https://github.com/ConstitutiveTemplates/architekton-py"
+repo_name = "ConstitutiveTemplates/architekton-py"
 edit_uri = "edit/main/docs/"
 
-copyright = 'Maintained by <a href="https://github.com/ConstitutiveTemplates/daimonion">kasi-x</a>.'
+copyright = 'Maintained by <a href="https://github.com/ConstitutiveTemplates/architekton-py">kasi-x</a>.'
 
 nav = [
   { "Home" = "index.md" },

@@ -276,7 +276,7 @@ template_fingerprint = _tool("template_fingerprint")
 
 def main(args: Sequence[str] | None = None) -> None:
     """Run the MCP server with stdio (default) or Streamable HTTP."""
-    parser = argparse.ArgumentParser(description="MCP server for daimonion")
+    parser = argparse.ArgumentParser(description="MCP server for architekton-py")
     parser.add_argument("--transport", choices=["stdio", "streamable-http"], default="stdio")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind (streamable-http)")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind (streamable-http)")

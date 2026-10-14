@@ -38,14 +38,16 @@ to *prove* correct rather than merely test by example:
 
 ## Name origin
 
-The name is Socrates' daimonion — the inner voice that, by his own account,
-never told him what to do, only when to stop. That is exactly this template's
-posture: it never tells you *what* to build (the questionnaire is yours to
-answer); it only refuses, aborts, and warns when a render path would be
-unsound. The word also underlies the Unix *daemon* — a background helper that
-quietly keeps watch without being asked to steer.
+The project is now architekton-py — Greek *architekton*, the master-builder:
+the template is the master-builder's plan, which says what must hold rather
+than what to build. That is exactly this template's posture: it never tells
+you *what* to build (the questionnaire is yours to answer); it only refuses,
+aborts, and warns when a render path would be unsound.
 
-*Like Socrates' daimonion, it never tells you what to build — only when to stop.*
+The project was formerly named daimonion, after Socrates' inner voice that,
+by his own account, never told him what to do, only when to stop. *Like
+Socrates' daimonion, it never tells you what to build — only when to stop.*
+— that name now belongs to the daimonion linter.
 
 ## Where this fits among the alternatives
 
@@ -113,6 +115,6 @@ repository's `TODO.md`.
 The most useful contribution right now is not a new `project_type` — see
 [Contributing](../how-to/contribute.md) — it's a bug report from an actual
 generated project, or a link to a real repo demonstrating a behavior you
-want changed (per [CONTRIBUTING](https://github.com/ConstitutiveTemplates/daimonion/blob/main/.github/CONTRIBUTING.md),
+want changed (per [CONTRIBUTING](https://github.com/ConstitutiveTemplates/architekton-py/blob/main/.github/CONTRIBUTING.md),
 this template treats "show me the repo where this matters" as the way
 changes get evaluated).

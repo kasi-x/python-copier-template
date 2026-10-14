@@ -1,14 +1,14 @@
 # Contribute to the template
-Contributions and issues are most welcome! All issues and pull requests are handled through [GitHub](https://github.com/ConstitutiveTemplates/daimonion/issues). Also, please check for any existing issues before filing a new one. If you have a great idea but it involves big changes, please file a ticket before making a pull request! We want to make sure you don't spend your time coding something that might not fit the scope of the project.
+Contributions and issues are most welcome! All issues and pull requests are handled through [GitHub](https://github.com/ConstitutiveTemplates/architekton-py/issues). Also, please check for any existing issues before filing a new one. If you have a great idea but it involves big changes, please file a ticket before making a pull request! We want to make sure you don't spend your time coding something that might not fit the scope of the project.
 
 ## Security
 
 Please do not open a public issue for security vulnerabilities. Report them
-privately via the [Security Advisory workflow](https://github.com/ConstitutiveTemplates/daimonion/security/advisories/new) — see [SECURITY.md](../SECURITY.md) for details.
+privately via the [Security Advisory workflow](https://github.com/ConstitutiveTemplates/architekton-py/security/advisories/new) — see [SECURITY.md](../SECURITY.md) for details.
 
 ## Issue or Discussion?
 
-Github also offers [discussions](https://github.com/ConstitutiveTemplates/daimonion/discussions) as a place to ask questions and share ideas. If your issue is open ended and it is not obvious when it can be "closed", please raise it as a discussion instead.
+Github also offers [discussions](https://github.com/ConstitutiveTemplates/architekton-py/discussions) as a place to ask questions and share ideas. If your issue is open ended and it is not obvious when it can be "closed", please raise it as a discussion instead.
 
 ## Getting changes into the template
 
@@ -18,7 +18,7 @@ This template is a place to pull together agreed best practices from various sou
 ## Ethics / regional / operational rule sections
 
 The section texts under `_shared/ethics/` are a vendored snapshot of
-[good-future-codex](https://github.com/ConstitutiveTemplates/good-future-codex),
+[kanon](https://github.com/ConstitutiveTemplates/kanon),
 which owns their content, sources, and review cadence. New sections and
 corrections are pull requests there, not here; obligation-level changes go
 through [law-map](https://github.com/ConstitutiveTemplates/law-map)'s Legal
@@ -43,7 +43,7 @@ blast radius, never the whole suite.
 
 The cheapest real change an outsider can make: add or correct an ethics /
 regional / operational rule section in
-[good-future-codex](https://github.com/ConstitutiveTemplates/good-future-codex)
+[kanon](https://github.com/ConstitutiveTemplates/kanon)
 (copy its `sections/_template.md.jinja`, fill every field, run its
 `tools/validate.py`). It needs no knowledge of this template's questionnaire,
 and once merged the weekly `ethics-sync.yml` here reports it for vendoring
@@ -61,7 +61,7 @@ The template has tests for:
 
 However, this does not test whether processes like CI and docs work correctly. You can ensure that these are checked by:
 
-- Making your changes on a branch of <https://github.com/ConstitutiveTemplates/daimonion>
+- Making your changes on a branch of <https://github.com/ConstitutiveTemplates/architekton-py>
 - Running `uvx copier update --vcs-ref=<branch_name>` in the repo where you would like to demonstrate the behaviour
 - Linking to that demonstration repo in the PR
 
@@ -69,4 +69,4 @@ However, this does not test whether processes like CI and docs work correctly. Y
 
 It is recommended that developers use a [vscode devcontainer](https://code.visualstudio.com/docs/devcontainers/containers). This repository contains configuration to set up a containerized development environment that suits its own needs.
 
-For more information on common tasks like setting up a developer environment, running the tests, and the lint workflow, see the [How-to guides](https://constitutivetemplates.github.io/daimonion/main/how-to.html)
+For more information on common tasks like setting up a developer environment, running the tests, and the lint workflow, see the [How-to guides](https://constitutivetemplates.github.io/architekton-py/main/how-to.html)

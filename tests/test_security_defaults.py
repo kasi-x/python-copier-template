@@ -98,7 +98,7 @@ def test_mcp_checklist_requires_allowlist_for_public_binds(tmp_path: Path, rende
     agents = _agents(mcp)
     assert "MCP_ALLOWED_HOSTS" in agents
     assert "refuses to start" in agents
-    body = (mcp / "src" / "daimonion_example" / "mcp_server.py").read_text()
+    body = (mcp / "src" / "architekton_py_example" / "mcp_server.py").read_text()
     assert "MCP_ALLOWED_HOSTS" in body, "mcp_server.py must back the allowlist claim"
 
     bare = tmp_path / "bare"
@@ -126,7 +126,7 @@ def test_line_checklist_warns_about_public_webhook(tmp_path: Path, render_cache)
     agents = _agents(tmp_path)
     assert "BOT_PORT" in agents
     assert "HTTPS" in agents
-    body = (tmp_path / "src" / "daimonion_example" / "bot_line.py").read_text()
+    body = (tmp_path / "src" / "architekton_py_example" / "bot_line.py").read_text()
     assert 'host="0.0.0.0"' in body, "bot_line.py must back the all-interfaces claim"
 
 
@@ -148,7 +148,7 @@ def test_scraping_checklist_warns_about_contact_placeholder(tmp_path: Path, rend
     scraped = tmp_path / "scraped"
     copy_project(scraped, project_type="cli", include_scraping=True)
     assert "FETCHER_CONTACT" in _agents(scraped)
-    body = (scraped / "src" / "daimonion_example" / "fetcher.py").read_text()
+    body = (scraped / "src" / "architekton_py_example" / "fetcher.py").read_text()
     assert "contact@example.com" in body, "fetcher.py must back the placeholder claim"
 
     bare = tmp_path / "bare"

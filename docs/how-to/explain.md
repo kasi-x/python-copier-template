@@ -1,13 +1,13 @@
 # Explain a preset or an answer before choosing it
 
-`daimonion explain` answers "why this value" and "what changes if I pick
+`architekton-py explain` answers "why this value" and "what changes if I pick
 something else" from the questionnaire's own words — no need to read the
 whole feature catalogue first:
 
 ```shell
-daimonion explain --preset web-api          # why the preset pins what it pins
-daimonion explain project_type cli          # the question's help, values, and support rows
-daimonion explain --deviate project_type cli  # which questions appear/disappear, which tier promises it
+architekton-py explain --preset web-api          # why the preset pins what it pins
+architekton-py explain project_type cli          # the question's help, values, and support rows
+architekton-py explain --deviate project_type cli  # which questions appear/disappear, which tier promises it
 ```
 
 The explanation has a single source: the `help` text in `questions/*.yml`,

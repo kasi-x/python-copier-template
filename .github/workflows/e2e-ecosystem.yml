@@ -1,7 +1,7 @@
 name: E2E ecosystem
 
 # Full cross-repo pipeline (TODO §41-A2): law-map export -> codex
-# tools/validate.py -> daimonion render -> the generated AGENTS.md carries
+# tools/validate.py -> architekton-py render -> the generated AGENTS.md carries
 # the codex-derived ethics sections. The pairwise checks this complements
 # (law-map CI's `validate --codex`, this repo's scheduled-check.yml
 # `law-map-review-by`) each pin one edge; a schema change that keeps both
@@ -26,7 +26,7 @@ on:
 
 jobs:
   e2e:
-    name: law-map export, codex validate, daimonion render
+    name: law-map export, codex validate, architekton-py render
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -40,17 +40,17 @@ jobs:
           path: law-map
           persist-credentials: false
 
-      - name: Checkout good-future-codex
+      - name: Checkout kanon
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ConstitutiveTemplates/good-future-codex
-          path: good-future-codex
+          repository: ConstitutiveTemplates/kanon
+          path: kanon
           persist-credentials: false
 
-      - name: Checkout daimonion
+      - name: Checkout architekton-py
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          path: daimonion
+          path: architekton-py
           persist-credentials: false
 
       - name: Install uv
@@ -63,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           uv run law-map export --out ../e2e-export
-          uv run law-map validate --codex ../good-future-codex
+          uv run law-map validate --codex ../kanon
           # validate --codex proves every related_sections id resolves to
           # sections/<tier>/<slug>.md.jinja in the codex checkout; the
           # assertion below proves the export skeletons themselves carry the
@@ -83,14 +83,14 @@ jobs:
           PY
 
       - name: Validate the codex corpus
-        working-directory: good-future-codex
+        working-directory: kanon
         run: uv run --with pyyaml python tools/validate.py
         # Exits 1 on any structural drift (a section missing from MANIFEST,
         # a malformed ethics header, an expired review_by, jinja leaking
         # into a flag-agnostic body).
 
       - name: Render one project and assert the ethics appendix landed
-        working-directory: daimonion
+        working-directory: architekton-py
         run: |
           set -euo pipefail
           uv run --locked python -m tools.cli new ../e2e-project --preset web-api --ref HEAD
@@ -134,7 +134,7 @@ jobs:
           if [ "$existing" -eq 0 ]; then
             gh issue create \
               --title "E2E ecosystem pipeline failed (scheduled check)" \
-              --body "The weekly law-map export -> codex validate -> daimonion render pipeline broke with no repo changes involved: a schema or section-id change in one repo silently broke a downstream edge. See: $RUN_URL" \
+              --body "The weekly law-map export -> codex validate -> architekton-py render pipeline broke with no repo changes involved: a schema or section-id change in one repo silently broke a downstream edge. See: $RUN_URL" \
               --label "documentation"
           else
             echo "An issue for this drift is already open; skipping."

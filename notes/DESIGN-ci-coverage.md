@@ -7,7 +7,7 @@
 
 | 経路 | 状態 | 実証 |
 |---|---|---|
-| 生成 CI Python matrix 3.11–3.14 (ubuntu, uv) | ✅ 実走 | daimonion-example CI: test (3.11/3.12/3.13/3.14) 全緑（run 37204484538） |
+| 生成 CI Python matrix 3.11–3.14 (ubuntu, uv) | ✅ 実走 | architekton-py-example CI: test (3.11/3.12/3.13/3.14) 全緑（run 37204484538） |
 | 生成 `dist` / `container` / `lint` / `docs` / `hygiene` jobs | ✅ 実走 | 同 run で dist/container/docs/lint 緑。hygiene の gitleaks は 2026-10-13 に license-gated action → pin バイナリ直実行へ置換（secret 不要化、green） |
 | テンプレ本体の heavy tier / test-randomly | ✅ 夜間 | ci.yml schedule 03:00 JST 毎日 |
 | `_example.yml` publish | ⚠️ 経路は実走済み・現状赤 | deploy key 無効 org ポリシー（内部 HUMAN_TODO Secrets 項 — kasi-x/daimonion-internal） |
@@ -20,11 +20,11 @@
 ### 1. 生成 CI の windows/macos
 
 生成 `ci.yml` の test matrix は `runs-on: ["ubuntu-latest"]` に windows/macos
-追加のコメント付き。daimonion-example が ubuntu のみなので非ubuntu 実走ゼロ。
+追加のコメント付き。architekton-py-example が ubuntu のみなので非ubuntu 実走ゼロ。
 
-- **blast radius 小**: コストは CI 分数のみ。実装は daimonion-example を
+- **blast radius 小**: コストは CI 分数のみ。実装は architekton-py-example を
   「マルチ OS の例」に変えるだけ（matrix の runs-on を拡張する PR を
-  daimonion-example に出す）— ただし `_example.yml` が main を毎回再生成する
+  architekton-py-example に出す）— ただし `_example.yml` が main を毎回再生成する
   ため、変更は template 側のデフォルトか preset で表現する必要がある。
   例: `ci_os` 構造化回答 or matrix コメントを実値に。
 - **費用対効果**: 生成物のほぼ全コードは OS 非依存。OS 差が出るのは
@@ -41,7 +41,7 @@
 example は uv。pixi・poetry 選択時の生成物は render のみで CI 実走なし。
 
 - 実証経路の選択肢:
-  - (a) 第 2 example リポ（daimonion-example-pixi）を `_example.yml` から
+  - (a) 第 2 example リポ（architekton-py-example-pixi）を `_example.yml` から
     週次生成・push → その repo の CI が pixi 経路を実走。コスト: repo 追加。
   - (b) scheduled-check.yml に「pixi render + `task test` 実走」ジョブを
     追加（repo 内完結、重いが既存の witness heavy tier と同型）。

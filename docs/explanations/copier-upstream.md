@@ -1,6 +1,6 @@
 # Working With Upstream copier
 
-daimonion is built on [copier](https://github.com/copier-org/copier) and drives
+architekton-py is built on [copier](https://github.com/copier-org/copier) and drives
 it harder than most templates do: non-interactive renders in CI, a wrapper CLI,
 presets, an update rehearsal against every release, and coding agents that
 render projects through the template's MCP server. Where that use runs into
@@ -9,10 +9,10 @@ page records those frictions with reproductions, so anyone, including copier's
 maintainers, can check them against the copier they have installed.
 
 It is a log of where we ran into trouble, not a wishlist. copier's design is
-copier's to decide; the workarounds below already keep daimonion working
+copier's to decide; the workarounds below already keep architekton-py working
 whatever upstream does.
 
-## How daimonion drives copier
+## How architekton-py drives copier
 
 - **Non-interactive by default.** The documented commands and the CI matrix run
   `copier copy --trust --defaults --data-file ...`
@@ -99,7 +99,7 @@ of time and say that `--answers-file` is destination-relative.
 
 ### Implicit latest-tag checkout can be far behind
 
-When daimonion was still a fork, it inherited 38 tags from the template it was
+When architekton-py was still a fork, it inherited 38 tags from the template it was
 forked from. `copier copy <url>` resolved to the newest *inherited* tag and
 rendered an old questionnaire, with no hint that the default
 branch had moved on. Our docs had to pin `--vcs-ref` everywhere until we
@@ -144,6 +144,6 @@ written with that help as well.
 copier's [AI policy](https://github.com/copier-org/copier/blob/master/AI_POLICY.md)
 requires a human to write issues and pull requests in their own words and to
 understand what they submit. Anything this project brings to copier follows
-that policy: the daimonion maintainer writes and files it personally, and
+that policy: the architekton-py maintainer writes and files it personally, and
 answers review personally. Where a translation tool is used, the original text
 is included as the policy suggests. Nothing is filed by an agent.

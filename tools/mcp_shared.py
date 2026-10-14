@@ -27,7 +27,7 @@ from tools import batch  # noqa: E402
 
 OUTPUT_LIMIT = batch.OUTPUT_LIMIT
 
-server = MCPServer("daimonion")
+server = MCPServer("architekton-py")
 
 
 def repo_root() -> Path:

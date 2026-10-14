@@ -288,8 +288,8 @@ def explain_preset(name: str) -> str:
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
-    """The `explain` argument shape (also used through the `daimonion explain` subcommand)."""
-    parser = argparse.ArgumentParser(prog="daimonion explain", description=__doc__)
+    """The `explain` argument shape (also used through the `architekton-py explain` subcommand)."""
+    parser = argparse.ArgumentParser(prog="architekton-py explain", description=__doc__)
     parser.add_argument("--preset", default=None, help="explain one preset (e.g. --preset web-api)")
     parser.add_argument("question", nargs="?", default=None, help="question to explain (e.g. project_type)")
     parser.add_argument("value", nargs="?", default=None, help="value to explain (e.g. cli)")
@@ -314,7 +314,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.question:
             print(explain_answer(args.question, args.value))
         else:
-            print("usage: daimonion explain --preset NAME | QUESTION [VALUE] | --deviate QUESTION VALUE")
+            print("usage: architekton-py explain --preset NAME | QUESTION [VALUE] | --deviate QUESTION VALUE")
             return 2
     except ExplainError as exc:
         print(str(exc), file=sys.stderr)

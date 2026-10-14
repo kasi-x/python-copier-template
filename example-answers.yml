@@ -17,17 +17,17 @@ use_recommended_integrations: false
 use_recommended_security: false
 author_email: kashimiya.exe@gmail.com
 author_name: kashi-x
-description: An expanded https://github.com/ConstitutiveTemplates/daimonion to illustrate how it looks with all the options enabled.
-distribution_name: ConstitutiveTemplates-daimonion-example
+description: An expanded https://github.com/ConstitutiveTemplates/architekton-py to illustrate how it looks with all the options enabled.
+distribution_name: ConstitutiveTemplates-architekton-py-example
 docker: true
 github_org: ConstitutiveTemplates
 gitlab_group: mygroup
-package_name: daimonion_example
+package_name: architekton_py_example
 package_manager: uv
 task_runner: task
 allow_japanese: true
 project_type: data_science
-repo_name: daimonion-example
+repo_name: architekton-py-example
 pypi: true
 license: Apache-2.0
 fair: true

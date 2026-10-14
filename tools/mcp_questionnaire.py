@@ -114,7 +114,7 @@ def register_questionnaire(server: Any) -> None:
         match's preset name, score, human reasons and the answers it pins. The
         ranking is a deterministic keyword match over the preset files -- no
         model, no render. Next: draft the full answer set, check it with
-        `validate_answers`, then generate with `daimonion new --preset` or an
+        `validate_answers`, then generate with `architekton-py new --preset` or an
         answers file. Filesystem only -- no render, no network.
         """
         matches = suggest.suggest_presets([requirements])
@@ -129,7 +129,7 @@ def register_questionnaire(server: Any) -> None:
         unknown questions, answers to derived internals, values outside the
         choices, validator failures, answers to questions copier would never ask,
         and layer includes on a non-combinable base are all rejected. An approved
-        set (`ok: true`) is what `render_project` or `daimonion new --preset`
+        set (`ok: true`) is what `render_project` or `architekton-py new --preset`
         may generate from. Reads the questionnaire and runs copier's own
         questionnaire pass -- no render, no network.
         """

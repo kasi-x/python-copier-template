@@ -11,7 +11,7 @@ obvious. This page states it, with the mechanism behind it.
 ```yaml
 # Changes here will be overwritten by Copier
 _commit: 6.0.0-144-g3abc1234     # the template revision this project was generated from
-_src_path: https://github.com/ConstitutiveTemplates/daimonion.git
+_src_path: https://github.com/ConstitutiveTemplates/architekton-py.git
 package_name: my_project
 project_type: cli
 dependencies:                    # structured answer: edit to change [project] dependencies

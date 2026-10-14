@@ -4,6 +4,28 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Renames
+
+- rename the template daimonion -> architekton-py: repo
+  `ConstitutiveTemplates/architekton-py`, distribution and CLI command
+  `architekton-py`, docs site
+  `https://constitutivetemplates.github.io/architekton-py`, contract
+  manifest `.architekton-manifest.yml`, env vars `ARCHITEKTON_PY_*`,
+  example project `architekton-py-example`, cache
+  `~/.cache/architekton-py`, update branches
+  `architekton-py/update-...`. The linter takes the `daimonion` name
+  (`ConstitutiveTemplates/daimonion`, `daimonion diff`), and the codex
+  becomes `ConstitutiveTemplates/kanon`.
+
+- legacy-URL migration: a `_src_path` recording the old template URL
+  (`https://github.com/ConstitutiveTemplates/daimonion`, with or without
+  `.git`, or `gh:ConstitutiveTemplates/daimonion`) is still recognised as
+  this template, and the update path rewrites it to
+  `https://github.com/ConstitutiveTemplates/architekton-py.git` (with a
+  printed notice) before `copier update` runs, so the update never fetches
+  the old URL once it belongs to the linter.
+
+
 ### Bug Fixes
 
 - rename the codex secret CODEX_TOKEN -> GFCODEX_TOKEN (81b6e29)

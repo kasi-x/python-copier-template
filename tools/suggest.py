@@ -528,7 +528,7 @@ def _format_matches(matches: list[Match], requirements: list[str]) -> str:
         return (
             "no preset matches "
             + (", ".join(requirements) if requirements else "(no requirements given)")
-            + "; run `daimonion new --list-presets` to browse every family"
+            + "; run `architekton-py new --list-presets` to browse every family"
         )
     lines = [f"requirements: {', '.join(requirements)}", ""]
     for match in matches:
@@ -539,8 +539,8 @@ def _format_matches(matches: list[Match], requirements: list[str]) -> str:
         "",
         (
             "Next: propose the full answer set, check it with "
-            "`daimonion suggest --validate answers.yml`, then generate with "
-            f"`daimonion new <dir> --preset {matches[0].preset}` (or --data-file)."
+            "`architekton-py suggest --validate answers.yml`, then generate with "
+            f"`architekton-py new <dir> --preset {matches[0].preset}` (or --data-file)."
         ),
     ]
     return "\n".join(lines)
@@ -548,7 +548,8 @@ def _format_matches(matches: list[Match], requirements: list[str]) -> str:
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="daimonion suggest", description="Propose preset candidates for requirements, or validate an answer set."
+        prog="architekton-py suggest",
+        description="Propose preset candidates for requirements, or validate an answer set.",
     )
     parser.add_argument("requirements", nargs="*", help="requirement words, e.g. 'internal API, postgres'")
     parser.add_argument(

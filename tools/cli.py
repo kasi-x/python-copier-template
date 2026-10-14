@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """One command to create a project from this template.
 
-`daimonion new <dir>` asks `tools/detect.py` what the target is
+`architekton-py new <dir>` asks `tools/detect.py` what the target is
 and dispatches to the tool that does the right thing for it:
 
 What it does is decided by the mode `tools/detect.py` reports:
@@ -28,18 +28,18 @@ merge step off (use `tools/adopt.py --merge` when you want the template's
 dependencies and runner recipes added to your own files).
 
 The command works both from a clone of the template repo and installed
-(`uvx --from git+https://github.com/ConstitutiveTemplates/daimonion.git
-daimonion`, or a pip wheel): when TOP (this file's parent's
+(`uvx --from git+https://github.com/ConstitutiveTemplates/architekton-py.git
+architekton-py`, or a pip wheel): when TOP (this file's parent's
 parent) carries no copier.yml, there is no checkout next to the package, and
 `main` delegates to a cached clone of the template repo under
-`~/.cache/daimonion` (or `$XDG_CACHE_HOME`), so every TOP-
+`~/.cache/architekton-py` (or `$XDG_CACHE_HOME`), so every TOP-
 relative path -- tools/, presets/, copier.yml -- resolves in a checkout
 version-matched to the template ref it renders.
 
 Usage::
 
     python -m tools.cli new my-project --preset library
-    daimonion new /path/to/existing-project --dry-run
+    architekton-py new /path/to/existing-project --dry-run
 """
 
 from __future__ import annotations
@@ -279,7 +279,7 @@ def new(  # noqa: PLR0911  WHYNOT: one early return per input guard (list-preset
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="daimonion",
+        prog="architekton-py",
         description="Create a project from this template: detect the mode, then render or adopt.",
     )
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -385,16 +385,16 @@ def _add_scaffold_command(subcommands: Any) -> None:
 
 # --- installed (non-checkout) operation: delegate to the cached clone --------
 #
-# An installed `daimonion` (uvx --from git+..., pip wheel) has no
+# An installed `architekton-py` (uvx --from git+..., pip wheel) has no
 # checkout next to it: TOP is the install's site-packages, so every TOP-
 # relative path (tools/, presets/, copier.yml) resolves to nothing. The cached
 # clone below is the checkout those tools expect, and re-running this CLI from
 # it keeps every TOP-relative resolution version-matched to the template ref
 # it renders.
 
-DEFAULT_REMOTE = "https://github.com/ConstitutiveTemplates/daimonion.git"
-REMOTE_URL_ENV = "DAIMONION_TEMPLATE_URL"  # override for mirrors / local test clones
-DELEGATED_ENV = "DAIMONION_DELEGATED"  # recursion guard for the delegated run
+DEFAULT_REMOTE = "https://github.com/ConstitutiveTemplates/architekton-py.git"
+REMOTE_URL_ENV = "ARCHITEKTON_PY_TEMPLATE_URL"  # override for mirrors / local test clones
+DELEGATED_ENV = "ARCHITEKTON_PY_DELEGATED"  # recursion guard for the delegated run
 
 
 def _remote_url() -> str:
@@ -405,9 +405,9 @@ def _remote_url() -> str:
 def _cache_dir() -> Path:
     """Where the cached checkout of the template repo lives."""
     base = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
-    # renamed from ~/.cache/foundry on the daimonion rename; the old dir is
+    # renamed from ~/.cache/daimonion on the architekton-py rename; the old dir is
     # abandoned, the mirror re-clones.
-    return base / "daimonion" / "repo"
+    return base / "architekton-py" / "repo"
 
 
 def _clone_checkout(cache: Path) -> int:

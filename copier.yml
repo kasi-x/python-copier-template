@@ -45,7 +45,7 @@ project_type:
         (presets/: bare, bot, cli, data-science, library, mcp-server,
         micropython, online-judge-atcoder, online-judge-codeforces,
         online-judge-kattis, ros2, web-api). For a non-interactive run,
-        use `daimonion new <name> --preset <preset>` instead of answering
+        use `architekton-py new <name> --preset <preset>` instead of answering
         here.
     choices:
         - library
@@ -136,7 +136,7 @@ _tasks:
       when: "{{ existing_project }}"
     - command: |
         echo "Fresh project — suggested next steps:"
-        echo '  * git add -A && git commit -m "chore: scaffold from daimonion"'
+        echo '  * git add -A && git commit -m "chore: scaffold from architekton-py"'
         echo '  * git remote add origin {{ repo_url }}.git && git push -u origin main'
         {% if docs %}
         echo '  * after the first docs job succeeds, enable GitHub Pages:'
@@ -171,4 +171,4 @@ _migrations:
       before:
           - echo This update will require you to login to pypi.org and make changes before you can make a new release to PyPI. If you do not have time to do this now, press CTRL+C to abort this update.
       after:
-          - echo Visit https://constitutivetemplates.github.io/daimonion/main/how-to/pypi.html to find out how to set up PyPI trusted publishing
+          - echo Visit https://constitutivetemplates.github.io/architekton-py/main/how-to/pypi.html to find out how to set up PyPI trusted publishing

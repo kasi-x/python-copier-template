@@ -1,12 +1,12 @@
 # Propose a configuration from requirements
 
-`daimonion suggest` turns "what the project needs" into a preset candidate,
+`architekton-py suggest` turns "what the project needs" into a preset candidate,
 then checks the full answer set before anything is generated. The model (or
 you) proposes; the questionnaire's own machinery disposes:
 
 ```shell
-daimonion suggest "internal API, postgres, github actions"  # preset candidates with reasons
-daimonion suggest --validate answers.yml                    # check a drafted answer set (exit 2 when rejected)
+architekton-py suggest "internal API, postgres, github actions"  # preset candidates with reasons
+architekton-py suggest --validate answers.yml                    # check a drafted answer set (exit 2 when rejected)
 ```
 
 The flow the command enforces:
@@ -21,7 +21,7 @@ The flow the command enforces:
    copier's own questionnaire pass and rejects unknown questions, values
    outside the choices, answers to questions that would never be asked, and
    layer includes on a base that cannot carry them, with machine-readable
-   `{question, reason}` pairs. Only an approved set reaches `daimonion new
+   `{question, reason}` pairs. Only an approved set reaches `architekton-py new
    --preset` (or `--data-file`).
 
 What is refused, and why:

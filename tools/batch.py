@@ -113,6 +113,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
+from tools import detect as detect_mod  # noqa: E402
 from tools.git import GIT  # noqa: E402
 from tools.git import run as run_git  # noqa: E402
 
@@ -142,7 +143,7 @@ every comparison of renders takes them out first (TODO.md §28.3 3c / §28.5
 R3: this tuple is the one declaration -- a new stamp is a one-line edit here,
 and the two readers below follow it)."""
 
-MANIFEST_FILE = ".daimonion-manifest.yml"
+MANIFEST_FILE = ".architekton-manifest.yml"
 """The composition contract: the public record beside the answers file."""
 
 MANIFEST_STAMPS = ("template_ref",)
@@ -586,6 +587,10 @@ def _run_phase(request: Request, dest: Path, repo: Path, phase: dict[str, Any] |
         raise SpecError(msg)
     update_data = _answers_for(request, phase, repo)
     conflict: Literal["inline", "rej"] = "rej" if phase.get("conflict") == "rej" else "inline"
+    # The old template URL will soon belong to a different repository (the
+    # linter): rewrite a legacy `_src_path` to the new URL before copier
+    # fetches anything, so the update never clones the wrong repo.
+    detect_mod.migrate_legacy_src(dest)
     copier.run_update(
         dst_path=dest,
         data=update_data,

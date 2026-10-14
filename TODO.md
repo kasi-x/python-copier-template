@@ -523,7 +523,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 - [x] **変更速度を追える速さに**（PR 経由の習慣は 2026-10-05 から実施中 — 本日の変更は
       すべて PR #9-17 として経由）: 残る人間判断は定期リリースの周期（例: 月 1）と
       リリース前の凍結期間の設定
-- [x] **CLI を製品の中心に**: `docs/tutorials/installation.md` に new/adopt/update を semver 保証の公開インターフェースと明記(2026-10-05): `daimonion new / adopt / update` を semver で守る
+- [x] **CLI を製品の中心に**: `docs/tutorials/installation.md` に new/adopt/update を semver 保証の公開インターフェースと明記(2026-10-05): `architekton-py new / adopt / update` を semver で守る
       公開インターフェースと宣言し、内部の質問票は自由に変えられるようにする
 - [x] **update 成功率を公開指標に**: `update-rehearsal` の結果を docs 上の（2026-10-05 実装: --json → step summary + artifact + `auto/update-rehearsal` 自動PR、`support.md` に generated rehearsal 節 + README バッジ）
       ダッシュボードとして出す（例: 「全 272 葉でタグ間 update 成功率 100%」）。
@@ -531,7 +531,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 - [x] **ethics 層を独立コミュニティとして育てる**: §38 の分離をさらに進め、
       法規制コンテンツの正誤責任と更新負担をテンプレート本体から切り離す。
       ✅ 2026-10-06 に実施（PR #22 + codex/law-map 側の README / CONTRIBUTING 更新）。
-      codex を記事の Source of Truth、law-map を法務 RFC の窓口とし、daimonion は
+      codex を記事の Source of Truth、law-map を法務 RFC の窓口とし、architekton-py は
       「wiring（どのプロジェクトにどう配るか）」のみに専念する形をドキュメント化。
 - [ ] **copier upstream への貢献を信頼獲得の経路に**(パッチ 4 本 + discussion 草案 2 本は push 済み。PR/Discussion の投稿は upstream AI_POLICY により人間作業): F1–F7 パッチの upstream 化。
   **現状（2026-10-13）**: 投稿は引き続き人間のみ（copier AI_POLICY は
@@ -599,7 +599,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 
 外部挙動を全く変えず(生成物 byte-identical、CLI/警告/exit code 同一)に内部構造を整理。
 
-### daimonion(tools/)
+### architekton-py(tools/)
 - preset 読み取り 3 実装を `tools/answers.py`(PresetError/preset_names/read_preset)に集約
 - 裸 `yaml.safe_load` 7 サイトを `render_inputs.read_yaml_mapping` に統一(文言は呼出側で保持)
 - support tier 走査を `support_ledger.rows_naming/base_is_promised` へ集約
@@ -622,7 +622,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
   基底クラスに集約し各 adapter を薄化
 - `__main__.py`: fetch/text/dump の parser/wayback 配線 3 重複を統一、dead `all_topics` 削除
 
-### good-future-codex
+### kanon
 - `tools/validate.py`: FLAGGED 判定のマジックリテラルを定数化、ProbeFn 型エイリアス、
   check_sources/drift の URL probe を `_probe_unique_urls` に一本化、main を検証単位に分割
 
@@ -630,23 +630,23 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 - law-map: validate 0 errors / warnings 集合同一 / check --sources skipped:6 可視化維持 / 84 passed
 - codex: validate 0 warnings / --sources 0 flagged / 12 passed / `--sources` 出力 byte-identical
 - open-law: 178 passed / live 層 skip 維持 / `sources` 出力一致 / ruff clean
-- daimonion: test-fast 1153 passed(19.6s/30s)/ ruff+basedpyright clean / regen で witness は
+- architekton-py: test-fast 1153 passed(19.6s/30s)/ ruff+basedpyright clean / regen で witness は
   行順のみ(272 葉・3 excluded 同一)/ gen_docs --check 10 blocks in sync
 
 ## §46 完了: 質問・レイヤー・プリセットの自動 scaffold CLI + 検証体系 (2026-10-12)
 
 272 葉の厳密な Z3 命題検証・不変条件体系に対する機能追加の心理的障壁を下げるため、
-`daimonion scaffold` CLI および専用モジュール `tools/scaffold.py` を新設。
+`architekton-py scaffold` CLI および専用モジュール `tools/scaffold.py` を新設。
 
 ### 実装内容
-- **`daimonion scaffold question <name>`**:
+- **`architekton-py scaffold question <name>`**:
   - `questions/*.yml` に `when:`, `type:`, `default:`, `help:` を備えた推奨構文の質問ブロックを自動生成
   - `--when` 式の Z3 充足性（SAT）を事前検証し、タイポやデッド質問を警告
-- **`daimonion scaffold layer <name>`**:
+- **`architekton-py scaffold layer <name>`**:
   - `include_<name>` 質問、`invariants.yml` の `include=include_<name>` 行、`template/{% if include_<name> %}...` の雛形を一括案内・生成
-- **`daimonion scaffold preset <name>`**:
+- **`architekton-py scaffold preset <name>`**:
   - `presets/<name>.yml` の雛形生成（base project_type と推奨設定）
-- **`daimonion scaffold check`**:
+- **`architekton-py scaffold check`**:
   - 全質問 when 式の Z3 SAT、全 12 プリセット、36 行の invariants の健全性を 1 コマンドで検証
 - **テスト・Docs**:
   - `tests/test_scaffold.py`（7 テスト全緑）
@@ -678,9 +678,9 @@ AI エージェントのコンテキストウィンドウ圧迫と過剰反応�
   zizmor 適合・SHA pin 済み）。依存は `pyyaml` のみ。
 - **コマンド**: `law-lint diff`（git diff 対象のトリガー検出）、
   `law-lint check <path>`（ファイル/ディレクトリ走査）、`--strict`（L2 で exit 1）、
-  `list-rules`。`--rules` で daimonion の `REGISTRY.yml` や codex YAML を直接ロード可能。
-- **daimonion 側の連携**:
-  - `AGENTS.md.jinja`: 「コミット前に `uvx --from git+https://github.com/ConstitutiveTemplates/law-lint law-lint diff`」を追記
+  `list-rules`。`--rules` で architekton-py の `REGISTRY.yml` や codex YAML を直接ロード可能。
+- **architekton-py 側の連携**:
+  - `AGENTS.md.jinja`: 「コミット前に `uvx --from git+https://github.com/ConstitutiveTemplates/daimonion daimonion diff`」を追記
   - `_tasks.jinja`: `legal-check` タスクを `quality_tasks` に追加
     （`agents_md_effective` ゲート、audit/license-check と同じネットワーク依存 one-off）
   - `.github-org` プロフィールの Repositories 表に law-lint を追加
@@ -762,10 +762,10 @@ upstream F1–F7 投稿のみ。
 
 - [x] ~~**`legal-check` タスク未実装**~~ → **訂正（2026-10-13）**: `_tasks.jinja`
       L120 の `quality_tasks` に実装済み（`agents_md_effective` ゲート、
-      `uvx ... law-lint diff --strict`）。grep が `template/` 配下のみを
+      `uvx ... daimonion diff --strict`）。grep が `template/` 配下のみを
       見た調査ミス。実ギャップは **AGENTS.md コマンド表への漏れ**:
       表は `agent_cmd_specs` から生成され `legal-check` が未登録のため
-- [x] **完了: daimonion `legal-check` コマンド表登録** ✅ **2026-10-13 本 wave**
+- [x] **完了: architekton-py `legal-check` コマンド表登録** ✅ **2026-10-13 本 wave**
       （E1: `_tasks.jinja` の `agent_cmd_specs` に登録 + `tests/test_example_docs_ci.py`
       に 8 テスト追加 — 全 Taskfile に出ることと AGENTS.md 記載を `copy_project`
       レンダで検証；`audit`/`license-check` と同じネットワーク依存 one-off として
@@ -808,14 +808,14 @@ upstream F1–F7 投稿のみ。
 - [x] **完了: law-map checks spec への `triggers:` 接続** ✅ **2026-10-13**
       （law-map `bb623d7`: `src/law_map/checkspecs.py` で `triggers:` 正規表現
       リストをスキーマ検証（不正 regex は `validate` を落とす）＋全 18 spec
-      に daimonion ethics 節と同語彙で付与；`external-transmission-declared`
+      に architekton-py ethics 節と同語彙で付与；`external-transmission-declared`
       の未検出 YAML 破損も捕捉・修正。law-lint `5bbcc4e`:
       `Rule.from_check_spec` + `--rules` のディレクトリ受けで
       `law-lint --rules ../law-map/checks` が spec を直接消費。
       obligation → check spec → lint trigger → AGENTS.md 節のパイプライン閉結。
       law-map 94 passed / law-lint 63 passed）
 
-### C. daimonion 本体
+### C. architekton-py 本体
 
 - [x] **§36 S5: invariants/layers の導出化**（着手条件充足）→ **計画着地
       2026-10-13**: `notes/plan-S5-derived-invariants.md`（commit `28af493e`）。
@@ -866,7 +866,7 @@ upstream F1–F7 投稿のみ。
       `MvLawAdapter`（fetch/search/full_text、サーバ描画経路）+ オフライン
       fixture テスト 9 件 + live-tier probe + `adapter-health.yml` + docs。
       187 passed / ruff・basedpyright clean）
-- [x] **daimonion 未コミット差分の処理判断** → **コミット済み
+- [x] **architekton-py 未コミット差分の処理判断** → **コミット済み
       （2026-10-13）**: `tools/adopt*.py` 系 + テスト
       28 ファイル（+442/-627）の adopt 分解リファクタ差分が作業ツリーに残存。
       中断中なら `task test-fast` で状態確認し commit or stash。

@@ -4,7 +4,7 @@ The ethics appendix (`_shared/ethics/`, surfaced into generated `AGENTS.md`)
 is the one part of this template whose content has its own review cadence —
 OWASP revisions, FIPS finalization, Let's Encrypt chain ceremonies, regional
 law — independent of the template's release cycle. It now lives upstream as
-its own repository — **`good-future-codex`**, the canonical section texts of
+its own repository — **`kanon`**, the canonical section texts of
 the Good-future charter — so other templates and projects can consume the
 same reviewed text. This page records the design for that split: what moves,
 what stays, and why the sync happens at vendor time and never at render time.
@@ -12,14 +12,14 @@ what stays, and why the sync happens at vendor time and never at render time.
 The codex is itself one layer of a larger legal pipeline:
 
 ```text
-open-law            law-map                 good-future-codex      this repo
+open-law            law-map                 kanon      this repo
 world legislation   obligation graph         reviewed prose         vendored
 -> unified corpus -> jurisdiction groundings -> AGENTS.md sections -> snapshot
 ```
 
 `open-law` fetches statutes, `law-map` organizes them as machine-readable
 technical obligations (statute, precedent, and guidance share one
-functional-equivalence node), and `good-future-codex` renders the human-
+functional-equivalence node), and `kanon` renders the human-
 and-agent-facing prose this repo vendors.
 
 ## Why not fetch at render time
@@ -69,7 +69,7 @@ external SHA is vendored, so the check only fires on genuinely new upstream
 work — the permanent-red trap the fork check escaped.
 
 ```text
-ethics-sections (source of truth)      daimonion
+ethics-sections (source of truth)      architekton-py
 ┌──────────────────────────┐         ┌────────────────────────────┐
 │ sections/*.md.jinja       │  sync   │ _shared/ethics/ (vendored) │
 │  flag-agnostic prose      │ ──────► │ REGISTRY.yml (flag gating) │
@@ -91,7 +91,7 @@ which is what keeps a surprise upstream edit out of a user's `copier update`.
 
 ## Status
 
-The split is done: `good-future-codex` is live under the
+The split is done: `kanon` is live under the
 [ConstitutiveTemplates](https://github.com/ConstitutiveTemplates)
 organization alongside `open-law` (legislation scraping) and `law-map`
 (the obligation graph). For a single consumer the vendor machinery would be
@@ -120,7 +120,7 @@ one thing to fix.
 The weekly `e2e-ecosystem.yml` workflow closes the remaining gap: it runs
 the whole chain in one job — `law-map export` plus
 `law-map validate --codex` against a fresh codex checkout, then
-`tools/validate.py` in the codex, then a `daimonion new --preset web-api`
+`tools/validate.py` in the codex, then a `architekton-py new --preset web-api`
 render of this checkout whose `AGENTS.md` must still carry the
 codex-derived ethics sections (the unconditional active registry rows).
 Each pairwise check can stay green while the handoff between two repos

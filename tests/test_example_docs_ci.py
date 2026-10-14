@@ -49,19 +49,19 @@ def test_template_with_extra_code_and_api_docs(tmp_path: Path):
     copy_project(tmp_path, docs_type="sphinx", project_type="library")
     run = make_venv(tmp_path)
     # add some code
-    init = tmp_path / "src" / "daimonion_example" / "__init__.py"
+    init = tmp_path / "src" / "architekton_py_example" / "__init__.py"
     init.write_text(
         init.read_text()
         .replace(
             "__version__: str\ntry:",
-            "from daimonion_example import extra_pkg\n\n__version__: str\ntry:",
+            "from architekton_py_example import extra_pkg\n\n__version__: str\ntry:",
         )
         .replace(
-            'version("ConstitutiveTemplates-daimonion-example")\n\n__all__ = ["__version__"]',
-            'version("ConstitutiveTemplates-daimonion-example")\n\n\nclass TopCls:\n    """A top level class."""\n\n\n__all__ = ["TopCls", "__version__", "extra_pkg"]',
+            'version("ConstitutiveTemplates-architekton-py-example")\n\n__all__ = ["__version__"]',
+            'version("ConstitutiveTemplates-architekton-py-example")\n\n\nclass TopCls:\n    """A top level class."""\n\n\n__all__ = ["TopCls", "__version__", "extra_pkg"]',
         )
     )
-    extra_pkg = tmp_path / "src" / "daimonion_example" / "extra_pkg"
+    extra_pkg = tmp_path / "src" / "architekton_py_example" / "extra_pkg"
     extra_pkg.mkdir()
     (extra_pkg / "__init__.py").write_text('"""Extra Package."""\n')
     code = '''"""A module."""
@@ -77,17 +77,17 @@ class Thing:
     run("uvx --from go-task-bin task docs")
     # Check it generates the right output
     api_dir = tmp_path / "build" / "html" / "_api"
-    top_html = api_dir / "daimonion_example.html"
+    top_html = api_dir / "architekton_py_example.html"
     assert "extra_pkg" in top_html.read_text()
     assert "Extra Package." in top_html.read_text()
     assert "TopCls" in top_html.read_text()
     assert "A top level class." in top_html.read_text()
     assert "__version__" in top_html.read_text()
     assert "setuptools_scm" in top_html.read_text()
-    package_html = api_dir / "daimonion_example.extra_pkg.html"
+    package_html = api_dir / "architekton_py_example.extra_pkg.html"
     assert "extra_module" in package_html.read_text()
     assert "A module." in package_html.read_text()
-    module_html = api_dir / "daimonion_example.extra_pkg.extra_module.html"
+    module_html = api_dir / "architekton_py_example.extra_pkg.extra_module.html"
     assert "Thing" in module_html.read_text()
     assert "A docstring." in module_html.read_text()
 
@@ -159,7 +159,7 @@ def test_template_library_sphinx_version_command(tmp_path: Path):
     """Non-web_api types keep the CLI --version check, named exactly."""
     copy_project(tmp_path, docs_type="README")
     ci = (tmp_path / ".github" / "workflows" / "ci.yml").read_text()
-    assert "version-command: python -m daimonion_example --version" in ci
+    assert "version-command: python -m architekton_py_example --version" in ci
     # The guess-based fallback stays only as the reusable workflow's default.
     dist = (tmp_path / ".github" / "workflows" / "_dist.yml").read_text()
     assert "version-command" in dist
@@ -376,15 +376,15 @@ def test_template_ci_runs_license_check(tmp_path: Path):
 def test_template_legal_check_task(tmp_path: Path):
     """Recommended path ships a standalone legal-check task + an AGENTS.md row.
 
-    law-lint is network-dependent (uvx fetches it from git), so the task
+    daimonion is network-dependent (uvx fetches it from git), so the task
     stays out of `type-check`/`check` like audit/license-check (both must
     run offline). The AGENTS.md command table iterates `agent_cmd_specs`,
     not the task model, so without a spec entry the guide silently omits it.
     """
     copy_project(tmp_path, project_type="cli")
     tasks = yaml.safe_load((tmp_path / "Taskfile.yml").read_text())["tasks"]
-    assert any("law-lint" in str(command) for command in tasks["legal-check"]["cmds"])
-    assert not any("law-lint" in str(command) for command in tasks["type-check"]["cmds"]), (
+    assert any("daimonion" in str(command) for command in tasks["legal-check"]["cmds"])
+    assert not any("daimonion" in str(command) for command in tasks["type-check"]["cmds"]), (
         "type-check must stay runnable offline"
     )
     assert "legal-check" not in tasks["check"].get("deps", []), "check must stay runnable offline"
@@ -416,7 +416,7 @@ def test_legal_check_task_ships_on_every_runner(
     copy_project(target, project_type="cli", **answers)
     rendered = (target / runner_file).read_text()
     assert task_name in rendered, f"{runner} drops the legal-check task"
-    assert "law-lint" in rendered, f"{runner} legal-check lost its law-lint command"
+    assert "daimonion" in rendered, f"{runner} legal-check lost its daimonion command"
     assert "legal-check" in (target / "AGENTS.md").read_text(), f"{runner} AGENTS.md omits legal-check"
 
 
@@ -486,8 +486,8 @@ def test_template_fair_metadata(tmp_path: Path):
     )
     cff = (tmp_path / "CITATION.cff").read_text()
     assert "cff-version: 1.2.0" in cff
-    assert 'title: "daimonion-example"' in cff
-    assert 'repository-code: "https://github.com/ConstitutiveTemplates/daimonion-example"' in cff
+    assert 'title: "architekton-py-example"' in cff
+    assert 'repository-code: "https://github.com/ConstitutiveTemplates/architekton-py-example"' in cff
     assert 'license: "Apache-2.0"' in cff
     assert 'orcid: "https://orcid.org/0000-0002-1825-0099"' in cff
     reuse_toml = (tmp_path / "REUSE.toml").read_text()
@@ -588,7 +588,7 @@ def test_template_scorecard_opt_in(tmp_path: Path):
     assert (tmp_path / "SECURITY.md").exists()
     assert (tmp_path / ".github" / "workflows" / "scorecard.yml").exists()
     readme = (tmp_path / "README.md").read_text()
-    assert "api.scorecard.dev/projects/github.com/ConstitutiveTemplates/daimonion-example/badge" in readme
+    assert "api.scorecard.dev/projects/github.com/ConstitutiveTemplates/architekton-py-example/badge" in readme
 
 
 def test_template_readme_badges(tmp_path: Path):
@@ -636,7 +636,7 @@ print(obj._bar)
     run("ruff check")
 
     # Private member access should not be allowed in src
-    src_file = tmp_path / "src" / "daimonion_example" / "private_access.py"
+    src_file = tmp_path / "src" / "architekton_py_example" / "private_access.py"
     with src_file.open("w") as stream:
         stream.write(code)
     with pytest.raises(AssertionError, match=r"private-member-access: Private member accessed: `_bar`"):
@@ -653,7 +653,7 @@ myVariable = "foo"
     copy_project(tmp_path)
     run = make_venv(tmp_path)
 
-    src_file = tmp_path / "src" / "daimonion_example" / "bad_example.py"
+    src_file = tmp_path / "src" / "architekton_py_example" / "bad_example.py"
     with src_file.open("w") as stream:
         stream.write(code)
     with pytest.raises(AssertionError, match=r"mixed-case-variable-in-global-scope.*"):
@@ -694,7 +694,7 @@ def test_basedpyright_works_with_external_deps(tmp_path: Path):
     assert n == 1, "could not find dependencies array in generated pyproject.toml"
     pyproject_toml.write_text(text)
     # And some code that uses it
-    src_file = tmp_path / "src" / "daimonion_example" / "example.py"
+    src_file = tmp_path / "src" / "architekton_py_example" / "example.py"
     src_file.write_text("""
 import numpy as np
 

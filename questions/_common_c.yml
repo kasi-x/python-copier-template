@@ -64,7 +64,7 @@ package_name:
 description:
     type: str
     help: A short description of your project
-    default: A Python project generated from daimonion
+    default: A Python project generated from architekton-py
 
 git_platform:
     type: str

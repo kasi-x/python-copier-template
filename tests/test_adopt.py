@@ -465,7 +465,9 @@ def test_merge_verification_detects_a_rewritten_requirement(tmp_path: Path):
 
 
 def test_refuses_a_project_this_template_already_generated(tmp_path: Path):
-    (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/ConstitutiveTemplates/daimonion.git\n")
+    (tmp_path / ".copier-answers.yml").write_text(
+        "_src_path: https://github.com/ConstitutiveTemplates/architekton-py.git\n"
+    )
     with pytest.raises(adopt_types.AdoptError):
         adopt_run.adopt(tmp_path, ref="HEAD")
 

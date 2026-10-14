@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Verify a generated project's composition contract (TODO §42-A2).
 
-The manifest (`.daimonion-manifest.yml`, rendered from
-`template/.daimonion-manifest.yml.jinja`) is the public record of a
+The manifest (`.architekton-manifest.yml`, rendered from
+`template/.architekton-manifest.yml.jinja`) is the public record of a
 generation: the template ref, the answers file it describes, and the ethics
 sections the render distributed -- never answer values (those live in
 `.copier-answers.yml`, which copier already records). `verify` reads both
@@ -242,7 +242,7 @@ def verify(target: Path, *, against: Path | None = None) -> Report:
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="daimonion verify",
+        prog="architekton-py verify",
         description="Verify a generated project's composition contract.",
     )
     parser.add_argument("dir", type=Path, help="generated project to verify")

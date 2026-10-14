@@ -1,6 +1,6 @@
 # Presets Reference
 
-The template ships pre-configured preset files under `presets/*.yml` for use with the `daimonion new <project> --preset <name>` CLI (or with Copier directly via `--data-file presets/<name>.yml`).
+The template ships pre-configured preset files under `presets/*.yml` for use with the `architekton-py new <project> --preset <name>` CLI (or with Copier directly via `--data-file presets/<name>.yml`).
 
 Presets define a project family by pinning only the answers essential to that family. Any question not specified in a preset takes Copier's default from `copier.yml`.
 
@@ -148,5 +148,5 @@ To create a custom preset for your organization or team:
 3. Use your preset when rendering:
    ```shell
    uvx copier copy --data-file presets/my-preset.yml \
-       https://github.com/ConstitutiveTemplates/daimonion.git my-app
+       https://github.com/ConstitutiveTemplates/architekton-py.git my-app
    ```

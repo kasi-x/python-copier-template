@@ -1,6 +1,6 @@
 # Setup the repository with recommended settings
 
-When the repository has been created, it will require some settings to be changed for all the features of daimonion to work. These are listed below.
+When the repository has been created, it will require some settings to be changed for all the features of architekton-py to work. These are listed below.
 
 ## Discussions
 

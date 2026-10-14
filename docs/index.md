@@ -1,4 +1,4 @@
-# daimonion
+# architekton-py
 
 A Copier template for Python projects.
 

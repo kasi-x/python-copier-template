@@ -3,7 +3,7 @@
 What each answer in the [questionnaire](questionnaire.md) configures: the
 project types and their layouts, the toolchain choices, the opt-in layers, the
 support tiers CI guarantees, and why the option set looks the way it does. The
-[README](https://github.com/ConstitutiveTemplates/daimonion#readme) is the short
+[README](https://github.com/ConstitutiveTemplates/architekton-py#readme) is the short
 version of this page.
 
 ## Recommended settings, per area
@@ -315,7 +315,7 @@ element to a combinable base:
 - CI-enforced repo hygiene (secret scanning via gitleaks, actionlint,
   YAML/EOF checks, conventional commits) in a dedicated workflow
 - [OpenSSF Scorecard](https://securityscorecards.dev) workflow + a
-  [SECURITY.md](https://github.com/ConstitutiveTemplates/daimonion/blob/main/SECURITY.md) vulnerability-reporting policy
+  [SECURITY.md](https://github.com/ConstitutiveTemplates/architekton-py/blob/main/SECURITY.md) vulnerability-reporting policy
 - [editorconfig](https://editorconfig.org) (`.editorconfig`) for consistent
   editor indentation and line endings
 - A `.env.example` with the environment variables the project understands

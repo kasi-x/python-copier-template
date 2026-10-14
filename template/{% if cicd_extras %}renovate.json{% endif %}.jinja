@@ -16,14 +16,14 @@
   },
   "packageRules": [
     {
-      "description": "Disable python version as that is managed by daimonion",
+      "description": "Disable python version as that is managed by architekton-py",
       "matchManagers": [
         "pyenv"
       ],
       "enabled": false
     },
     {
-      "description": "Core CI actions managed by daimonion (checkout, toolchain setup, lint/test helpers)",
+      "description": "Core CI actions managed by architekton-py (checkout, toolchain setup, lint/test helpers)",
       "matchPackageNames": [
         "actions/checkout",
         "astral-sh/setup-uv",
@@ -40,7 +40,7 @@
       "enabled": false
     },
     {
-      "description": "Hygiene actions managed by daimonion (workflow linting, REUSE, CITATION.cff)",
+      "description": "Hygiene actions managed by architekton-py (workflow linting, REUSE, CITATION.cff)",
       "matchPackageNames": [
         "rhysd/actionlint",
         "fsfe/reuse-action",
@@ -52,7 +52,7 @@
       "enabled": false
     },
     {
-      "description": "Release actions managed by daimonion (release notes, coverage, changelog)",
+      "description": "Release actions managed by architekton-py (release notes, coverage, changelog)",
       "matchPackageNames": [
         "softprops/action-gh-release",
         "orhun/git-cliff-action",
@@ -64,7 +64,7 @@
       "enabled": false
     }{% if docker %},
     {
-      "description": "Container actions managed by daimonion",
+      "description": "Container actions managed by architekton-py",
       "matchPackageNames": [
         "docker/setup-buildx-action",
         "docker/login-action",
@@ -77,7 +77,7 @@
       "enabled": false
     }{% endif %}{% if pypi %},
     {
-      "description": "PyPI publish action managed by daimonion",
+      "description": "PyPI publish action managed by architekton-py",
       "matchPackageNames": [
         "pypa/gh-action-pypi-publish"
       ],
@@ -87,7 +87,7 @@
       "enabled": false
     }{% endif %}{% if docs %},
     {
-      "description": "Docs deploy action managed by daimonion",
+      "description": "Docs deploy action managed by architekton-py",
       "matchPackageNames": [
         "peaceiris/actions-gh-pages"
       ],
@@ -97,7 +97,7 @@
       "enabled": false
     }{% endif %}{% if scorecard_effective %},
     {
-      "description": "OpenSSF Scorecard actions managed by daimonion",
+      "description": "OpenSSF Scorecard actions managed by architekton-py",
       "matchPackageNames": [
         "ossf/scorecard-action",
         "github/codeql-action"
@@ -108,7 +108,7 @@
       "enabled": false
     }{% endif %}{% if fair %},
     {
-      "description": "FAIR compliance action managed by daimonion",
+      "description": "FAIR compliance action managed by architekton-py",
       "matchPackageNames": [
         "fair-software/howfairis-github-action"
       ],
@@ -118,7 +118,7 @@
       "enabled": false
     }{% endif %},
     {
-      "description": "Disable Dockerfile base images that are managed by daimonion",
+      "description": "Disable Dockerfile base images that are managed by architekton-py",
       "matchManagers": [
         "dockerfile"
       ],

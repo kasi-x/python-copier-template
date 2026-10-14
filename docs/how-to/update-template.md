@@ -47,7 +47,7 @@ The following steps are recommended to update your project, especially for infre
 
 ## Check what changed: the composition contract
 
-Every generated project carries `.daimonion-manifest.yml`: the composition
+Every generated project carries `.architekton-manifest.yml`: the composition
 contract — the template ref it was generated from, the answers file it
 describes, and the ethics sections the render distributed. It never carries
 answer values (those live in `.copier-answers.yml`), so it is safe to keep
@@ -56,8 +56,8 @@ and compare.
 Before updating, record what you have; after updating, ask what moved:
 
 ```
-daimonion verify /path/to/project
-daimonion verify /path/to/project --against /path/to/older-copy
+architekton-py verify /path/to/project
+architekton-py verify /path/to/project --against /path/to/older-copy
 ```
 
 The report checks the manifest's schema version, holds the manifest's ref

@@ -39,7 +39,7 @@ import yaml
 
 TOP = Path(__file__).resolve().parent.parent
 
-GITIGNORE_HEADER = "# Added by daimonion (tools/adopt.py)"
+GITIGNORE_HEADER = "# Added by architekton-py (tools/adopt.py)"
 MAKEFILE_TARGET = re.compile(r"^(?P<name>[A-Za-z0-9_.][A-Za-z0-9_.-]*)\s*:(?!=)")
 JUST_RECIPE = re.compile(r"^(?P<name>[a-zA-Z_][a-zA-Z0-9_-]*)(?P<rest>\s+[^:]*)?:")
 IGNORED_JUST_NAMES = frozenset({"alias", "export", "import", "mod", "set", "unexport"})
@@ -146,7 +146,7 @@ def merge_recipes(target_path: Path, source_path: Path, kind: str, *, apply: boo
         return result
     result.added = sorted(missing)
     if apply:
-        header = "# Added by daimonion (tools/adopt.py)"
+        header = "# Added by architekton-py (tools/adopt.py)"
         body = "\n\n".join(missing[name] for name in sorted(missing))
         target_path.write_text(f"{_prefix(existing_text)}{header}\n\n{body}\n", encoding="utf-8")
         result.applied = True
@@ -427,7 +427,7 @@ def _apply_python_tasks_append(
     source_text, source_tree = source
     before = _python_fragments(target_text, target_tree)
     fragments = dict(_python_fragments(source_text, source_tree))
-    header = "# Added by daimonion (tools/adopt.py)"
+    header = "# Added by architekton-py (tools/adopt.py)"
     appended = (
         _prefix(target_text)
         + header

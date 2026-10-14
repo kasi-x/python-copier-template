@@ -1,4 +1,4 @@
-# The flag vocabulary this template exports to good-future-codex.
+# The flag vocabulary this template exports to kanon.
 #
 # The codex's sections/MANIFEST.yml declares each section's placement under an
 # ABSTRACT `when` (scraping / oj_code / mcp / ...). This file is the mapping

@@ -77,7 +77,7 @@ their maintenance cost is no longer justified.
 
 ## Release discipline
 
-`daimonion new`, `daimonion adopt`, and `daimonion update` are the public
+`architekton-py new`, `architekton-py adopt`, and `architekton-py update` are the public
 interface and follow the compatibility policy documented in the installation
 tutorial. A release must validate the revision users will actually resolve
 from the template source, not only an untagged working tree. Required CI must

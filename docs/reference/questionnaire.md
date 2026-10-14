@@ -11,7 +11,7 @@ that area are asked.
 
 Every answer can also come from a file instead of the prompt —
 [Non-interactive Generation](non-interactive.md) covers the flags — and
-[`example-answers.yml`](https://github.com/ConstitutiveTemplates/daimonion/blob/main/example-answers.yml)
+[`example-answers.yml`](https://github.com/ConstitutiveTemplates/architekton-py/blob/main/example-answers.yml)
 at the template root is a ready-made starting point: it turns every area gate
 off, so it spells out each detailed question that the recommended path would
 otherwise leave at its default.
@@ -400,7 +400,7 @@ Answer **No** to drop SECURITY.md, drop the license check, or add an OpenSSF Sco
 | Question | Default | Asked when | Prompt |
 |---|---|---|---|
 | `package_name` | `my_package` | all | Name of the python import package. Must be a valid python identifier, i.e. my_package. ASCII characters only (a-z, A-Z, 0-9, _). |
-| `description` | `A Python project generated from daimonion` | all | A short description of your project |
+| `description` | `A Python project generated from architekton-py` | all | A short description of your project |
 | `git_platform` | `github.com` | all | Git platform hosting the repository |
 | `github_org` | `my-org` | `git_platform` = github.com | GitHub organisation or username that will contain this repo. Set to your GitHub username (e.g. kasi-x) for a personal repo, or the name of an… |
 | `gitlab_group` | `my-group` | `git_platform` = gitlab.com | GitLab group (or username) that will contain this repo. |
