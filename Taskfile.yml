@@ -66,6 +66,22 @@ tasks:
     desc: Run docs server with zensical
     cmd: uv run --locked zensical serve {{ .CLI_ARGS }}
 
+  docs-i18n:
+    desc: Build the translated docs site from docs-i18n/<lang>/ (DOCS_LANG=ja) into build/docs-i18n/<lang>/site
+    vars:
+      DOCS_LANG: '{{ .DOCS_LANG | default "ja" }}'
+    cmds:
+      - uv run --locked python tools/docs_i18n.py {{ .DOCS_LANG }}
+      - uv run --locked zensical build -f build/docs-i18n/{{ .DOCS_LANG }}/zensical.toml
+
+  docs-i18n-serve:
+    desc: Serve the translated docs site (DOCS_LANG=ja); re-run after editing docs-i18n/<lang>/
+    vars:
+      DOCS_LANG: '{{ .DOCS_LANG | default "ja" }}'
+    cmds:
+      - uv run --locked python tools/docs_i18n.py {{ .DOCS_LANG }}
+      - uv run --locked zensical serve -f build/docs-i18n/{{ .DOCS_LANG }}/zensical.toml {{ .CLI_ARGS }}
+
   docs-linkcheck:
     desc: Check all links in docs/ and README.md with lychee
     cmds:

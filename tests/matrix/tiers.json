@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1203,
+      "collected": 1209,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -17,6 +17,7 @@
         "tests/test_contract_manifest.py": 8,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 25,
+        "tests/test_docs_i18n.py": 6,
         "tests/test_ethics_registry.py": 12,
         "tests/test_example_adopt.py": 1,
         "tests/test_example_data_science.py": 7,
@@ -67,7 +68,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "2dc06dbb48f136731c503849b955db6e40c3a10eac4e5497c45c2e60c386e711",
+      "ids_sha256": "d0632bef9ebdaf0d254e9c98d659737c701dd927de6a0f0cb1e5ace931de2e57",
       "wall_seconds": 18.6,
       "measured": "2026-09-20",
       "budget_seconds": 30,
@@ -130,7 +131,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1270,
+      "collected": 1276,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -143,6 +144,7 @@
         "tests/test_contract_manifest.py": 8,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 25,
+        "tests/test_docs_i18n.py": 6,
         "tests/test_ethics_registry.py": 12,
         "tests/test_example_adopt.py": 3,
         "tests/test_example_data_science.py": 7,
@@ -195,7 +197,7 @@
         "tests/test_witness_matrix.py": 287,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "60ab407ff64e18f92776a807fbcd96fb2f0063f28231ee99c5c020875a3615a7",
+      "ids_sha256": "d6edeb478a9bff26ea63df3a03dfc30a139cc0d6cfd8e4ea5bcd3a023f8ef5fb",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -204,7 +206,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1203,
+      "collected": 1209,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -217,6 +219,7 @@
         "tests/test_contract_manifest.py": 8,
         "tests/test_copier_structure.py": 17,
         "tests/test_detect.py": 25,
+        "tests/test_docs_i18n.py": 6,
         "tests/test_ethics_registry.py": 12,
         "tests/test_example_adopt.py": 1,
         "tests/test_example_data_science.py": 7,
@@ -267,7 +270,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "2dc06dbb48f136731c503849b955db6e40c3a10eac4e5497c45c2e60c386e711",
+      "ids_sha256": "d0632bef9ebdaf0d254e9c98d659737c701dd927de6a0f0cb1e5ace931de2e57",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",

@@ -35,6 +35,23 @@ The same argument kills a permanent `release` branch: releases are tags on
 branch only earns its place the day a hotfix has to go out while `main` has
 already moved on — create it then, from the tag, not before.
 
+## The translation stream
+
+`lattice/docs` is the bot branch [orimono's Lattice Docs](https://github.com/kasi-x/orimono)
+rebuilds `docs-i18n/<lang>/` on. Like `vendor/*` it owns a generated subtree
+and answers to upstream drift, but it adds one rule the others do not need:
+
+- **Merge commits for bot and vendor PRs, squash for the rest.** Lattice's
+  `absorb` attributes a reviewer's edit by `git blame` on the branch. A
+  squash merge rewrites the PR's history into a single commit authored by
+  whoever merged it, so a human edit pushed after the bot's last absorb would
+  land on `main` attributed to the merger -- and `absorb` would then read it
+  as bot-authored render drift. Merge commits keep the branch's authorship
+  intact, which is what makes "edit the generated file" a safe workflow.
+- The bot never force-pushes a branch that has human commits; it merges
+  `main` in instead. Force-push is only for rebuilding a branch that is
+  still bot-only.
+
 ## Experimental work
 
 `exp/<name>` is for template work that might not survive contact with the
