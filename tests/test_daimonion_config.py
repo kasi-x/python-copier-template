@@ -25,7 +25,10 @@ if str(TOP) not in sys.path:
 from tools.answers import BASE  # noqa: E402
 
 from support import render_answers  # noqa: E402
-from test_daimonion_parity import KANON_DIR, derive_when, kanon_applies, load_kanon  # noqa: E402
+from test_daimonion_parity import KANON_DIR  # noqa: E402
+from test_daimonion_parity import derive_when  # noqa: E402
+from test_daimonion_parity import kanon_applies  # noqa: E402
+from test_daimonion_parity import load_kanon  # noqa: E402
 
 BEGIN = "<!-- daimonion:ethics:begin"
 END = "<!-- daimonion:ethics:end -->"
