@@ -2771,10 +2771,10 @@ project ships. The <strong>contest-rules</strong> section (<code>domain-contest-
 (AtCoder bans generative AI during ABC/ARC/AGC except a whitelisted
 translation prompt), that the submission is the entrant's own responsibility,
 and that rating manipulation and multi-accounting are banned. Both are
-enforcement L0: they reach the reader through the generated <code>AGENTS.md</code>
-appendix, and the ethics-appendix predicate in
-<code>tests/test_render_invariants.py</code> holds them to the leaf classes that select
-them.</p>
+enforcement L0: they reach the reader through the linter-rendered <code>AGENTS.md</code>
+block, and the <code>daimonion-config</code> predicate in
+<code>tests/test_render_invariants.py</code> holds the derived <code>when</code> conditions to the
+leaf classes that select them.</p>
 <h2 id="how-it-is-enforced">How it is enforced<a class="headerlink" href="#how-it-is-enforced" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

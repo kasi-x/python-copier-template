@@ -2810,22 +2810,20 @@ reaches a generated <code>AGENTS.md</code>. The full contract is
 pipeline.</p>
 <div class="highlight"><pre><span></span><code>flowchart LR
     OL["open-law&lt;br/&gt;(world legislation corpus)"] --&gt; LM["law-map&lt;br/&gt;(obligation graph,&lt;br/&gt;related_sections ids)"]
-    LM --&gt; CX["kanon&lt;br/&gt;(reviewed prose,&lt;br/&gt;sections tier/slug,&lt;br/&gt;review_by dates)"]
-    CX --&gt; VE["_shared/ethics/&lt;br/&gt;(vendored snapshot:&lt;br/&gt;MANIFEST.yml, FLAGS.yml,&lt;br/&gt;REGISTRY.yml, .ethics-vendored)"]
-    VE --&gt; CC["tools/check_ethics_contract.py&lt;br/&gt;(MANIFEST vs FLAGS vs REGISTRY)"]
-    CC --&gt; GA["tools/gen_ethics_appendix.py&lt;br/&gt;--check in CI"]
-    GA --&gt; AJ["_shared/ethics-appendix.jinja&lt;br/&gt;(generated)"]
-    AJ --&gt; AM["template AGENTS.md.jinja&lt;br/&gt;(ethics appendix,&lt;br/&gt;agents_md_effective gate)"]
-    AM --&gt; ET["tools/ethics.py match()&lt;br/&gt;(MCP check_ethics,&lt;br/&gt;presence triggers)"]
+    LM --&gt; CX["kanon&lt;br/&gt;(reviewed prose,&lt;br/&gt;MANIFEST.yml when + placement)"]
+    CX --&gt; DW["_shared/daimonion-when.jinja&lt;br/&gt;(answers → when conditions)"]
+    DW --&gt; DC[".daimonion.yml&lt;br/&gt;(declared conditions)"]
+    DC --&gt; AM["daimonion agents-md --write&lt;br/&gt;(fills the marker block)"]
+    AM --&gt; AG["AGENTS.md&lt;br/&gt;(empty markers + linter block)"]
 </code></pre></div>
-<p>Watchers on the chain, each naming exactly one failure: <code>ethics-sync.yml</code>
-(prose drift vs. codex <code>main</code>, <code>tools/check_ethics_drift.py</code>),
+<p>Watchers on the chain, each naming exactly one failure:
 <code>scheduled-check.yml</code> job <code>law-map-review-by</code> (expired <code>review_by</code>
 groundings, <code>law-map check --codex</code>), and the <code>e2e</code> job in
-<code>e2e-ecosystem.yml</code> (<code>law-map export</code> + codex validate + a render whose
-<code>AGENTS.md</code> must still carry the codex-derived sections). The generated
+<code>e2e-ecosystem.yml</code> (<code>law-map export</code> + kanon validate + a render whose
+<code>.daimonion.yml</code> declares the expected conditions). The generated
 project's own <code>legal-check</code> task (<code>_tasks.jinja</code>, <code>daimonion diff --strict</code>)
-is the downstream consumer, not a watcher.</p>
+is the downstream consumer, not a watcher. There is no vendor-sync watcher
+anymore: nothing is vendored, so prose drift cannot happen here.</p>
 <h2 id="ci-at-a-glance-four-lanes">CI at a glance: four lanes<a class="headerlink" href="#ci-at-a-glance-four-lanes" title="Permanent link">&para;</a></h2>
 <p>Each scheduled lane is staggered so a red run names exactly one cause.
 <code>ci.yml</code> handles push/PR plus the nightly heavy tier; the weekly lanes only
@@ -2861,10 +2859,10 @@ watch drift that push/PR CI cannot see.</p>
     end
 </code></pre></div>
 <p>Adjacent but separate: <code>pr.yml</code> (job <code>validate-pr-title</code>, conventional-commit
-titles), <code>ethics-sync.yml</code> (weekly codex drift), <code>e2e-ecosystem.yml</code> (weekly
-FRI cross-repo chain), <code>dependency-audit.yml</code> (weekly pip-audit),
-<code>security.yml</code> (zizmor workflow audit), and <code>update-rehearsal.yml</code> (the
-<code>copier update</code> path the adopt flow depends on).</p>
+titles), <code>e2e-ecosystem.yml</code> (weekly FRI cross-repo chain),
+<code>dependency-audit.yml</code> (weekly pip-audit), <code>security.yml</code> (zizmor workflow
+audit), and <code>update-rehearsal.yml</code> (the <code>copier update</code> path the adopt flow
+depends on).</p>
 
 
 

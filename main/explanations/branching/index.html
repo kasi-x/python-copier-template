@@ -2807,7 +2807,7 @@ each stream first has real work.</p>
 <tr>
 <td><strong>Vendored content</strong></td>
 <td><code>vendor/&lt;source&gt;</code></td>
-<td><code>_shared/ethics/</code> snapshots from the external repo, any future vendored content</td>
+<td>any future vendored content (the ethics snapshot stream is retired: kanon prose is never vendored anymore)</td>
 <td>on upstream drift only — the sync workflow opens the PR</td>
 </tr>
 <tr>
@@ -2860,12 +2860,10 @@ verification experiment. Rules:</p>
   changes; content bumps are merge commits whose PR holds the upstream diff.</li>
 </ul>
 <h2 id="relationship-to-the-ethics-split">Relationship to the ethics split<a class="headerlink" href="#relationship-to-the-ethics-split" title="Permanent link">&para;</a></h2>
-<p>This model is what <a href="../ethics-external/">Ethics as External Source</a> needs on
-the consuming side: the external repo owns content history, <code>vendor/ethics</code>
-PRs are the sync mechanism, and <code>main</code> never blocks on upstream's cadence.
-Until that split is implemented, <code>_shared/ethics/</code> edits land on <code>main</code>
-directly — the branch model is forward-looking, not a reason to route
-in-repo edits through a branch that has no upstream.</p>
+<p>This model is what <a href="../ethics-external/">Ethics Content Lives in Kanon</a> needs on
+the consuming side: the external repo owns content history, and <code>main</code> never
+blocks on upstream's cadence — there is no sync PR anymore because nothing is
+vendored.</p>
 
 
 

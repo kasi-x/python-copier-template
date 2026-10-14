@@ -2915,7 +2915,7 @@ witness tiers run into minutes.</p>
 </tr>
 <tr>
 <td><code>check_ethics</code></td>
-<td>which ethics/regional rules (<code>_shared/ethics/REGISTRY.yml</code>) the given text trips: each match carries the section's full markdown, its lifecycle (draft rules warn but ship nowhere) and its enforcement — the <code>license-drift</code> rule's L2 is the generated <code>license-check</code> gate</td>
+<td>which kanon rules the given text trips (matched by the linter's trigger index): each match carries the section's id and title — the generated <code>license-check</code> gate stays as the offline L2 enforcement</td>
 <td>filesystem</td>
 </tr>
 </tbody>
@@ -2960,7 +2960,7 @@ nothing about the answers. Every other byte is compared as it is.</p>
 </tr>
 <tr>
 <td><code>template://ethics</code></td>
-<td>the ethics/regional rule registry: one row per section with its lifecycle, enforcement, audience and documented presence trigger — the active rows are what the generated AGENTS.md ethics appendix ships</td>
+<td>the kanon section index the linter matches against: one row per section with its id, title and triggers — <code>daimonion agents-md --write</code> renders the matching sections into the guide</td>
 </tr>
 </tbody>
 </table>

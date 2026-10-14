@@ -27,7 +27,7 @@
     
     
       
-        <title>Ethics Sections as an External Source - architekton-py</title>
+        <title>Ethics Content Lives in Kanon; the Template Emits Conditions - architekton-py</title>
       
     
     
@@ -83,7 +83,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ethics-sections-as-an-external-source" class="md-skip">
+        <a href="#ethics-content-lives-in-kanon-the-template-emits-conditions" class="md-skip">
           Skip to content
         </a>
       
@@ -119,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Ethics Sections as an External Source
+              Ethics Content Lives in Kanon; the Template Emits Conditions
             
           </span>
         </div>
@@ -2210,10 +2210,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-moves-what-stays" class="md-nav__link">
+  <a href="#what-moved-what-stays" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        What moves, what stays
+        What moved, what stays
       </span>
     </span>
   </a>
@@ -2221,10 +2221,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-sync-contract" class="md-nav__link">
+  <a href="#the-sync-contract-new-shape" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The sync contract
+        The sync contract (new shape)
       </span>
     </span>
   </a>
@@ -2717,10 +2717,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-moves-what-stays" class="md-nav__link">
+  <a href="#what-moved-what-stays" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        What moves, what stays
+        What moved, what stays
       </span>
     </span>
   </a>
@@ -2728,10 +2728,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-sync-contract" class="md-nav__link">
+  <a href="#the-sync-contract-new-shape" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        The sync contract
+        The sync contract (new shape)
       </span>
     </span>
   </a>
@@ -2778,24 +2778,31 @@
   
 
 
-<h1 id="ethics-sections-as-an-external-source">Ethics Sections as an External Source<a class="headerlink" href="#ethics-sections-as-an-external-source" title="Permanent link">&para;</a></h1>
-<p>The ethics appendix (<code>_shared/ethics/</code>, surfaced into generated <code>AGENTS.md</code>)
-is the one part of this template whose content has its own review cadence —
+<h1 id="ethics-content-lives-in-kanon-the-template-emits-conditions">Ethics Content Lives in Kanon; the Template Emits Conditions<a class="headerlink" href="#ethics-content-lives-in-kanon-the-template-emits-conditions" title="Permanent link">&para;</a></h1>
+<p>The ethics appendix used to be vendored prose: <code>_shared/ethics/</code> carried a
+pinned snapshot of kanon sections, <code>_shared/ethics/REGISTRY.yml</code> gated each
+one on template flags, and the generated <code>AGENTS.md</code> shipped the matching
+prose inline. That changed: <strong>content moved to kanon, the linter owns the
+wiring, and this template only emits configuration.</strong></p>
+<p>The one part of this template whose content has its own review cadence —
 OWASP revisions, FIPS finalization, Let's Encrypt chain ceremonies, regional
-law — independent of the template's release cycle. It now lives upstream as
-its own repository — <strong><code>kanon</code></strong>, the canonical section texts of
-the Good-future charter — so other templates and projects can consume the
-same reviewed text. This page records the design for that split: what moves,
-what stays, and why the sync happens at vendor time and never at render time.</p>
+law — lives upstream as <strong><a href="https://github.com/politeuma/kanon">kanon</a></strong>,
+the canonical section texts of the Good-future charter, so other templates
+and projects consume the same reviewed text. What moved, what stayed, and
+why the render stays pure is recorded here: this page is the record of that
+move, superseding the old vendor-snapshot design below only where it
+describes vendoring (the "why not fetch at render time" property still
+holds, restated for the new shape).</p>
 <p>The codex is itself one layer of a larger legal pipeline:</p>
-<div class="highlight"><pre><span></span><code>open-law            law-map                 kanon      this repo
-world legislation   obligation graph         reviewed prose         vendored
--&gt; unified corpus -&gt; jurisdiction groundings -&gt; AGENTS.md sections -&gt; snapshot
+<div class="highlight"><pre><span></span><code>open-law            law-map                 kanon      daimonion
+world legislation   obligation graph         reviewed prose   rendered block
+-&gt; unified corpus -&gt; jurisdiction groundings -&gt; AGENTS.md sections -&gt; agent guide
 </code></pre></div>
 <p><code>open-law</code> fetches statutes, <code>law-map</code> organizes them as machine-readable
 technical obligations (statute, precedent, and guidance share one
-functional-equivalence node), and <code>kanon</code> renders the human-
-and-agent-facing prose this repo vendors.</p>
+functional-equivalence node), <code>kanon</code> renders the human- and agent-facing
+prose, and <code>daimonion</code> (the linter) matches sections to a project and writes
+them into its guide.</p>
 <h2 id="why-not-fetch-at-render-time">Why not fetch at render time<a class="headerlink" href="#why-not-fetch-at-render-time" title="Permanent link">&para;</a></h2>
 <p>The tempting version — <code>copier copy</code> pulls the latest ethics text from the
 external repo — breaks the property the whole verification stack rests on:</p>
@@ -2813,100 +2820,108 @@ external repo — breaks the property the whole verification stack rests on:</p>
   of bug the rehearsal exists to catch.</li>
 </ul>
 <p>So the external repo is the <em>source of truth for content</em>, and this repo
-<em>vendors</em> a snapshot. The render never sees the network.</p>
-<h2 id="what-moves-what-stays">What moves, what stays<a class="headerlink" href="#what-moves-what-stays" title="Permanent link">&para;</a></h2>
+never sees the network at render time. The render emits only a declarative
+config; prose enters the project later, through the linter, on the user's
+machine.</p>
+<h2 id="what-moved-what-stays">What moved, what stays<a class="headerlink" href="#what-moved-what-stays" title="Permanent link">&para;</a></h2>
 <p>The split is content vs. wiring — the line is drawn at "does this text
 reference a template flag":</p>
 <table>
 <thead>
 <tr>
-<th>Moves to the external repo</th>
+<th>Moved to kanon + daimonion</th>
 <th>Stays here</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Section bodies (<code>*.md.jinja</code> prose)</td>
-<td><code>REGISTRY.yml</code> — the gate column names template flags (<code>scraping_effective</code>, <code>oj_code</code>, <code>mcp_effective</code>); moving it would leak the flag namespace into a repo that should not know it exists</td>
+<td>Section bodies (prose, triggers, <code>review_by</code> dates, sources)</td>
+<td><code>_shared/daimonion-when.jinja</code> — the single answer-to-condition derivation macro</td>
 </tr>
 <tr>
-<td><code>review_by</code> dates and watch metadata</td>
-<td>The <code>when:</code>/audience mapping (which leaf classes get which section)</td>
+<td>The <code>when:</code>/audience mapping (which abstract condition selects which section: kanon's <code>MANIFEST.yml</code>)</td>
+<td>The emitted <code>.daimonion.yml</code> (the project's declared conditions, in kanon's <code>when</code> vocabulary)</td>
 </tr>
 <tr>
-<td>Source citations in each section's <code>why</code></td>
-<td>The enforcement level (L0/L1/L2) and the invariants.yml predicates that check it</td>
+<td>Section selection and block rendering (<code>daimonion agents-md --write</code>)</td>
+<td>The empty marker pair in the generated <code>AGENTS.md</code> (<code>&lt;!-- daimonion:ethics:begin --&gt;</code> / <code>&lt;!-- daimonion:ethics:end --&gt;</code>)</td>
 </tr>
 <tr>
-<td>The <code>_template.md.jinja</code> section shape</td>
-<td><code>tools/ethics.py</code> presence triggers and the appendix assembly in <code>AGENTS.md.jinja</code></td>
+<td>Presence triggers and <code>check_ethics</code> matching</td>
+<td>The composition manifest's <code>when:</code> list (the same macro, the public record <code>verify</code> reads)</td>
+</tr>
+<tr>
+<td>The enforcement level's L1/L2 machinery that reads prose</td>
+<td>The L2 <code>license-check</code> gate (pip-licenses; needs no prose) and the <code>daimonion-config</code> render predicate that holds the <code>when</code> list</td>
 </tr>
 </tbody>
 </table>
-<p>The external repo holds <strong>flag-agnostic content</strong>: each section is a file
-with frontmatter (<code>id</code>, <code>audience</code>, <code>review_by</code>, <code>sources</code>) and a prose body.
-It must not contain <code>{{ scraping_effective }}</code>-style conditionals — gating is
-this repo's job, applied at vendor time by the registry row.</p>
-<h2 id="the-sync-contract">The sync contract<a class="headerlink" href="#the-sync-contract" title="Permanent link">&para;</a></h2>
-<p>Same pattern as <code>check-upstream-fork</code>: a scheduled workflow diffs the
-external repo's sections against the vendored copy and opens a PR when they
-diverge. A human reviews the diff (a section edit is a content decision, not
-a merge), then the vendor commit lands. The marker file records which
-external SHA is vendored, so the check only fires on genuinely new upstream
-work — the permanent-red trap the fork check escaped.</p>
-<div class="highlight"><pre><span></span><code>ethics-sections (source of truth)      architekton-py
-┌──────────────────────────┐         ┌────────────────────────────┐
-│ sections/*.md.jinja       │  sync   │ _shared/ethics/ (vendored) │
-│  flag-agnostic prose      │ ──────► │ REGISTRY.yml (flag gating) │
-│  frontmatter: id,         │   PR    │ invariants.yml predicates  │
-│   audience, review_by     │         │ tools/ethics.py triggers   │
-└──────────────────────────┘         └────────────────────────────┘
-        ▲ own review cadence                 ▲ scheduled sync opens PR
-        (OWASP / FIPS / LE watch)            on content drift only
-</code></pre></div>
-<h2 id="versioning">Versioning<a class="headerlink" href="#versioning" title="Permanent link">&para;</a></h2>
-<p>The vendored snapshot is pinned to an external SHA (the marker file), not a
-floating <code>main</code>. A template release therefore ships a <em>known</em> ethics text —
-the release notes can name it — and a <code>copier update</code> between two template
-tags shows the ethics diff as part of the template diff, reviewable like any
-other change. Bumping the vendored SHA is a deliberate act (the sync PR),
-which is what keeps a surprise upstream edit out of a user's <code>copier update</code>.</p>
-<h2 id="status">Status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h2>
-<p>The split is done: <code>kanon</code> is live under the
-<a href="https://github.com/politeuma">politeuma</a>
-organization alongside <code>open-law</code> (legislation scraping) and <code>law-map</code>
-(the obligation graph). For a single consumer the vendor machinery would be
-cost without benefit; the codex now has two consumers (this template and
-<code>law-map</code>'s section references), so it pays for itself.</p>
-<p>Two contracts hold the pipeline together:</p>
+<p>Kanon holds <strong>flag-agnostic content</strong>: each section is a file with an
+<code>{# ethics: ... #}</code> header (<code>id</code>, <code>version</code>, <code>status</code>) and a prose body,
+plus a <code>MANIFEST.yml</code> row declaring its abstract <code>when</code> (a string, or a
+list meaning "any of") and its <code>placement</code>. It never names a template flag.
+This repo maps its answers onto kanon's abstract vocabulary once, in
+<code>_shared/daimonion-when.jinja</code>:</p>
 <ul>
-<li><strong>Vendored snapshot</strong>: <code>_shared/ethics/</code> is pinned to a codex SHA in
-  <code>.ethics-vendored</code>; the weekly <code>ethics-sync.yml</code> workflow runs
-  <code>tools/check_ethics_drift.py</code> and opens an issue when codex <code>main</code> moves
-  ahead of the marker.</li>
+<li><code>library</code> ← <code>project_type == 'library'</code>, <code>cli</code> ← <code>project_type == 'cli'</code>,
+  <code>embedded</code> ← <code>project_type == 'micropython'</code>;</li>
+<li><code>personal_data</code> / <code>face_recognition</code> / <code>medtech</code> ← the <code>domain_traits</code>
+  answers; <code>scraping</code> ← <code>scraping_effective</code>; <code>oj_code</code> ← <code>oj_code</code>;
+  <code>mcp</code> ← <code>mcp_effective</code>; <code>data_science</code> ← <code>data_science_layout</code> (not
+  <code>ds_stack</code>); <code>kaggle</code> ← the kaggle workspace; <code>web_api</code> ← <code>web_api</code>;
+  <code>commercial</code> ← the <code>distribution</code> answer;</li>
+<li><code>jp</code>, <code>eu_market</code>, <code>ai_assisted</code> are not derivable from the questionnaire
+  and are emitted as commented hints for the user to decide.</li>
+</ul>
+<p><code>always</code> sections apply without being listed and are never emitted.</p>
+<h2 id="the-sync-contract-new-shape">The sync contract (new shape)<a class="headerlink" href="#the-sync-contract-new-shape" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>kanon (source of truth)                 this template              generated project
+┌──────────────────────────┐         ┌─────────────────────┐         ┌────────────────────┐
+│ sections/*.md.jinja       │  read   │ .daimonion.yml       │ linter  │ AGENTS.md            │
+│  flag-agnostic prose      │ ──────► │ (declared when list) │ ──────► │ (filled marker block)│
+│  MANIFEST.yml (when +     │   at    │ manifest when:       │ agents- │ `daimonion agents-md │
+│   placement)              │ render  │ (same macro)         │ md      │  --write`            │
+└──────────────────────────┘         └─────────────────────┘         └────────────────────┘
+        ▲ own review cadence              ▲ render-pure                    ▲ prose enters here,
+        (OWASP / FIPS / LE watch)         (no network)                     on the user's machine
+</code></pre></div>
+<p>There is no weekly vendor-sync PR anymore: nothing is vendored, so nothing
+can drift. When kanon adds or revises a section, projects pick it up by
+running <code>daimonion agents-md --write</code> — the same command that fills the
+block the first time. The template's side of the contract is the derivation
+macro plus two tests:</p>
+<ul>
+<li><code>tests/test_daimonion_parity.py</code> proves the cutover changed <em>which leaf
+  gets which section</em>: the old registry gates (frozen constant) and kanon's
+  <code>applies()</code> over the derived <code>when</code> set select identical section-id sets
+  for all 272 witness leaves.</li>
+<li><code>tests/test_daimonion_config.py</code> renders contrasting presets and pins the
+  <code>.daimonion.yml</code> <code>when</code> list, the manifest agreement, and the empty marker
+  pair with no vendored prose.</li>
+</ul>
+<h2 id="versioning">Versioning<a class="headerlink" href="#versioning" title="Permanent link">&para;</a></h2>
+<p>A template release no longer ships a <em>known ethics text</em> — it ships a known
+<em>derivation</em>. The prose a project carries is whatever kanon revision the
+user's linter run rendered, recorded in the marker block's <code>kanon=</code> stamp.
+<code>copier update</code> between two template tags therefore shows only derivation
+changes (a condition added, removed, or re-derived); prose updates arrive
+through the linter, reviewable as a normal <code>agents-md --write</code> diff.</p>
+<h2 id="status">Status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h2>
+<p>The move is done: <code>_shared/ethics/</code>, its registry, and the appendix include
+chain are deleted; <code>tools/ethics.py</code> and its MCP surface are deleted with
+them. The remaining references:</p>
+<ul>
 <li><strong>Section ids</strong>: <code>law-map</code> obligations link prose via <code>related_sections</code>
   ids of the form <code>&lt;tier&gt;-&lt;slug&gt;</code>, which resolve to
-  <code>sections/&lt;tier&gt;/&lt;slug&gt;.md.jinja</code> in the codex (e.g.
-  <code>baseline-personal-data</code> → <code>sections/baseline/personal-data.md.jinja</code>).
-  <code>law-map check --codex &lt;checkout&gt;</code> fails on an unresolvable id, and
-  <code>law-map export</code> emits skeletons in that same shape.</li>
+  <code>sections/&lt;tier&gt;/&lt;slug&gt;.md.jinja</code> in kanon. Unchanged by this move.</li>
+<li><strong><code>daimonion diff --strict</code></strong> stays the generated project's <code>legal-check</code>
+  task: it matches changed lines against the rendered block's triggers.</li>
+<li><strong>Migration</strong>: a project generated before the move carries appendix prose
+  inline. Its next <code>daimonion agents-md --write</code> replaces the stale text
+  with the linter-managed block; the <code>_src_path</code> legacy-URL migration
+  (old <code>politeuma/daimonion</code> template URL → <code>politeuma/architekton-py</code>)
+  is handled by the detect path before <code>copier update</code> runs.</li>
 </ul>
-<p>The weekly <code>scheduled-check.yml</code> job <code>law-map-review-by</code> runs
-<code>law-map check --codex</code> against fresh checkouts of both repos and fails when
-a grounding's <code>review_by</code> has expired — a different corpus than the vendored
-drift check (prose SHA vs. obligation freshness), so a red run names exactly
-one thing to fix.</p>
-<p>The weekly <code>e2e-ecosystem.yml</code> workflow closes the remaining gap: it runs
-the whole chain in one job — <code>law-map export</code> plus
-<code>law-map validate --codex</code> against a fresh codex checkout, then
-<code>tools/validate.py</code> in the codex, then a <code>architekton-py new --preset web-api</code>
-render of this checkout whose <code>AGENTS.md</code> must still carry the
-codex-derived ethics sections (the unconditional active registry rows).
-Each pairwise check can stay green while the handoff between two repos
-breaks — an export schema change that drops the section header, a gating
-change that silently drops a section from the render — so a red run here
-means a downstream silent break, and it opens an issue like the other
-scheduled drift checks.</p>
 
 
 

@@ -1391,21 +1391,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vendor-it-and-register-a-draft-row" class="md-nav__link">
+  <a href="#declare-the-condition-here" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Vendor it and register a draft row
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#promote-a-draft-to-active" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Promote a draft to active
+        Declare the condition here
       </span>
     </span>
   </a>
@@ -1417,28 +1406,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Enforcement levels
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-sections-this-template-currently-ships" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The sections this template currently ships
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#structured-data-the-lang-dictionaries" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Structured data: the <code>lang/</code> dictionaries
       </span>
     </span>
   </a>
@@ -2750,21 +2717,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#vendor-it-and-register-a-draft-row" class="md-nav__link">
+  <a href="#declare-the-condition-here" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Vendor it and register a draft row
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#promote-a-draft-to-active" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Promote a draft to active
+        Declare the condition here
       </span>
     </span>
   </a>
@@ -2776,28 +2732,6 @@
     <span class="md-ellipsis">
       <span class="md-typeset">
         Enforcement levels
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-sections-this-template-currently-ships" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        The sections this template currently ships
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#structured-data-the-lang-dictionaries" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Structured data: the <code>lang/</code> dictionaries
       </span>
     </span>
   </a>
@@ -2848,26 +2782,24 @@
 <p>Field rules (a retired NTP server, a licensing drift, a jurisdiction's
 data rules) are prose sections owned by
 <a href="https://github.com/politeuma/kanon">kanon</a>.
-This repo vendors a pinned snapshot of them into <code>_shared/ethics/</code> and
-wires each one through a row in <code>_shared/ethics/REGISTRY.yml</code>. The split
-is content vs. wiring: the codex is responsible for what a section says
-and whether its sources are still right; this repo decides which
-generated projects carry it. The design goal: a new rule must not move
-the questionnaire, the witness leaf space, or anyone's render — it
-accumulates as documentation first and is promoted only when a
-distribution bundle forms. Who decides what goes in the generated
-projects is stated in
+This repo no longer vendors them: it maps questionnaire answers onto kanon's
+abstract <code>when</code> conditions in <code>_shared/daimonion-when.jinja</code>, emits the
+result as the generated project's <code>.daimonion.yml</code>, and leaves an empty
+marker block in <code>AGENTS.md</code> for <code>daimonion agents-md --write</code> to fill. The
+split is content vs. wiring: kanon is responsible for what a section says
+and whether its sources are still right; this repo decides which abstract
+conditions a generated project declares. Who decides what goes in the
+generated projects is stated in
 <a href="https://github.com/politeuma/architekton-py/blob/main/GOVERNANCE.md">GOVERNANCE.md</a>:
 contributors draft and research; the maintainer owns the defaults and
-the promotions. The vendor contract is explained in
-<a href="../../explanations/ethics-external/">External ethics sections</a>.</p>
+the promotions. The architecture is explained in
+<a href="../../explanations/ethics-external/">Ethics Content Lives in Kanon</a>.</p>
 <h2 id="write-or-correct-the-section-upstream">Write or correct the section upstream<a class="headerlink" href="#write-or-correct-the-section-upstream" title="Permanent link">&para;</a></h2>
 <p>Section text — new sections, factual corrections, dead source links —
 goes to kanon as a pull request, following its
-<code>CONTRIBUTING.md</code>. Do not edit the files under <code>_shared/ethics/</code> here:
-they are a vendored copy, and <code>tools/check_ethics_drift.py</code> (run weekly
-by <code>ethics-sync.yml</code>) fails when they differ from the snapshot recorded
-in <code>.ethics-vendored</code>. Obligation-level changes (which statute requires
+<code>CONTRIBUTING.md</code>. There is nothing to vendor here: when the kanon change
+is merged, projects pick it up by running <code>daimonion agents-md --write</code>.
+Obligation-level changes (which statute requires
 what) go through law-map's
 <a href="https://github.com/politeuma/law-map/issues/new?template=legal_rfc.yml">Legal RFC</a>.</p>
 <p>Write the rule as a one-line summary plus a link to the primary source;
@@ -2876,84 +2808,24 @@ not-legal-advice footer. Name concrete shapes in 禁止パターン and
 copy-pasteable settings in 推奨設定, not slogans — back the rule with at
 least one bad/good code-or-config pair, the way the active sections do.
 Keep snippets free of <code>{{ }}</code> / <code>{% %}</code>: the section file is rendered as
-jinja, so double braces would be evaluated, not printed. And keep
-<code>```python</code> examples ruff-format-clean: ruff 0.16+ formats Python code
-blocks inside markdown, so a stylistically-off example fails the
-generated project's <code>task check</code> (the registry test here catches this
-at vendor time, before any render — a "bad" example is bad semantically,
-not stylistically).</p>
-<h2 id="vendor-it-and-register-a-draft-row">Vendor it and register a draft row<a class="headerlink" href="#vendor-it-and-register-a-draft-row" title="Permanent link">&para;</a></h2>
-<p>Once the codex change is merged, the weekly drift check reports codex
-<code>main</code> ahead of <code>.ethics-vendored</code>. The sync PR here then:</p>
-<ol>
-<li>Re-vendors the snapshot, keeping the two consumer-owned files:
-   <code>rsync -a --delete --exclude FLAGS.yml --exclude REGISTRY.yml &lt;codex&gt;/sections/ _shared/ethics/</code>,
-   then writes the codex SHA to <code>.ethics-vendored</code>.</li>
-<li>For a new section, registers one row in <code>_shared/ethics/REGISTRY.yml</code>
-   with <code>status: draft</code> and <code>rendered_from: []</code>; for an edited one,
-   mirrors the new <code>version</code> and <code>sources</code>. Keep the id, version
-   (<code>YYYY-MM-DD.rev</code>), and status in agreement with the file header —
-   the guards check both directions.</li>
-<li>Checks the result:</li>
-</ol>
-<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>tools/check_ethics_drift.py
-uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>pytest<span class="w"> </span>tests/test_ethics_registry.py
+jinja, so double braces would be evaluated, not printed.</p>
+<h2 id="declare-the-condition-here">Declare the condition here<a class="headerlink" href="#declare-the-condition-here" title="Permanent link">&para;</a></h2>
+<p>If the new section's kanon <code>when</code> is one this template never derives
+(a new abstract condition, or a new answer that implies an existing one),
+extend the derivation macro <code>_shared/daimonion-when.jinja</code> once — both the
+generated <code>.daimonion.yml</code> and the composition manifest's <code>when:</code> list
+interpolate that macro, so one edit serves both. <code>jp</code>, <code>eu_market</code> and
+<code>ai_assisted</code> are deliberately not derived: the config emits them as
+commented hints for the user to decide.</p>
+<p>Then check the result:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--locked<span class="w"> </span>pytest<span class="w"> </span>tests/test_daimonion_parity.py<span class="w"> </span>tests/test_daimonion_config.py
 </code></pre></div>
-<p>The guards pin: row shape (id, version, dates, primary sources,
-   scope, scale, audience, enforcement), header agreement, the body
-   naming its scale and every audience entry, a documented presence
-   trigger (<code>設定側トリガー</code>) that compiles and stays unique across
-   rows, and — for drafts — that no template file includes you.</p>
-<p>A draft is documentation only: nothing includes it, no render changes,
-and every guard accepts it without any other file being touched.</p>
-<h2 id="promote-a-draft-to-active">Promote a draft to active<a class="headerlink" href="#promote-a-draft-to-active" title="Permanent link">&para;</a></h2>
-<p>A draft promotes only when a bundle forms: three sections sharing one
-distribution condition, or one section needing a distinct code/test gate
-(enforcement L2). A promotion changes generated renders, so it wires the
-verification stack as it goes — each step below has a check that catches
-the omission:</p>
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>Touchpoint</th>
-<th>What catches the omission</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>Registry row: bump <code>version</code>, set <code>status: active</code>, name the parent(s) in <code>rendered_from</code>, and write the <code>gate</code> expression (the single spelling of "which leaf carries this section")</td>
-<td><code>test_ethics_registry.py</code>: a distributed row must name parents and carry a gate; its gate must parse under the allowlisted evaluator and name only leaf-context flags</td>
-</tr>
-<tr>
-<td>2</td>
-<td><code>uv run python tools/gen_ethics_appendix.py</code> — regenerate <code>_shared/ethics-appendix.jinja</code> from the registry</td>
-<td><code>test_the_generated_appendix_matches_the_registry</code> — a stale committed file fails</td>
-</tr>
-<tr>
-<td>3</td>
-<td>The generated include lands in the AGENTS.md appendix automatically — there is no hand-written chain left to edit</td>
-<td>the <code>ethics-appendix</code> predicate in <code>tests/test_render_invariants.py</code> evaluates the same gate string per leaf and fails a leaf missing the section <em>or</em> shipping it uninvited</td>
-</tr>
-<tr>
-<td>4</td>
-<td><code>tests/matrix/invariants.yml</code>: name the <code>ethics-appendix</code> predicate on every row whose leaves select the section (content pairs for section markers are gone — the predicate is the pin)</td>
-<td>the predicate registry fails a named row without it</td>
-</tr>
-<tr>
-<td>5</td>
-<td><code>task witness</code> + the fast tier</td>
-<td>the ledger freshness and content checks</td>
-</tr>
-</tbody>
-</table>
-<p>The audience in the registry row is the human-readable word for the gate
-(<code>iot</code> may map to <code>micropython</code>, as <code>baseline-pki-chain</code> does); the gate
-spells the mapping, the row keeps the word. A draft row may carry its
-intended <code>gate</code> at registration time — it is linted (safe AST) but not
-bound-checked until activation, so a promotion is a status flip plus the
-answer wiring the gate already names.</p>
+<p>The guards pin: the parity test (every witness leaf's derived <code>when</code> set
+selects the same kanon sections the old gates did), the config test (the
+<code>when</code> list order, provenance comments, manifest agreement, and the empty
+marker pair with no vendored prose), and the <code>daimonion-config</code> predicate
+in <code>tests/test_render_invariants.py</code> (every leaf class carrying a condition
+names it in <code>tests/matrix/invariants.yml</code>).</p>
 <h2 id="enforcement-levels">Enforcement levels<a class="headerlink" href="#enforcement-levels" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -2967,81 +2839,29 @@ answer wiring the gate already names.</p>
 <tr>
 <td><code>L0</code></td>
 <td>the section reaches a reader</td>
-<td>the generated AGENTS.md appendix, the MCP tools</td>
-</tr>
-<tr>
-<td><code>L1</code></td>
-<td>the presence trigger is machine-readable</td>
-<td><code>tools/ethics.py match()</code>, the MCP <code>check_ethics</code> tool, <code>template://ethics</code></td>
+<td>the linter-rendered AGENTS.md block</td>
 </tr>
 <tr>
 <td><code>L2</code></td>
 <td>something fails the build</td>
-<td>e.g. <code>baseline-license-drift</code>'s <code>license-check</code> task in generated CI</td>
+<td>e.g. the <code>license-check</code> task in generated CI (pip-licenses; needs no prose)</td>
 </tr>
 </tbody>
 </table>
-<p>New sections start at <code>L0</code>. A <code>L1</code> lift is free — the trigger span is
-already parsed for every row; drafts warn through <code>check_ethics</code> even
-while they ship nowhere. A <code>L2</code> lift needs a real gate with an offline
-contract (see how <code>license-check</code> stays out of <code>type-check</code>/<code>check</code>).</p>
-<h2 id="the-sections-this-template-currently-ships">The sections this template currently ships<a class="headerlink" href="#the-sections-this-template-currently-ships" title="Permanent link">&para;</a></h2>
-<p>The full inventory lives in <code>_shared/ethics/REGISTRY.yml</code>; the two most
-recently promoted rows are:</p>
-<ul>
-<li><code>domain-scraping-law</code> — <strong>L0</strong>, gate <code>scraping_effective</code> (the AGENTS.md
-  include is <code>{% if scraping_effective %}</code>). The scraping-law map: copyright
-  and the EU database right (Directive 96/9/EC art. 7) sit beside the
-  contract question (ToS) and the unauthorized-access line (CFAA /
-  不正アクセス禁止法), and robots.txt is evidence of the operator's intent,
-  not an authorization (hiQ Labs v. LinkedIn, 9th Cir. 2022). Its generated
-  counterpart is <code>LEGAL.md</code> — the per-source pre-crawl checklist every
-  scraping layer ships, asserting what the toolchain enforces vs what stays
-  the operator's duty.</li>
-<li><code>domain-contest-rules</code> — <strong>L0</strong>, gate <code>oj_code</code> (the code-submission
-  judges; kaggle and ctf are deliberately outside it). Competition
-  integrity: AI-use rules differ per judge and change (AtCoder bans
-  generative AI during ABC/ARC/AGC except a whitelisted translation
-  prompt), the submission is the entrant's own responsibility, and rating
-  manipulation / multi-accounting are banned.</li>
-</ul>
-<p>Both are <code>status: active</code> with <code>rendered_from</code> naming the AGENTS.md
-appendix, and the <code>ethics-appendix</code> predicate in
-<code>tests/test_render_invariants.py</code> holds each to the leaf classes its gate
-selects — the mutation that drops a gate fails the render sweep, not a
-human review.</p>
-<h2 id="structured-data-the-lang-dictionaries">Structured data: the <code>lang/</code> dictionaries<a class="headerlink" href="#structured-data-the-lang-dictionaries" title="Permanent link">&para;</a></h2>
-<p>Rules whose substance is a table (protection terms per jurisdiction,
-per-country filing deadlines) keep the prose summary in the section and
-the data in <code>_shared/ethics/lang/&lt;name&gt;.yml</code> — see
-<code>copyright-terms.yml</code>, the first one. The table names the section it
-serves (<code>serves:</code>), matches its <code>review_by</code>, carries primary sources per
-row, and the section references it back; a guard in
-<code>tests/test_ethics_registry.py</code> holds the two together.</p>
 <h2 id="market-triggered-rules-the-regions-table">Market-triggered rules: the regions table<a class="headerlink" href="#market-triggered-rules-the-regions-table" title="Permanent link">&para;</a></h2>
 <p>Some rules have no questionnaire channel at all: whether Japan's
 third-party-transmission disclosure duty or the EU Accessibility Act
 applies depends on the markets a project ships to, and a
 <code>target_markets</code> question would add a leaf-space dimension for two
-sections. Those rules do not promote into the AGENTS.md appendix;
+sections. Those rules do not derive a <code>when</code> condition;
 instead the generated project ships <code>ethics/regions.yml</code> (web_api
 renders only — both current rules are frontend/UI duties), a per-rule
-summary table whose <code>serves:</code> entries point back at the registry draft
-the rule abbreviates. The AGENTS.md appendix links to the file rather
-than including the sections, so the draft isolation the registry test
-enforces stays intact.</p>
-<p>A <code>serves:</code> line in <code>regions.yml</code> is the one permitted reference to a
-draft section from a <code>template/</code> file — it names the file for the
-reader without distributing its body. A rule graduates out of the
-table the same way any draft does: three sections sharing one
-distribution condition, or one needing its own gate.</p>
+summary table whose <code>serves:</code> entries point at the kanon section URLs.
+The AGENTS.md block links to the file rather than including the sections.</p>
 <h2 id="keeping-sections-alive">Keeping sections alive<a class="headerlink" href="#keeping-sections-alive" title="Permanent link">&para;</a></h2>
-<p>Every row's <code>review_by</code> is the date its 制度変更ウォッチ items must be
-re-checked by. A passed date fails the registry test, so CI reddens
-until someone re-checks the primary sources, updates the body, and bumps
-the row's <code>version</code> and <code>review_by</code> (or supersedes the row via
-<code>superseded_by</code>). The re-check is a good first contribution; the bump is
-a one-line registry edit.</p>
+<p>Every kanon section's <code>review_by</code> is the date its 制度変更ウォッチ items
+must be re-checked by. That cadence lives upstream now — re-checks land as
+kanon pull requests, not template edits.</p>
 
 
 
