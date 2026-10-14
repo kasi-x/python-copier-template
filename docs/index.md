@@ -8,7 +8,7 @@ what the generated `AGENTS.md` field-rules block is doing there.
 
 ## How the documentation is structured
 
-Documentation is split into [four categories](https://diataxis.fr), also accessible from links in the top navigation bar.
+Documentation is split into [four categories](https://diataxis.fr), also reachable from the top navigation bar.
 
 - **[Tutorials](tutorials.md)**: Tutorials for installation and typical usage. New users start here.
 - **[How-to Guides](how-to.md)**: Practical step-by-step guides for the more experienced user. In the navigation these live under Reference.
