@@ -16,7 +16,7 @@ move, superseding the old vendor-snapshot design below only where it
 describes vendoring (the "why not fetch at render time" property still
 holds, restated for the new shape).
 
-The codex is itself one layer of a larger legal pipeline:
+Kanon is itself one layer of a larger legal pipeline:
 
 ```text
 open-law            law-map                 kanon      daimonion

@@ -76,8 +76,8 @@
   (secrets 再設定・private repo 分離・upstream PR 投稿)
 - §43 再評価 → このファイル。設計判断の維持基準(閾値条件付き)
 - §49 次期改善候補 → このファイル。2026-10-13 レビュー。法務レイヤー不整合
-  (legal-check 未実装・law-lint ルール drift・law-map 孤児 checks)、
-  law-lint 強化、§36 S5 / §29 region 昇格の着手条件充足など
+  (legal-check 未実装・daimonion ルール drift・law-map 孤児 checks)、
+  daimonion 強化、§36 S5 / §29 region 昇格の着手条件充足など
 ### B. アーカイブ側の残り(28 件 + 各着地記録。原文は archive)
 
 - 機能の将来拡張(7): OJ 9 種＋その他(§2, archive L117)[§2 本体に記録済み(着地)]/ bot LINE・Gmail 残り(§4, L182)[着地済み]/
@@ -312,7 +312,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 #### P2. 導入体験（UX）の極小摩擦化（Zero-Friction Onboarding）
 - **ゼロインストール・ワンライナーの前面化**:
   - `git clone` 前提の手順を即時廃止。README 先頭を `uvx copier copy --trust gh:<org>/<repo> my-project` に刷新。
-  - CLI（`foundry`）の PyPI 公開または `uvx` 配布対応（パッケージ構成を整理し、clone なしで `uvx <name> new my-project --preset library` を可能に）。
+  - CLI（`architekton-py`）の PyPI 公開または `uvx` 配布対応（パッケージ構成を整理し、clone なしで `uvx <name> new my-project --preset library` を可能に）。
 - **プリセット主導の「3秒スタート」体験**:
   - 質問票の第1問目で「推奨プリセットから選ぶ（Web API / CLI / Data Science / Library / Minimal Bare）」を案内し、1回のリターンキーで即座に走る体験を提供。
 - **既存プロジェクト近代化ツール（Adopt）のワンライナー化**:
@@ -373,7 +373,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 2. **フェーズ 2: 独立とリブランディング（1週間）**
    - リポジトリの detach / 独立公開、固有名称・新リポジトリの確定。
    - v1.0.0 タグの打ち直し、Scorecard 初回計測、Branch Protection 設定。
-   - `foundry` CLI パッケージの整理（PyPI または `uvx` 配布）。
+   - `architekton-py` CLI パッケージの整理（PyPI または `uvx` 配布）。
 3. **フェーズ 3: 対外発信と認知拡大（ローンチ後 2〜4週間）**
    - 3大技術ブログ（Z3検証、ドリフト検知、AGENTS.md）の同時公開（Hacker News / Reddit / Zenn）。
    - `awesome-python` / `awesome-copier` への PR 提出。
@@ -481,7 +481,7 @@ CONTRIBUTING.md は 45 行で装置が載らない。フォーク関係がハイ
 1. **Showcase（採用実績）の構築**:
    - 自分のプロジェクト（MCPサーバー、CLIツール、競プロリポジトリ）を本テンプレートで生成し、`README.md` に「採用例」として掲載。
    - 外部ユーザーのリポジトリに「Adopt」を提案する PR（またはサンプルリポジトリ）を作成し、感謝とともに Showcase への掲載許可を得る。
-   - `[![Built with foundry](https://img.shields.io/badge/built%20with-foundry-blue)](https://github.com/politeuma/foundry)]` バッジの配布。
+   - `[![Built with architekton-py](https://img.shields.io/badge/built%20with-architekton--py-blue)](https://github.com/politeuma/architekton-py)]` バッジの配布。
 2. **初動の Issue / PR 体制と contributor ladder**:
    - 新規スターやフォーク、Issue が立った際は 24時間以内に丁寧に応答。
    - `good first issue`（倫理ドラフトの追加、タイポ修正、ドキュメント改善）に最初の貢献があった場合、即座にレビューして merge し、`CONTRIBUTORS.md` に記載してリテンションを高める。
@@ -673,22 +673,22 @@ AI エージェントのコンテキストウィンドウ圧迫と過剰反応�
 - **検証と互換性の維持**:
   - `ETHICS_SECTIONS` の H1 タイトル検証、`test_ethics_registry.py` の 12 テスト、`test-fast`（1161 件全緑）、不変条件契約を 100% 保持
 
-## §48 完了: law-lint 独立 Linter 新設 + gitleaks ライセンス課金の構造解消 (2026-10-13)
+## §48 完了: daimonion 独立 Linter 新設 + gitleaks ライセンス課金の構造解消 (2026-10-13)
 
-### law-lint（機械的法務トリガー Linter）
+### daimonion（機械的法務トリガー Linter）
 - **背景**: §47 で AGENTS.md を軽量化したが、エージェントが「どのセクションが
   自分の変更に関係するか」を判断する手段は文書読解に委ねられていた。
   差分を機械的に grep して該当ルールを報告する独立 Linter を新設。
-- **リポジトリ**: `politeuma/law-lint`（新規公開、CI 緑、
+- **リポジトリ**: `politeuma/daimonion`（新規公開、CI 緑、
   zizmor 適合・SHA pin 済み）。依存は `pyyaml` のみ。
-- **コマンド**: `law-lint diff`（git diff 対象のトリガー検出）、
-  `law-lint check <path>`（ファイル/ディレクトリ走査）、`--strict`（L2 で exit 1）、
+- **コマンド**: `daimonion diff`（git diff 対象のトリガー検出）、
+  `daimonion check <path>`（ファイル/ディレクトリ走査）、`--strict`（L2 で exit 1）、
   `list-rules`。`--rules` で architekton-py の `REGISTRY.yml` や codex YAML を直接ロード可能。
 - **architekton-py 側の連携**:
   - `AGENTS.md.jinja`: 「コミット前に `uvx --from git+https://github.com/politeuma/daimonion daimonion diff`」を追記
   - `_tasks.jinja`: `legal-check` タスクを `quality_tasks` に追加
     （`agents_md_effective` ゲート、audit/license-check と同じネットワーク依存 one-off）
-  - `.github-org` プロフィールの Repositories 表に law-lint を追加
+  - `.github-org` プロフィールの Repositories 表に daimonion を追加
 
 ### gitleaks-action のライセンス課金問題 → pin バイナリ置換
 - **症状**: gitleaks-action v3 が org アカウントで `GITLEAKS_LICENSE` を要求し、
@@ -775,12 +775,12 @@ upstream F1–F7 投稿のみ。
       に 8 テスト追加 — 全 Taskfile に出ることと AGENTS.md 記載を `copy_project`
       レンダで検証；`audit`/`license-check` と同じネットワーク依存 one-off として
       表では inline spec なし）
-- [x] **完了: law-lint `DEFAULT_RULES` と REGISTRY triggers の drift 防止** ✅ **2026-10-13 本 wave**
-      （law-lint 側に `tools/check_ethics_parity.py` + 週次 `ethics-parity.yml`
-      を新設 — REGISTRY active 12 行と `law-lint/rules.py` 組込みルールを
-      12 対 12 でマップし、各ファイルの Triggers 正規表現と law-lint ルールの
+- [x] **完了: daimonion `DEFAULT_RULES` と REGISTRY triggers の drift 防止** ✅ **2026-10-13 本 wave**
+      （daimonion 側に `tools/check_ethics_parity.py` + 週次 `ethics-parity.yml`
+      を新設 — REGISTRY active 12 行と `daimonion/rules.py` 組込みルールを
+      12 対 12 でマップし、各ファイルの Triggers 正規表現と daimonion ルールの
       正規表現間でキーワード/プローブが相互にヒットすることを検証。
-      `law-lint_linter/format/report.py` 直下のレポート経路は触れていないので
+      `daimonion/format/report.py` 直下のレポート経路は触れていないので
       本節の承諾経路とは独立）
 - [x] ~~**law-map 未参照 checks 5 本の整理**~~ → **誤検出（2026-10-13）**:
       13 本全て check_refs で参照済み（例: `llm-tool-allowlist-gate` は
@@ -795,7 +795,7 @@ upstream F1–F7 投稿のみ。
       必須でコード検査の排水口がなく L0 維持を明記。`validate --warnings` の
       spec-less 警告は 6→1 に縮退、`law-map validate` は 0 errors, 84 passed）
 
-### B. law-lint 強化
+### B. daimonion 強化
 
 - [x] **完了: 機械可読出力** ✅ **2026-10-13 本 wave**（E2:
       `--format {human,json,sarif}` を `check|diff` に、human/json を
@@ -803,7 +803,7 @@ upstream F1–F7 投稿のみ。
       SARIF 2.1.0: `tool.driver.rules[]` + `results[]`、L2→error/L1→warning/L0→note。
       `--strict` の exit code 1/0 は書式によらず同一）
 - [x] **完了: `.pre-commit-hooks.yaml` + 薄い GitHub Action** ✅ **2026-10-13 本 wave**（E3 一部:
-      `.pre-commit-hooks.yaml` に `law-lint --strict diff --staged`（`pass_filenames:false`）、
+      `.pre-commit-hooks.yaml` に `daimonion --strict diff --staged`（`pass_filenames:false`）、
       `action.yml` composite（`strict=true|args=diff`、SHA pin の `setup-uv` + `uvx`））
 - [x] **完了: テスト拡充** ✅ **2026-10-13 本 wave**（E2: `context.py` の gate
       フォールバックを fail-closed（UserWarning 付き）に変更 + `tests/test_context.py`
@@ -814,11 +814,11 @@ upstream F1–F7 投稿のみ。
       （law-map `bb623d7`: `src/law_map/checkspecs.py` で `triggers:` 正規表現
       リストをスキーマ検証（不正 regex は `validate` を落とす）＋全 18 spec
       に architekton-py ethics 節と同語彙で付与；`external-transmission-declared`
-      の未検出 YAML 破損も捕捉・修正。law-lint `5bbcc4e`:
+      の未検出 YAML 破損も捕捉・修正。daimonion `5bbcc4e`:
       `Rule.from_check_spec` + `--rules` のディレクトリ受けで
-      `law-lint --rules ../law-map/checks` が spec を直接消費。
+      `daimonion --rules ../law-map/checks` が spec を直接消費。
       obligation → check spec → lint trigger → AGENTS.md 節のパイプライン閉結。
-      law-map 94 passed / law-lint 63 passed）
+      law-map 94 passed / daimonion 63 passed）
 
 ### C. architekton-py 本体
 

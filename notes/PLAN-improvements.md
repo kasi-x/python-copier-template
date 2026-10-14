@@ -4,7 +4,7 @@
 
 # PLAN: 劇的改善の作業分解（委託用）
 
-対象リポジトリ: `kasi-x/python-copier-template`（HEAD = `e2a210e1`、2026-09-11）。
+対象リポジトリ: `politeuma/architekton-py`（HEAD = `e2a210e1`、2026-09-11）。
 この文書は **そのまま他エージェントへ委託できる粒度**の作業パッケージ集。
 既存の `TODO.md`（節1〜21）と重複する項目は、参照のみで再記述しない（二重管理の禁止）。
 
@@ -425,7 +425,7 @@ extras/markers は推測せず報告。`--no-deps` で無効化。マージは�
 - **所有**: `tools/cli.py`（新規）、`pyproject.toml`（script エントリのみ）、`presets/*.yml`（新規）、
   `docs/tutorials/installation.md`、`docs/tutorials/create-new.md`。
 - **Change**:
-  1. `python-copier-template new <dir> [--preset <name>] [--ref <ref>]` を実装。
+  1. `architekton-py new <dir> [--preset <name>] [--ref <ref>]` を実装。
      内部で `tools/detect.py` の `detect()` によりモード（fresh / adopt / update / foreign）を判定し、
      adopt なら `existing_project: true` と `adopt_protect` を、`collisions` があれば警告を出す。
      その後 `copier` を `--trust` 付きで呼ぶ。`--ref` の既定は「最新の fork タグ」。

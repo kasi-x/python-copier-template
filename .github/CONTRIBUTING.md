@@ -53,7 +53,7 @@ above.
 The template has tests for:
 
 - Generating a new project from scratch
-- Updating the [example project](https://github.com/kasi-x/python-copier-template-example)
+- Updating the [example project](https://github.com/politeuma/architekton-py-example)
 - Checking that both of the above produce the same results
 
 However, this does not test whether processes like CI and docs work correctly. You can ensure that these are checked by:

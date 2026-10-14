@@ -75,7 +75,7 @@ flowchart LR
 
 Watchers on the chain, each naming exactly one failure:
 `scheduled-check.yml` job `law-map-review-by` (expired `review_by`
-groundings, `law-map check --codex`), and the `e2e` job in
+groundings, `law-map check --kanon`), and the `e2e` job in
 `e2e-ecosystem.yml` (`law-map export` + kanon validate + a render whose
 `.daimonion.yml` declares the expected conditions). The generated
 project's own `legal-check` task (`_tasks.jinja`, `daimonion diff --strict`)

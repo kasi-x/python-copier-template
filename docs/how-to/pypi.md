@@ -8,7 +8,7 @@ You will need the following information:
 
 - Owner: The GitHub org that the repo is contained in, e.g. `kasi-x`
 - Repository name: The GitHub repository name, e.g. `architekton-py-example`
-- PyPI Project Name: The distribution name on PyPI, e.g. `kasi-x-architekton-py-example`
+- PyPI Project Name: The distribution name on PyPI, e.g. `politeuma-architekton-py-example`
 - Workflow name: The workflow that does publishing, `_pypi.yml` for `architekton-py` projects
 - Environment name: The GitHub environment that publishing is done with, `release` for `architekton-py` projects
 
