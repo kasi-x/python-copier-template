@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.1.1",
+  "work": "reference-md",
+  "title": {
+    "en": "Reference"
+  },
+  "source_lang": "en",
+  "target_langs": [
+    "ja"
+  ],
+  "profile": "commonmark+gfm-tables+math",
+  "profiles": [
+    "core",
+    "technical"
+  ],
+  "normalization": {
+    "form": "NFC",
+    "unicode": "15.1"
+  },
+  "hash": "xxh3-64",
+  "parser": "pulldown-cmark@0.13.4",
+  "ext": {
+    "lattice-docs": {
+      "source_path": "reference.md",
+      "lowering": 1,
+      "front_matter_keys": [
+        "title",
+        "description",
+        "sidebar_label"
+      ]
+    }
+  }
+}

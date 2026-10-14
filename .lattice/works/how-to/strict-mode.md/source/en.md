@@ -1,0 +1,57 @@
+# Choose your strictness level
+
+The template offers a single axis — `strictness` — that controls both how
+strictly type annotations are required and how thorough the static-analysis
+toolchain is. Pick one level when prompted; it drives the generated
+`pyproject.toml`, task-runner tasks and CI configuration together.
+
+## The 4 levels
+
+| Level | Type annotations | Type checkers | Static analysis | Ruff |
+|---|---|---|---|---|
+| `none` | Not required | None | None | Minimal set (pycodestyle, pyflakes, isort) |
+| `basic` | Not required | None | None | Basic set (bugbear, pycodestyle, isort, pyupgrade, ...) |
+| `recommended` | Partial (fully-untyped functions pass) | basedpyright + secondary (pyrefly by default) | typos, vulture, deptry (+ `audit` on demand: pip-audit) | `ALL` rules with pragmatic ignores |
+| `full` | All functions annotated | basedpyright (strict, `Any` forbidden) + secondary (pyrefly/ty) | Same as recommended | `ALL` rules with minimal ignores |
+
+- <lt-m v="**"/>`none`<lt-m v="**"/>: pytest + ruff with a minimal rule set. No type checking, no
+  static analysis. For throwaway scripts and experiments.
+- <lt-m v="**"/>`basic`<lt-m v="**"/>: pytest + ruff with a curated basic rule set. No type checking.
+  Good for small prototypes that still want consistent style.
+- <lt-m v="**"/>`recommended`<lt-m v="**"/> (default): the full toolchain — ruff with `ALL` rules
+  (preview enabled, pragmatic `WHYNOT` ignores), basedpyright (always) plus
+  your chosen secondary checker (`type_checker`: pyrefly by default, or ty),
+  typos / vulture / deptry, driven by your task runner.
+  Partially-annotated functions are allowed. Dependency auditing is a
+  separate on-demand `audit` task (`pip-audit`, needs network) so offline
+  `type-check`/`check`/CI stays green.
+- <lt-m v="**"/>`full`<lt-m v="**"/>: everything in recommended plus strict type checking. `Any` is
+  forbidden (`reportAny` etc.), every function must be annotated, and ruff's
+  ignores are minimized. When ty is the secondary checker, it additionally
+  treats unresolved references as errors. Best for a brand-new project you
+  intend to maintain long-term.
+
+## How to Choose
+
+When creating a project, select your `strictness` level when prompted.
+
+- <lt-m v="**"/>`none`<lt-m v="**"/>: you want fast iteration without thinking about types or style.
+  Good for throwaway scripts and experiments.
+- <lt-m v="**"/>`basic`<lt-m v="**"/>: you want consistent style but no type checking.
+- <lt-m v="**"/>`recommended`<lt-m v="**"/> (default): a balanced default. Fits both new code and
+  applying the template to existing code.
+- <lt-m v="**"/>`full`<lt-m v="**"/>: you treat `Any` as a code smell and want strict typing from day
+  one. Best for a brand-new project you intend to maintain long-term.
+
+## Lessons from practice
+
+- <lt-m v="**"/>`full` is for new projects.<lt-m v="**"/> Applying strict mode to legacy code can
+  produce thousands of errors. Use `recommended` for retrofits.
+- <lt-m v="**"/>`recommended` survives retrofits.<lt-m v="**"/> `analyzeUnannotatedFunctions = false`
+  skips fully-untyped functions, so an existing codebase stays green while new
+  code gets stricter.
+- <lt-m v="**"/>`Any` is sometimes necessary.<lt-m v="**"/> Libraries like `boto3` without full stubs
+  need `Any` (or `types-boto3`). `full` requires the latter.
+- <lt-m v="**"/>Type checkers are not interchangeable.<lt-m v="**"/> `# pyright: ignore[Rule]` is the
+  correct comment for pyright-based checkers; mypy's `# type: ignore[code]`
+  codes are not recognized.

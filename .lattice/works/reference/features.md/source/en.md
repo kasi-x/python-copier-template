@@ -1,0 +1,462 @@
+# Feature catalogue
+
+What each answer in the <lt-m v="["/>questionnaire<lt-m v="](questionnaire.md)"/> configures: the
+project types and their layouts, the toolchain choices, the opt-in layers, the
+support tiers CI guarantees, and why the option set looks the way it does. The
+<lt-m v="["/>README<lt-m v="](https://github.com/politeuma/architekton-py#readme)"/> is the short
+version of this page.
+
+## Recommended settings, per area
+
+The template asks a few questions and generates a project tailored to your
+answers. Besides the essentials (project type, package name, author, ...), each
+customisable area asks a single "use the recommended settings?" question first
+(default: yes), with the recommendation spelled out in its help text. Answer
+<lt-m v="**"/>yes<lt-m v="**"/> and that area is configured from its recommended defaults without
+asking anything else; answer <lt-m v="**"/>no<lt-m v="**"/> and the detailed question(s) for that area
+are asked — <lt-m v="["/>the questionnaire reference<lt-m v="](questionnaire.md)"/> lists every one.
+
+<!-- BEGIN GENERATED: features-areas (architekton/gen_docs.py --write) -->
+| Area gate | Recommended default | Asked when |
+|---|---|---|
+| `use_recommended_agent` | yes — a plain library / CLI without agent tooling. | library / cli |
+| `use_recommended_toolchain` | uv (package manager) + just (task runner). | not ros2 + `ros2_package_manager` = pixi |
+| `use_recommended_data_science` | GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer). | the data_science layer is present |
+| `use_recommended_polish` | src/ layout (library/cli), no Japanese (multibyte) characters in comments/docstrings, English AGENTS.md rule summaries. | all |
+| `use_recommended_docs` | zensical (Zensical, an MkDocs fork with mkdocstrings). | all |
+| `use_recommended_quality` | basedpyright (primary) + pyrefly (additional static analysis), strictness "recommended" (ruff ALL rules, typos/vulture/deptry/pip-audit). | all |
+| `use_recommended_license` | MIT license, no FAIR research-software metadata (CITATION.cff / REUSE). | all |
+| `use_recommended_integrations` | no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP support, GitHub Actions for CI, structlog for logging. | all |
+| `use_recommended_web_api` | a FastAPI app in a top-level `app/` package (no library <pkg>): async SQLAlchemy 2.0 + Alembic + Postgres, a demo CRUD router, request-id logging (asgi-correlation-id), a BackgroundTasks example, and /health + /docs endpoints. | the web_api layer is present |
+| `use_recommended_security` | minimal CI permissions, GitHub Actions pinned to commit SHAs (renovate keeps them up to date), zizmor + actionlint checks, a SECURITY.md vulnerability-reporting policy, a test_qa.py that verifies dependency integrity and the public API at runtime, and a license-check task (pip-licenses --fail-on with the project's copyleft policy) that CI runs alongside type-check. | all |
+<!-- END GENERATED: features-areas -->
+
+## Ask order
+
+The branches below follow the order the questions are actually asked in
+(`copier.yml`); each gate's Yes/No branches rejoin before the next gate:
+
+<!-- BEGIN GENERATED: features-mermaid (architekton/gen_docs.py --write) -->
+```mermaid
+flowchart TD
+    Start([Start]) --> PT[project_type]
+    PT -->|ros2| Q0["ask: pkg_language (python / cpp), ros_distro (humble / jazzy),<br/>ros2_package_manager (apt / pixi)"]
+    PT -->|micropython| Q1["ask: micropython_port (esp32 / esp8266 / rp2 / stm32 / samd / unix /<br/>windows / mimxrt)"]
+    PT -->|library / cli| G_agent{"use_recommended_agent?<br/>(library / cli)"}
+    PT -->|other| G_toolchain{"use_recommended_toolchain?<br/>(not ros2 + ros2_package_manager = pixi)"}
+    Q0 --> G_toolchain
+    Q1 --> G_toolchain
+    G_agent -->|Yes| G_agent_yes["a plain library / CLI without agent tooling."]
+    G_agent -->|No| G_agent_no["add a runnable pydantic-ai example: a prompts/ directory, a typed tools/ package…"]
+    G_agent_yes --> G_toolchain
+    G_agent_no --> G_toolchain
+    G_toolchain -->|Yes| G_toolchain_yes["uv (package manager) + just (task runner)."]
+    G_toolchain -->|No| G_toolchain_no["ask: package_manager, task_runner, task_runner_pixi"]
+    G_toolchain_yes --> D2
+    G_toolchain_no --> D2
+    D2{"online_judge?"}
+    D2 -->|Yes| Q7["ask: oj_category (data_science / competitive_coding / ctf), oj_kind<br/>(kaggle / atcoder / leetcode / yukicoder / aoj / codeforces /<br/>kattis / other / ctf), oj_allow_ai (atcoder / leetcode /<br/>codeforces / kattis / other)"]
+    Q7 --> INC
+    D2 -->|No| INC
+    INC["ask: include_data_science, include_web_api, include_ctf,<br/>include_scraping, include_bot<br/>(each only for the bases it combines with)"]
+    INC --> L3{"include_scraping?"}
+    L3 -->|Yes| G_scraping{"use_recommended_scraping?<br/>(a cli base answers Yes to include_scraping)"}
+    L3 -->|No| L4
+    G_scraping -->|Yes| G_scraping_yes["httpx — a polite stdlib-robots fetcher"]
+    G_scraping -->|No| G_scraping_no["ask: scraping_engine"]
+    G_scraping_yes --> L4
+    G_scraping_no --> L4
+    L4{"include_bot?"}
+    L4 -->|Yes| G_bot{"use_recommended_bot?<br/>(a cli / web_api base answers Yes to include_bot)"}
+    L4 -->|No| L5
+    G_bot -->|Yes| G_bot_yes["discord = discord.py — the de-facto Discord library"]
+    G_bot -->|No| G_bot_no["ask: bot_platform"]
+    G_bot_yes --> L5
+    G_bot_no --> L5
+    L5{"data science layer?"}
+    L5 -->|Yes| G_data_science{"use_recommended_data_science?<br/>(the data_science layer is present)"}
+    L5 -->|No| G_polish
+    G_data_science -->|Yes| G_data_science_yes["GPU workloads enabled (NVIDIA CUDA Dockerfile + devcontainer)."]
+    G_data_science -->|No| G_data_science_no["ask: use_gpu"]
+    G_data_science_yes --> G_polish
+    G_data_science_no --> G_polish
+    G_polish{"use_recommended_polish?"}
+    G_polish -->|Yes| G_polish_yes["src/ layout (library/cli), no Japanese"]
+    G_polish -->|No| G_polish_no["ask: layout, allow_japanese, agents_md_language"]
+    G_polish_yes --> G_docs
+    G_polish_no --> G_docs
+    G_docs{"use_recommended_docs?"}
+    G_docs -->|Yes| G_docs_yes["zensical (Zensical, an MkDocs fork with mkdocstrings)."]
+    G_docs -->|No| G_docs_no["ask: docs_type"]
+    G_docs_yes --> G_quality
+    G_docs_no --> G_quality
+    G_quality{"use_recommended_quality?"}
+    G_quality -->|Yes| G_quality_yes["basedpyright (primary) + pyrefly"]
+    G_quality -->|No| G_quality_no["ask: type_checker, strictness"]
+    G_quality_yes --> G_license
+    G_quality_no --> G_license
+    G_license{"use_recommended_license?"}
+    G_license -->|Yes| G_license_yes["MIT license, no FAIR research-software metadata (CITATION.cff / REUSE)."]
+    G_license -->|No| G_license_no["ask: license, fair, author_orcid"]
+    G_license_yes --> G_integrations
+    G_license_no --> G_integrations
+    G_integrations{"use_recommended_integrations?"}
+    G_integrations -->|Yes| G_integrations_yes["no Docker container, no PyPI auto-publish, no cloud provider, no Sentry, no MCP…"]
+    G_integrations -->|No| G_integrations_no["ask: docker, pypi, cloud_provider, aws_services, include_sentry,<br/>include_mcp, ci_provider, log_library, cicd_extras"]
+    G_integrations_yes --> L6
+    G_integrations_no --> L6
+    L6{"web api layer?"}
+    L6 -->|Yes| G_web_api{"use_recommended_web_api?<br/>(the web_api layer is present)"}
+    L6 -->|No| G_security
+    G_web_api -->|Yes| G_web_api_yes["a FastAPI app in a top-level app/ package"]
+    G_web_api -->|No| G_web_api_no["ask: prometheus, rate_limit, cors"]
+    G_web_api_yes --> G_security
+    G_web_api_no --> G_security
+    G_security{"use_recommended_security?"}
+    G_security -->|Yes| G_security_yes["minimal CI permissions, GitHub Actions pinned to commit SHAs"]
+    G_security -->|No| G_security_no["ask: license_check, security_policy, scorecard"]
+    G_security_yes --> PD
+    G_security_no --> PD
+    PD["Project details: package_name, description, git_platform, github_org,<br/>gitlab_group, repo_name, distribution_name, author_name,<br/>author_email, dependencies, src_dirs"]
+    PD --> End([Generate project])
+```
+<!-- END GENERATED: features-mermaid -->
+
+## Package management
+
+`package_manager` picks the dependency manager:
+
+- <lt-m v="**"/>uv<lt-m v="**"/> — fast, pure Python package manager (default)
+- <lt-m v="**"/>pixi<lt-m v="**"/> — conda-based package manager with cross-language support
+- <lt-m v="**"/>poetry<lt-m v="**"/> — dependency management and packaging with Poetry
+
+## Task runner
+
+`task_runner` (and `task_runner_pixi` when `package_manager` is pixi) picks the
+runner every recipe goes through:
+
+<!-- BEGIN GENERATED: features-task-runner (architekton/gen_docs.py --write) -->
+- A task runner of your choice (<lt-m v="["/>Just<lt-m v="](https://just.systems)"/> (default) /
+  <lt-m v="["/>Task&nbsp;(go-task)<lt-m v="](https://taskfile.dev)"/> / <lt-m v="["/>poethepoet<lt-m v="](https://github.com/nat-n/poethepoet)"/> /
+  <lt-m v="["/>Make<lt-m v="](https://www.gnu.org/software/make/)"/> / <lt-m v="["/>pyinvoke<lt-m v="](https://www.pyinvoke.org)"/> /
+  <lt-m v="["/>duty<lt-m v="](https://pawamoy.github.io/duty)"/>) driving lint / type-check / test / docs — one shared task
+  definition, invoked by CI too. With `package_manager` = pixi, the choices are
+  <lt-m v="["/>pixi&nbsp;(native&nbsp;tasks)<lt-m v="](https://pixi.sh)"/> (default) /
+  <lt-m v="["/>Task&nbsp;(go-task)<lt-m v="](https://taskfile.dev)"/> / <lt-m v="["/>Just<lt-m v="](https://just.systems)"/> /
+  <lt-m v="["/>Make<lt-m v="](https://www.gnu.org/software/make/)"/> (poethepoet is not offered there).
+<!-- END GENERATED: features-task-runner -->
+
+## Project type
+
+`project_type` picks the base — the shape of the repository:
+
+- <lt-m v="**"/>library<lt-m v="**"/> — a Python library/package
+- <lt-m v="**"/>web_api<lt-m v="**"/> — a working FastAPI scaffold in a top-level `app/` package
+  (no library `<pkg>`; run with `uvicorn app.main:app`): async SQLAlchemy
+  2.0 + Alembic + Postgres, demo CRUD router, request-id logging,
+  `/health` + `/docs`. Deliberately API-only — full-stack needs point to the
+  upstream full-stack-fastapi-template. Ships `compose.local.yml`
+  (API + Postgres) and a CI test job backed by a Postgres service container.
+  Optional: Prometheus `/metrics`, slowapi rate limiting, CORS (see the
+  <lt-m v="["/>web-api how-to<lt-m v="](../how-to/web-api.md)"/>)
+- <lt-m v="**"/>cli<lt-m v="**"/> — a command-line tool
+- <lt-m v="**"/>data_science<lt-m v="**"/>: `data/`, `models/`, `reports/`, `notebooks/` and a `src/`
+  pipeline layout. GPU Dockerfile, a Quarto paper and the de-identification
+  data-sharing gate are always included (see the
+  <lt-m v="["/>data-science how-to<lt-m v="](../how-to/data-science.md)"/> and the
+  <lt-m v="["/>quarto-paper how-to<lt-m v="](../how-to/quarto-paper.md)"/>). Ships polars / duckdb / pyarrow as base
+  deps and a `data/queries/` SQL workspace readable via
+  `duckdb.sql(open("data/queries/example.sql").read())`.
+- <lt-m v="**"/>online_judge<lt-m v="**"/>: a competitive-programming / Kaggle project. The follow-up
+  `oj_kind` question picks the judge:
+  - <lt-m v="**"/>kaggle<lt-m v="**"/>: the competition layout `src/{configs,data,input,output,features,logs,models,notebook,scripts,utils}` where `src/utils` is the installable package, plus the GPU Dockerfile
+  - <lt-m v="**"/>atcoder / leetcode / yukicoder / aoj / codeforces / kattis / other<lt-m v="**"/>: a bare code-submission workspace
+    (stdlib only) — no package or `solutions/` tree is generated, and the
+    repo stays empty until a CLI tool creates the per-problem folders and
+    `test/` sample files (`oj` for AtCoder / yukicoder / Codeforces, `acc` for AtCoder
+    contests, `aoj-cli` for AOJ, `submit.py` + `.kattisrc` for Kattis; LeetCode is solved in its own editor,
+    `other` uses `oj` where the service allows)
+- <lt-m v="**"/>script<lt-m v="**"/> — a minimal script, flat package at the repo root
+- <lt-m v="**"/>ros2<lt-m v="**"/> — a ROS 2 package (`ament_python` with rclpy, or `ament_cmake`
+  with C++), built with <lt-m v="**"/>colcon + rosdep<lt-m v="**"/>. Choose <lt-m v="**"/>Humble<lt-m v="**"/> (Ubuntu
+  22.04 / Python 3.10, recommended for its wide deployment) or <lt-m v="**"/>Jazzy<lt-m v="**"/>
+  (Ubuntu 24.04 / Python 3.12), and provision the environment with <lt-m v="**"/>apt<lt-m v="**"/>
+  (classic `ros-<distro>-*` + industrial_ci) or <lt-m v="**"/>pixi<lt-m v="**"/> (RoboStack
+  conda-forge via the `robostack-<distro>` channel on prefix.dev). Generates
+  `package.xml`, `setup.py`/`CMakeLists.txt`, `resource/`, ament linter
+  tests, `Dockerfile.ros2`, and a ROS-aware devcontainer. CI runs
+  industrial_ci (apt) or setup-pixi + colcon (pixi). See the
+  <lt-m v="["/>ros2 how-to<lt-m v="](../how-to/ros2.md)"/>
+- <lt-m v="**"/>micropython<lt-m v="**"/> — MicroPython firmware for a microcontroller (ESP32 / RP2 /
+  STM32 / ...). Choose the target <lt-m v="**"/>port<lt-m v="**"/> (`micropython_port`); the firmware
+  lives in `firmware/` (`boot.py`, `main.py`, `board_config.py` + a
+  device-independent `core/`), is deployed with <lt-m v="**"/>mpremote<lt-m v="**"/>, and is
+  type-checked against `micropython-<port>-stubs` (installed into a git-ignored
+  `typings/` folder). The CPython dev toolchain (uv/ruff/pytest/basedpyright)
+  coexists to unit-test `core/`. See the
+  <lt-m v="["/>MicroPython how-to<lt-m v="](../how-to/micropython.md)"/>
+
+## Combining bases and layers
+
+`include_data_science` / `include_web_api` (and the other opt-in layers) add an
+element to a combinable base:
+
+- `project_type` picks the <lt-m v="**"/>base<lt-m v="**"/>; two opt-in questions can layer another
+  element on top: `include_data_science` (asked for `library` / `cli` /
+  `web_api`) adds the analysis layout (`notebooks/`, `data/`, `models/`,
+  `reports/`, Quarto paper), and `include_web_api` (asked for `library` /
+  `cli` / `data_science` and Kaggle) adds the FastAPI scaffold (top-level
+  `app/`). So a data_science base can ship an API, and an API base can ship
+  analysis directories and MCP — in one repo.
+- `ros2` / `micropython` / code-submission judges / `script` stay
+  single-type: their build or execution shape cannot be combined.
+
+## Layout
+
+`layout` (asked for `library` / `cli`) picks where the package lives:
+
+- <lt-m v="**"/>src<lt-m v="**"/> — package in a `src/` directory (<lt-m v="**"/>default<lt-m v="**"/>; prevents accidental
+  imports of an uninstalled package)
+- <lt-m v="**"/>flat<lt-m v="**"/> — package at the repository root
+- `data_science` always uses `src/`; `online_judge` with the `kaggle` kind
+  uses `src/` too (as `src/utils`); `script` always uses flat; `web_api`
+  always uses a top-level `app/` package (no `src`/flat question);
+  `micropython` and `ros2` don't ask (firmware/ament layouts instead)
+
+## AI agent
+
+`use_recommended_agent` (`library` / `cli`) adds an agent example or not:
+
+- Recommended: <lt-m v="**"/>no<lt-m v="**"/> — a plain library / CLI without agent tooling.
+- Answer <lt-m v="**"/>no<lt-m v="**"/> to scaffold a runnable <lt-m v="["/>pydantic-ai<lt-m v="](https://ai.pydantic.dev)"/>
+  example: a `prompts/agent.md` system prompt, a typed `architekton/` package
+  (`architekton/example.py`) and a module-level `agent` wired with `@agent.tool`.
+  `python -m <package>.agent "..."` runs offline via pydantic-ai's
+  `TestModel`; pass `--model openai:gpt-4o-mini` (with the matching API key in
+  the environment) for a real model.
+
+## Cloud / integrations
+
+- <lt-m v="**"/>Cloud provider<lt-m v="**"/> (`cloud_provider`): `none` (default) / `aws` (boto3 +
+  service type stubs) / `gcp` (google-cloud-storage) / `azure`
+  (azure-identity). For `aws`, `aws_services` picks the `boto3-stubs` extra
+  (`essential` / `s3` / `dynamodb` / `sqs` / `lambda`).
+- <lt-m v="**"/>Sentry<lt-m v="**"/> (`include_sentry`): adds `sentry-sdk` and initialises it from
+  `SENTRY_DSN` at CLI startup.
+- <lt-m v="**"/>MCP<lt-m v="**"/> (`include_mcp`, cli / web_api / the API layer): adds the `mcp[cli]`
+  SDK and scaffolds an `mcp_server.py` with typed example tools, a `ToolError`
+  sample and a resource, plus a `mcp-server-<name>` console script and an
+  in-process client test — the template's first <lt-m v="*"/>long-running executable<lt-m v="*"/>
+  layer (see
+  <lt-m v="["/>the layer model<lt-m v="](../explanations/long-running.md)"/>
+  and the
+  <lt-m v="["/>MCP how-to<lt-m v="](../how-to/mcp.md)"/>).
+  The module lives in `app/mcp_server.py` when the web_api layer is present,
+  otherwise in `<pkg>/mcp_server.py`.
+  Run it with stdio (an MCP host launches `uv run mcp-server-<name>`) or
+  streamable-http (`--transport streamable-http`), and debug it with the
+  MCP Inspector (`uv run mcp dev src/<package>/mcp_server.py`).
+- <lt-m v="**"/>Logging library<lt-m v="**"/> (`log_library`): `structlog` (default) / `loguru` /
+  `picologging` / `logging` (standard library, no extra dependency).
+  `logging_setup.py` exposes the same `logger.bind(...)` / `logger.info(event,
+  **fields)` call shape regardless of which one is chosen, plus a
+  `LOG_FORMAT=json` console/JSON switch. Not asked for `ros2` packages (they
+  use rclpy's own node logger) or `micropython` firmware (logging runs on the
+  device, not through CPython's logging stack).
+
+## Experimentation
+
+`[project.optional-dependencies] experiment` / the pixi `experiment` feature:
+
+- marimo notebooks, matplotlib / seaborn / plotly for debugging, plus LLM API deps
+- Kept separate from the minimal runtime dependencies
+
+## License & changelog
+
+- <lt-m v="**"/>License<lt-m v="**"/> (`license`, asked when you opt out of `use_recommended_license`
+  — the recommendation is MIT): the full
+  <lt-m v="["/>choosealicense.com<lt-m v="](https://choosealicense.com)"/> list (MIT, Apache-2.0,
+  GPL/LGPL/AGPL, BSD variants, MPL-2.0, ISC, Unlicense, CC0, and more), plus a
+  `Proprietary` / all-rights-reserved option. Sets the `LICENSE` file text,
+  `pyproject.toml`'s PEP 639 `license`/`license-files`, and the README badge.
+  Regenerated from source via `architekton/generate_license_template.py`.
+- <lt-m v="**"/>Changelog<lt-m v="**"/>: <lt-m v="["/>git-cliff<lt-m v="](https://git-cliff.org)"/> generates `CHANGELOG.md`
+  from <lt-m v="["/>Conventional Commits<lt-m v="](https://www.conventionalcommits.org)"/>; the PR
+  title is enforced in CI (a conventional-title check in the hygiene
+  workflow) and PRs land via squash-merge, so the title is what becomes
+  history, and each GitHub Release's notes are generated by git-cliff from
+  that tag's commits.
+- <lt-m v="**"/>FAIR / research-software metadata<lt-m v="**"/> (adapted from
+  <lt-m v="["/>fair-python-cookiecutter<lt-m v="](https://github.com/Materials-Data-Science-and-Informatics/fair-python-cookiecutter)"/>):
+  the `fair` option adds a `CITATION.cff` (validated in CI, optional
+  `author_orcid`); CI additionally covers `REUSE.toml`
+  with SPDX annotations — only for open-source licenses, Proprietary
+  projects skip it. It also adds a `fair-software.yml` GitHub Actions
+  workflow running
+  <lt-m v="["/>howfairis<lt-m v="](https://github.com/fair-software/howfairis-github-action)"/> to
+  measure compliance with the <lt-m v="["/>fair-software.eu<lt-m v="](https://fair-software.eu)"/>
+  recommendations on push to `main`.
+- <lt-m v="**"/>Data governance<lt-m v="**"/> (`data_science` projects; independent
+  of `fair`): a one-page de-identification protocol (ISO/IEC 20889), a
+  data-transfer-agreement template and a transfer log always ship in
+  `data/`, so every non-public extract that leaves for another organisation
+  can be traced back to an agreement and an approver. On top of that,
+  `data_reusable` opts into a <lt-m v="**"/>DUO<lt-m v="**"/> (Data Use Ontology) data-use
+  conditions sheet, and `data_ethics` opts into a <lt-m v="**"/>CARE<lt-m v="**"/> principles
+  data-governance statement (with provenance & custody records) — both
+  asked under the data-science gate.
+
+## Tooling
+
+- <lt-m v="["/>setuptools<lt-m v="](https://setuptools.pypa.io)"/> + <lt-m v="["/>setuptools-scm<lt-m v="](https://setuptools-scm.readthedocs.io)"/> packaging
+- <lt-m v="["/>pytest<lt-m v="](https://docs.pytest.org)"/>, coverage, hypothesis
+- <lt-m v="["/>ruff<lt-m v="](https://docs.astral.sh/ruff)"/>, <lt-m v="["/>vulture<lt-m v="](https://github.com/jendrikseipp/vulture)"/>,
+  <lt-m v="["/>deptry<lt-m v="](https://deptry.com)"/>, <lt-m v="["/>typos<lt-m v="](https://github.com/crate-ci/typos)"/>
+- <lt-m v="["/>basedpyright<lt-m v="](https://docs.basedpyright.com)"/> plus <lt-m v="["/>pyrefly<lt-m v="](https://github.com/facebook/pyrefly)"/> or <lt-m v="["/>ty<lt-m v="](https://docs.astral.sh/ty/)"/> as the secondary checker
+- CI-enforced repo hygiene (secret scanning via gitleaks, actionlint,
+  YAML/EOF checks, conventional commits) in a dedicated workflow
+- <lt-m v="["/>OpenSSF Scorecard<lt-m v="](https://securityscorecards.dev)"/> workflow + a
+  <lt-m v="["/>SECURITY.md<lt-m v="](https://github.com/politeuma/architekton-py/blob/main/SECURITY.md)"/> vulnerability-reporting policy
+- <lt-m v="["/>editorconfig<lt-m v="](https://editorconfig.org)"/> (`.editorconfig`) for consistent
+  editor indentation and line endings
+- A `.env.example` with the environment variables the project understands
+  (`.env` is git-ignored and auto-loaded by direnv / the compose stack)
+- Author/GitHub-org questions have plain defaults (override at any prompt)
+- <lt-m v="["/>zensical<lt-m v="](https://zensical.org)"/>, <lt-m v="["/>sphinx<lt-m v="](https://www.sphinx-doc.org)"/> or
+  <lt-m v="["/>great-docs<lt-m v="](https://posit-dev.github.io/great-docs/)"/> for docs
+- README badge row: CI, coverage, license, a Python-version badge matching
+  the actual CI test matrix, and each tool's own <lt-m v="*"/>officially documented<lt-m v="*"/>
+  badge — <lt-m v="["/>Ruff<lt-m v="](https://github.com/astral-sh/ruff)"/> and a
+  <lt-m v="["/>"Made with Copier"<lt-m v="](https://github.com/copier-org/copier#show-your-support)"/>
+  badge (h/t <lt-m v="["/>reproML<lt-m v="](https://github.com/Excidion/reproML)"/> and
+  <lt-m v="["/>pypackage-template<lt-m v="](https://github.com/browniebroke/pypackage-template)"/>).
+  No unofficial/inferred tool badges (e.g. uv, pixi have none) —
+  <lt-m v="["/>pawamoy/copier-uv<lt-m v="](https://github.com/pawamoy/copier-uv)"/>, a well-known
+  uv-based copier template, only badges CI/docs/chat for the same reason.
+
+## CI/CD
+
+- <lt-m v="**"/>CI provider<lt-m v="**"/> (`ci_provider`): `github_actions` (default) generates the
+  full GitHub Actions workflow set; `none` skips `.github/workflows/`
+- GitHub Actions: `concurrency` with `cancel-in-progress`, minimal
+  `permissions`, and a `required-checks-passed` gate for branch protection
+- <lt-m v="**"/>Security gate<lt-m v="**"/> (`use_recommended_security`, default yes): GitHub Actions
+  pinned to commit SHAs via renovate (`helpers:pinGitHubActionDigests`), a
+  zizmor CI job auditing the workflows, a generated `tests/test_qa.py`, and —
+  when you opt out (GitHub projects) — the choice of a `SECURITY.md`
+  vulnerability policy and an OpenSSF Scorecard workflow (public repos only).
+  GitLab projects keep the hardened `.gitlab-ci.yml` but skip the GitHub-only
+  files (SECURITY.md / Scorecard)
+- PyPI publishing, Docker containers, docs deployment to GitHub Pages
+
+## Support tiers
+
+<!-- BEGIN GENERATED: support-table (architekton/gen_docs.py --write) -->
+<lt-m v="**"/>Supported<lt-m v="**"/> — executed end to end by CI:
+
+| combination | tier |
+|---|---|
+| `project_type=library/gate=recommended` | `full` |
+| `project_type=cli/gate=recommended` | `full` |
+| `project_type=web_api/gate=recommended` | `full` |
+| `project_type=data_science/gate=recommended` | `full` |
+| `project_type=script/gate=recommended` | `full` |
+| `project_type=micropython/gate=recommended` | `full` |
+| `project_type=online_judge/gate=recommended/oj=competitive_coding/atcoder` | `full` |
+| `project_type=cli/gate=off:use_recommended_agent` | `full` |
+
+<lt-m v="**"/>Best effort<lt-m v="**"/> — rendered by CI, but never executed:
+
+| combination | tier |
+|---|---|
+| `task_runner = make \| poe \| invoke \| duty` | `best_effort` |
+| `package_manager = poetry` | `best_effort` |
+| `log_library = loguru \| picologging` | `best_effort` |
+| `type_checker = ty` | `best_effort` |
+| `project_type=ros2` | `best_effort` |
+| `project_type=online_judge/.../oj=* except atcoder` | `best_effort` |
+| `any leaf under an opt-in layer (include_ctf \| include_data_science \| include_scraping \| include_web_api \| include_bot)` | `best_effort` |
+| `any detailed-question branch (gate=off:use_recommended_*)` | `best_effort` |
+| `any domain-trait variant (domain_traits selects personal-data / face-recognition / medtech)` | `best_effort` |
+| `any distribution variant (distribution answers commercial and/or oss)` | `best_effort` |
+
+Full matrix and the evidence behind each tier: <lt-m v="["/>support.md<lt-m v="](support.md)"/>.
+<!-- END GENERATED: support-table -->
+
+## Design decisions
+
+The option set has been consolidated over time. The key moves:
+
+- <lt-m v="**"/>`typing_style` → `strictness`<lt-m v="**"/>: type-annotation strictness and the
+  static-analysis toolchain are now one axis (`none` / `basic` /
+  `recommended` / `full`) instead of two loosely-coupled ones. `recommended`
+  (the default) is the full toolchain used by the author's
+  `~/dotfiles/template` (private repo): ruff with
+  `ALL` rules, basedpyright + pyrefly, typos / vulture / deptry / pip-audit.
+- <lt-m v="**"/>`is_ds` / `quarto_paper` / `use_gpu` → `project_type`<lt-m v="**"/>: project kind is
+  now one axis (`library` / `web_api` / `cli` / `data_science` / `online_judge`
+  / `script`). The GPU Dockerfile and Quarto paper are always part of
+  `data_science` rather than separate toggles.
+- **`competition` (sub-option of data_science) → `online_judge` +
+  `oj_kind=kaggle`**: a Kaggle-style competition is a <lt-m v="*"/>competition<lt-m v="*"/>, not an
+  analysis project — the AI-use rules and the GPU/submission layout differ
+  from plain data science. It now lives under the `online_judge` project
+  type, so `data_science` is purely the analysis layout and
+  `online_judge` can also express code-submission judges (AtCoder / LeetCode
+  / yukicoder / AOJ — a bare workspace the user drives with `oj` / `acc` /
+  `aoj-cli`).
+- <lt-m v="**"/>`detail_level` → one "use recommended settings?" gate per area<lt-m v="**"/>: a
+  single upfront simple/detailed toggle controlled ~20 questions at once, so
+  going off the beaten path for one option (say, the license) meant opting
+  into every other detailed question too. Each customisable area now asks
+  its own yes/no gate, right where that area comes up, with the
+  recommendation spelled out in its help text — see the previous section.
+- **Long-running executables (bots, MCP servers) are a layer, not a
+  `project_type`**: they run on the same CPython + uv environment as
+  `library` / `cli` / `web_api`, so adding a `daemon` type would violate the
+  "project_type = fundamentally different execution environment" rule.
+  Instead they are opt-in modules with their own entry point (the first
+  instance is `include_mcp` → `mcp_server.py` on `cli` / `web_api`, with a
+  `mcp-server-<name>` console script), started by an MCP host or via
+  `python -m <package>.mcp_server` — never through `__main__.py`, which the
+  Docker `ENTRYPOINT` and CLI tests own. The same base+layer idea now covers
+  `include_data_science` / `include_web_api`: one generated repo can hold a
+  base plus another element (data_science + web_api, web_api + MCP, ...). See
+  <lt-m v="["/>the layer model<lt-m v="](../explanations/long-running.md)"/>.
+- <lt-m v="**"/>`web_api` is now a working FastAPI scaffold, not a shell<lt-m v="**"/>: it used to
+  generate Docker/compose/Postgres wiring and tell you to "add fastapi +
+  uvicorn yourself". It now ships the full recommended stack — async
+  SQLAlchemy 2.0 + Alembic + Postgres, a demo CRUD router, request-id logging
+  (asgi-correlation-id), `BackgroundTasks`, and `/health` + `/docs` — with
+  tests that run against SQLite locally and Postgres in CI. The web-API
+  detail gate (`use_recommended_web_api`) offers exactly three switches
+  (Prometheus /metrics via prometheus-client, slowapi rate limiting, CORS),
+  deliberately not a catalogue; auth, other ORMs, admin UIs and task queues
+  are documented as "add later" (fastapi-users is in maintenance mode, which
+  is why no auth is baked in).
+
+```mermaid
+flowchart LR
+    subgraph before["Before"]
+        A1[typing_style<br/>none / partial / full / hardline]
+        A2[is_ds]
+        A3[quarto_paper]
+        A4[use_gpu]
+        A5[competition<br/>sub-option of data_science]
+        A6[detail_level<br/>simple / detailed, asked once upfront]
+    end
+
+    subgraph after["After"]
+        B1[strictness<br/>none / basic / recommended / full]
+        B2[project_type<br/>library / web_api / cli / data_science /<br/>online_judge / script]
+        B3["online_judge + oj_kind<br/>kaggle (ex-competition) / atcoder /<br/>leetcode / yukicoder / aoj"]
+        B4["use_recommended_* gates<br/>one per area, asked in place"]
+    end
+
+    A1 --> B1
+    A2 --> B2
+    A3 --> B2
+    A4 --> B2
+    A5 --> B3
+    A6 --> B4
+```

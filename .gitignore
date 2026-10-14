@@ -175,3 +175,4 @@ challenges/**/flag*
 # credentials
 test/
 .kattisrc
+.lattice/works/**/segments/

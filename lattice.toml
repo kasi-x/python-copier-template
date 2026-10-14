@@ -1,0 +1,21 @@
+[docs]
+source      = "docs"                 # tree root, relative to the repo root
+source_lang = "en"
+targets     = ["ja"]
+include     = ["**/*.md", "**/*.mdx"]
+exclude     = ["changelog.md"]       # output dirs of the layout are always excluded
+layout      = "docs-i18n/{lang}/{path}" # "dir" | "suffix" | "docusaurus" | a template string
+mirror_assets= false                 # copy non-Markdown files into each language tree (design §12)
+
+[producer]                            # default: nenshi
+kind  = "nenshi"                     # "nenshi" | "cmd" | "none"
+model = "translategemma:4b"
+provider = "ollama"                  # passed through to nenshi
+
+[markdown]
+front_matter = ["title", "description", "sidebar_label"]       # translatable keys; all others are copied verbatim
+mdx          = "auto"                # "auto" (.mdx files only) | true | false
+admonitions  = true                  # ":::name … :::" fences are protected
+
+[review]
+bot = ["lattice-bot <lattice-bot@users.noreply.github.com>"]    # authors whose edits are never absorbed

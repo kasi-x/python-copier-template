@@ -92,6 +92,7 @@ nav = [
       { "Excalidraw Diagrams" = "how-to/excalidraw.md" },
       { "Migrate from Hypermodern" = "how-to/migrate-from-hypermodern.md" },
       { "Contribute" = "how-to/contribute.md" },
+      { "Translate the docs" = "how-to/translate-docs.md" },
   ]},
   ]},
 ]

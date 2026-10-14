@@ -1,0 +1,121 @@
+# Create a new repo from the template
+
+## The one-command way
+
+The template ships a small CLI that wraps copier: it decides whether the target
+is a new project or an existing one, picks the release to expand, warns about
+the files both the target and the template have, and then renders.
+
+```shell
+uvx --from git+https://github.com/politeuma/architekton-py.git \
+    architekton-py new my-project --preset library
+```
+
+The installed CLI clones and caches the template repo on first use, so no
+checkout is needed. Inside a checkout of this repository the same two forms
+are `uv run architekton-py …` (the console script the package declares) and
+`uv run python -m architekton.cli …`.
+
+`--preset library` answers the one question that defines the project family;
+every other question keeps copier's default. Drop `--preset` and copier asks
+the <lt-m v="["/>whole questionnaire<lt-m v="](../reference/questionnaire.md)"/> instead, which needs a
+terminal.
+
+| preset | `project_type` | what you get |
+| --- | --- | --- |
+| `library` | `library` | a reusable Python package (src/ layout) |
+| `bare` | `library` | like `library`, minus the optional infra extras — no devcontainer, `.vscode`, `.envrc`, renovate, secrets/lint config, security workflow, or issue/PR templates |
+| `cli` | `cli` | a command-line application |
+| `mcp-server` | `cli` | a Model Context Protocol (MCP) server: the `mcp[cli]` dependency, a typed-tools example at `<pkg>/mcp_server.py` (stdio), and a `mcp-server-<name>` console script |
+| `web-api` | `web_api` | a FastAPI service (Postgres, Alembic, Prometheus, rate limiting, CORS) |
+| `data-science` | `data_science` | notebooks, `data/`, `models/`, `reports/` — see the <lt-m v="["/>data-science how-to<lt-m v="](../how-to/data-science.md)"/> |
+| `ros2` | `ros2` | a ROS 2 package (ament_python + rclpy, Humble, apt toolchain) |
+| `micropython` | `micropython` | firmware (esp32 by default) beside the CPython dev toolchain |
+| `online-judge-atcoder` | `online_judge` | an AtCoder workspace driven with `oj` + `acc` |
+| `online-judge-codeforces` | `online_judge` | a Codeforces workspace driven with `oj` |
+| `online-judge-kattis` | `online_judge` | a Kattis workspace driven with `submit.py` + `.kattisrc` |
+
+Each preset is a file under `presets/`: it names only the answers that define
+the family, so adding a preset of your own is a two-line YAML file. See the
+<lt-m v="["/>Presets Reference<lt-m v="](../reference/presets.md)"/> for the exact questions and answers
+pinned by each preset (and what each declines). For a
+fixture that sets every option instead, copy
+<lt-m v="["/>`example-answers.yml`<lt-m v="](https://github.com/politeuma/architekton-py/blob/main/example-answers.yml)"/>
+from the template root — it turns every area gate off (so every detailed
+question is answered) on a `data_science` base, it is what the template's own
+CI renders, and it works as a `copier copy --data-file` answers file.
+
+Other options:
+
+- `--ref <ref>` expands another revision (`--ref HEAD` is the working tree of
+  the checkout). <lt-m v="**"/>No `--vcs-ref` is needed<lt-m v="**"/>: without it the CLI expands this
+  fork's newest release tag, and only falls back to the default branch — saying
+  so — when that tag carries a different questionnaire.
+- `--dry-run` renders the plan into a temporary directory and reports what the
+  target would receive; nothing is written.
+- A target that already has files is not copied into but
+  <lt-m v="["/>adopted<lt-m v="](./adopt-existing.md)"/>: the files you already have are left alone
+  (collisions are skipped and reported), the infrastructure you are missing is
+  added, and the run rolls back if any of your files changed anyway.
+
+Exit codes follow the other tools in the repository: `0` success, `1` a failed
+render, `2` an invalid request (unknown preset, `copier update` needed, no
+terminal for an interactive run), `3` the target belongs to another copier
+template.
+
+## The raw copier command (advanced)
+
+Once you have followed the <lt-m v="["/>installation<lt-m v="](./installation.md)"/> tutorial, you can
+also drive copier directly:
+
+```
+git init --initial-branch=main /path/to/my-project
+# $_ resolves to /path/to/my-project
+uvx copier copy --trust \
+    https://github.com/politeuma/architekton-py.git $_
+```
+
+No `--vcs-ref` is needed here either: copier then expands this fork's **newest
+release tag**, and since the 6.0.0 fork detach that tag is the fork's own
+release. Pass `--vcs-ref=6.0.0` (or another release tag) only to pin an exact
+release and make the generation reproducible. Add `--defaults` to accept every
+default, and `--data-file example-answers.yml` (the
+<lt-m v="["/>fixture in the preset section<lt-m v="](#the-one-command-way)"/>) for a fully specified run.
+
+This will:
+
+- Ask some questions about the project to be created (each area first asks
+  whether to use its <lt-m v="["/>recommended settings<lt-m v="](../reference/questionnaire.md)"/>)
+- Expand the template with the answers give
+- Record the answers in the project so they can be used in later updates
+- Create a git repository if the directory is not already one
+
+## Committing the results
+
+You can now check what the template has created, tweak the results if desired, install the environment, and commit the results. The install command is the one your answers selected — the generated README's installation section has the full story (device deploy for MicroPython, ROS sourcing and `colcon` for ros2):
+
+| Your answers | Install the environment |
+| --- | --- |
+| `package_manager = uv` (the default) | `uv sync` |
+| `package_manager = poetry` | `poetry install` |
+| `package_manager = pixi` | `pixi install` |
+| `project_type = ros2`, `ros2_package_manager = apt` | source `/opt/ros/$ROS_DISTRO/setup.bash`, then `rosdep install --from-paths . --ignore-src -r -y` |
+| `project_type = micropython` | the toolchain above, then `uv run pip install -r requirements-dev.txt --target typings` for the device stubs |
+
+Then <lt-m v="["/>lock the requirements<lt-m v="](../how-to/lock-requirements.md)"/> and commit:
+
+```shell
+$ cd /path/to/my-project
+$ uv sync          # or your toolchain's install command, from the table above
+$ git add .
+$ git commit -m "Expand from architekton-py x.x.x"
+```
+
+## Uploading to GitHub
+
+You can now <lt-m v="["/>create a new blank project on GitHub<lt-m v="](https://github.com/new)"/>. Choose the same GitHub owner, repo name and description that you answered in the questions earlier. GitHub will now give you the commands needed to upload your repo from GitHub.
+
+
+## Getting started with your new repo
+
+You can now <lt-m v="["/>set up the repo<lt-m v="](../how-to/setup-repo.md)"/>, <lt-m v="["/>set up a dev environment<lt-m v="](../how-to/dev-install.md)"/>, and then follow some of the other <lt-m v="["/>how-to guides<lt-m v="](../how-to.md)"/>.

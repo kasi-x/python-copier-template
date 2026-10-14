@@ -1,0 +1,11 @@
+{"src": "1506b64a", "rev": 1, "text": "アーキテクトン・パイ", "state": "translated", "subState": "tz:mt", "run": "r-0001", "ts": "2026-10-14T22:02:20Z"}
+{"src": "9edc68a0", "rev": 1, "text": "Pythonプロジェクト向けのテンプレート。", "state": "translated", "subState": "tz:mt", "run": "r-0002", "ts": "2026-10-14T22:02:21Z"}
+{"src": "cb4471c1", "rev": 1, "text": "ドキュメントの構成は以下の通り", "state": "translated", "subState": "tz:mt", "run": "r-0003", "ts": "2026-10-14T22:02:26Z"}
+{"src": "f9edfe98", "rev": 1, "text": "ドキュメントは、トップナビゲーションバーにあるリンクからアクセスできる⟦html:1⟧4つのカテゴリ⟦html:2⟧に分割されています。", "state": "translated", "subState": "tz:mt", "run": "r-0004", "ts": "2026-10-14T22:02:28Z"}
+{"src": "abceda20", "rev": 1, "text": "⟦html:1⟧⟦html:2⟧導入と一般的な使用方法に関するチュートリアル⟦html:3⟧⟦html:4⟧：初心者の方はこちらから。", "state": "translated", "subState": "tz:mt", "run": "r-0005", "ts": "2026-10-14T22:02:31Z"}
+{"src": "1506b64a", "rev": 2, "text": "architekton-py", "state": "reviewed", "reviewer": "kasi-x", "ts": "2026-10-14T22:03:21Z", "ext": {"commit": "6da32ce5c0c396c837f5bc5f6487c86c6a836a38", "lines": [1, 1], "path": "docs-i18n/ja/index.md", "via": "absorb"}}
+{"src": "1506b64a", "rev": 3, "text": "architekton-py", "state": "translated", "subState": "tz:ctx-drift", "ts": "2026-10-14T22:03:26Z"}
+{"src": "7aa3ac01", "rev": 1, "text": "Pythonプロジェクト用のテンプレート。単一のファイルで、必要なすべての要素を含むプロジェクト全体を構築します。", "state": "translated", "subState": "tz:mt", "run": "r-0006", "ts": "2026-10-14T22:03:28Z"}
+{"src": "28d5becf", "rev": 1, "text": "こちらに初めていらっしゃるのでしょうか？まず、⟦html:1⟧最初の10分間⟦html:2⟧をご覧ください。その後、⟦html:3⟧「なぜコードとルールが隣接しているのか」⟦html:4⟧について、生成された⟦code:1⟧フィールド・ルールブロックがそこで何をしているのかを理解してください。", "state": "translated", "subState": "tz:mt", "run": "r-0007", "ts": "2026-10-14T22:03:33Z"}
+{"src": "95733ce4", "rev": 1, "text": "⟦html:1⟧⟦html:2⟧の使い方: 経験豊富なユーザー向けの実用的な、手順からのガイド。これらの情報は、ナビゲーションメニューの「参考」セクションにあります。⟦html:3⟧⟦html:4⟧", "state": "translated", "subState": "tz:mt", "run": "r-0008", "ts": "2026-10-14T22:03:37Z"}
+{"src": "af82fcd0", "rev": 1, "text": "ドキュメントは、上部のナビゲーションバーからもアクセスできる⟦html:1⟧4つのカテゴリ⟦html:2⟧に分かれています。", "state": "translated", "subState": "tz:mt", "run": "r-0009", "ts": "2026-10-14T22:04:51Z"}

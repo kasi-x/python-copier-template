@@ -1,0 +1,7 @@
+{
+  "html": "inline markup delimiter — an open/close PAIR, keep both, never translate or drop them",
+  "code": "inline code — copy verbatim, never translate",
+  "eq": "inline math — copy verbatim, never translate",
+  "img": "inline image — copy verbatim, never translate",
+  "url": "autolink — copy verbatim, never translate"
+}
