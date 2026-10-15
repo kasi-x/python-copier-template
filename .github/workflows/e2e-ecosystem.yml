@@ -91,9 +91,12 @@ jobs:
           # daimonion fills the AGENTS.md marker block from the guidance
           # sections, and --check proves the block is current. A derivation
           # change that silently drops a condition from the render keeps both
-          # upstream checks green and fails here.
+          # upstream checks green and fails here. The daimonion install is the
+          # same commit-pinned spec generated projects get (questions/_internal.yml),
+          # never floating main.
           test -f ../e2e-project/.daimonion.yml
-          uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --write --repo ../e2e-project
+          DAIMONION_SPEC="$(python3 -c 'import yaml; print(yaml.safe_load(open("questions/_internal.yml"))["daimonion_spec"]["default"])')"
+          uvx --from "$DAIMONION_SPEC" daimonion agents-md --write --repo ../e2e-project
           python3 - <<'PY'
           from pathlib import Path
 
@@ -102,7 +105,7 @@ jobs:
           assert "<!-- daimonion:rules:end -->" in agents, "the rules block end marker is missing"
           print("render ok: the daimonion rules block is present in AGENTS.md")
           PY
-          uvx --from git+https://github.com/politeuma/daimonion daimonion agents-md --check --repo ../e2e-project
+          uvx --from "$DAIMONION_SPEC" daimonion agents-md --check --repo ../e2e-project
 
       - name: Open drift issue
         if: failure()

@@ -94,3 +94,32 @@ def test_zizmor_drift_rule_tracks_both_halves_of_the_pair():
     action = cu.Pin(name="zizmor action version (security.yml)", current="v0.6.4", upstream="v0.6.4", checkable=True)
     action_ok, action_message = cu._is_drift(action)  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
     assert not action_ok and action_message.startswith("[ok]")
+
+
+def test_daimonion_pin_is_extracted_offline():
+    """The generated project's daimonion install stays commit-pinned to the spec."""
+    internal = (TOP / "questions" / "_internal.yml").read_text(encoding="utf-8")
+    spec = re.search(r'daimonion_spec:\n    type: str\n    default: "git\+[^"]+@([0-9a-f]{40})"', internal)
+    assert spec, "daimonion_spec lost its commit pin in questions/_internal.yml"
+    pins = _pins()
+    assert pins["daimonion pin (questions/_internal.yml)"].current == spec.group(1)
+
+
+def test_daimonion_pin_drift_rule():
+    """A commit pin that differs from upstream head is drift; equal is ok."""
+    behind = cu.Pin(
+        name="daimonion pin (questions/_internal.yml)",
+        current="0" * 40,
+        upstream="1" * 40,
+        checkable=True,
+    )
+    is_drift, message = cu._is_drift(behind)  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    assert is_drift and "[DRIFT]" in message
+    same = cu.Pin(
+        name="daimonion pin (questions/_internal.yml)",
+        current="1" * 40,
+        upstream="1" * 40,
+        checkable=True,
+    )
+    ok, ok_message = cu._is_drift(same)  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    assert not ok and ok_message.startswith("[ok]")

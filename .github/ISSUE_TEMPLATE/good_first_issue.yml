@@ -1,0 +1,69 @@
+name: Good first issue
+description: A small, self-contained change with spelled-out context — for new contributors
+title: "[GOOD FIRST]: "
+labels: ["good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A good first issue is complete without any repository lore. Write it so
+        someone who has never seen this codebase can start: name the exact
+        files, the exact change, and the exact command that proves it. If the
+        task needs context you cannot explain in two sentences, it is not a
+        good first issue — use the template-change or feature form instead.
+
+  - type: textarea
+    id: background
+    attributes:
+      label: Background
+      description: |
+        What is this, and why does it exist? One or two sentences of context a
+        newcomer needs — what the file or mechanism does, and why the change
+        is wanted. Link the design note or prior issue if one exists.
+      placeholder: |
+        `architekton/example.py` does X for Y. It currently ..., which means ...
+        We want it to ... because ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to touch
+      description: |
+        Exact paths the contributor edits, plus any files they must read but
+        not change (format examples, the file that consumes the output).
+      placeholder: |
+        Edit: `tests/matrix/witnesses.jsonl`, `docs/reference/support.md`
+        Read for context: `architekton/z3_witnesses.py`
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      description: |
+        The change itself as a numbered list, small enough that each step is
+        one edit or one command. Include the setup command if the contributor
+        has not cloned yet (`uv run --locked ...`).
+      placeholder: |
+        1. `git clone ... && cd architekton-py && uv sync`
+        2. In `file`, change ... to ...
+        3. Run `uv run --locked pytest -q tests/test_x.py`
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Done criteria
+      description: |
+        The exact command that proves the change, and what "done" looks like.
+        If the change alters rendered output, say which task re-records it
+        (`task regen`) and which check must stay green.
+      placeholder: |
+        `task lint type-check` is green; `task test-fast` shows 0 new failures;
+        the diff touches only the files listed above.
+    validations:
+      required: true

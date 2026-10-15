@@ -84,7 +84,7 @@ sample entirely (its generated recipes need `/opt/ros/$ROS_DISTRO`, not a bare
 runner). The leaves the sample does not cover stay in L2.
 
 L3 **cannot** generalize. It is evidence for eight leaves, not for the other
-197, and it is not a cheaper way to run L2 — it is the only way to observe the
+264, and it is not a cheaper way to run L2 — it is the only way to observe the
 external toolchain. See [Why L3 stays](#why-l3-stays-the-evidence) for what
 keeping it has already caught.
 

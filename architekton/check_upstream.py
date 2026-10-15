@@ -32,6 +32,10 @@ upstream feed it is compared against:
     release of zizmorcore/zizmor.
   - uvx tool pins (`conventional-pre-commit`, `nbstripout`, `cffconvert` in
     the same hygiene file) — each tracks its latest release on PyPI.
+- daimonion pin (`daimonion_spec` in questions/_internal.yml) — tracks the
+  head commit of politeuma/daimonion main; the generated project's uvx
+  install is pinned to one commit so a render never executes whatever
+  landed on main since.
 Exits 0 when everything is current, 1 on any drift. Intended to run in CI
 (see .github/workflows/check-upstream.yml) where a nonzero exit + the drift
 report opens an issue.
@@ -127,6 +131,27 @@ def github_latest_release(repo: str) -> str | None:
     if isinstance(data, dict):
         tag = data.get("tag_name")
         return str(tag) if tag else None
+    return None
+
+
+def github_default_branch_head(repo: str) -> str | None:
+    """Return the head commit SHA of a GitHub repo's default branch."""
+    try:
+        data = https_get_json("api.github.com", f"/repos/{repo}")
+    except RuntimeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    branch = data.get("default_branch")
+    if not branch:
+        return None
+    try:
+        ref = https_get_json("api.github.com", f"/repos/{repo}/commits/{branch}")
+    except RuntimeError:
+        return None
+    if isinstance(ref, dict):
+        sha = ref.get("sha")
+        return str(sha) if sha else None
     return None
 
 
@@ -354,6 +379,22 @@ def _extract_security_pins() -> list[Pin]:
     ]
 
 
+def _extract_daimonion_pin() -> list[Pin]:
+    """Extract the commit-pinned daimonion uvx spec from the questionnaire."""
+    internal_src = (QUESTIONS_DIR / "_internal.yml").read_text()
+    spec_m = re.search(
+        r"daimonion_spec:\n    type: str\n    default: \"git\+https://github\.com/politeuma/daimonion@([0-9a-f]{40})\"",
+        internal_src,
+    )
+    return [
+        Pin(
+            name="daimonion pin (questions/_internal.yml)",
+            current=spec_m.group(1) if spec_m else "?",
+            checkable=True,
+        )
+    ]
+
+
 def extract_pins() -> list[Pin]:
     """Extract the pins from the template files (no network)."""
     pyproject_src = _load_combined_pyproject_sources()
@@ -365,6 +406,7 @@ def extract_pins() -> list[Pin]:
     pins.extend(_extract_runner_pins())
     pins.extend(_extract_hygiene_pins())
     pins.extend(_extract_security_pins())
+    pins.extend(_extract_daimonion_pin())
     return pins
 
 
@@ -547,6 +589,8 @@ def _resolve_one(pin: Pin, today: str) -> str | None:  # noqa: PLR0911, PLR0912,
         return github_latest_release("zizmorcore/zizmor")
     if name.startswith("zizmor action version"):
         return github_latest_release("zizmorcore/zizmor-action")
+    if name.startswith("daimonion pin"):
+        return github_default_branch_head("politeuma/daimonion")
     if name.startswith("uvx "):
         tool = name.removeprefix("uvx ").split(" version")[0]
         return _resolve_uvx_tool(tool)
@@ -573,6 +617,11 @@ def _check_exact_match_drift(pin: Pin) -> tuple[bool, str] | None:
             f"v{pin.current}" == pin.upstream,
             f"[ok]     {pin.name}: v{pin.current}",
             f"[DRIFT]  {pin.name}: v{pin.current} -> official latest {pin.upstream}",
+        ),
+        "daimonion pin": (
+            pin.current == pin.upstream,
+            f"[ok]     {pin.name}: @{pin.current}",
+            f"[DRIFT]  {pin.name}: pinned @{pin.current} but main is now {pin.upstream}",
         ),
         "actionlint image digest": (
             pin.current == pin.upstream,
