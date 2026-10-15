@@ -389,6 +389,10 @@ parallel = true
 show_missing = true
 skip_covered = true
 skip_empty = true
+# gen_invariants.py is a one-shot generator: `task regen` and CI never call it;
+# its output (tests/matrix/invariants.yml) is what test_invariants.py checks.
+# Keep it out of the ratchet rather than test a replay script.
+omit = ["architekton/gen_invariants.py"]
 # 下限はラチェット（目標ではない）。2026-09-14 実測: architekton/ の網羅率は
 # 全体 79.9%（`uv run --no-sync pytest -q --cov --cov-report term`、4276 文中
 # 861 未達）、fast tier 79.8%（同 -m "not heavy and not slow"）、fast+heavy 79.8%。
