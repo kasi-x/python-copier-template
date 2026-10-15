@@ -31,6 +31,7 @@ import json
 import os
 from pathlib import Path
 
+import pytest
 import yaml
 
 TOP = Path(__file__).absolute().parent.parent
@@ -197,6 +198,8 @@ def load_kanon() -> list[dict]:
     section file's YAML front matter for the authoritative status.
     """
     sections_dir = GUIDANCE_DIR if (GUIDANCE_DIR / "MANIFEST.yml").is_file() else GUIDANCE_DIR / "sections"
+    if not (sections_dir / "MANIFEST.yml").is_file():
+        pytest.skip(f"law-map guidance checkout not found at {GUIDANCE_DIR}")
     manifest = yaml.safe_load((sections_dir / "MANIFEST.yml").read_text(encoding="utf-8"))
     out = []
     for row in manifest["sections"]:
