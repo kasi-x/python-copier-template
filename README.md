@@ -147,9 +147,9 @@ just check       # lint + type-check + test
 - **Already have a repo** — [adopt this template into it](docs/tutorials/adopt-existing.md), or
   [update an existing project](docs/how-to/update-template.md) that already uses it.
 - **Changing the template itself** — [the shortest path](docs/how-to/change-template.md):
-  one page, three change shapes, one proving command each. The meta-tooling
-  (`tools/`, the workflow fleet, the Quint specs) is deliberately not linked
-  here — it holds the render contract and you only meet it through that page.
+one page, three change shapes, one proving command each. The meta-tooling
+(`architekton/`, the workflow fleet, the Quint specs) is deliberately not linked
+here — it holds the render contract and you only meet it through that page.
 
 ## License, contributing and releases
 

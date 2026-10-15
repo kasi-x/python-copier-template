@@ -9,8 +9,7 @@ the framework this repository uses to reason about that: every way a
 template can be wrong has a **source**, every way it can be noticed has a
 **timing**, and the two are independent axes. Keep the matrix honest and
 rot has nowhere to hide; leave a cell empty and it becomes the story of
-the bug you find six months late. The internal design notes live in
-`notes/Strategy.md`; this page is the transferable version.
+the bug you find six months late.
 
 (The runtime verification these mechanisms feed into — input space,
 render invariants, execution — is a different axis again; see

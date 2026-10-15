@@ -9,7 +9,7 @@
    exactly once, here.
 
    Where the python-version values' authority lives (template-dev.md,
-   "Hardcoded pins need an upstream check"): tools/check_upstream.py guards
+   "Hardcoded pins need an upstream check"): architekton/check_upstream.py guards
    them, so a bump here must agree with its checks:
      - the `else` floor (3.11) is what check_upstream.py's "Python floor
        (requires-python)" pin tracks (_resolve_python_floor: the oldest
@@ -20,7 +20,7 @@
    Coupling note for the next bump: the floor pin locates the value by
    grepping the requires-python expression in template/pyproject.toml.jinja
    (`else '>=3.11')`), while the value itself now lives in python_version()
-   below — when tools/check_upstream.py is next touched (adding that pin was
+   below — when architekton/check_upstream.py is next touched (adding that pin was
    deferred until this extraction), point its floor regex at this file.
 
    The experiment extra's dependencies live here for the same reason: they

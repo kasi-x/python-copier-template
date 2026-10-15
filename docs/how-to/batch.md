@@ -18,9 +18,8 @@ itself is invalid (unknown key, duplicate id, malformed JSON).
 
 The same request list is useful to three different callers: a human
 debugging one combination, CI running the whole matrix, and a generator
-that emits requests from the questionnaire (see
-`notes/PLAN-improvements.md` W3, which turns Z3 witnesses into exactly this
-format). Two properties pytest does not give you fall out of that: the
+that emits requests from the questionnaire. Two properties pytest does not
+give you fall out of that: the
 runner executes the *real* copier against the *working tree* (uncommitted
 template edits are included, with copier's `DirtyLocalWarning`), and its
 verdict is a machine-readable report (`--json`) rather than a test outcome.

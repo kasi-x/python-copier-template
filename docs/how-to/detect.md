@@ -123,10 +123,9 @@ Two deliberate limits:
   file the project does not have would stop the template from creating it.
 - **Shape questions are not guessed.** `project_type`, `include_*`,
   `docs_type`, `strictness` and the rest are absent on purpose:
-  `notes/SPEC-adoption.md` section 12 keeps code-based questionnaire
-  inference a non-goal, and a wrong guess would be silently baked into the
-  generated project. Add them yourself, or let `--defaults` take each
-  question's own default.
+  code-based questionnaire inference is a deliberate non-goal, and a wrong
+  guess would be silently baked into the generated project. Add them
+  yourself, or let `--defaults` take each question's own default.
 
 `--answers` is refused (exit 2) for `update` and `foreign`: those need
 `copier update`, not an answers file.
