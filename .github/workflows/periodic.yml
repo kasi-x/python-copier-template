@@ -24,7 +24,10 @@ jobs:
           # Docs + README; exclude the docs build output (site/ for
           # zensical/mkdocs, build/ for the local Sphinx-era leftovers) and
           # the vendored .github/pages helper (not user-facing links).
-          args: --no-progress --exclude-path site --exclude-path build README.md docs
+          # --retry + accept 429: transient rate-limits (gnu.org) and slow
+          # sites flake otherwise; the failures this job is for are
+          # persistent 404/410s.
+          args: --no-progress --exclude-path site --exclude-path build --retry 3 --max-retries 5 --accept 200,429 README.md docs
           fail: true
 
   patch-rot:

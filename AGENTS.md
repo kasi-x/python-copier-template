@@ -13,8 +13,9 @@ The `task` runner ([Taskfile.yml](Taskfile.yml)) drives the common commands:
 task fix         # auto-fix formatting and lint
 task lint        # ruff format --check + ruff check
 task type-check  # basedpyright + pyrefly, vulture, deptry, typos
+task hygiene     # merge markers, trailing newlines, YAML, size (CI-mirrored)
 task test-fast   # the edit loop: no venv builds, no network (30 s budget)
-task check       # lint + type-check + test
+task check       # lint + type-check + hygiene + test
 task regen       # after a questionnaire change: witnesses, batch, tiers, docs
 task docs        # build the documentation site
 ```

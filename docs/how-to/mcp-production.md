@@ -104,7 +104,7 @@ gives you the seam; wiring it is deployment work, not generation work.
 generated at startup and held only by that process. Multi-round-trip
 state minted by one worker is rejected by every other worker (and after
 any restart). A single `server.run()` is one
-[uvicorn](https://www.uvicorn.org/) process — the SDK does no process
+[uvicorn](https://uvicorn.dev/) process — the SDK does no process
 management, there is no `--workers` flag — so the moment you run two
 replicas, give them the same key:
 
