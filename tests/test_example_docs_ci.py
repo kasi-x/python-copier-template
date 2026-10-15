@@ -510,6 +510,24 @@ def test_template_fair_metadata(tmp_path: Path):
     assert _renovate_disables(tmp_path / "renovate.json", "fair-software/howfairis-github-action"), (
         "the action's version is owned by copier update, not renovate"
     )
+    readme = (tmp_path / "README.md").read_text()
+    assert "fair--software.eu" in readme, "the FAIR workflow's checklist check needs the badge"
+
+
+def test_template_fair_howfairis_skip(tmp_path: Path):
+    copy_project(tmp_path, fair=True, pypi=False)
+    # No pypi: the registry check would fail forever, so the render ships a
+    # .howfairis.yml that says why it is skipped.
+    howfairis = yaml.safe_load((tmp_path / ".howfairis.yml").read_text())
+    assert howfairis["skip_registry_checks_reason"]
+
+
+def test_template_fair_pypi_no_howfairis_skip(tmp_path: Path):
+    copy_project(tmp_path, fair=True, pypi=True)
+    # With pypi enabled the PyPI badge is rendered and the registry check
+    # can pass, so no .howfairis.yml skip is generated.
+    assert not (tmp_path / ".howfairis.yml").exists()
+    assert "fair--software.eu" in (tmp_path / "README.md").read_text()
 
 
 def test_template_fair_off(tmp_path: Path):
@@ -518,6 +536,8 @@ def test_template_fair_off(tmp_path: Path):
     assert not (tmp_path / "REUSE.toml").exists()
     assert not (tmp_path / ".github" / "workflows" / "fair-software.yml").exists()
     assert not _renovate_mentions(tmp_path / "renovate.json", "howfairis"), "no FAIR rule without the FAIR workflow"
+    assert not (tmp_path / ".howfairis.yml").exists()
+    assert "fair--software.eu" not in (tmp_path / "README.md").read_text()
 
 
 @pytest.mark.parametrize("restricted_license", ["Proprietary", "Confidential"])

@@ -88,6 +88,16 @@ jobs:
           key: venv-${{ runner.os }}-${{ inputs.python-version || 'default' }}-${{ hashFiles('uv.lock', '.python-version') }}
           restore-keys: venv-${{ runner.os }}-${{ inputs.python-version || 'default' }}-
 
+      - name: Repair a stale restored .venv
+        # restore-keys can fall back to a venv built under an older lockfile;
+        # uv run --locked then syncs only the package delta and can leave the
+        # venv without the dev entry-point scripts (observed: pytest missing
+        # after Uninstalled 27 / Installed 28 on a fallback restore). An
+        # explicit `uv sync` rebuilds the console scripts; on an exact-key hit
+        # this is a no-op verification.
+        if: hashFiles('pixi.lock', 'poetry.lock') == ''
+        run: uv sync --locked --all-extras --dev
+
       - name: Run tests
         env:
           TASK_RUNNER: ${{ inputs.task_runner }}

@@ -205,6 +205,8 @@ fair:
         - REUSE.toml with SPDX annotations, checked by the reuse hook — but
           only when an open-source license is selected; Proprietary projects
           skip REUSE
+        - the fair-software.eu badge in the README, and a .howfairis.yml
+          skipping the registry check when PyPI publishing is off
         (data_science's DUO/CARE data-governance sheets are asked separately,
         under use_recommended_data_science — they don't depend on this.)
     default: false

@@ -1,0 +1,9 @@
+## howfairis configuration: skip checks the project intentionally does not
+## satisfy, so the remaining checks reflect the real compliance state.
+
+# Registry: PyPI (or another index) publishing is opt-in via the `pypi`
+# question. Without it there is no release artifact for a registry to hold;
+# publish once and remove this file (or the skip line) to re-enable the check.
+skip_registry_checks_reason: "no registry publication configured (pypi: no)"
+
+ignore_commented_badges: true
