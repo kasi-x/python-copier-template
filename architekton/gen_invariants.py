@@ -480,13 +480,12 @@ class TemplateWalk:
     @staticmethod
     def _or_segment(seg_sites: list[predicates.Site], model: Model, n: int) -> list[bool] | None:
         """OR one path segment's site vectors (None when any site is unevaluable)."""
-        seg_or: list[bool] | None = [False] * n
+        seg_or = [False] * n
         for site in seg_sites:
             vector = model.gate_vector(site.eval_expr)
             if vector is None:
                 return None
-            if seg_or is not None:
-                seg_or = [hit or fire for hit, fire in zip(seg_or, vector, strict=True)]
+            seg_or = [hit or fire for hit, fire in zip(seg_or, vector, strict=True)]
         return seg_or
 
     def candidates(self, artifact: str, pkg_options: list[str]) -> list[tuple[str, GatedFile]]:
@@ -595,11 +594,8 @@ def _check_absent(
         else:
             gate_unknown = [
                 expr
-                for rendered_path, entry in (
-                    (rendered_path, entry)
-                    for rendered_path, entry in (
-                        (r, e) for pkg in pkg_options for r, e in walk.candidates(artifact, [pkg])
-                    )
+                for _rendered_path, entry in (
+                    (r, e) for pkg in pkg_options for r, e in walk.candidates(artifact, [pkg])
                 )
                 for expr, vector in entry.gates
                 if vector is None
@@ -615,12 +611,12 @@ def _check_absent(
 
 def _read_anchor(anchor: str) -> tuple[str, list[str]] | None:
     """Locate the anchor file and read its lines (None when unreadable)."""
-    path: Path | None = TOP / anchor
+    path = TOP / anchor
     if not path.exists():
         matches = list(TEMPLATE.rglob(Path(anchor).name))
-        path = matches[0] if matches else None
-    if path is None:
-        return None
+        if not matches:
+            return None
+        path = matches[0]
     try:
         return path.relative_to(TOP).as_posix(), path.read_text(encoding="utf-8").splitlines()
     except OSError:

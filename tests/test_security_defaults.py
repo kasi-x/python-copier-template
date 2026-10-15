@@ -18,7 +18,8 @@ if str(TOP) not in sys.path:
 
 from architekton import answers as answers_mod  # noqa: E402
 
-from render_cache import render_cache as render_cache  # noqa: PLC0414  # session fixture, made visible here
+from render_cache import RenderCache  # noqa: E402
+from render_cache import render_cache as render_cache  # noqa: E402, PLC0414  # session fixture, made visible here
 from support import copy_project  # noqa: E402
 
 SECTION = "## Production security defaults"
@@ -33,12 +34,12 @@ def _agents(project: Path) -> str:
     return (project / "AGENTS.md").read_text(encoding="utf-8")
 
 
-def test_docs_inventory_page_exists(tmp_path: Path):
+def test_docs_inventory_page_exists():
     """The inventory page exists (nav wiring is the integrator's job)."""
     assert DOCS_PAGE.is_file(), "docs/explanations/security-defaults.md must exist"
 
 
-def test_every_render_ships_the_checklist(tmp_path: Path, render_cache):
+def test_every_render_ships_the_checklist(tmp_path: Path):
     """library, web_api, cli and script renders all carry the section."""
     for kwargs in (
         {"project_type": "library"},
@@ -51,7 +52,7 @@ def test_every_render_ships_the_checklist(tmp_path: Path, render_cache):
         assert SECTION in _agents(target), f"{kwargs}: AGENTS.md lost the checklist"
 
 
-def test_web_api_checklist_names_prod_changes(tmp_path: Path, render_cache):
+def test_web_api_checklist_names_prod_changes(tmp_path: Path):
     """web_api AGENTS.md warns about the DB credential, CORS, bind and open routes."""
     copy_project(tmp_path, project_type="web_api")
     agents = _agents(tmp_path)
@@ -74,7 +75,7 @@ def test_web_api_checklist_names_prod_changes(tmp_path: Path, render_cache):
     assert "postgres:postgres" in env, ".env.example must back the DATABASE_URL claim"
 
 
-def test_web_api_detail_options_off_mentions_missing_rate_limit(tmp_path: Path, render_cache):
+def test_web_api_detail_options_off_mentions_missing_rate_limit(tmp_path: Path):
     """cors/rate_limit/prometheus off: the checklist says what is absent."""
     copy_project(
         tmp_path,
@@ -91,7 +92,7 @@ def test_web_api_detail_options_off_mentions_missing_rate_limit(tmp_path: Path, 
     assert "/metrics" not in agents
 
 
-def test_mcp_checklist_requires_allowlist_for_public_binds(tmp_path: Path, render_cache):
+def test_mcp_checklist_requires_allowlist_for_public_binds(tmp_path: Path):
     """cli + include_mcp warns about MCP_ALLOWED_HOSTS; a bare cli does not."""
     mcp = tmp_path / "mcp"
     copy_project(mcp, project_type="cli", include_mcp=True)
@@ -106,7 +107,7 @@ def test_mcp_checklist_requires_allowlist_for_public_binds(tmp_path: Path, rende
     assert "MCP_ALLOWED_HOSTS" not in _agents(bare)
 
 
-def test_bot_checklists_name_each_platform_secret(tmp_path: Path, render_cache):
+def test_bot_checklists_name_each_platform_secret(tmp_path: Path):
     """Each bot platform's AGENTS.md names its required secret(s)."""
     cases = [
         ({}, "DISCORD_BOT_TOKEN"),
@@ -120,7 +121,7 @@ def test_bot_checklists_name_each_platform_secret(tmp_path: Path, render_cache):
         assert needle in _agents(target), f"bot AGENTS.md must warn about {needle!r}"
 
 
-def test_line_checklist_warns_about_public_webhook(tmp_path: Path, render_cache):
+def test_line_checklist_warns_about_public_webhook(tmp_path: Path):
     """LINE's webhook listens on all interfaces: the checklist says HTTPS-only."""
     copy_project(tmp_path, project_type="cli", include_bot=True, **LINE_ANSWERS)
     agents = _agents(tmp_path)
@@ -130,7 +131,7 @@ def test_line_checklist_warns_about_public_webhook(tmp_path: Path, render_cache)
     assert 'host="0.0.0.0"' in body, "bot_line.py must back the all-interfaces claim"
 
 
-def test_sentry_checklist_warns_about_sample_rate(tmp_path: Path, render_cache):
+def test_sentry_checklist_warns_about_sample_rate(tmp_path: Path):
     """include_sentry warns about the DSN + 1.0 sample rate; bare renders do not."""
     sentry = tmp_path / "sentry"
     copy_project(sentry, project_type="cli", include_sentry=True)
@@ -143,7 +144,7 @@ def test_sentry_checklist_warns_about_sample_rate(tmp_path: Path, render_cache):
     assert "SENTRY_DSN" not in _agents(bare)
 
 
-def test_scraping_checklist_warns_about_contact_placeholder(tmp_path: Path, render_cache):
+def test_scraping_checklist_warns_about_contact_placeholder(tmp_path: Path):
     """include_scraping warns about FETCHER_CONTACT; bare renders do not."""
     scraped = tmp_path / "scraped"
     copy_project(scraped, project_type="cli", include_scraping=True)
@@ -156,7 +157,7 @@ def test_scraping_checklist_warns_about_contact_placeholder(tmp_path: Path, rend
     assert "FETCHER_CONTACT" not in _agents(bare)
 
 
-def test_checklist_does_not_touch_ethics_gates(tmp_path: Path, render_cache):
+def test_checklist_does_not_touch_ethics_gates(tmp_path: Path):
     """The checklist coexists with the rules block on gated leaves."""
     copy_project(tmp_path, project_type="cli", include_scraping=True)
     agents = _agents(tmp_path)
@@ -176,7 +177,7 @@ def test_inventory_rows_are_backed_by_template_sources():
     assert not missing, f"inventory names sources that do not exist: {missing}"
 
 
-def test_recommended_fast_path_keeps_checklist_and_appendix(tmp_path: Path, render_cache):
+def test_recommended_fast_path_keeps_checklist_and_appendix(tmp_path: Path, render_cache: RenderCache):
     """The recommended path (BASE answers) renders both checklist and appendix."""
     answers: dict[str, object] = {**answers_mod.BASE, "project_type": "web_api"}
     render_cache.render(tmp_path, answers)

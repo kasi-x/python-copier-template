@@ -48,8 +48,6 @@ GUIDANCE_DIR = Path(
         ),
     )
 )
-# Backwards-compatible alias: test_daimonion_config imports KANON_DIR.
-KANON_DIR = GUIDANCE_DIR
 
 # Frozen copy of _shared/ethics/REGISTRY.yml `status==active` rows' gates
 # (id -> gate string). Verified identical to guidance applies() over the
@@ -217,18 +215,9 @@ def load_kanon() -> list[dict]:
     return out
 
 
-# Backwards-compatible alias for the new-format reader: the guidance tree is
-# the single rulebook, and this is its only section source.
-load_guidance = load_kanon
-
-
 def kanon_applies(section: dict, conditions: list[str]) -> bool:
     wanted = {"always", *conditions}
     return section["status"] == "active" and section["placement"] == "agents_md" and bool(wanted & set(section["when"]))
-
-
-# Backwards-compatible alias: same applies() over the guidance rows.
-guidance_applies = kanon_applies
 
 
 def _leaves() -> list[dict]:

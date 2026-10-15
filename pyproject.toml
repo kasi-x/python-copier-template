@@ -338,8 +338,8 @@ ignore-fully-untyped = true
 # reason as in generated ones (-w rewrites identifiers silently), so a
 # legit acronym identifier belongs in these ignore lists rather than in a
 # rename.
-extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
-extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr']
+extend-ignore-words-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr', '\b[0-9a-f]{12}\b']
+extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiCorp', 'advertis', 'fpr', 'fnr', '\b[0-9a-f]{12}\b']
 
 [tool.typos.files]
 # template/ は生成コード。生成先プロジェクト側でチェックされる。
@@ -353,7 +353,7 @@ min_confidence = 60
 # replay call; copier itself reads them.
 # __getattr__ / __dir__ are the lazy facade's (architekton/mcp_server.py)
 # module-level PEP 562 hooks, called by the import system on attribute access.
-ignore_names = ["pytestmark", "dst_path", "quiet", "__getattr__", "__dir__"]
+ignore_names = ["pytestmark", "dst_path", "quiet", "__getattr__", "__dir__", "adopt_project"]
 # Entry points whose callers vulture cannot see: the MCP tools in
 # architekton/mcp_server.py are invoked by MCP hosts (same idea as @app.route),
 # HTTP routes are registered by their decorator, and pytest discovers
@@ -363,7 +363,7 @@ ignore_decorators = ["*tool*", "*resource*", "*route*", "*fixture*", "@rule", "@
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage|pytest-randomly,DEP003=architekton-py,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
+per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage|pytest-randomly,DEP003=architekton-py|tomli_w,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
 # tests/ は pytest の暗黙パッケージ import (support, test_recommended_path) があり依存検査と相性が悪い。
 # .cache/ は tests/render_cache.py が置くレンダ済みプロジェクト（生成コード）で、
