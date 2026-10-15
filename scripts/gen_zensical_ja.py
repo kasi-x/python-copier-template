@@ -23,8 +23,9 @@ from __future__ import annotations
 import re
 import sys
 import tomllib
-import tomli_w
 from pathlib import Path
+
+import tomli_w
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_TOML = ROOT / "zensical.toml"

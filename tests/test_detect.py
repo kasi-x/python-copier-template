@@ -125,8 +125,7 @@ def test_answers_are_not_guessed_for_shape_questions(tmp_path: Path):
 
 def test_generated_project_is_update(tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text(
-        "_commit: 5.4.0-1-gabcdef\n_src_path: https://github.com/politeuma/architekton-py.git\n"
-        "project_type: library\n"
+        "_commit: 5.4.0-1-gabcdef\n_src_path: https://github.com/politeuma/architekton-py.git\nproject_type: library\n"
     )
     assert detect.detect(tmp_path).mode == "update"
 
@@ -180,9 +179,7 @@ def test_non_legacy_foreign_url_is_untouched(tmp_path: Path) -> None:
 
 
 def test_answers_file_refused_for_update(tmp_path: Path):
-    (tmp_path / ".copier-answers.yml").write_text(
-        "_src_path: https://github.com/politeuma/architekton-py.git\n"
-    )
+    (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/politeuma/architekton-py.git\n")
     out = tmp_path / "answers.yml"
     assert detect.main([str(tmp_path), "--answers", str(out)]) == 2
     assert not out.exists()
