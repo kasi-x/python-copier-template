@@ -511,7 +511,9 @@ def test_template_fair_metadata(tmp_path: Path):
         "the action's version is owned by copier update, not renovate"
     )
     readme = (tmp_path / "README.md").read_text()
-    assert "fair--software.eu" in readme, "the FAIR workflow's checklist check needs the badge"
+    # howfairis' checklist check regex-matches the badge with %20%20 separators
+    # (single-%20 variants are not recognized and the job reports "no badge").
+    assert "fair--software.eu-%E2%97%8F%20%20" in readme, "the FAIR workflow's checklist check needs the badge"
 
 
 def test_template_fair_howfairis_skip(tmp_path: Path):
