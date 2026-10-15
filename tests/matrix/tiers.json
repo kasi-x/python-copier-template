@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1216,
+      "collected": 1232,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -37,6 +37,7 @@
         "tests/test_generated_sizes.py": 3,
         "tests/test_generation_docs.py": 1,
         "tests/test_gitleaks_config.py": 9,
+        "tests/test_hygiene.py": 16,
         "tests/test_invariants.py": 25,
         "tests/test_layer_matrix.py": 4,
         "tests/test_license_catalog.py": 3,
@@ -69,7 +70,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "b0df777771dc5367c26a314bd6bce7c3490c045da76d59ff69cbca95b900c9cb",
+      "ids_sha256": "6c438787f74b27a7cb8fcd75662e79caeec9517bafd9de5b3c8fcaf177f19061",
       "wall_seconds": 18.6,
       "measured": "2026-09-20",
       "budget_seconds": 30,
@@ -132,7 +133,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1285,
+      "collected": 1301,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -166,6 +167,7 @@
         "tests/test_generated_typecheck.py": 7,
         "tests/test_generation_docs.py": 1,
         "tests/test_gitleaks_config.py": 9,
+        "tests/test_hygiene.py": 16,
         "tests/test_invariants.py": 25,
         "tests/test_layer_matrix.py": 4,
         "tests/test_license_catalog.py": 3,
@@ -199,7 +201,7 @@
         "tests/test_witness_matrix.py": 287,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "5883f816083f29e5cf7046f2788221268be070f74ff168454dab4c4595b0241d",
+      "ids_sha256": "17ab7fafd106fffd767016b3f73f81c30be77d57bebbafc3ee72c58d37e623b9",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -208,7 +210,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1216,
+      "collected": 1232,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -241,6 +243,7 @@
         "tests/test_generated_sizes.py": 3,
         "tests/test_generation_docs.py": 1,
         "tests/test_gitleaks_config.py": 9,
+        "tests/test_hygiene.py": 16,
         "tests/test_invariants.py": 25,
         "tests/test_layer_matrix.py": 4,
         "tests/test_license_catalog.py": 3,
@@ -273,7 +276,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "b0df777771dc5367c26a314bd6bce7c3490c045da76d59ff69cbca95b900c9cb",
+      "ids_sha256": "6c438787f74b27a7cb8fcd75662e79caeec9517bafd9de5b3c8fcaf177f19061",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",
