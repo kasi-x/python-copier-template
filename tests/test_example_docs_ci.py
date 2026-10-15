@@ -518,17 +518,19 @@ def test_template_fair_metadata(tmp_path: Path):
 
 def test_template_fair_howfairis_skip(tmp_path: Path):
     copy_project(tmp_path, fair=True, pypi=False)
-    # No pypi: the registry check would fail forever, so the render ships a
-    # .howfairis.yml that says why it is skipped.
+    # Checklist is always skipped (the bestpractices.dev badge needs external
+    # registration); without pypi the registry check is skipped too.
     howfairis = yaml.safe_load((tmp_path / ".howfairis.yml").read_text())
+    assert howfairis["skip_checklist_checks_reason"]
     assert howfairis["skip_registry_checks_reason"]
 
 
-def test_template_fair_pypi_no_howfairis_skip(tmp_path: Path):
+def test_template_fair_pypi_keeps_registry_check(tmp_path: Path):
     copy_project(tmp_path, fair=True, pypi=True)
-    # With pypi enabled the PyPI badge is rendered and the registry check
-    # can pass, so no .howfairis.yml skip is generated.
-    assert not (tmp_path / ".howfairis.yml").exists()
+    # pypi renders the registry badge, so only the checklist is skipped.
+    howfairis = yaml.safe_load((tmp_path / ".howfairis.yml").read_text())
+    assert howfairis["skip_checklist_checks_reason"]
+    assert "skip_registry_checks_reason" not in howfairis
     assert "fair--software.eu" in (tmp_path / "README.md").read_text()
 
 

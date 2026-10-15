@@ -1,0 +1,17 @@
+## howfairis configuration: skip checks the project intentionally does not
+## satisfy, so the remaining checks reflect the real compliance state.
+
+# Checklist: the only check in this category is an OpenSSF best-practices
+# badge, which requires registering the project on bestpractices.dev — that
+# is a human decision, not a template answer. The fair-software.eu badge
+# itself is still verified by howfairis' badge-vs-compliance comparison.
+skip_checklist_checks_reason: "bestpractices.dev registration is opt-in, not templatable"
+
+{% if not pypi -%}
+# Registry: PyPI (or another index) publishing is opt-in via the `pypi`
+# question. Without it there is no release artifact for a registry to hold;
+# publish once and remove this line to re-enable the check.
+skip_registry_checks_reason: "no registry publication configured (pypi: no)"
+{% endif -%}
+
+ignore_commented_badges: true
