@@ -131,8 +131,8 @@ _KEYWORDS: dict[str, tuple[str, str]] = {
     "atcoder": ("oj:atcoder", "targets AtCoder"),
     "codeforces": ("oj:codeforces", "targets Codeforces"),
     "kattis": ("oj:kattis", "targets Kattis"),
-    # scraping/ctf keywords were removed: no preset pins include_scraping or
-    # include_ctf, so those signals could never rank a preset (TODO review).
+    # scraping/ctf keywords are deliberately absent: no preset pins
+    # include_scraping or include_ctf, so the signal could never rank one.
     "library": ("library", "ships as an importable library"),
     "package": ("library", "ships as an importable library"),
 }
