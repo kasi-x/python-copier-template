@@ -880,22 +880,28 @@ upstream F1–F7 投稿のみ。
       adopt_tree/adopt_run に分解）としてコミット。legal-check 表登録は
       `8f155bce` で別コミット
 
-## §51 実施中: issue wave と供給網ピン強化（2026-10-15）
+## §51 着地: issue wave と供給網ピン強化（2026-10-15）
 
-- **issue 解消**: #28（Taskfile の 234 表記→272、f603ef80）・#29（`task tiers`
-  → meta tier 記述、f603ef80）・#27（vendoring 廃止で陳腐化）・#2（未 push
-  修正で既に解消済み）を close。#30（S5 M1）着地: D3 alias 2 行 + D4
-  bot 派生 6 行を `tests/matrix/invariants.files.yml` 生成側車へ導出化
-  （14884a16、`gen_invariants --check` in sync、24 passed）。
-- **供給網**: `check_upstream.py` に daimonion pin drift 追跡を追加
-  （`daimonion_spec` ↔ politeuma/daimonion default branch head）。即座に
+- **issue 解消**: #27（vendoring 廃止で陳腐化）・#2（未 push 修正で解消済み）
+  ・#28（272 表記、f603ef80）・#29（meta tier 記述、f603ef80）・#30（S5 M1、
+  14884a16）・#31（S5 M4、07cfeffb — merges: は `tests/matrix/merges.yml` へ
+  分離、invariants.yml に stale merges: があれば拒否）を close。open issue 0 件。
+- **供給網**: `check_upstream.py` に daimonion pin drift 追跡を追加。即座に
   検出した実 drift: pin `5ec9539` は **未 push のローカルコミット** —
   daimonion main が push されるまで生成物の post-gen `uvx` は 404。
-  push は人間作業（§40 secrets/push 系と同じ括り）。`e2e-ecosystem.yml`
-  も floating main から pinned spec へ（310ed51b）。
-- **テンプレ修正**: zizmor `self-repository` を全 local-ref workflow に
-  拡張（`$/` は actionlint 未対応のため suppress 側で対処）+
-  `template-update.yml` の SC2086 指示行を分離（a9d01ee0）。example
-  リポジトリ側は ee0a723/a449174 で同型修正済み。
-- **残**: #31（S5 M4 merges: 分割）実施中。PR #33–35 の merge 判断と
-  全 repo の push は人間。
+  `e2e-ecosystem.yml` も floating main から pinned spec へ（310ed51b）。
+- **テンプレ修正**: zizmor `self-repository` を全 local-ref workflow に拡張、
+  `template-update.yml` の SC2086 指示行を分離（a9d01ee0）。fair-software:
+  README に `fair` 時の fair-software.eu バッジを追加 + `pypi: no` 時に
+  `.howfairis.yml`（registry skip）を生成（dc5a642a）— howfairis の
+  checklist/registry 不一致で example の fair CI が永久に赤い問題を解消。
+  `_test.yml` に `uv sync --locked` 復旧 step を追加（restore-keys fallback
+  が古い .venv を復元して `pytest` script が消える 3.12 失敗への対処）。
+- **law-map**: LM-11（`blocking:` を executable recipe 化、4 つの L2 spec を
+  semgrep/cyclonedx 実コマンドに変換 + repo-wide gate テスト、bb9cfc1）と
+  PHI-4（rfc-editor adapter + `[not watched]` 可視化、e81b0d3）着地。
+- **dotgithub**: README の disclaimer を canonical 文言へ、versions.md の
+  SHA 表を実値へ更新（2bc0c17）。architekton-py-example: PyPI badge 撤去
+  （5db186d; 未公開なのに badge があるのは誤導 + howfairis 不一致）。
+- **残（人間）**: 全 repo の push（daimonion の `5ec9539` 含む）、
+  PR #33/#34/#35 の merge 判断、§40 の secrets/private-repo 系。
