@@ -15,6 +15,10 @@ tasks:
       - uv run --locked ruff check --fix .
       - uv run --locked ruff format .
 
+  hygiene:
+    desc: Check merge markers, oversized files, trailing newlines and YAML (CI-mirrored)
+    cmd: uv run --locked python -m architekton.hygiene
+
   type-check:
     desc: Run basedpyright + pyrefly + 静的解析
     cmds:
@@ -203,7 +207,7 @@ tasks:
 
   check:
     desc: Run all quality checks
-    deps: [lint, type-check, test, docs]
+    deps: [lint, hygiene, type-check, test, docs]
 
   pipeline:
     # order: upstream→downstream -- thin wrapper over the existing contract

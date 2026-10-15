@@ -12,7 +12,20 @@ $ task lint
 
 (or `just lint`, `poe lint`, ... depending on your task runner).
 
-Repository hygiene checks are not run locally: they run in CI via the repository hygiene workflow, which covers secret scanning (gitleaks), workflow linting (actionlint), YAML validity, missing end-of-file newlines, conflict markers, oversized files, the conventional PR title (individual commit messages are free-form; PRs land via squash-merge), REUSE lint and CITATION.cff validation.
+Repository hygiene checks — merge-conflict markers, file size, end-of-file
+newlines, YAML validity — live in `architekton/hygiene.py` and run locally through
+the task runner:
+
+```
+$ task hygiene
+```
+
+The repository hygiene workflow runs that same module in CI, so a local run and the
+CI run make the same call; `task check` runs it alongside `lint`, `type-check`,
+`test` and `docs`. CI adds what needs a network or the runner image: secret
+scanning (gitleaks), workflow linting (actionlint), the conventional PR title
+(individual commit messages are free-form; PRs land via squash-merge), REUSE lint
+and CITATION.cff validation.
 
 ## Fixing issues
 

@@ -72,6 +72,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
                 "check_upstream_fork",
                 "docs_i18n",
                 "generate_license_template",
+                "hygiene",
             }
         ),
     ),
