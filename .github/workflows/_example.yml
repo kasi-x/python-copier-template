@@ -65,3 +65,6 @@ jobs:
           publish_branch: main
           enable_jekyll: true  # don't put a .nojekyll
           exclude_assets: ''  # default would exclude .github
+          # Conventional-commit shape: the example repo's hygiene job checks
+          # the pushed commit message too, so the default "deploy: …" fails it.
+          commit_message: "chore(deploy): regenerate from ${{ github.repository }}@${{ github.sha }}"
