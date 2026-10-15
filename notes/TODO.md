@@ -879,3 +879,23 @@ upstream F1–F7 投稿のみ。
       `b780c44c`（refactor: lazy facade を adopt_types/adopt_revision/
       adopt_tree/adopt_run に分解）としてコミット。legal-check 表登録は
       `8f155bce` で別コミット
+
+## §51 実施中: issue wave と供給網ピン強化（2026-10-15）
+
+- **issue 解消**: #28（Taskfile の 234 表記→272、f603ef80）・#29（`task tiers`
+  → meta tier 記述、f603ef80）・#27（vendoring 廃止で陳腐化）・#2（未 push
+  修正で既に解消済み）を close。#30（S5 M1）着地: D3 alias 2 行 + D4
+  bot 派生 6 行を `tests/matrix/invariants.files.yml` 生成側車へ導出化
+  （14884a16、`gen_invariants --check` in sync、24 passed）。
+- **供給網**: `check_upstream.py` に daimonion pin drift 追跡を追加
+  （`daimonion_spec` ↔ politeuma/daimonion default branch head）。即座に
+  検出した実 drift: pin `5ec9539` は **未 push のローカルコミット** —
+  daimonion main が push されるまで生成物の post-gen `uvx` は 404。
+  push は人間作業（§40 secrets/push 系と同じ括り）。`e2e-ecosystem.yml`
+  も floating main から pinned spec へ（310ed51b）。
+- **テンプレ修正**: zizmor `self-repository` を全 local-ref workflow に
+  拡張（`$/` は actionlint 未対応のため suppress 側で対処）+
+  `template-update.yml` の SC2086 指示行を分離（a9d01ee0）。example
+  リポジトリ側は ee0a723/a449174 で同型修正済み。
+- **残**: #31（S5 M4 merges: 分割）実施中。PR #33–35 の merge 判断と
+  全 repo の push は人間。
