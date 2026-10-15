@@ -499,21 +499,29 @@ def _apply_sidecar(rows: tuple[LeafClass, ...], sidecar: dict[str, dict[str, obj
             out.append(row)
             continue
         entry = sidecar[row.id]
-        ships = tuple(entry.get("ships", []))  # type: ignore[arg-type]
-        absent = tuple(entry.get("absent", []))  # type: ignore[arg-type]
-        content = tuple(tuple(pair) for pair in entry.get("content", []))  # type: ignore[arg-type]
+        raw_ships = entry.get("ships", [])
+        raw_absent = entry.get("absent", [])
+        raw_content = entry.get("content", [])
+        # _load_sidecar already validated these shapes; the asserts narrow the
+        # dict[str, object] value type for the checker.
+        assert isinstance(raw_ships, list) and all(isinstance(s, str) for s in raw_ships)
+        assert isinstance(raw_absent, list) and all(isinstance(s, str) for s in raw_absent)
+        assert isinstance(raw_content, list)
+        ships = tuple(raw_ships)
+        absent = tuple(raw_absent)
+        content = tuple((pair[0], pair[1]) for pair in raw_content)
         marker_ships = ships
         marker_absent: tuple[str, ...] = ()
         out.append(
             LeafClass(
                 id=row.id,
                 select=row.select,
-                ships=ships,  # type: ignore[arg-type]
-                absent=absent,  # type: ignore[arg-type]
-                marker_ships=marker_ships,  # type: ignore[arg-type]
+                ships=ships,
+                absent=absent,
+                marker_ships=marker_ships,
                 marker_absent=marker_absent,
                 predicates=row.predicates,
-                content=content,  # type: ignore[arg-type]
+                content=content,
                 tier=row.tier,
                 why=row.why,
             )

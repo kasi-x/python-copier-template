@@ -91,7 +91,7 @@ def make_venv(project_path: Path) -> Callable[..., str]:
     return run
 
 
-def copy_project(project_path: Path, *, run_tasks: bool = True, **kwargs: Any) -> None:
+def copy_project(project_path: Path, **kwargs: Any) -> None:
     """Render example-answers.yml (+ `kwargs`) into `project_path`, with `_tasks`.
 
     "The render that runs tasks": the render cache serves the pure render and
@@ -101,6 +101,10 @@ def copy_project(project_path: Path, *, run_tasks: bool = True, **kwargs: Any) -
     task side effects. The destination is `git init`-ed and the result
     `git add`-ed, as tests relying on the staged state expect.
     """
+    # `run_tasks` rides in kwargs (not a keyword-only param) so answer-dict
+    # `**extra` spreads can't collide with it in the signature.
+    run_tasks = kwargs.pop("run_tasks", True)
+    assert isinstance(run_tasks, bool), "run_tasks must be bool"
     with Path(TOP / "example-answers.yml").open() as f:
         answers = yaml.safe_load(f)
     answers.update(kwargs)

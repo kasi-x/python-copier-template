@@ -740,7 +740,7 @@ def _check_origin_cover(model: Model, row_id: str, members: list[bool]) -> Findi
     gate = {"gate_off=use_recommended_agent": "agent_scaffold"}.get(row_id, origin.split(" ")[0])
     vector = model.gate_vector(gate)
     cover = _coverage(vector, members)
-    if cover is None:
+    if vector is None or cover is None:
         return Finding(row_id, "origin", origin, f"gate {gate} unevaluable", "UNKNOWN")
     fires = sum(1 for fire in vector if fire)
     return Finding(
