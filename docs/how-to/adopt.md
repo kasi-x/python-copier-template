@@ -163,9 +163,8 @@ adoption back.
 `--no-merge` skips all of it (your files are then left byte-identical).
 
 What it still does not do: reconcile a *conflicting* constraint or rewrite
-`[tool.*]` sections. `notes/SPEC-adoption.md` section 12 keeps section-level
-TOML reconciliation a non-goal — the merge above is the additive half that is
-safe to automate.
+`[tool.*]` sections. Section-level TOML reconciliation is a deliberate
+non-goal — the merge above is the additive half that is safe to automate.
 
 ## Example
 

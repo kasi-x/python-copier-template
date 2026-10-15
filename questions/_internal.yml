@@ -343,7 +343,7 @@ render_docs:
 # tag). The micropython-<port>-stubs type stubs (from the community
 # josverl/micropython-stubs project, NOT official) are pinned to the same
 # version so the stubs match the firmware. Bump all three together, and run
-# tools/check_upstream.py to confirm against the official
+# architekton/check_upstream.py to confirm against the official
 # micropython/micropython releases.
 micropython_version:
     type: str

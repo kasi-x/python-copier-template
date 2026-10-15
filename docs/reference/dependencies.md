@@ -115,7 +115,7 @@ category (one rule per concern, each with its own description):
 - Scorecard (`github-actions`, `scorecard=true` only): `scorecard-action` +
   `codeql-action`.
 - FAIR (`github-actions`, `fair=true` only): `howfairis-github-action`.
-- `dockerfile`: `ubuntu` and `ghcr.io/kasi-x/ubuntu-devcontainer` base
+- `dockerfile`: `ubuntu` and `ghcr.io/diamondlightsource/ubuntu-devcontainer` base
   images disabled (template-managed).
 
 A test (`test_renovate_actions_match_what_is_shipped`) asserts the disabled

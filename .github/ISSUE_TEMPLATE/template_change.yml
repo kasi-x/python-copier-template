@@ -31,7 +31,7 @@ body:
       label: Files to touch
       description: |
         Which template sources change (`template/...`, `_shared/...`,
-        `questions/...`, `tools/...`, `docs/...`)? Name the files, not the
+        `questions/...`, `architekton/...`, `docs/...`)? Name the files, not the
         feature. Leave blank for a docs-only fix outside those trees.
       placeholder: "template/{% if ... %}...{% endif %}.jinja, tests/test_....py"
     validations:

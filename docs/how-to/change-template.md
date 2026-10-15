@@ -29,7 +29,7 @@ condition extends the macro here — see [How to add an ethics section](ethics-s
 
 ## The meta-tooling, in one paragraph
 
-`tools/` (~50 scripts), the 25 workflows, and the Quint specs exist to hold
+`architekton/` (~50 scripts), the 25 workflows, and the Quint specs exist to hold
 the render contract: Z3 enumerates the 272 answer leaves, the render matrix
 renders each one, invariants check the output, and the update rehearsal
 proves `copier update` lands cleanly. You do not need to understand any of
