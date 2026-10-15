@@ -54,6 +54,7 @@ import yaml as _yaml_mod  # noqa: E402  # bootstrap sidecar-emptying + check/wri
 from architekton import invariants  # noqa: E402
 from architekton import predicates  # noqa: E402
 from architekton import questionnaire  # noqa: E402
+
 # z3_witnesses is imported lazily inside Model (module-level load would deadlock --write bootstrap)
 TEMPLATE = TOP / "template"
 
@@ -265,42 +266,52 @@ def _coverage(fires: list[bool] | None, members: list[bool]) -> str | None:
     return "cover" if all(not leaf or fire for leaf, fire in zip(members, fires, strict=True)) else "gap"
 
 
+def _bootstrap_policy_without_sidecar() -> tuple[Path, Path]:
+    """Stage a tmp policy file with derived markers stripped, plus its merges copy.
+
+    Returns the (policy, merges) tmp paths; the caller loads then unlinks both.
+    """
+    _path_cls = Path  # noqa: PLC0415, N806
+    _yaml = _yaml_mod  # noqa: PLC0415
+    policy = invariants.PATH.read_text(encoding="utf-8")
+    raw = _yaml.safe_load(policy)
+    stripped = []
+    for entry in raw.get("leaf_classes") or []:
+        if isinstance(entry, dict) and any(k in entry for k in invariants.DERIVED_ROW_KEYS):
+            copy = dict(entry)
+            copy.pop("alias-of", None)
+            copy.pop("origin", None)
+            # supply explicit empty file-set so _row accepts the hand-less row during bootstrap
+            copy.setdefault("ships", [])
+            copy.setdefault("absent", [])
+            copy.setdefault("content", [])
+            stripped.append(copy)
+        else:
+            stripped.append(entry)
+    raw["leaf_classes"] = stripped
+    fd, tmppath = tempfile.mkstemp(suffix=".yml")
+    try:  # noqa: SIM105
+        __import__("os").close(fd)
+    except OSError:  # noqa: SIM105
+        pass
+    tmp = _path_cls(tmppath)
+    tmp.write_text(_yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
+    tmp_merges = tmp.parent / "merges.yml"
+    tmp_merges.write_text(invariants.MERGES.read_text(encoding="utf-8"), encoding="utf-8")
+    return tmp, tmp_merges
+
+
 class Model:
     """The live inputs, loaded once: leaves, sites, vectors, contexts."""
 
-    def __init__(self, *, allow_missing_sidecar: bool = False) -> None:  # noqa: PLR0915, PLR0912, FBT001, FBT002
+    def __init__(self, *, allow_missing_sidecar: bool = False) -> None:  # noqa: FBT001, FBT002
         # During bootstrap --write the sidecar does not exist yet, so the module-level
         # z3_witnesses.INVARIANTS (strict load) would already have required it. We still
         # need to be able to build the live model to emit the sidecar. When
         # allow_missing_sidecar is True we synthesize the invariants by stripping the
         # derived markers so _load_sidecar sees no derived rows.
         if allow_missing_sidecar:
-            _path_cls = Path  # noqa: PLC0415, N806
-            _yaml = _yaml_mod  # noqa: PLC0415
-
-            policy = invariants.PATH.read_text(encoding="utf-8")
-            raw = _yaml.safe_load(policy)
-            stripped = []
-            for entry in raw.get("leaf_classes") or []:
-                if isinstance(entry, dict) and any(k in entry for k in invariants.DERIVED_ROW_KEYS):
-                    copy = dict(entry)
-                    copy.pop("alias-of", None)
-                    copy.pop("origin", None)
-                    # supply explicit empty file-set so _row accepts the hand-less row during bootstrap
-                    copy.setdefault("ships", [])
-                    copy.setdefault("absent", [])
-                    copy.setdefault("content", [])
-                    stripped.append(copy)
-                else:
-                    stripped.append(entry)
-            raw["leaf_classes"] = stripped
-            fd, tmppath = tempfile.mkstemp(suffix=".yml")
-            try:  # noqa: SIM105
-                __import__("os").close(fd)
-            except OSError:  # noqa: SIM105
-                pass
-            tmp = _path_cls(tmppath)
-            tmp.write_text(_yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
+            tmp, tmp_merges = _bootstrap_policy_without_sidecar()
             try:
                 self.inv = invariants.load(tmp)
             finally:
@@ -308,9 +319,14 @@ class Model:
                     tmp.unlink()
                 except OSError:  # noqa: SIM105
                     pass
+                try:  # noqa: SIM105
+                    tmp_merges.unlink()
+                except OSError:  # noqa: SIM105
+                    pass
         else:
             self.inv = invariants.load()
         from architekton import z3_witnesses as _zw  # noqa: PLC0415
+
         _raw, _order = questionnaire.load_raw_questions()
         self.raw_questions = _raw
         self.vocab = self.inv.vocabulary

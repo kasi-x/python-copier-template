@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""What a render of the questionnaire must satisfy, read from one file.
+"""What a render of the questionnaire must satisfy, read from two files.
 
 ``tests/matrix/invariants.yml`` is the single source for "what a leaf must
 satisfy": the artifacts it ships and must not ship, the content predicates
 that hold on them, its witness tier and the reason a question type is left out.
-This module is the only reader of that
-file, so the schema is enforced in one place and a typo cannot silently shrink
+``tests/matrix/merges.yml`` is the single source for the adopt-time merge
+contracts (kind -> the post-conditions it promises), joined onto the policy
+file here; a ``merges:`` section left in ``invariants.yml`` is refused (S5 M4:
+no dual truth). This module is the only reader of those
+files, so the schema is enforced in one place and a typo cannot silently shrink
 a class's invariants:
 
 - every row key, ``select`` key and ``select`` value is checked against the
@@ -65,6 +68,9 @@ from architekton.questionnaire import static_str_choices  # noqa: E402
 
 #: The file this module is the reader of.
 PATH = TOP / "tests" / "matrix" / "invariants.yml"
+
+#: The merge-contract registry this module joins onto the policy file (S5 M4).
+MERGES = TOP / "tests" / "matrix" / "merges.yml"
 
 #: The witness tiers a row may declare (tests/test_witness_matrix.py's tiers).
 TIERS = ("full", "fast", "best_effort", "none")
@@ -527,12 +533,15 @@ def load(path: Path | None = None) -> Invariants:
         msg = f"{source}: the file must be a mapping of sections"
         raise InvariantError(msg)
     unknown = sorted(set(payload) - {"version", "predicates", "excluded", "leaf_classes", "merges"})
+    if "merges" in payload:
+        msg = f"{source}: merges: moved to {MERGES.name} (S5 M4: no dual truth)"
+        raise InvariantError(msg)
     if unknown:
-        msg = f"{source}: unknown section(s) {unknown}; the schema is version/predicates/excluded/leaf_classes/merges"
+        msg = f"{source}: unknown section(s) {unknown}; the schema is version/predicates/excluded/leaf_classes"
         raise InvariantError(msg)
     predicates = _predicates(payload.get("predicates"), source)
     excluded, excluded_questions = _excluded(payload.get("excluded"), source)
-    merge_contracts = _merge_contracts(payload.get("merges"), source)
+    merge_contracts = _merge_contracts(_load_merges(source), MERGES)
     questions, _order = when_model.load_questions()
     vocabulary = questionnaire_vocabulary(questions)
     rows = _rows(payload.get("leaf_classes"), vocabulary, predicates, excluded, source)
@@ -552,8 +561,32 @@ def load(path: Path | None = None) -> Invariants:
     return invariants
 
 
+def _merges_path_for(source: Path) -> Path:
+    """The merge-contract registry next to the policy file.
+
+    When ``load`` is called with an explicit ``path`` (the malformed-file tests'),
+    the registry is the sibling ``merges.yml`` next to that path. Otherwise
+    it is :data:`MERGES`.
+    """
+    return source.parent / "merges.yml"
+
+
+def _load_merges(source: Path) -> Any:
+    """Read the ``merges:`` mapping from the sibling ``merges.yml`` registry."""
+    merges_path = _merges_path_for(source)
+    try:
+        payload = yaml.safe_load(merges_path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        msg = f"{merges_path}: not valid YAML: {exc}"
+        raise InvariantError(msg) from exc
+    if not isinstance(payload, dict) or not isinstance(payload.get("merges"), dict):
+        msg = f"{merges_path}: the file must be a mapping with a merges: section"
+        raise InvariantError(msg)
+    return payload.get("merges")
+
+
 def _merge_contracts(value: Any, source: Path) -> dict[str, tuple[str, ...]]:
-    """The ``merges:`` section: kind -> the post-conditions it promises.
+    """The ``merges:`` registry: kind -> the post-conditions it promises.
 
     Structure only, here: that each kind is a non-empty mapping to non-empty
     condition-name lists. Which condition names have implementations, and that
@@ -561,8 +594,6 @@ def _merge_contracts(value: Any, source: Path) -> dict[str, tuple[str, ...]]:
     -- the same split as the render predicates, whose implementations live in
     their test module.
     """
-    if value is None:
-        return {}
     where = f"{source}: merges"
     contracts: dict[str, tuple[str, ...]] = {}
     for kind, conditions in _mapping(value, where).items():

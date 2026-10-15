@@ -200,6 +200,10 @@ def _missing_why(payload: dict[str, Any]) -> None:
     del _row(payload, "common")["why"]
 
 
+def _stale_merges_section(payload: dict[str, Any]) -> None:
+    payload["merges"] = {"gitignore": ["idempotent"]}
+
+
 def _missing_row(payload: dict[str, Any]) -> None:
     payload["leaf_classes"] = [row for row in payload["leaf_classes"] if row["id"] != "project_type=script"]
 
@@ -329,6 +333,7 @@ CASES: tuple[tuple[str, Callable[[dict[str, Any]], None], str], ...] = (
     ("contradictory markers", _contradictory_markers, "both shipped and absent"),
     ("missing why", _missing_why, "`why`"),
     ("missing row", _missing_row, "no row selects project_type"),
+    ("stale merges section", _stale_merges_section, "moved to merges.yml"),
     ("derived row double truth (origin + ships)", _double_truth_ships, "only the generated sidecar"),
     ("derived row double truth (alias + ships)", _double_truth_alias_ships, "only the generated sidecar"),
 )
@@ -337,16 +342,19 @@ CASES: tuple[tuple[str, Callable[[dict[str, Any]], None], str], ...] = (
 def _stage_with_sidecar(tmp_path: Path, payload: dict[str, Any]) -> Path:
     """Write *payload* as a tmp invariants.yml plus its sibling sidecar.
 
-    The loader joins the policy file with ``invariants.files.yml`` next to it,
-    so the tmp file must carry its own sidecar copy; otherwise every
-    tmp-path test would fail with “missing sidecar” instead of the intended
-    schema error.
+    The loader joins the policy file with ``invariants.files.yml`` and
+    ``merges.yml`` next to it, so the tmp file must carry its own copies;
+    otherwise every tmp-path test would fail with "missing sidecar" instead
+    of the intended schema error.
     """
     broken = tmp_path / invariants.PATH.name
     broken.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
     sidecar_src = invariants.FILES
     if sidecar_src.exists():
         (tmp_path / sidecar_src.name).write_text(sidecar_src.read_text(encoding="utf-8"), encoding="utf-8")
+    merges_src = invariants.MERGES
+    if merges_src.exists():
+        (tmp_path / merges_src.name).write_text(merges_src.read_text(encoding="utf-8"), encoding="utf-8")
     return broken
 
 
@@ -373,6 +381,7 @@ def test_missing_sidecar_for_derived_row_is_refused(tmp_path: Path) -> None:
     payload = yaml.safe_load(invariants.PATH.read_text(encoding="utf-8"))
     broken = tmp_path / invariants.PATH.name
     broken.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    (tmp_path / invariants.MERGES.name).write_text(invariants.MERGES.read_text(encoding="utf-8"), encoding="utf-8")
     # No sidecar copied -- load must refuse the missing generated row.
     with pytest.raises(invariants.InvariantError, match=r"need invariants\.files\.yml"):
         invariants.load(broken)

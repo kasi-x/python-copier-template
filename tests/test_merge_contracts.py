@@ -1,4 +1,4 @@
-"""The adopt-time merge contracts, declared in tests/matrix/invariants.yml.
+"""The adopt-time merge contracts, declared in tests/matrix/merges.yml.
 
 Every merge kind architekton/adopt.py can apply to an adopter's file makes promises
 about its outcome. This module records those promises as an *artifact* -- the
@@ -6,9 +6,9 @@ same oracle shape the render invariants use -- rather than as checks that live
 only inside the merge implementations, so that a new merge kind has to declare
 its contract and a contract change has to be deliberate:
 
-- ``tests/matrix/invariants.yml``'s ``merges:`` section declares, per kind,
+- ``tests/matrix/merges.yml``'s ``merges:`` section declares, per kind,
   the conditions that kind promises.
-- ``architekton/invariants.py`` parses that section and refuses unknown shape; this
+- ``architekton/invariants.py`` parses that registry and refuses unknown shape; this
   module owns the condition *implementations* (the same split the render
   predicates use) and holds the registry against the dispatch:
   a kind the code offers without a declared contract, or a declared contract
@@ -54,7 +54,7 @@ if str(TOP) not in sys.path:
 from architekton import file_merge  # noqa: E402
 from architekton import pyproject_merge  # noqa: E402
 
-INVARIANTS = TOP / "tests" / "matrix" / "invariants.yml"
+MERGES = TOP / "tests" / "matrix" / "merges.yml"
 
 # --------------------------------------------------------------------------- #
 # per-kind drivers: a realistic (target, source) sample and the production
@@ -277,14 +277,14 @@ def _violation(kind: str, condition: str, before: bytes, after: bytes) -> tuple[
 
 
 def _registry() -> dict[str, list[str]]:
-    payload = yaml.safe_load(INVARIANTS.read_text(encoding="utf-8"))
+    payload = yaml.safe_load(MERGES.read_text(encoding="utf-8"))
     return payload["merges"]
 
 
 def test_the_registry_and_the_dispatch_name_the_same_kinds():
     """A kind the code offers without a declared contract -- or the reverse -- fails here."""
     assert set(_registry()) == set(CODE_KINDS), (
-        "invariants.yml's merges: and the merge dispatch disagree; "
+        "merges.yml's merges: and the merge dispatch disagree; "
         f"registry-only: {sorted(set(_registry()) - set(CODE_KINDS))}, "
         f"code-only: {sorted(set(CODE_KINDS) - set(_registry()))}"
     )
@@ -325,4 +325,4 @@ def test_the_registry_promises_no_condition_no_checker_implements():
         for kind, conditions in _registry().items()
         if any(name not in CONDITIONS for name in conditions)
     }
-    assert not unknown, f"invariants.yml promises conditions no checker implements: {unknown}"
+    assert not unknown, f"merges.yml promises conditions no checker implements: {unknown}"
