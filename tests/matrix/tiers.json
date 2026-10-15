@@ -69,7 +69,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "1093291bc54b04625827b825cfbe30977a4457996712696b95885b2b920a4100",
+      "ids_sha256": "b0df777771dc5367c26a314bd6bce7c3490c045da76d59ff69cbca95b900c9cb",
       "wall_seconds": 18.6,
       "measured": "2026-09-20",
       "budget_seconds": 30,
@@ -199,7 +199,7 @@
         "tests/test_witness_matrix.py": 287,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "a12a7671c10bbca1f208347c631c87d27e856fe24577971c2a3d18e518135f32",
+      "ids_sha256": "5883f816083f29e5cf7046f2788221268be070f74ff168454dab4c4595b0241d",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -273,7 +273,7 @@
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "1093291bc54b04625827b825cfbe30977a4457996712696b95885b2b920a4100",
+      "ids_sha256": "b0df777771dc5367c26a314bd6bce7c3490c045da76d59ff69cbca95b900c9cb",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",
