@@ -78,6 +78,18 @@ TRAITS = ("data_science", "kaggle", "src_layout", "web_api")
 SELECT_KEYS = (*NAMED_SELECT_KEYS, *TRAITS)
 
 ROW_KEYS = ("id", "select", "ships", "absent", "markers", "content", "predicates", "tier", "why")
+DERIVED_ROW_KEYS = ("alias-of", "origin")
+DERIVED_FILE_SET_KEYS = ("ships", "absent", "content")
+FILES = TOP / "tests" / "matrix" / "invariants.files.yml"
+_KNOWN_ORIGINS = frozenset(
+    {
+        "bot_slack_effective",
+        "bot_line_effective",
+        "bot_gmail_effective",
+        "bot_platform",
+    }
+)
+_KNOWN_ALIAS_TARGETS = frozenset({"layout=data_science", "layout=web_api"})
 
 
 class InvariantError(ValueError):
@@ -372,6 +384,137 @@ def questionnaire_vocabulary(questions: dict[str, dict] | None = None) -> Vocabu
     )
 
 
+def _files_path_for(source: Path) -> Path:
+    """The generated sidecar next to the policy file.
+
+    When ``load`` is called with an explicit ``path`` (the malformed-file tests'),
+    the sidecar is the sibling ``invariants.files.yml`` next to that path. Otherwise
+    it is :data:`FILES`.
+    """
+    return source.parent / "invariants.files.yml"
+
+
+def _load_sidecar(source: Path, rows: tuple[LeafClass, ...]) -> dict[str, dict[str, object]]:  # noqa: C901, PLR0912, PLR0915
+    """Load ``invariants.files.yml`` and validate it against ``rows``.
+
+    A policy row carrying ``alias-of``/``origin`` must have a sidecar entry,
+    and every sidecar entry must name a policy row. Empty sets are explicit
+    (never omitted) so ``"asserted empty"`` and ``"not generated"`` stay
+    distinct (plan §4 R2).
+    """
+    # Derive which policy rows expect a sidecar entry: those carrying a derived key.
+    policy_text = source.read_text(encoding="utf-8")
+    payload_raw = yaml.safe_load(policy_text)
+    derived_ids: set[str] = set()
+    for entry in payload_raw.get("leaf_classes") or []:
+        if isinstance(entry, dict) and any(k in entry for k in DERIVED_ROW_KEYS):
+            entry_id = entry.get("id")
+            if isinstance(entry_id, str):
+                derived_ids.add(entry_id)
+    files_path = _files_path_for(source)
+    if not derived_ids:
+        if files_path.exists():
+            try:
+                extra = yaml.safe_load(files_path.read_text(encoding="utf-8")) or {}
+            except yaml.YAMLError:
+                extra = {}
+            if isinstance(extra, dict) and extra:
+                msg = f"{files_path}: orphan generated rows with no derived policy row: {sorted(extra)}"
+                raise InvariantError(msg)
+        return {}
+    if not files_path.exists():
+        msg = (  # noqa: E501
+            f"{source}: derived rows {sorted(derived_ids)} need {files_path.name} "
+            "(run: uv run --locked python architekton/gen_invariants.py --write)"
+        )
+        raise InvariantError(msg)
+    try:
+        raw = yaml.safe_load(files_path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as exc:
+        msg = f"{files_path}: not valid YAML: {exc}"
+        raise InvariantError(msg) from exc
+    if not isinstance(raw, dict):
+        msg = f"{files_path}: expected a mapping id -> {{ships, absent, content}}"
+        raise InvariantError(msg)
+    policy_ids = {row.id for row in rows}
+    missing = sorted(derived_ids - set(raw))
+    if missing:
+        msg = f"{files_path}: missing generated rows for derived policy rows {missing}"
+        raise InvariantError(msg)
+    orphan = sorted(set(raw) - policy_ids)
+    if orphan:
+        msg = f"{files_path}: orphan generated rows with no policy row: {orphan}"
+        raise InvariantError(msg)
+    # Validate shape of each entry; hand-file-set keys already refused in _row, so every
+    # derived id must map to exactly {ships, absent, content} with explicit lists.
+    for row_id, entry in raw.items():
+        if row_id not in derived_ids:
+            msg = (  # noqa: E501
+                f"{files_path}: {row_id!r} is not a derived row but has a generated entry "
+                "(only alias-of/origin rows belong in the sidecar)"
+            )
+            raise InvariantError(msg)
+        if not isinstance(entry, dict):
+            msg = f"{files_path}: {row_id!r} must map to {{ships, absent, content}}"
+            raise InvariantError(msg)
+        unknown = sorted(set(entry) - {"ships", "absent", "content"})
+        if unknown:
+            msg = f"{files_path}: {row_id!r} has unknown key(s) {unknown}; expected ships/absent/content"
+            raise InvariantError(msg)
+        for key in ("ships", "absent"):
+            if key not in entry:
+                msg = f"{files_path}: {row_id!r} missing {key!r} (empty sets must be recorded explicitly)"
+                raise InvariantError(msg)
+            val = entry[key]
+            if not isinstance(val, list) or not all(isinstance(item, str) for item in val):
+                msg = f"{files_path}: {row_id!r} {key} must be a list of strings"
+                raise InvariantError(msg)
+        if "content" not in entry:
+            msg = f"{files_path}: {row_id!r} missing 'content' (empty sets must be recorded explicitly)"
+            raise InvariantError(msg)
+        cval = entry["content"]
+        if not isinstance(cval, list):
+            msg = f"{files_path}: {row_id!r} content must be a list of [path, substring] pairs"
+            raise InvariantError(msg)
+        for pair in cval:
+            if not isinstance(pair, list) or len(pair) != 2 or not all(isinstance(item, str) for item in pair):
+                msg = f"{files_path}: {row_id!r} content entries must be [path, substring] pairs, got {pair!r}"
+                raise InvariantError(msg)
+    return raw  # type: ignore[return-value]
+
+
+def _apply_sidecar(rows: tuple[LeafClass, ...], sidecar: dict[str, dict[str, object]]) -> tuple[LeafClass, ...]:
+    """Join sidecar file-sets onto the derived rows, preserving policy order."""
+    if not sidecar:
+        return rows
+    out: list[LeafClass] = []
+    for row in rows:
+        if row.id not in sidecar:
+            out.append(row)
+            continue
+        entry = sidecar[row.id]
+        ships = tuple(entry.get("ships", []))  # type: ignore[arg-type]
+        absent = tuple(entry.get("absent", []))  # type: ignore[arg-type]
+        content = tuple(tuple(pair) for pair in entry.get("content", []))  # type: ignore[arg-type]
+        marker_ships = ships
+        marker_absent: tuple[str, ...] = ()
+        out.append(
+            LeafClass(
+                id=row.id,
+                select=row.select,
+                ships=ships,  # type: ignore[arg-type]
+                absent=absent,  # type: ignore[arg-type]
+                marker_ships=marker_ships,  # type: ignore[arg-type]
+                marker_absent=marker_absent,
+                predicates=row.predicates,
+                content=content,  # type: ignore[arg-type]
+                tier=row.tier,
+                why=row.why,
+            )
+        )
+    return tuple(out)
+
+
 def load(path: Path | None = None) -> Invariants:
     """Read and validate the invariants file, or raise ``InvariantError``."""
     source = PATH if path is None else path
@@ -393,6 +536,8 @@ def load(path: Path | None = None) -> Invariants:
     questions, _order = when_model.load_questions()
     vocabulary = questionnaire_vocabulary(questions)
     rows = _rows(payload.get("leaf_classes"), vocabulary, predicates, excluded, source)
+    sidecar = _load_sidecar(source, rows)
+    rows = _apply_sidecar(rows, sidecar)
     invariants = Invariants(
         source=source,
         predicates=predicates,
@@ -606,7 +751,7 @@ def _predicate_names(row: dict[str, Any], predicates: dict[str, str], where: str
     return names
 
 
-def _row(
+def _row(  # noqa: C901, PLR0912, PLR0915
     entry: Any,
     where: str,
     vocabulary: Vocabulary,
@@ -615,30 +760,79 @@ def _row(
 ) -> LeafClass:
     """One leaf class row, checked against the questionnaire and the registry."""
     row = _mapping(entry, where)
-    unknown = sorted(set(row) - set(ROW_KEYS))
+    allowed = set(ROW_KEYS) | set(DERIVED_ROW_KEYS)
+    unknown = sorted(set(row) - allowed)
     if unknown:
-        msg = f"{where}: unknown key(s) {unknown}; the schema is {list(ROW_KEYS)}"
+        msg = f"{where}: unknown key(s) {unknown}; the schema is {list(ROW_KEYS)} + {list(DERIVED_ROW_KEYS)}"
         raise InvariantError(msg)
     name = row.get("id")
     if not isinstance(name, str) or not name:
         msg = f"{where}: `id` must be a non-empty string"
         raise InvariantError(msg)
     where = f"{where} ({name})"
-    for key in ("select", "ships", "absent"):
-        if key not in row:
-            msg = f"{where}: `{key}` is required (say `[]`/`{{}}` when the row adds nothing)"
+    has_derived = any(key in row for key in DERIVED_ROW_KEYS)
+    has_alias = "alias-of" in row
+    has_origin = "origin" in row
+    if has_alias and has_origin:
+        msg = (  # noqa: E501
+            f"{where}: `alias-of` and `origin` are mutually exclusive "
+            "(a row is either an alias or an origin-derived row)"
+        )
+        raise InvariantError(msg)
+    has_file_set = any(key in row for key in DERIVED_FILE_SET_KEYS)
+    if has_derived and has_file_set:
+        leftovers = sorted(key for key in DERIVED_FILE_SET_KEYS if key in row)
+        msg = (  # noqa: E501
+            f"{where}: derived row with {leftovers} still carries hand file-set fields "
+            "(R5: only the generated sidecar may declare them)"
+        )
+        raise InvariantError(msg)
+    if has_alias:
+        alias = row["alias-of"]
+        if not isinstance(alias, str) or not alias.strip():
+            msg = f"{where}: `alias-of` must be a non-empty string (e.g. `layout=data_science`)"
             raise InvariantError(msg)
-    ships = _strings(row["ships"], where, "ships")
-    marker_ships, marker_absent = _markers(row, ships, where)
+        if alias.strip() not in _KNOWN_ALIAS_TARGETS:
+            msg = f"{where}: unknown `alias-of` {alias!r}; expected one of {sorted(_KNOWN_ALIAS_TARGETS)}"
+            raise InvariantError(msg)
+        ships: tuple[str, ...] = ()
+        marker_ships: tuple[str, ...] = ()
+        marker_absent: tuple[str, ...] = ()
+        absent: tuple[str, ...] = ()
+        content: tuple[tuple[str, str], ...] = ()
+    elif has_origin:
+        origin = row["origin"]
+        if not isinstance(origin, str) or not origin.strip():
+            msg = f"{where}: `origin` must be a non-empty string"
+            raise InvariantError(msg)
+        if origin.strip() not in _KNOWN_ORIGINS:
+            msg = f"{where}: unknown `origin` {origin!r}; expected one of {sorted(_KNOWN_ORIGINS)}"
+            raise InvariantError(msg)
+        ships = ()
+        marker_ships = ()
+        marker_absent = ()
+        absent = ()
+        content = ()
+    else:
+        for key in ("select", "ships", "absent"):
+            if key not in row:
+                msg = f"{where}: `{key}` is required (say `[]`/`{{}}` when the row adds nothing)"
+                raise InvariantError(msg)
+        ships = _strings(row["ships"], where, "ships")
+        marker_ships, marker_absent = _markers(row, ships, where)
+        absent = _strings(row["absent"], where, "absent")
+        content = _content(row, where)
+    marker_ships_out = marker_ships if not has_derived else ()
+    marker_absent_out = marker_absent if not has_derived else ()
     return LeafClass(
         id=name,
         select=_select(row["select"], vocabulary, excluded, where),
         ships=ships,
-        absent=_strings(row["absent"], where, "absent"),
-        marker_ships=marker_ships,
-        marker_absent=marker_absent,
+        absent=absent,
+        marker_ships=marker_ships_out,
+        marker_absent=marker_absent_out,
         predicates=_predicate_names(row, predicates, where),
-        content=_content(row, where),
+        content=content,
         tier=_tier(row.get("tier"), where),
         why=_why(row, where),
     )

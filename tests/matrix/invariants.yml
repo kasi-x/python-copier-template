@@ -339,8 +339,7 @@ leaf_classes:
   # -- opt-in layers ------------------------------------------------------ #
   - id: include=include_data_science
     select: {include: [include_data_science]}
-    ships: []
-    absent: []
+    alias-of: layout=data_science
     predicates: []
     tier:
       name: fast
@@ -349,8 +348,7 @@ leaf_classes:
 
   - id: include=include_web_api
     select: {include: [include_web_api]}
-    ships: []
-    absent: []
+    alias-of: layout=web_api
     predicates: []
     tier:
       name: fast
@@ -447,19 +445,8 @@ leaf_classes:
   # not just the recommended one.
   - id: include=include_bot/bot_platform=slack
     select: {include: [include_bot], project_type: [cli], web_api: false, bot_platform: [slack]}
-    ships:
-      - src/smoke_example/bot_slack.py
-      - tests/test_bot_slack.py
-    absent:
-      - src/smoke_example/bot_discord.py
-      - src/smoke_example/bot_line.py
-      - src/smoke_example/bot_gmail.py
-      - tests/test_bot_discord.py
-      - tests/test_bot_line.py
-      - tests/test_bot_gmail.py
+    origin: bot_slack_effective
     predicates: []
-    content:
-      - [pyproject.toml, slack-bolt]
     tier:
       name: fast
       why: "the custom platform renders and ruff-checks in the fast tier; its real execution (a recording slack_bolt.App, /app_mention in-process) is tests/test_bot_layer.py's heavy case"
@@ -467,19 +454,8 @@ leaf_classes:
 
   - id: include=include_bot/bot_platform=line
     select: {include: [include_bot], project_type: [cli], web_api: false, bot_platform: [line]}
-    ships:
-      - src/smoke_example/bot_line.py
-      - tests/test_bot_line.py
-    absent:
-      - src/smoke_example/bot_discord.py
-      - src/smoke_example/bot_slack.py
-      - src/smoke_example/bot_gmail.py
-      - tests/test_bot_discord.py
-      - tests/test_bot_slack.py
-      - tests/test_bot_gmail.py
+    origin: bot_line_effective
     predicates: []
-    content:
-      - [pyproject.toml, line-bot-sdk]
     tier:
       name: fast
       why: "the custom platform renders and ruff-checks in the fast tier; its real execution (a signed POST /callback over httpx's ASGITransport) is tests/test_bot_layer.py's heavy case"
@@ -487,19 +463,8 @@ leaf_classes:
 
   - id: include=include_bot/bot_platform=gmail
     select: {include: [include_bot], project_type: [cli], web_api: false, bot_platform: [gmail]}
-    ships:
-      - src/smoke_example/bot_gmail.py
-      - tests/test_bot_gmail.py
-    absent:
-      - src/smoke_example/bot_discord.py
-      - src/smoke_example/bot_slack.py
-      - src/smoke_example/bot_line.py
-      - tests/test_bot_discord.py
-      - tests/test_bot_slack.py
-      - tests/test_bot_line.py
+    origin: bot_gmail_effective
     predicates: []
-    content:
-      - [pyproject.toml, google-api-python-client]
     tier:
       name: fast
       why: "the custom platform renders and ruff-checks in the fast tier; its real execution (a recording Gmail discovery client, /ping subject in-process) is tests/test_bot_layer.py's heavy case"
@@ -507,19 +472,8 @@ leaf_classes:
 
   - id: include=include_bot_web_api/bot_platform=slack
     select: {include: [include_bot], web_api: true, bot_platform: [slack]}
-    ships:
-      - app/bot_slack.py
-      - tests/test_bot_slack.py
-    absent:
-      - app/bot_discord.py
-      - app/bot_line.py
-      - app/bot_gmail.py
-      - tests/test_bot_discord.py
-      - tests/test_bot_line.py
-      - tests/test_bot_gmail.py
+    origin: bot_slack_effective
     predicates: []
-    content:
-      - [pyproject.toml, slack-bolt]
     tier:
       name: fast
       why: "the custom platform renders and ruff-checks in the fast tier; the cli-base row above carries the execution story for the shared scaffold"
@@ -527,19 +481,8 @@ leaf_classes:
 
   - id: include=include_bot_web_api/bot_platform=line
     select: {include: [include_bot], web_api: true, bot_platform: [line]}
-    ships:
-      - app/bot_line.py
-      - tests/test_bot_line.py
-    absent:
-      - app/bot_discord.py
-      - app/bot_slack.py
-      - app/bot_gmail.py
-      - tests/test_bot_discord.py
-      - tests/test_bot_slack.py
-      - tests/test_bot_gmail.py
+    origin: bot_line_effective
     predicates: []
-    content:
-      - [pyproject.toml, line-bot-sdk]
     tier:
       name: fast
       why: "the custom platform renders and ruff-checks in the fast tier; the cli-base row above carries the execution story for the shared scaffold"
@@ -547,19 +490,8 @@ leaf_classes:
 
   - id: include=include_bot_web_api/bot_platform=gmail
     select: {include: [include_bot], web_api: true, bot_platform: [gmail]}
-    ships:
-      - app/bot_gmail.py
-      - tests/test_bot_gmail.py
-    absent:
-      - app/bot_discord.py
-      - app/bot_slack.py
-      - app/bot_line.py
-      - tests/test_bot_discord.py
-      - tests/test_bot_slack.py
-      - tests/test_bot_line.py
+    origin: bot_gmail_effective
     predicates: []
-    content:
-      - [pyproject.toml, google-api-python-client]
     tier:
       name: fast
       why: "the custom platform renders and ruff-checks in the fast tier; the cli-base row above carries the execution story for the shared scaffold"

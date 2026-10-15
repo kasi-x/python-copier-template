@@ -204,6 +204,116 @@ def _missing_row(payload: dict[str, Any]) -> None:
     payload["leaf_classes"] = [row for row in payload["leaf_classes"] if row["id"] != "project_type=script"]
 
 
+_M1_EXPECTED: dict[str, dict[str, object]] = {
+    "include=include_data_science": {"ships": [], "absent": [], "content": []},
+    "include=include_web_api": {"ships": [], "absent": [], "content": []},
+    "include=include_bot/bot_platform=slack": {
+        "ships": ["src/smoke_example/bot_slack.py", "tests/test_bot_slack.py"],
+        "absent": [
+            "src/smoke_example/bot_discord.py",
+            "src/smoke_example/bot_line.py",
+            "src/smoke_example/bot_gmail.py",
+            "tests/test_bot_discord.py",
+            "tests/test_bot_line.py",
+            "tests/test_bot_gmail.py",
+        ],
+        "content": [["pyproject.toml", "slack-bolt"]],
+    },
+    "include=include_bot/bot_platform=line": {
+        "ships": ["src/smoke_example/bot_line.py", "tests/test_bot_line.py"],
+        "absent": [
+            "src/smoke_example/bot_discord.py",
+            "src/smoke_example/bot_slack.py",
+            "src/smoke_example/bot_gmail.py",
+            "tests/test_bot_discord.py",
+            "tests/test_bot_slack.py",
+            "tests/test_bot_gmail.py",
+        ],
+        "content": [["pyproject.toml", "line-bot-sdk"]],
+    },
+    "include=include_bot/bot_platform=gmail": {
+        "ships": ["src/smoke_example/bot_gmail.py", "tests/test_bot_gmail.py"],
+        "absent": [
+            "src/smoke_example/bot_discord.py",
+            "src/smoke_example/bot_slack.py",
+            "src/smoke_example/bot_line.py",
+            "tests/test_bot_discord.py",
+            "tests/test_bot_slack.py",
+            "tests/test_bot_line.py",
+        ],
+        "content": [["pyproject.toml", "google-api-python-client"]],
+    },
+    "include=include_bot_web_api/bot_platform=slack": {
+        "ships": ["app/bot_slack.py", "tests/test_bot_slack.py"],
+        "absent": [
+            "app/bot_discord.py",
+            "app/bot_line.py",
+            "app/bot_gmail.py",
+            "tests/test_bot_discord.py",
+            "tests/test_bot_line.py",
+            "tests/test_bot_gmail.py",
+        ],
+        "content": [["pyproject.toml", "slack-bolt"]],
+    },
+    "include=include_bot_web_api/bot_platform=line": {
+        "ships": ["app/bot_line.py", "tests/test_bot_line.py"],
+        "absent": [
+            "app/bot_discord.py",
+            "app/bot_slack.py",
+            "app/bot_gmail.py",
+            "tests/test_bot_discord.py",
+            "tests/test_bot_slack.py",
+            "tests/test_bot_gmail.py",
+        ],
+        "content": [["pyproject.toml", "line-bot-sdk"]],
+    },
+    "include=include_bot_web_api/bot_platform=gmail": {
+        "ships": ["app/bot_gmail.py", "tests/test_bot_gmail.py"],
+        "absent": [
+            "app/bot_discord.py",
+            "app/bot_slack.py",
+            "app/bot_line.py",
+            "tests/test_bot_discord.py",
+            "tests/test_bot_slack.py",
+            "tests/test_bot_line.py",
+        ],
+        "content": [["pyproject.toml", "google-api-python-client"]],
+    },
+}
+
+
+def test_m1_generated_file_sets_are_byte_identical_to_former_hand_values() -> None:
+    """M1 temporary byte-identical assertion (plan §2.3, removed at M3).
+
+    The 8 derived rows' file-sets now come from the generated sidecar joined
+    by architekton/invariants.py. This pinned assertion proves the generated
+    file-set (ships/absent/content) equals the former hand-written file-set
+    byte-for-byte, so the union/``expect`` outputs are unchanged. The expected
+    dict is the committed hand value copied literally from invariants.yml at
+    M0; the loader already guarantees the sidecar supplies an explicit entry
+    for every derived row (R2).
+    """
+    by_id = {row.id: row for row in INVARIANTS.rows}
+    problems: list[str] = []
+    for row_id, expected in _M1_EXPECTED.items():
+        row = by_id.get(row_id)
+        if row is None:
+            problems.append(f"{row_id}: missing row")
+            continue
+        got = {"ships": list(row.ships), "absent": list(row.absent), "content": [list(pair) for pair in row.content]}
+        if got != expected:
+            problems.append(f"{row_id}: got {got} want {expected}")
+    assert problems == [], "M1 generated file-sets diverged from former hand file-sets:\n  " + "\n  ".join(problems)
+
+
+def _double_truth_ships(payload: dict[str, Any]) -> None:
+    _row(payload, "include=include_bot/bot_platform=slack")["ships"] = ["src/smoke_example/bot_slack.py"]
+
+
+def _double_truth_alias_ships(payload: dict[str, Any]) -> None:
+    _row(payload, "include=include_data_science")["ships"] = []
+
+
 CASES: tuple[tuple[str, Callable[[dict[str, Any]], None], str], ...] = (
     ("unknown row key", _unknown_row_key, "unknown key"),
     ("unknown select key", _unknown_select_key, "unknown select key"),
@@ -219,7 +329,25 @@ CASES: tuple[tuple[str, Callable[[dict[str, Any]], None], str], ...] = (
     ("contradictory markers", _contradictory_markers, "both shipped and absent"),
     ("missing why", _missing_why, "`why`"),
     ("missing row", _missing_row, "no row selects project_type"),
+    ("derived row double truth (origin + ships)", _double_truth_ships, "only the generated sidecar"),
+    ("derived row double truth (alias + ships)", _double_truth_alias_ships, "only the generated sidecar"),
 )
+
+
+def _stage_with_sidecar(tmp_path: Path, payload: dict[str, Any]) -> Path:
+    """Write *payload* as a tmp invariants.yml plus its sibling sidecar.
+
+    The loader joins the policy file with ``invariants.files.yml`` next to it,
+    so the tmp file must carry its own sidecar copy; otherwise every
+    tmp-path test would fail with “missing sidecar” instead of the intended
+    schema error.
+    """
+    broken = tmp_path / invariants.PATH.name
+    broken.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
+    sidecar_src = invariants.FILES
+    if sidecar_src.exists():
+        (tmp_path / sidecar_src.name).write_text(sidecar_src.read_text(encoding="utf-8"), encoding="utf-8")
+    return broken
 
 
 @pytest.mark.parametrize(
@@ -236,7 +364,26 @@ def test_a_malformed_file_fails_loudly(tmp_path: Path, mutate: Callable[[dict[st
     """
     payload = yaml.safe_load(invariants.PATH.read_text(encoding="utf-8"))
     mutate(payload)
+    broken = _stage_with_sidecar(tmp_path, payload)
+    with pytest.raises(invariants.InvariantError, match=match):
+        invariants.load(broken)
+
+
+def test_missing_sidecar_for_derived_row_is_refused(tmp_path: Path) -> None:
+    payload = yaml.safe_load(invariants.PATH.read_text(encoding="utf-8"))
     broken = tmp_path / invariants.PATH.name
     broken.write_text(yaml.safe_dump(payload, sort_keys=False), encoding="utf-8")
-    with pytest.raises(invariants.InvariantError, match=match):
+    # No sidecar copied -- load must refuse the missing generated row.
+    with pytest.raises(invariants.InvariantError, match=r"need invariants\.files\.yml"):
+        invariants.load(broken)
+
+
+def test_orphan_generated_row_is_refused(tmp_path: Path) -> None:
+    payload = yaml.safe_load(invariants.PATH.read_text(encoding="utf-8"))
+    broken = _stage_with_sidecar(tmp_path, payload)
+    sidecar = tmp_path / invariants.FILES.name
+    data = yaml.safe_load(sidecar.read_text(encoding="utf-8"))
+    data["orphan=row"] = {"ships": [], "absent": [], "content": []}
+    sidecar.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    with pytest.raises(invariants.InvariantError, match="orphan generated rows"):
         invariants.load(broken)

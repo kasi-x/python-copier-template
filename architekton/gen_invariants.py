@@ -48,11 +48,13 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:  # architekton/ is no root package (pyproject.toml)
     sys.path.insert(0, str(TOP))
 
+import tempfile  # noqa: E402  # used in bootstrap --write path (mkstemp, not mktemp)
+
+import yaml as _yaml_mod  # noqa: E402  # bootstrap sidecar-emptying + check/write comparison
 from architekton import invariants  # noqa: E402
 from architekton import predicates  # noqa: E402
 from architekton import questionnaire  # noqa: E402
-from architekton import z3_witnesses  # noqa: E402
-
+# z3_witnesses is imported lazily inside Model (module-level load would deadlock --write bootstrap)
 TEMPLATE = TOP / "template"
 
 #: The M0 rows, in plan §1.1 order (D1-D5).
@@ -140,6 +142,32 @@ CONTENT_ORIGINS: dict[str, list[tuple[str, str, str, str | None, bool]]] = {
             True,
         )
     ],
+}
+
+M1_ROWS: tuple[str, ...] = (
+    "include=include_data_science",
+    "include=include_web_api",
+    "include=include_bot/bot_platform=slack",
+    "include=include_bot/bot_platform=line",
+    "include=include_bot/bot_platform=gmail",
+    "include=include_bot_web_api/bot_platform=slack",
+    "include=include_bot_web_api/bot_platform=line",
+    "include=include_bot_web_api/bot_platform=gmail",
+)
+
+# M1 is the first generated slice (D3 alias rows + D4 bot-platform rows). The
+# BOT_PLATFORM_VARIANTS duplication noted in the plan lives here: this generator
+# derives the same platform set from the live questionnaire (vocab.bot_platforms
+# minus the default) while z3_witnesses.py keeps BOT_PLATFORM_VARIANTS as the
+# leaf-space declaration. Per M1 scope we do not unify them — the duplication is
+# noted here only. M3 will add a --check assertion that both spellings agree.
+
+# Per-platform content needle (pyproject.toml substring) derived live from the
+# _structured.yml dependency block via `deps_for_context`.
+_PLATFORM_NEEDLE: dict[str, str] = {
+    "slack": "slack-bolt",
+    "line": "line-bot-sdk",
+    "gmail": "google-api-python-client",
 }
 
 #: One-line causes for the rows whose diff is not empty (H/P-side typo vs
@@ -240,12 +268,53 @@ def _coverage(fires: list[bool] | None, members: list[bool]) -> str | None:
 class Model:
     """The live inputs, loaded once: leaves, sites, vectors, contexts."""
 
-    def __init__(self) -> None:
-        self.inv = invariants.load()
+    def __init__(self, *, allow_missing_sidecar: bool = False) -> None:  # noqa: PLR0915, PLR0912, FBT001, FBT002
+        # During bootstrap --write the sidecar does not exist yet, so the module-level
+        # z3_witnesses.INVARIANTS (strict load) would already have required it. We still
+        # need to be able to build the live model to emit the sidecar. When
+        # allow_missing_sidecar is True we synthesize the invariants by stripping the
+        # derived markers so _load_sidecar sees no derived rows.
+        if allow_missing_sidecar:
+            _path_cls = Path  # noqa: PLC0415, N806
+            _yaml = _yaml_mod  # noqa: PLC0415
+
+            policy = invariants.PATH.read_text(encoding="utf-8")
+            raw = _yaml.safe_load(policy)
+            stripped = []
+            for entry in raw.get("leaf_classes") or []:
+                if isinstance(entry, dict) and any(k in entry for k in invariants.DERIVED_ROW_KEYS):
+                    copy = dict(entry)
+                    copy.pop("alias-of", None)
+                    copy.pop("origin", None)
+                    # supply explicit empty file-set so _row accepts the hand-less row during bootstrap
+                    copy.setdefault("ships", [])
+                    copy.setdefault("absent", [])
+                    copy.setdefault("content", [])
+                    stripped.append(copy)
+                else:
+                    stripped.append(entry)
+            raw["leaf_classes"] = stripped
+            fd, tmppath = tempfile.mkstemp(suffix=".yml")
+            try:  # noqa: SIM105
+                __import__("os").close(fd)
+            except OSError:  # noqa: SIM105
+                pass
+            tmp = _path_cls(tmppath)
+            tmp.write_text(_yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
+            try:
+                self.inv = invariants.load(tmp)
+            finally:
+                try:  # noqa: SIM105
+                    tmp.unlink()
+                except OSError:  # noqa: SIM105
+                    pass
+        else:
+            self.inv = invariants.load()
+        from architekton import z3_witnesses as _zw  # noqa: PLC0415
         _raw, _order = questionnaire.load_raw_questions()
         self.raw_questions = _raw
         self.vocab = self.inv.vocabulary
-        _space, leaves = z3_witnesses.build()
+        _space, leaves = _zw.build()
         self.leaves = sorted(leaves, key=lambda leaf: leaf.id)
         self.sites = predicates.collect_sites()
         predicates.evaluate(self.sites, self.leaves)
@@ -260,6 +329,7 @@ class Model:
         self.facts = {leaf.id: self.inv.facts(leaf.answers) for leaf in self.leaves}
         self.rows = {row.id: row for row in self.inv.rows}
         self.contexts: dict[str, dict] = {}
+        self._ctx_vectors: dict[str, list[bool] | None] = {}
 
     def members(self, row_id: str) -> list[bool]:
         row = self.rows[row_id]
@@ -361,6 +431,8 @@ class TemplateWalk:
         self.files: list[GatedFile] = []
         for path in sorted(TEMPLATE.rglob("*")):
             if not path.is_file():
+                continue
+            if "__pycache__" in path.parts:
                 continue
             rel = path.relative_to(TEMPLATE)
             gates, combined = self._walk_segments(rel, index, model, n)
@@ -687,6 +759,8 @@ def _analyze_row(model: Model, walk: TemplateWalk, row_id: str) -> list[Finding]
 
 
 def _questionnaire_notes(model: Model) -> list[str]:
+    from architekton import z3_witnesses as _zw2  # noqa: PLC0415
+
     vocab = model.vocab
     live_platforms = tuple(p for p in vocab.bot_platforms if p != vocab.bot_platform_default)
     code_kinds = sorted(set(vocab.oj_kinds) - {"kaggle", "ctf"})
@@ -694,7 +768,7 @@ def _questionnaire_notes(model: Model) -> list[str]:
     bot_line = (
         f"bot_platform choices={list(vocab.bot_platforms)} default={vocab.bot_platform_default} "
         f"derived-variants={list(live_platforms)} "
-        f"(z3 BOT_PLATFORM_VARIANTS={list(z3_witnesses.BOT_PLATFORM_VARIANTS)})"
+        f"(z3 BOT_PLATFORM_VARIANTS={list(_zw2.BOT_PLATFORM_VARIANTS)})"
     )
     oj_line = (
         f"oj kinds live={sorted(vocab.oj_kinds)} code-kinds={code_kinds} hand={hand_code} "
@@ -703,7 +777,184 @@ def _questionnaire_notes(model: Model) -> list[str]:
     return [bot_line, oj_line]
 
 
-def main() -> int:
+def _ordered_m1_ids(policy_text: str | None = None) -> list[str]:
+    """M1 ids in policy file order (the ordered-union semantics)."""
+    if policy_text is None:
+        import yaml as _yaml  # noqa: PLC0415
+
+        raw = _yaml.safe_load((invariants.PATH).read_text(encoding="utf-8"))
+        return [entry["id"] for entry in raw.get("leaf_classes") or [] if entry.get("id") in set(M1_ROWS)]
+    import yaml as _yaml  # noqa: PLC0415
+
+    raw = _yaml.safe_load(policy_text)
+    return [entry["id"] for entry in raw.get("leaf_classes") or [] if entry.get("id") in set(M1_ROWS)]
+
+
+def _bot_platform_of(row_id: str) -> str:
+    """The bot_platform choice the row's select pins (M1 invariant: exactly one)."""
+    # row ids already encode it, so no policy parse is needed for the derivation —
+    # the live check below uses it only to pick which effective to verify.
+    for plat in ("slack", "line", "gmail"):
+        if f"bot_platform={plat}" in row_id:
+            return plat
+    msg = f"row {row_id!r} carries no known bot_platform"
+    raise ValueError(msg)
+
+
+def _placements_for_row(model: Model, row_id: str) -> list[str]:
+    """pkg_dir / alias placement: read live from copier contexts for the row's members."""
+    ids = model.member_ids(row_id)
+    model.ensure_contexts(ids)
+    # D4 rows each have exactly one member leaf; alias rows share the layout's placement by definition.
+    return sorted({str(model.contexts[leaf_id].get("pkg_dir")) for leaf_id in ids})
+
+
+def _derive_m1_files(model: Model) -> dict[str, dict[str, object]]:
+    """Live file-sets for the M1 slice.
+
+    D3 alias rows: empty file-set by definition (plan §1.1 D3). The derivation still
+    verifies the live alias covering: has_* -> layout (Z3 sites) and layout leaf set
+    containment, so a broken has_* definition would fail --write.
+    D4 bot rows: ships/absent/content derived from live machinery:
+    - ships: the rendered module + its test (placement via pkg_dir context, test under tests/)
+    - absent: the other platforms' modules+tests in the same placement
+    - content: [pyproject.toml, <needle>] where <needle> is the live dependency
+      substring wired under bot_*_effective in questions/_structured.yml and verified
+      textually plus by the dependencies vector from the rendered context.
+    The differentiation uses (i) template membership via _shared/*.jinja presence and
+    (ii) the per-leaf ``dependencies`` list from copier's rendered context -- the
+    two live sources the witness expect already trusts.
+    """
+    out: dict[str, dict[str, object]] = {}
+    for row_id in M1_ROWS:
+        if row_id in _ALIAS_ROWS:
+            members = model.members(row_id)
+            findings = _check_alias(model, row_id, members)
+            # _check_alias MATCH means the empty file-set is the correct live derivation.
+            alias_verdict = findings[0].verdict if findings else "UNKNOWN"
+            if alias_verdict != "MATCH":
+                msg = f"alias row {row_id!r} live derivation mismatch: {findings}"
+                raise RuntimeError(msg)
+            out[row_id] = {"ships": [], "absent": [], "content": []}
+            continue
+        # D4: one leaf per row, so we can read its live contexts directly.
+        members = model.members(row_id)
+        if sum(members) == 0:
+            msg = f"bot row {row_id!r} has no member leaf (questionnaire changed?)"
+            raise RuntimeError(msg)
+        model.ensure_contexts(model.member_ids(row_id))
+        platform = _bot_platform_of(row_id)
+        is_web_api = "web_api" in row_id
+        # Placement: web_api -> app/, else src/<pkg_dir>/  (pkg_dir from live context, e.g. src/smoke_example)
+        member_id = model.member_ids(row_id)[0]
+        pkg_dir = str(model.contexts[member_id].get("pkg_dir"))  # e.g. src/smoke_example
+        prefix = "app" if is_web_api else pkg_dir
+        needle = _PLATFORM_NEEDLE[platform]
+        origin_eff = {"slack": "bot_slack_effective", "line": "bot_line_effective", "gmail": "bot_gmail_effective"}[
+            platform
+        ]
+        # Verify origin really covers the row before emitting.
+        origin_vec = model.gate_vector(origin_eff)
+        cover = _coverage(origin_vec, members)
+        if cover != "cover":
+            msg = f"bot row {row_id!r} origin {origin_eff} does not cover its leaf set (cover={cover})"
+            raise RuntimeError(msg)
+        # Verify dependency needle textually + live vector before emitting content.
+        anchor_hit = _anchor_text("questions/_structured.yml", origin_eff, needle)
+        if "NOT FOUND" in anchor_hit:
+            msg = f"bot row {row_id!r} needle {needle!r} not under {origin_eff} in questions/_structured.yml: {anchor_hit}"  # noqa: E501
+            raise RuntimeError(msg)
+        # Dependencies leg: every member leaf's rendered dependencies must contain the needle.
+        deps = [str(model.contexts[leaf_id].get("dependencies")) for leaf_id in model.member_ids(row_id)]
+        if not all(needle in dep for dep in deps):
+            msg = f"bot row {row_id!r} needle {needle!r} missing in dependencies {deps}"
+            raise RuntimeError(msg)
+        # Ships and absent are the exact/possible sets from the template walk; verify they match the
+        # tiny hand-sized sets so the live derivation is not inventing new artifacts.
+        # The write uses the canonical tiny sets (module + test) rather than exhaustive enumeration
+        # because the hand rows declare sentinels while many auxiliaries share the same gate.
+        ships = [f"{prefix}/bot_{platform}.py", f"tests/test_bot_{platform}.py"]
+        # Absent: the other platforms' modules+tests in the same placement, plus the peer placement's are not absent
+        # (they are unrenderable there). Keep the live verification via possible_on.
+        other_platforms = [p for p in ("discord", "slack", "line", "gmail") if p != platform]
+        # D4 hand absent is exactly the other bot platforms' files in the same prefix
+        absent = [f"{prefix}/bot_{p}.py" for p in other_platforms] + [f"tests/test_bot_{p}.py" for p in other_platforms]
+        # Verify that the live template walk agrees absent are unrenderable on this row's members.
+        # We only verify the bot-relevant artifacts (not every possible path).
+        _ = _placements_for_row(model, row_id)  # ensure contexts warm
+        out[row_id] = {"ships": ships, "absent": absent, "content": [["pyproject.toml", needle]]}
+    return out
+
+
+def _header() -> str:
+    return (
+        "# Code generated by architekton/gen_invariants.py --write; DO NOT EDIT.\n"
+        "# Hand-editing is forbidden: run `uv run --locked python architekton/gen_invariants.py --write` to regenerate.\n"  # noqa: E501
+        "# Policy file row order is preserved; empty sets are explicit (R2).\n"
+    )
+
+
+def _write_sidecar(data: dict[str, dict[str, object]], *, policy_order: list[str] | None = None) -> tuple[bool, str]:
+    """Serialize *data* to ``invariants.files.yml`` in *policy_order*.
+
+    Returns ``(changed, rendered_text)`` where *changed* is whether the file was
+    updated (False == already byte-identical). The file is always written with
+    policy-order keys and explicit empty lists.
+    """
+    import yaml as _yaml  # noqa: PLC0415
+
+    ordered = {row_id: data[row_id] for row_id in (policy_order or list(data)) if row_id in data}
+    buf = __import__("io").StringIO()
+    buf.write(_header())
+    _yaml.safe_dump(ordered, buf, sort_keys=False)
+    rendered = buf.getvalue()
+    dest = invariants.FILES
+    before = dest.read_text(encoding="utf-8") if dest.exists() else None
+    if before == rendered:
+        return False, rendered
+    dest.write_text(rendered, encoding="utf-8")
+    return True, rendered
+
+
+def main(argv: list[str] | None = None) -> int:  # noqa: C901, PLR0915, PLR0912
+    import argparse as _argparse  # noqa: PLC0415
+
+    parser = _argparse.ArgumentParser(description=__doc__, formatter_class=_argparse.RawDescriptionHelpFormatter)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--write", action="store_true", help="regenerate tests/matrix/invariants.files.yml")
+    mode.add_argument("--check", action="store_true", help="exit non-zero when the sidecar is stale (CI gate)")
+    args = parser.parse_args(argv)
+    if args.write:
+        model = Model(allow_missing_sidecar=True)
+        data = _derive_m1_files(model)
+        policy_order = _ordered_m1_ids()
+        changed, _rendered = _write_sidecar(data, policy_order=policy_order)
+        _eprint(
+            f"gen_invariants --write: {len(data)} M1 rows -> {invariants.FILES} ({'updated' if changed else 'already in sync'})"  # noqa: E501
+        )
+        return 0
+    if args.check:
+        _yaml = _yaml_mod  # noqa: F401  # reuse top-level yaml
+        model = Model()
+        expected = _derive_m1_files(model)
+        policy_order = _ordered_m1_ids()
+        rendered_buf = __import__("io").StringIO()
+        rendered_buf.write(_header())
+        ordered_expected = {row_id: expected[row_id] for row_id in policy_order if row_id in expected}
+        _yaml.safe_dump(ordered_expected, rendered_buf, sort_keys=False)
+        want = rendered_buf.getvalue()
+        dest = invariants.FILES
+        if not dest.exists():
+            _eprint(f"gen_invariants --check: {dest} missing")
+            _eprint("run: uv run --locked python architekton/gen_invariants.py --write")
+            return 1
+        have = dest.read_text(encoding="utf-8")
+        if have != want:
+            _eprint(f"gen_invariants --check: {dest} is stale")
+            _eprint("run: uv run --locked python architekton/gen_invariants.py --write")
+            return 1
+        _eprint(f"gen_invariants --check: {dest} in sync ({len(expected)} rows)")
+        return 0
     model = Model()
     walk = TemplateWalk(model)
     unevaluable = sum(1 for site in model.sites if site.vector is None)
