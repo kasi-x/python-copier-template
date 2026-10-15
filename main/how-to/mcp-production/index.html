@@ -3119,7 +3119,7 @@ gives you the seam; wiring it is deployment work, not generation work.</p>
 generated at startup and held only by that process. Multi-round-trip
 state minted by one worker is rejected by every other worker (and after
 any restart). A single <code>server.run()</code> is one
-<a href="https://www.uvicorn.org/">uvicorn</a> process — the SDK does no process
+<a href="https://uvicorn.dev/">uvicorn</a> process — the SDK does no process
 management, there is no <code>--workers</code> flag — so the moment you run two
 replicas, give them the same key:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
