@@ -98,7 +98,8 @@ jobs:
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
           git switch -C "$BRANCH"
-          # shellcheck disable=SC2086: REF_ARG is empty or exactly one flag plus its value.
+          # REF_ARG is empty or exactly one flag plus its value.
+          # shellcheck disable=SC2086
           if uvx copier update --trust --defaults $REF_ARG; then
             echo "conflict=false" >> "$GITHUB_OUTPUT"
           else

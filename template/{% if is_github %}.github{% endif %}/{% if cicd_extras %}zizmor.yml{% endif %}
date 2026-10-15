@@ -14,10 +14,11 @@
 #   - template-injection on _container.yml: its smoke-test renders
 #     `${{ inputs.smoke-command }}`, which ci.yml (same repository) sets to a
 #     fixed literal (`--version` / `--help`), never to an external value.
-#   - self-repository (all workflows): `./.github/workflows/*` is the
-#     established local-reusable-workflow form here and in generated
-#     projects; zizmor v1.30's `$/...` suggestion is cosmetic for this
-#     repository layout.
+#   - self-repository (every workflow below): `./.github/workflows/*` and
+#     `./.github/actions/*` are the established local-ref form here; zizmor
+#     v1.30's `$/...` self-repo replacement is cosmetic, and actionlint
+#     (rhysd/actionlint#711) still rejects `$/`, so the hygiene job would
+#     fail on it. The findings are suppressed per-file instead.
 
 rules:
   unpinned-uses:
@@ -35,6 +36,11 @@ rules:
       - ci.yml
   self-repository:
     ignore:
+      - _dist.yml
+      - _docs.yml
+      - _tasks.yml
+      - _test.yml
+      - audit.yml
       - ci.yml
       - scheduled-check.yml
   template-injection:
