@@ -15,6 +15,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+from architekton.hygiene import conflict_markers
+from architekton.hygiene import invalid_yaml
+from architekton.hygiene import oversized
+from architekton.hygiene import worktree_files
+
 TOP = Path(__file__).resolve().parent.parent
 SCRIPT = TOP / "architekton" / "hygiene.py"
 MEGABYTE = 1024 * 1024
@@ -187,3 +192,36 @@ def test_every_failing_check_is_reported(tmp_path: Path) -> None:
     assert result.returncode == 1, result.stdout
     for label in ("merge-conflict markers", "files over 10MB", "missing trailing newline", "invalid YAML"):
         assert label in result.stdout, result.stdout
+
+
+def test_walk_fallback_outside_git(tmp_path: Path) -> None:
+    """A released tarball has no `.git`: the walk still sees every file."""
+    _write(tmp_path, "README.md", "# hi\n")
+    _write(tmp_path, ".git/trap.yml", "key: [1, 2\n")
+    names = [p.as_posix() for p in worktree_files(tmp_path)]
+    assert "README.md" in names
+    assert ".git/trap.yml" not in names
+
+
+def test_read_failure_is_skipped(tmp_path: Path) -> None:
+    """A file that cannot be opened (dangling symlink, race) is no finding."""
+    (tmp_path / "gone.txt").symlink_to("no-such-target")
+    assert conflict_markers([tmp_path / "gone.txt"]) == []
+
+
+def test_stat_failure_is_skipped(tmp_path: Path) -> None:
+    """`oversized` tolerates a path that disappears between listing and stat."""
+    (tmp_path / "gone.bin").symlink_to("no-such-target")
+    assert oversized([tmp_path / "gone.bin"]) == []
+
+
+def test_yaml_read_failure_is_reported(tmp_path: Path) -> None:
+    """An unreadable `.yml` surfaces as a finding, not a traceback."""
+    bad = tmp_path / "locked.yml"
+    bad.write_text("key: 1\n", encoding="utf-8")
+    bad.chmod(0o000)
+    try:
+        found = invalid_yaml([bad])
+    finally:
+        bad.chmod(0o644)
+    assert found and "locked.yml" in found[0]
