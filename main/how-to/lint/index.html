@@ -2891,7 +2891,17 @@
 <div class="highlight"><pre><span></span><code>$ task lint
 </code></pre></div>
 <p>(or <code>just lint</code>, <code>poe lint</code>, ... depending on your task runner).</p>
-<p>Repository hygiene checks are not run locally: they run in CI via the repository hygiene workflow, which covers secret scanning (gitleaks), workflow linting (actionlint), YAML validity, missing end-of-file newlines, conflict markers, oversized files, the conventional PR title (individual commit messages are free-form; PRs land via squash-merge), REUSE lint and CITATION.cff validation.</p>
+<p>Repository hygiene checks — merge-conflict markers, file size, end-of-file
+newlines, YAML validity — live in <code>architekton/hygiene.py</code> and run locally through
+the task runner:</p>
+<div class="highlight"><pre><span></span><code>$ task hygiene
+</code></pre></div>
+<p>The repository hygiene workflow runs that same module in CI, so a local run and the
+CI run make the same call; <code>task check</code> runs it alongside <code>lint</code>, <code>type-check</code>,
+<code>test</code> and <code>docs</code>. CI adds what needs a network or the runner image: secret
+scanning (gitleaks), workflow linting (actionlint), the conventional PR title
+(individual commit messages are free-form; PRs land via squash-merge), REUSE lint
+and CITATION.cff validation.</p>
 <h2 id="fixing-issues">Fixing issues<a class="headerlink" href="#fixing-issues" title="Permanent link">&para;</a></h2>
 <p>The typical workflow is:</p>
 <ul>

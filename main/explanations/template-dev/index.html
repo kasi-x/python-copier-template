@@ -3576,7 +3576,7 @@ leans on (<code>task predicates</code>, <code>task question-graph</code>, <code>
 the rule the machinery cannot check for you (mechanical equality is not
 intent). See <a href="../extending/">Extending the Questionnaire</a>.</p>
 <h2 id="keep-the-architekton-dependency-layers-declared">Keep the <code>architekton/</code> dependency layers declared<a class="headerlink" href="#keep-the-architekton-dependency-layers-declared" title="Permanent link">&para;</a></h2>
-<p><code>architekton/</code> is nineteen modules, and their dependency direction was implicit:
+<p><code>architekton/</code> is a tree of maintenance modules, and their dependency direction was implicit:
 every cross-module import reads <code>from architekton import x</code>, but nothing said which
 modules sit where, so "may <code>adopt.py</code> use <code>invariants</code>?" was answerable only
 by reading all of them. The layering is now a declared contract — the repo's
@@ -3594,7 +3594,7 @@ up:</p>
 <tbody>
 <tr>
 <td><code>standalone</code></td>
-<td><code>check_upstream</code>, <code>check_upstream_fork</code>, <code>check_questionnaire_diff</code>, <code>generate_license_template</code></td>
+<td><code>check_upstream</code>, <code>check_upstream_fork</code>, <code>check_questionnaire_diff</code>, <code>generate_license_template</code>, <code>hygiene</code></td>
 <td>maintenance/CI scripts that import nothing from <code>architekton/</code> (a pristine checkout or a released tarball is their world)</td>
 </tr>
 <tr>
