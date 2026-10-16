@@ -39,8 +39,9 @@ and docs that name it. Edit those files rather than searching.
 - Questionnaire: `questions/NN-<area>.yml`, one file per area; NN is the ask
   order and a question may only read answers from lower numbers.
   `copier.yml` only lists the files and holds template settings.
-- Generated project payload: `template/` (file and directory names carry
-  copier's `{% if %}` conditionals) and the snippets in `partials/`; the
+- Generated project payload: `template/` (plain names, as in the generated
+  project) and the snippets in `partials/`; which files exist for which
+  answers is the table in `questions/99-files.yml`; the
   generated task-runner model is `partials/tasks.jinja`
 - Presets: `presets/<name>.yml`
 - Template tooling (CLI, witnesses, batch runner, docs generator, MCP

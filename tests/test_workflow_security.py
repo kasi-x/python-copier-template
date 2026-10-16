@@ -430,13 +430,7 @@ def test_zizmor_cli_pin_is_inside_the_actions_allowlist():
     # The shipped copy is what generated projects actually run, and it is a
     # separate file (a .jinja, not a symlink): a fix applied to one side only
     # would leave every generated project red. Compare the pin lines.
-    jinja = (
-        TOP
-        / "template"
-        / "{% if is_github %}.github{% endif %}"
-        / "{% if ci_github_actions %}workflows{% endif %}"
-        / "{% if cicd_extras %}security.yml{% endif %}.jinja"
-    ).read_text(encoding="utf-8")
+    jinja = (TOP / "template" / ".github" / "workflows" / "security.yml.jinja").read_text(encoding="utf-8")
     assert action_m.group(0) in jinja, (
         "template security.yml.jinja pins a different zizmor action than the root workflow"
     )

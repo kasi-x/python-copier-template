@@ -1,7 +1,7 @@
 # The questionnaire, as a table of contents.
 #
 # Every question lives in questions/, one file per area, and the number in
-# the file name IS the ask order: copier asks 01 first and 91 last. To change
+# the file name IS the ask order: copier asks 01 first and 99 last. To change
 # a question, open the file whose name matches its area; to see everything a
 # question touches, run `architekton-py where <question>`.
 #
@@ -18,6 +18,8 @@
 #   15-web-api (their gates read has_data_science / has_web_api).
 # - 90-derived holds internal values nobody is asked (when: false); 91-structured
 #   holds the dependency / src-dir lists whose defaults read 90-derived.
+# - 99-files is the table of which generated files exist for which answers;
+#   it reads everything above, so it comes last.
 #
 # Each include is its own YAML document: two `!include` tags in one document
 # would collide as the same mapping key.
@@ -59,6 +61,8 @@
 ---
 !include questions/91-structured.yml
 ---
+!include questions/99-files.yml
+---
 # Template settings (underscore keys). Copier merges these across fragments;
 # they are kept here in one place so the template's runtime behaviour is
 # documented in a single spot. `questions/` holds the include fragments, so
@@ -67,6 +71,10 @@ _subdirectory: "template"
 
 _exclude:
     - questions
+    # questions/99-files.yml: every path whose condition is false. `copier
+    # update` also applies this list while it re-renders the project's *old*
+    # template version, which may predate the table: hence the default.
+    - "{% for path, keep in (file_gates | default({})).items() if not keep %}/{{ path }}\n{% endfor %}"
 
 _skip_if_exists:
     - CHANGELOG.md

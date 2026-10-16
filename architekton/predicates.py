@@ -71,6 +71,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:  # architekton/ is no root package (pyproject.toml)
     sys.path.insert(0, str(TOP))
 
+from architekton import file_gates  # noqa: E402
 from architekton import invariants  # noqa: E402
 from architekton import questionnaire  # noqa: E402
 from architekton import when_model  # noqa: E402
@@ -221,6 +222,16 @@ def _filename_sites() -> list[Site]:
             base = Path(parent, segment).as_posix()
             for ordinal, (_line, _keyword, expr, evaluated) in enumerate(_scan_blocks(segment)):
                 sites.append(_site(FILENAME, f"{base}::{ordinal}", expr, evaluated))
+    # The rows of questions/99-files.yml gate paths the same way a name
+    # condition does, so each row is a filename site at the template/ path
+    # that produces its output path.
+    entries = {file_gates.output_path(path.relative_to(root).as_posix()): path for path in sorted(root.rglob("*"))}
+    for gate in file_gates.load(TOP):
+        entry = entries.get(gate.path)
+        if entry is None:
+            continue  # a stale row: file_gates --check and its test own that failure
+        location = Path(TEMPLATE_DIR, entry.relative_to(root)).as_posix()
+        sites.append(_site(FILENAME, f"{location}::table", gate.full_condition, gate.full_condition))
     return sites
 
 

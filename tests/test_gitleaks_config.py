@@ -18,7 +18,7 @@ import yaml
 
 TOP = Path(__file__).resolve().parent.parent
 GITLEAKS_TOML = TOP / ".gitleaks.toml"
-TEMPLATE_LINK = TOP / "template" / "{% if cicd_extras %}.gitleaks.toml{% endif %}"
+TEMPLATE_LINK = TOP / "template" / ".gitleaks.toml"
 HYGIENE = TOP / ".github" / "workflows" / "_hygiene.yml"
 
 

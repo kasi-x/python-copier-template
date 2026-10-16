@@ -11,8 +11,12 @@ has to know the layout first:
 - **feeds**: the derived values (`when: false` internals) that read it,
   transitively -- a template file gated on `runner_just` is still a
   `task_runner` file.
-- **template / partials**: payload files whose *path* (the file exists only
-  when ...) or *Jinja code* reads the name or anything it feeds. Only Jinja
+- **which files exist**: the rows of `questions/99-files.yml` whose
+  condition reads the name or anything it feeds (with their line numbers:
+  that is where to edit), plus the few template/ paths that keep their
+  condition in their computed name.
+- **template / partials**: payload files whose *Jinja code* reads the name
+  or anything it feeds. Only Jinja
   code is scanned (`{{ ... }}` / `{% ... %}`), never prose, so a short name
   like `docs` matches where the template branches on it, not every sentence
   that mentions documentation.
@@ -44,9 +48,13 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:  # architekton/ is no root package (pyproject.toml)
     sys.path.insert(0, str(TOP))
 
+from architekton import file_gates  # noqa: E402
 from architekton import question_graph  # noqa: E402
 from architekton import questionnaire  # noqa: E402
 from architekton import when_model  # noqa: E402
+
+#: The internal that holds questions/99-files.yml's table.
+TABLE_NAME = "file_gates"
 
 #: The payload trees: the generated project and the partials it includes.
 PAYLOAD_ROOT = "template"
@@ -120,6 +128,7 @@ def _closure(name: str, graph: question_graph.Graph) -> tuple[list[str], list[st
                     frontier.append(reader)
             elif reader != name:
                 read_by.add(reader)
+    feeds.discard(TABLE_NAME)  # the file table reads everything; its rows are reported on their own
     return sorted(feeds, key=order.__getitem__), sorted(read_by, key=order.__getitem__)
 
 
@@ -141,12 +150,19 @@ def _payload_files(root: Path) -> list[Path]:
 
 
 def _scan_payload(top: Path, watched: set[str], hits: Touchpoints) -> None:
+    # Which files exist: the rows of questions/99-files.yml, plus the few
+    # template/ paths that keep their condition in their (computed) name.
+    hits.file_gated = [
+        f"{file_gates.GATES_FILE.as_posix()}:{gate.line}  {gate.path}"
+        for gate in file_gates.load(top)
+        if jinja_reads("{{ " + gate.full_condition + " }}") & watched
+    ]
     template = top / PAYLOAD_ROOT
     for path in _payload_files(template):
         relative = path.relative_to(top).as_posix()
         if jinja_reads(path.relative_to(template).as_posix()) & watched:
             hits.file_gated.append(relative)
-        elif jinja_reads(_read_text(path)) & watched:
+        if jinja_reads(_read_text(path)) & watched:
             hits.content.append(relative)
     hits.partials = [
         path.relative_to(top).as_posix()
@@ -209,7 +225,7 @@ def report(hits: Touchpoints, *, limit: int = 12) -> str:
     if hits.read_by:
         lines.append(f"  read by     {', '.join(hits.read_by)} (questions asked only depending on it)")
     lines.append("")
-    lines += _section("Generated files that exist only depending on it", hits.file_gated, limit=limit)
+    lines += _section("Which files exist (edit the condition here)", hits.file_gated, limit=limit)
     lines += _section("Generated files whose content depends on it", hits.content, limit=limit)
     lines += _section("Snippets the generated files include (partials/)", hits.partials, limit=limit)
     lines += _section("Presets that set it", hits.presets, limit=limit)

@@ -173,3 +173,5 @@ challenges/**/flag*
 # credentials
 test/
 .kattisrc
+# ...but this repo's template/test/ is the ros2 package's test directory
+!/template/test/

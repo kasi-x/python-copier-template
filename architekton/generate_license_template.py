@@ -89,7 +89,7 @@ def render_chain(licenses: list[tuple[str, str, str]]) -> str:
 def main() -> None:
     licenses = load_licenses()
 
-    license_path = TEMPLATE_DIR / "{% if render_license %}LICENSE{% endif %}.jinja"
+    license_path = TEMPLATE_DIR / "LICENSE.jinja"
     license_path.write_text(render_chain(licenses), encoding="utf-8")
     print(f"wrote {license_path}")
 

@@ -307,9 +307,18 @@ must keep the tags at the SAME indentation as the block-scalar content
 the shell script — harmless. Verified by rendering with
 `load_template_config` (machine gate) plus an actual `copier copy`.
 
-The same lesson applies to answer-driven file protection: conditional
-presence is expressed on the FILE NAME (`{% if x %}name{% endif %}.jinja`),
-never by jinja in `_skip_if_exists` (config values are not rendered).
+## Which files exist is a table, not file names
+
+Whether a generated file exists is one row of `questions/99-files.yml`
+(`<path>: {{ <condition> }}`); copier.yml's `_exclude` turns every row whose
+condition is false into an excluded path, so `template/` keeps the plain
+names of the generated project. Two kinds of paths keep `{% if %}` in their
+name instead: names computed from answers (`{{ pkg_dir }}`, the
+uv.lock / pixi.lock switch), and the `src/` sub-trees that several project
+types fill (a row keyed on an output path would also hit a package that
+happens to share it). `tests/test_file_gates.py` holds that line, and
+refuses a row no template file produces. Never put conditions in
+`_skip_if_exists`: copier does not render it.
 
 ## Documented generation commands must run without `--vcs-ref`
 
@@ -348,7 +357,7 @@ one-line root cause.
 
 `git_platform` offers `github.com` (default) and `gitlab.com`. The platform
 distinction is enforced in two places: the `is_github` / `is_gitlab`
-internals (questions/90-derived.yml) gate whole files by filename, and
+internals (questions/90-derived.yml) gate whole files (rows in `questions/99-files.yml`), and
 the `repo_url` / `docs_url` internals in `questions/90-derived.yml` decide URL
 bytes. What that means for a `gitlab.com` render:
 
@@ -363,7 +372,7 @@ Shipped, following the platform:
   `docs/tutorials/installation.md`, the README clone/source links, the ros2
   `package.xml`, and the LICENSE notice text.
 - the hardened `.gitlab-ci.yml` instead of the GitHub Actions workflow set
-  (`.github/` is filename-gated to github.com), and — because
+  (`.github` is a `questions/99-files.yml` row gated on `is_github`), and — because
   `security_policy_effective` / `scorecard_effective` gate on the platform —
   no `SECURITY.md` / Scorecard workflow (see
   `docs/explanations/security.md`).

@@ -28,7 +28,7 @@ task_runner — question
   feeds       task_runner_effective, runner_just, runner_task
 
 Generated files that exist only depending on it (5)
-  template/{% if not existing_project and task_runner_effective == 'just' %}justfile{% endif %}.jinja
+  template/justfile.jinja
   ...
 Snippets the generated files include (partials/) (3)
   partials/tasks.jinja
@@ -45,7 +45,7 @@ lives in one of them:
 | --- | --- |
 | a question: its wording, default, choices, or when it is asked | `questions/NN-<area>.yml` (NN is the ask order) |
 | what a generated file contains | the file under `template/`, or the snippet in `partials/` it includes |
-| whether a generated file exists | the `{% if %}` in that file's name under `template/` |
+| whether a generated file exists | its row in `questions/99-files.yml` (`<path>: {{ <condition> }}`) |
 | a ready-made answer set | `presets/<name>.yml` |
 | the text of a field rule (licenses, personal data, ...) | not here: [law-map](https://github.com/politeuma/law-map/tree/main/guidance/sections) (see [Field rules](#field-rules)) |
 | the docs | `docs/`; blocks marked `GENERATED` are rewritten by `task regen`, so edit their source instead |

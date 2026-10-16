@@ -61,12 +61,10 @@ from pathlib import Path
 TOP = Path(__file__).resolve().parent.parent
 QUESTIONS_DIR = TOP / "questions"
 TEMPLATE_DIR = TOP / "template"
-PYPROJECT_JINJA = TEMPLATE_DIR / "{% if render_pyproject %}pyproject.toml{% endif %}.jinja"
-GPU_DOCKERFILE = TEMPLATE_DIR / ("{% if use_gpu_effective %}Dockerfile.gpu{% endif %}.jinja")
-COMPOSE_JINJA = TEMPLATE_DIR / ("{% if web_api and docker %}compose.local.yml{% endif %}.jinja")
-CI_JINJA = TEMPLATE_DIR / (
-    "{% if is_github %}.github{% endif %}/{% if ci_github_actions %}workflows{% endif %}/ci.yml.jinja"
-)
+PYPROJECT_JINJA = TEMPLATE_DIR / "pyproject.toml.jinja"
+GPU_DOCKERFILE = TEMPLATE_DIR / "Dockerfile.gpu.jinja"
+COMPOSE_JINJA = TEMPLATE_DIR / "compose.local.yml.jinja"
+CI_JINJA = TEMPLATE_DIR / (".github/workflows/ci.yml.jinja")
 ROS2_QUESTIONS = QUESTIONS_DIR / "03-ros2.yml"
 MACROS_JINJA = TEMPLATE_DIR.parent / "partials" / "macros.jinja"
 
@@ -257,7 +255,7 @@ def _extract_platform_pins() -> list[Pin]:
         re.findall(r"image: (postgres:[^\s]+)", ci_src)
     )
 
-    docker_src = (TEMPLATE_DIR / "{% if docker or cicd_extras %}Dockerfile{% endif %}.jinja").read_text()
+    docker_src = (TEMPLATE_DIR / "Dockerfile.jinja").read_text()
     ubuntu_tags = set(re.findall(r"(?:ubuntu:|ubuntu-devcontainer:)(\w+)", docker_src))
     base_m = re.search(r"FROM (ghcr\.io/\S+) AS developer", docker_src)
 

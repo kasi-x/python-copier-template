@@ -26,6 +26,7 @@ a module missing here fails the test.)
 | Module | What it does |
 | --- | --- |
 | `questionnaire.py` | `copier.yml` + `questions/*.yml` as data, in ask order |
+| `file_gates.py` | `questions/99-files.yml`, the table of which files exist for which answers |
 | `when_model.py` | The `when:` expressions, and the Jinja identifier scanner everything shares |
 | `question_graph.py` | What reads what, and where a new question may be placed |
 | `answers.py` | The project details every test render starts from |

@@ -110,8 +110,9 @@ just docs        # build the documentation site
 
 ```text
 copier.yml     the questionnaire's table of contents (includes questions/ in order)
-questions/     the questions, one file per area; the NN- prefix is the ask order
-template/      the generated project; file names carry copier's {% if %} conditions
+questions/     the questions, one file per area; the NN- prefix is the ask order;
+               99-files.yml says which generated files exist for which answers
+template/      the generated project, file for file
 partials/      snippets that template files include
 presets/       ready-made answer sets for --preset
 architekton/   the CLI and the checks that prove every combination renders (map: architekton/README.md)

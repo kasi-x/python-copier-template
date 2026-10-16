@@ -213,7 +213,7 @@ def test_check_task_executes_on_poe(tmp_path: Path):
 
 # The shipped workflows that dispatch on the task runner. They reach generated
 # projects through the symlinks in
-# `template/{% if is_github %}.github{% endif %}/.../workflows/`,
+# `template/.github/.../workflows/`,
 # so a branch missing in one of them is a broken generated CI -- a runtime
 # `Unknown task runner` exit 1 that no render-only check sees. That is how
 # `_test.yml` and `_docs.yml` came to lack invoke/duty while `_tasks.yml` had

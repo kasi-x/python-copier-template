@@ -56,6 +56,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
+from architekton import file_gates  # noqa: E402
 from architekton import git  # noqa: E402
 from architekton import questionnaire  # noqa: E402
 from architekton.render_inputs import read_yaml_mapping  # noqa: E402
@@ -603,6 +604,7 @@ def template_outputs(template_dir: Path) -> list[Output]:
     the adopter's own package tree, which `scaffold` covers.
     """
     outputs: list[Output] = []
+    gates = file_gates.load(template_dir.parent)
     for path in sorted(template_dir.rglob("*")):
         if path.is_dir():
             continue
@@ -610,7 +612,8 @@ def template_outputs(template_dir: Path) -> list[Output]:
         if any(JINJA_VAR.search(part) or not part for part in parts):
             continue
         rendered = "/".join(parts).removesuffix(".jinja")
-        condition = " ".join(JINJA_TAG.findall(str(path.relative_to(template_dir))))
+        relative = path.relative_to(template_dir).as_posix()
+        condition = " ".join(f"{{% if {expr} %}}" for expr in file_gates.conditions_for(relative, gates))
         resolved = _resolve_condition(condition)
         token: str | None = None
         match = PROTECT_CONDITION.search(resolved)

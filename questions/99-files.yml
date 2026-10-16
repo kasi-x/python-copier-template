@@ -1,0 +1,171 @@
+# Which generated files exist for which answers.
+#
+# One row per path in the generated project: `<path>: {{ <condition> }}`.
+# The path -- a file, or a whole directory -- is generated only when the
+# condition is true; anything not listed is always generated (if its source
+# exists under template/). A condition can use any question or derived value
+# (questions/90-derived.yml). To add a file that only some projects get, put
+# it under template/ with its plain name and add its row here.
+#
+# Two kinds of paths keep their condition in the file name instead: names
+# that are computed from answers (`{{ pkg_dir }}`, the uv.lock / pixi.lock
+# switch), and the src/ sub-trees, which several project types fill.
+#
+# copier reads this table through `_exclude` in copier.yml: every row whose
+# condition is false becomes an excluded path. Run
+# `task where -- <path or setting>` to see a row in context.
+file_gates:
+    type: yaml
+    when: false
+    default: |
+        _quarto.yml: {{ data_science }}
+        AGENTS.md: {{ agents_md_effective }}
+        alembic: {{ web_api }}
+
+        app: {{ web_api }}
+        app/bot_discord.py: {{ bot_discord_effective }}
+        app/bot_gmail.py: {{ bot_gmail_effective }}
+        app/bot_line.py: {{ bot_line_effective }}
+        app/bot_slack.py: {{ bot_slack_effective }}
+        app/mcp_server.py: {{ mcp_effective }}
+        app/metrics.py: {{ prometheus_effective }}
+        app/rate_limit.py: {{ rate_limit_effective }}
+
+        challenges: {{ ctf_effective }}
+        CHARTER.md: {{ scraping_effective }}
+        CITATION.cff: {{ fair }}
+        CMakeLists.txt: {{ ros2_cpp }}
+        compose.local.yml: {{ web_api and docker }}
+        .daimonion.yml: {{ agents_md_effective }}
+
+        data: {{ data_science_layout }}
+        data/CARE.md: {{ care }}
+        data/DUO.md: {{ duo }}
+
+        .devcontainer: {{ cicd_extras }}
+        .devcontainer/devcontainer.gpu.json: {{ use_gpu_effective }}
+
+        Dockerfile: {{ docker or cicd_extras }}
+        Dockerfile.gpu: {{ use_gpu_effective }}
+        Dockerfile.ros2: {{ ros2_pkg }}
+        .dockerignore: {{ docker }}
+
+        docs: {{ render_docs }}
+        docs/_api.rst: {{ sphinx and not oj_code }}
+        docs/_templates: {{ sphinx }}
+        docs/conf.py: {{ sphinx }}
+        docs/genindex.md: {{ sphinx }}
+        docs/how-to.md: {{ sphinx }}
+        docs/how-to/contribute.md: {{ sphinx }}
+        docs/how-to/run-container.md: {{ docker }}
+        docs/index.md: {{ sphinx or zensical }}
+        docs/modules.md: {{ api_docs_zensical }}
+        docs/reference.md: {{ sphinx }}
+        docs/tutorials.md: {{ sphinx }}
+
+        duties.py: {{ not existing_project and task_runner_effective == 'duty' }}
+        .env.example: {{ needs_env_example }}
+        .envrc: {{ cicd_extras }}
+        ethics: {{ web_api }}
+        firmware: {{ micropython_pkg }}
+
+        .github: {{ is_github }}
+        .github/CODEOWNERS: {{ cicd_extras }}
+        .github/ISSUE_TEMPLATE: {{ cicd_extras }}
+        .github/PULL_REQUEST_TEMPLATE: {{ cicd_extras }}
+        .github/actionlint.yaml: {{ cicd_extras }}
+        .github/actions: {{ ci_github_actions }}
+        .github/workflows: {{ ci_github_actions }}
+        .github/workflows/_container.yml: {{ docker }}
+        .github/workflows/_dist.yml: {{ not ros2_pkg }}
+        .github/workflows/_docs.yml: {{ docs }}
+        .github/workflows/_hygiene.yml: {{ not ros2_pkg }}
+        .github/workflows/_pypi.yml: {{ pypi }}
+        .github/workflows/_release.yml: {{ not ros2_pkg }}
+        .github/workflows/_tasks.yml: {{ not ros2_pkg }}
+        .github/workflows/_test.yml: {{ not ros2_pkg }}
+        .github/workflows/fair-software.yml: {{ fair }}
+        .github/workflows/oj-sample.yml: {{ oj_sample }}
+        .github/workflows/scorecard.yml: {{ scorecard_effective }}
+        .github/workflows/security.yml: {{ cicd_extras }}
+        .github/zizmor.yml: {{ cicd_extras }}
+
+        .gitignore: {{ render_gitignore }}
+        .gitlab-ci.yml: {{ is_gitlab }}
+        .gitleaks.toml: {{ cicd_extras }}
+        great-docs.yml: {{ great_docs }}
+        .howfairis.yml: {{ fair }}
+        include: {{ ros2_cpp }}
+        index.qmd: {{ great_docs }}
+        justfile: {{ not existing_project and task_runner_effective == 'just' }}
+        LEGAL.md: {{ scraping_effective }}
+        LICENSE: {{ render_license }}
+        Makefile: {{ not existing_project and task_runner_effective == 'make' }}
+        .mcp.json: {{ mcp_effective }}
+        models: {{ data_science_layout }}
+        notebooks: {{ data_science }}
+        outputs: {{ data_science }}
+        package.xml: {{ ros2_pkg }}
+        paper: {{ data_science }}
+        pixi.toml: {{ ros2_pkg and ros2_package_manager == 'pixi' }}
+        prompts: {{ prompts_scaffold }}
+        pyproject-fmt.toml: {{ not ros2_cpp }}
+        pyproject.toml: {{ render_pyproject }}
+        .python-version: {{ render_python_version }}
+        README.md: {{ render_readme }}
+        references: {{ data_science }}
+        renovate.json: {{ cicd_extras }}
+        reports: {{ data_science_layout }}
+        requirements-dev.txt: {{ micropython_pkg }}
+        resource: {{ ros2_python }}
+        REUSE.toml: {{ reuse_effective }}
+        SECURITY.md: {{ security_policy_effective }}
+        setup.cfg: {{ ros2_python }}
+        setup.py: {{ ros2_python }}
+        slides: {{ data_science }}
+        Taskfile.yml: {{ not existing_project and task_runner_effective == 'task' }}
+        tasks.py: {{ not existing_project and task_runner_effective == 'invoke' }}
+        test: {{ ros2_python }}
+
+        tests: {{ tests_scaffold or micropython_pkg }}
+        tests/conftest.py: {{ tests_scaffold }}
+        tests/test_agent.py: {{ tests_scaffold and agent_scaffold }}
+        tests/test_app.py: {{ tests_scaffold and web_api }}
+        tests/test_bot_discord.py: {{ tests_scaffold and bot_discord_effective }}
+        tests/test_bot_gmail.py: {{ tests_scaffold and bot_gmail_effective }}
+        tests/test_bot_line.py: {{ tests_scaffold and bot_line_effective }}
+        tests/test_bot_slack.py: {{ tests_scaffold and bot_slack_effective }}
+        tests/test_browser_fetch.py: {{ tests_scaffold and scraping_playwright_effective }}
+        tests/test_cli.py: {{ tests_scaffold and not online_judge and not web_api }}
+        tests/test_core.py: {{ micropython_pkg }}
+        tests/test_ctf_example.py: {{ tests_scaffold and ctf_effective }}
+        tests/test_mcp_server.py: {{ tests_scaffold and mcp_effective }}
+        tests/test_memorious_crawler.py: {{ tests_scaffold and scraping_memorious_effective }}
+        tests/test_pipeline.py: {{ tests_scaffold and scraping_httpx_effective }}
+        tests/test_qa.py: {{ tests_scaffold and not online_judge and not web_api }}
+        tests/test_scraping.py: {{ tests_scaffold and scraping_httpx_effective }}
+        tests/test_scrapy_spider.py: {{ tests_scaffold and scraping_scrapy_effective }}
+        tests/test_workspace.py: {{ tests_scaffold and oj_code }}
+
+        tools: {{ micropython_pkg }}
+        .vscode: {{ cicd_extras }}
+        zensical.toml: {{ zensical }}
+
+        # Inside the package directory (pkg_dir: src/<name> or <name>), when the
+        # project has one. That directory keeps its condition in its name: the
+        # name is computed.
+        {% if pkg_scaffold %}
+        {{ pkg_dir }}/agent.py: {{ agent_scaffold }}
+        {{ pkg_dir }}/bot_discord.py: {{ bot_discord_effective }}
+        {{ pkg_dir }}/bot_gmail.py: {{ bot_gmail_effective }}
+        {{ pkg_dir }}/bot_line.py: {{ bot_line_effective }}
+        {{ pkg_dir }}/bot_slack.py: {{ bot_slack_effective }}
+        {{ pkg_dir }}/browser_fetch.py: {{ scraping_playwright_effective }}
+        {{ pkg_dir }}/crawler.py: {{ scraping_memorious_effective }}
+        {{ pkg_dir }}/fetcher.py: {{ scraping_httpx_effective }}
+        {{ pkg_dir }}/mcp_server.py: {{ mcp_effective }}
+        {{ pkg_dir }}/pipeline.py: {{ scraping_httpx_effective }}
+        {{ pkg_dir }}/spider.py: {{ scraping_scrapy_effective }}
+        {{ pkg_dir }}/storage.py: {{ scraping_httpx_effective }}
+        {{ pkg_dir }}/tools: {{ agent_scaffold }}
+        {% endif %}

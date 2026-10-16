@@ -11,7 +11,7 @@
       (task_runner_effective == 'poe')
     - the `[tool.pixi.feature.dev.tasks]` table in template/pyproject.toml.jinja
       (task_runner_effective == 'pixi')
-    - the command table in template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja
+    - the command table in template/AGENTS.md.jinja
 
   The model is ONE declarative list, `tasks`: each entry is
   {name, desc, run: [str, ...]} or {name, desc, deps: [name, ...]}, in the
