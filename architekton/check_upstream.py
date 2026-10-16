@@ -14,7 +14,7 @@ upstream feed it is compared against:
 - CUDA (Dockerfile.gpu base + cu124/cu126-style uv index) — the uv index
   must still receive torch releases; the Docker base should track the
   newest long-lived CUDA minor.
-- ROS 2 distros (questions/ros2.yml choices) — no offered distro may be
+- ROS 2 distros (questions/03-ros2.yml choices) — no offered distro may be
   past EOL per REP-2000; warn when a newer LTS exists.
 - Python floor (requires-python / CI matrix / classifiers) — the oldest
   supported version must not be past EOL per endoflife.date.
@@ -32,7 +32,7 @@ upstream feed it is compared against:
     release of zizmorcore/zizmor.
   - uvx tool pins (`conventional-pre-commit`, `nbstripout`, `cffconvert` in
     the same hygiene file) — each tracks its latest release on PyPI.
-- daimonion pin (`daimonion_spec` in questions/_internal.yml) — tracks the
+- daimonion pin (`daimonion_spec` in questions/90-derived.yml) — tracks the
   head commit of politeuma/daimonion main; the generated project's uvx
   install is pinned to one commit so a render never executes whatever
   landed on main since.
@@ -70,7 +70,7 @@ COMPOSE_JINJA = TEMPLATE_DIR / ("{% if web_api and docker %}compose.local.yml{% 
 CI_JINJA = TEMPLATE_DIR / (
     "{% if is_github %}.github{% endif %}/{% if ci_provider == 'github_actions' %}workflows{% endif %}/ci.yml.jinja"
 )
-ROS2_QUESTIONS = QUESTIONS_DIR / "ros2.yml"
+ROS2_QUESTIONS = QUESTIONS_DIR / "03-ros2.yml"
 MACROS_JINJA = TEMPLATE_DIR.parent / "_shared" / "macros.jinja"
 
 
@@ -381,14 +381,14 @@ def _extract_security_pins() -> list[Pin]:
 
 def _extract_daimonion_pin() -> list[Pin]:
     """Extract the commit-pinned daimonion uvx spec from the questionnaire."""
-    internal_src = (QUESTIONS_DIR / "_internal.yml").read_text()
+    internal_src = (QUESTIONS_DIR / "90-derived.yml").read_text()
     spec_m = re.search(
         r"daimonion_spec:\n    type: str\n    default: \"git\+https://github\.com/politeuma/daimonion@([0-9a-f]{40})\"",
         internal_src,
     )
     return [
         Pin(
-            name="daimonion pin (questions/_internal.yml)",
+            name="daimonion pin (questions/90-derived.yml)",
             current=spec_m.group(1) if spec_m else "?",
             checkable=True,
         )

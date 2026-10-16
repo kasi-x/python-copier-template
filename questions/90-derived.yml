@@ -38,7 +38,7 @@ scorecard_effective:
 # Project-type derived booleans (render-time only; the ones questions
 # reference live in their genre fragments). web_api / data_science are the
 # effective booleans: the matching base project_type, or the corresponding
-# combo opt-in from questions/_combo.yml. They come FIRST in this file:
+# combo opt-in from questions/08-layers.yml. They come FIRST in this file:
 # copier evaluates `when: false` defaults in definition order, so every
 # consumer below (mcp_effective, prometheus/rate_limit/cors_effective,
 # use_src_layout, pkg_dir, ...) must see them resolved.

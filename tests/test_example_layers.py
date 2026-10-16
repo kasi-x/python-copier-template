@@ -73,7 +73,7 @@ class FlagRow:
 
 # The render-time guards the deleted sweeps exercised. `license_check_effective`
 # is in the table to pin that it is NOT one of them: its gate is
-# use_recommended_security / license_check (questions/_internal.yml), so it
+# use_recommended_security / license_check (questions/90-derived.yml), so it
 # resolves True on every base -- the one former sweep family (license_check)
 # that lost its "not offered elsewhere" property when the check moved behind
 # the security gate; its render side lives in tests/test_example_docs_ci.py.
@@ -210,7 +210,7 @@ def test_effective_flags_are_not_offered_outside_their_declared_bases(worker: Wo
     problems = _flag_table_problems(worker, FLAG_TABLE, choices)
     assert not problems, (
         "the derived-layer flags drift from the declared truth table (evaluated by copier's own "
-        "questionnaire pass at the sweep polarity) -- update FLAG_TABLE or questions/_internal.yml, "
+        "questionnaire pass at the sweep polarity) -- update FLAG_TABLE or questions/90-derived.yml, "
         "whichever is wrong:\n  " + "\n  ".join(problems)
     )
 

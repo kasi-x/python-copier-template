@@ -25,7 +25,7 @@ over these three functions; the logic lives here so the wording has one
 owner (the architekton/explain.py precedent).
 
 The questionnaire itself is untouched: copier's ask-time `when` semantics,
-the `combinable` / `has_*` render-time guards (questions/_combo.yml) and the
+the `combinable` / `has_*` render-time guards (questions/08-layers.yml) and the
 support.yml refusal rules are reused, never re-spelled. The question order
 and the no-model CLI/questionnaire path keep working exactly as before.
 """
@@ -374,7 +374,7 @@ def validate_answers(answers: dict[str, Any]) -> ValidationResult:
       are computed at render time, never answered);
     - a key whose question copier would not ask at these answers is rejected
       (a forced answer copier keeps but the render guards discard -- the
-      questions/_combo.yml `when` / `combinable` / `has_*` trio);
+      questions/08-layers.yml `when` / `combinable` / `has_*` trio);
     - a layer include on a base that cannot carry it is rejected (the
       `combinable` half of the same trio: `include_web_api=true` on ros2);
     - an answer set whose base no support.yml row promises earns a warning

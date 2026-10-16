@@ -1,7 +1,7 @@
 # Web API questions (asked when has_web_api: project_type == 'web_api', or
 # the include_web_api combo opt-in). use_recommended_web_api is one of the
 # canonical area gates; the effective derived variables live in
-# questions/_internal.yml.
+# questions/90-derived.yml.
 
 use_recommended_web_api:
     type: bool

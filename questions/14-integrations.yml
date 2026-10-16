@@ -1,0 +1,160 @@
+# Area gate: Docker, PyPI, cloud, Sentry, MCP, CI provider, logging and
+# editor/CI extras.
+
+use_recommended_integrations:
+    type: bool
+    default: true
+    help: |
+        Use the recommended deployment & integration settings?
+        Recommended: no Docker container, no PyPI auto-publish, no cloud
+        provider, no Sentry, no MCP support, GitHub Actions for CI,
+        structlog for logging.
+        Answer No to turn any of these on, switch the CI provider, or pick a
+        different logging library.
+
+docker:
+    type: bool
+    when: "{{ not use_recommended_integrations and project_type != 'micropython' and not oj_bare }}"
+    help: |
+        Would you like to publish your project in a Docker container?
+        You should select this if you are making a service.
+    default: false
+
+pypi:
+    type: bool
+    when: "{{ not use_recommended_integrations and not online_judge }}"
+    help: Would you like the wheel and source distribution to be automatically uploaded to PyPI when a release is made?
+    default: false
+
+cloud_provider:
+    type: str
+    when: "{{ not use_recommended_integrations }}"
+    help: |
+        Which cloud provider will this project deploy to?
+        - none: no cloud-specific code or dependencies.
+        - aws: boto3 and service-specific dependencies are added.
+        - gcp: google-cloud-storage is added.
+        - azure: azure-identity is added.
+    choices:
+        - none
+        - aws
+        - gcp
+        - azure
+    default: none
+
+aws_services:
+    type: str
+    when: "{{ not use_recommended_integrations and cloud_provider == 'aws' }}"
+    help: |
+        Which AWS services will you use?
+        - essential: core services (S3, SQS, DynamoDB, Lambda types).
+        - s3: just S3.
+        - dynamodb: just DynamoDB.
+        - sqs: just SQS.
+        - lambda: just Lambda.
+    choices:
+        - essential
+        - s3
+        - dynamodb
+        - sqs
+        - lambda
+    default: essential
+
+include_sentry:
+    type: bool
+    # Base guard mirrors the pkg-tree parent gate (the `{% if %}` on the
+    # {{ pkg_dir }} directory) in raw form, like include_mcp's above: Sentry's
+    # only init site is <pkg>/__main__.py, so a Yes on a base whose pkg tree
+    # never renders would generate a sentry-sdk dependency and a .env.example
+    # entry with no code referencing either. A `when` runs at ask time and
+    # questions/90-derived.yml is included after this fragment, so the
+    # effective `web_api` alias cannot be referenced — hence the raw list of
+    # the types whose pkg tree renders __main__.py, with `not include_web_api`
+    # as the raw mirror of the gate's `not web_api` clause (include_web_api is
+    # defined earlier, in questions/08-layers.yml, so it resolves). Known
+    # remainder: the gate's existing_project + 'scaffold' adopt-protect clause
+    # also suppresses the pkg tree, and no clean raw formulation of it exists
+    # at ask time — this guard stays one hand-synced step narrow.
+    when: "{{ not use_recommended_integrations and project_type in ['library', 'cli', 'script', 'data_science'] and not include_web_api }}"
+    help: |
+        Would you like to include Sentry for error tracking?
+        If yes, sentry-sdk is added and initialised from SENTRY_DSN.
+    default: false
+
+include_mcp:
+    type: bool
+    # The base guard mirrors mcp_effective's (questions/90-derived.yml) in raw
+    # answers, per the ask-time/render-time rule (docs/explanations/template-dev.md).
+    # The `web_api` alias cannot be referenced here: questions resolve in
+    # include order and questions/90-derived.yml is included after this
+    # fragment, so it would be a forward reference (Undefined — the question
+    # would never ask). `has_web_api` would resolve (questions/08-layers.yml
+    # precedes this fragment — the include-order rule permits it); the raw
+    # disjunction stays because raw answers suffice at ask time. Known
+    # exception to "one predicate, one definition": keep this disjunction in
+    # sync with mcp_effective's base guard by hand.
+    when: "{{ not use_recommended_integrations and (project_type == 'cli' or project_type == 'web_api' or include_web_api) }}"
+    help: |
+        Publish this project as an MCP (Model Context Protocol) server?
+        If yes, the mcp SDK (with its CLI) is added and an mcp_server.py
+        is generated: a typed-tools example server you run over stdio,
+        plus an in-process client test as a worked example of how to call
+        it. A mcp-server-<name> console script is added too, so an MCP host
+        can launch it (and, once published, users can run it with uvx).
+        (For web_api projects the server lives in app/mcp_server.py;
+        otherwise in <pkg>/mcp_server.py.)
+    default: false
+
+ci_provider:
+    type: str
+    when: "{{ not use_recommended_integrations }}"
+    help: |
+        Which CI provider would you like to use?
+        - github_actions: GitHub Actions workflows for lint, type-checking,
+          tests and docs.
+        - none: no CI workflows are generated.
+    choices:
+        - github_actions
+        - none
+    default: github_actions
+
+log_library:
+    type: str
+    # Own exclusion list — exactly the three no-Python-package types. Not the
+    # same list as layout.when or use_src_layout (see their comments); pinned
+    # by tests/test_copier_structure.py::
+    # test_layout_exclusion_lists_stay_deliberately_different.
+    when: "{{ not use_recommended_integrations and project_type not in ['ros2', 'micropython', 'online_judge'] }}"
+    help: |
+        Which logging library should logging_setup.py use?
+        - structlog: structured, contextvars-aware logging with console/JSON
+          renderers. Recommended default.
+        - loguru: batteries-included logger — no boilerplate configuration,
+          built-in colours, exception-catching decorator.
+        - picologging: a C-accelerated, drop-in-compatible reimplementation
+          of the standard library logging module. Faster, same API.
+        - logging: the standard library logging module. No extra dependency.
+    choices:
+        - structlog
+        - loguru
+        - picologging
+        - logging
+    default: structlog
+
+cicd_extras:
+    type: bool
+    # An asked question, not a `when: false` internal, on purpose: copier
+    # drops the answers of un-asked questions from .copier-answers.yml
+    # (_main.py hides them), so an internal flag would survive the first
+    # render but be forgotten -- and the extras resurrected -- by
+    # `copier update`. Asking it only off the recommended path keeps the
+    # recommended answer count unchanged while still recording the answer.
+    when: "{{ not use_recommended_integrations }}"
+    help: |
+        Include the optional project infrastructure extras?
+        If no, the render stays minimal: no .devcontainer, .vscode, .envrc,
+        renovate.json, .gitleaks.toml, zizmor/actionlint config, GitHub
+        issue/PR templates, CODEOWNERS, the zizmor security workflow, or the
+        devcontainer-only Dockerfile stage (the publish Dockerfile still
+        renders when docker is on). The `bare` preset sets this to no.
+    default: true

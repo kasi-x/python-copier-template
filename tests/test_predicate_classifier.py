@@ -63,23 +63,23 @@ from architekton import when_model  # noqa: E402
 # The declared exceptions to (a)/(b): location -> internal -> the reason the
 # equivalence is intentional. Declared, not discovered -- like invariants.yml's
 # `excluded`, the test refuses an undeclared equivalence AND a stale entry.
-# Today's three are one family: the `has_*` guards in questions/_combo.yml are
+# Today's three are one family: the `has_*` guards in questions/08-layers.yml are
 # the spelled-out predicate, and `web_api` / `data_science` /
-# `data_science_layout` are its named aliases (questions/_internal.yml:
+# `data_science_layout` are its named aliases (questions/90-derived.yml:
 # "the effective booleans: the matching base project_type, or the
 # corresponding combo opt-in"). An audit examined exactly this trio and kept
 # it as three deliberate layers -- so a definition site may not reference its
 # own alias by name; the alias IS the definition.
 DECLARED_EQUIVALENCES: dict[str, dict[str, str]] = {
-    "_combo.yml:has_web_api": {
+    "08-layers.yml:has_web_api": {
         "web_api": "alias by definition: `web_api` = has_web_api is the render vocabulary's name for this"
-        " exact predicate (questions/_internal.yml), so the definition site is equivalent to the alias it"
+        " exact predicate (questions/90-derived.yml), so the definition site is equivalent to the alias it"
         " does not name -- the recorded effective-layer idiom",
     },
-    "_combo.yml:has_data_science": {
-        "data_science": "same alias idiom: `data_science` = has_data_science by declaration (questions/_internal.yml)",
+    "08-layers.yml:has_data_science": {
+        "data_science": "same alias idiom: `data_science` = has_data_science by declaration (questions/90-derived.yml)",
         "data_science_layout": "the chain's far end: data_science_layout = data_science = has_data_science,"
-        " one predicate with three readers' names (questions/_internal.yml)",
+        " one predicate with three readers' names (questions/90-derived.yml)",
     },
 }
 
@@ -118,7 +118,7 @@ def test_every_unconditional_site_internal_equivalence_is_accounted_for():
             equivalent.add((site.location, name))
             # (a') the site names ANOTHER internal for the same predicate -- the
             # alias family (`data_science` / `data_science_layout`, both defined
-            # in questions/_internal.yml as one predicate with two readers'
+            # in questions/90-derived.yml as one predicate with two readers'
             # names) is the vocabulary in use, not a re-spelling. This is a
             # refinement of (a), not a registry row: the site literally
             # references an internal it is equivalent to.

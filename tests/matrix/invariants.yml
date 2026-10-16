@@ -134,7 +134,7 @@ leaf_classes:
     predicates: [agents-md, docs-nav]
     content:
       - [pyproject.toml, polars]
-    why: "the data-science layout (notebooks/ data/ models/ reports/), from project_type=data_science or the include_data_science layer; it changes questions/_internal.yml's pkg_dir"
+    why: "the data-science layout (notebooks/ data/ models/ reports/), from project_type=data_science or the include_data_science layer; it changes questions/90-derived.yml's pkg_dir"
 
   - id: layout=web_api
     select: {web_api: true}
@@ -560,7 +560,7 @@ leaf_classes:
     tier:
       name: fast
       why: "render + ruff: the trait adds guidance conditions and, only where the data-science layout holds, the CARE sheet"
-    why: "the medtech domain trait: .daimonion.yml gains the medtech condition (the linter renders the medical-SaMD section), plus personal_data (health data is a special category). questions/_internal.yml's `care` takes the trait as a second trigger but keeps the `data_science_layout` conjunct, so a clinical web service gets the conditions and no data/ sheet."
+    why: "the medtech domain trait: .daimonion.yml gains the medtech condition (the linter renders the medical-SaMD section), plus personal_data (health data is a special category). questions/90-derived.yml's `care` takes the trait as a second trigger but keeps the `data_science_layout` conjunct, so a clinical web service gets the conditions and no data/ sheet."
 
   # -- the distribution answers ------------------------------------------- #
   #

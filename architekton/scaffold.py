@@ -51,7 +51,7 @@ def scaffold_question(  # noqa: PLR0913
     when: str = "true",
     default: Any = True,
     help_text: str = "",
-    target_file: str = "questions/_common_c.yml",
+    target_file: str = "questions/17-project-details.yml",
     dry_run: bool = False,
 ) -> int:
     """Generate a question stub in the specified questions file."""
@@ -101,11 +101,11 @@ def scaffold_layer(
     clean_name = layer_name.removeprefix("include_")
     question_name = f"include_{clean_name}"
 
-    # 1. Add question to questions/_combo.yml (the opt-in layers' home; keep
+    # 1. Add question to questions/08-layers.yml (the opt-in layers' home; keep
     # ask order = file order there). The generated `when` is the combinable
     # default; tighten it to the layer's real bases (cf. the existing
     # include_* rows) and declare the same bases in tests/matrix/layers.yml.
-    q_file = "questions/_combo.yml"
+    q_file = "questions/08-layers.yml"
     help_text = f"Include {clean_name} support? ({description or 'Opt-in layer'})"
     print(f"1. Staging question {question_name!r} in {q_file}...")
     res = scaffold_question(
@@ -152,7 +152,7 @@ def scaffold_layer(
     # 3. Print template + effective-internal guidance (layers render through
     # a <name>_effective internal, not a raw include_* file condition)
     print(
-        f"3. Wire the layer through a {clean_name}_effective internal in questions/_internal.yml "
+        f"3. Wire the layer through a {clean_name}_effective internal in questions/90-derived.yml "
         f'(default: "{{{{ {question_name} and ... }}}}" , when: false), '
         f"then gate template files on it: "
         f"template/{{{{% if {clean_name}_effective %}}}}...{{{{% endif %}}}}/"
@@ -261,7 +261,7 @@ def main(argv: list[str] | None = None) -> int:
     q_parser.add_argument("--when", default="true", help="when condition (Jinja expression)")
     q_parser.add_argument("--default", default="true", help="default value (true, false, or literal)")
     q_parser.add_argument("--help-text", default="", help="help/prompt text for questionnaire")
-    q_parser.add_argument("--file", default="questions/_common_c.yml", help="target file under questions/")
+    q_parser.add_argument("--file", default="questions/17-project-details.yml", help="target file under questions/")
     q_parser.add_argument("--dry-run", action="store_true", help="print without writing")
 
     # layer

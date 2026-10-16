@@ -227,7 +227,7 @@ def _question_local_vars() -> set[str]:
     """Names questions/*.yml and copier.yml bind with `{% set %}`.
 
     A question's `default` may be a small Jinja program that builds its value
-    with `{% set %}` (the structured answers in questions/_structured.yml
+    with `{% set %}` (the structured answers in questions/91-structured.yml
     accumulate a list that way). Those names are local to the expression, not
     copier.yml keys, so the undefined-reference check below must not flag
     them -- the same allowance `_template_local_vars` makes for template
@@ -361,7 +361,7 @@ def test_oj_predicate_raw_forms_are_named_internals():
     """The raw predicate forms the predicate unification eliminated never reappear.
 
     Nothing is allow-listed: after the unification there are zero occurrences
-    outside questions/online_judge.yml, where the internals are defined.
+    outside questions/07-online-judge.yml, where the internals are defined.
     """
     banned = "online_judge and not kaggle"
     for src in _rot_guard_sources():
@@ -422,14 +422,16 @@ def _fragment_questions() -> dict[str, dict]:
 
 
 def test_fragments_are_complete_and_duplicate_free():
-    """questions/*.yml fragments hold every resolved question exactly once."""
+    """questions/*.yml fragments hold every resolved question exactly once.
+
+    copier.yml itself declares no question: it is the include list plus the
+    template settings, so every question has exactly one file to edit.
+    """
     resolved, _ = when_model.load_questions()
     fragments = _fragment_questions()
-    # The resolved config is the union of fragments + the inline project_type
-    # in copier.yml.
     inline = set(resolved) - set(fragments)
-    assert inline == {"project_type"}, f"unexpected inline questions: {inline}"
-    assert set(fragments) == set(resolved) - {"project_type"}, (
+    assert not inline, f"questions declared inline in copier.yml instead of questions/: {inline}"
+    assert set(fragments) == set(resolved), (
         f"fragments diverge from resolved config: "
         f"only-in-fragments={sorted(set(fragments) - set(resolved))} "
         f"only-in-resolved={sorted(set(resolved) - set(fragments))}"

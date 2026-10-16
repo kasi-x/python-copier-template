@@ -366,7 +366,7 @@ def _add_scaffold_command(subcommands: Any) -> None:
     q.add_argument("--when", default="true", help="when condition (Jinja expression)")
     q.add_argument("--default", default="true", help="default value (true, false, or literal)")
     q.add_argument("--help-text", default="", help="help/prompt text for questionnaire")
-    q.add_argument("--file", default="questions/_common_c.yml", help="target file under questions/")
+    q.add_argument("--file", default="questions/17-project-details.yml", help="target file under questions/")
     q.add_argument("--dry-run", action="store_true", help="print without writing")
 
     layer = scaffold_sub.add_parser("layer", help="scaffold a new opt-in layer (include_<name>)")

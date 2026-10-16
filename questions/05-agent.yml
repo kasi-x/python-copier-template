@@ -1,0 +1,12 @@
+# Area gate: AI-agent tooling (library / cli only).
+
+use_recommended_agent:
+    type: bool
+    when: "{{ project_type in ['library', 'cli'] }}"
+    default: true
+    help: |
+        Use the recommended agent setup (no agent tooling)?
+        Recommended: yes — a plain library / CLI without agent tooling.
+        Answer No to add a runnable pydantic-ai example: a prompts/
+        directory, a typed tools/ package and an agent module wired with
+        @agent.tool, tested offline with pydantic-ai's TestModel.

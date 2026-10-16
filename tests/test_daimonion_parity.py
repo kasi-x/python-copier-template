@@ -124,7 +124,7 @@ def _combinable(answers: dict) -> bool:
 
 
 def leaf_context(answers: dict) -> dict:
-    """Mirror of architekton/ethics.py `leaf_context` (questions/_internal.yml derived defaults)."""
+    """Mirror of architekton/ethics.py `leaf_context` (questions/90-derived.yml derived defaults)."""
     project_type = str(answers.get("project_type") or "")
     combinable = _combinable(answers)
     web_api = project_type == "web_api" or (bool(answers.get("include_web_api")) and combinable)

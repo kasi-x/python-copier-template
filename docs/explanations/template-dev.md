@@ -96,7 +96,7 @@ settings. Rules:
   that a question references (e.g. `micropython_pkg`, `online_judge`) must
   live in their genre fragment *before* that question — a back-reference
   renders as Undefined (falsy) and silently picks the wrong branch.
-- The same ordering trap applies *inside* `questions/_internal.yml`: copier
+- The same ordering trap applies *inside* `questions/90-derived.yml`: copier
   evaluates `when: false` defaults in definition order, so an internal
   variable must be defined *before* any internal variable that references it
   (e.g. `web_api` / `data_science` come first, ahead of `mcp_effective`,
@@ -106,7 +106,7 @@ settings. Rules:
   (it skips `when: false` in the forward-only check), so verify with an
   actual render.
 - Internal variables that only feed template rendering (the `*_effective`
-  family, `pkg_dir`, `import_pkg`, ...) stay in `questions/_internal.yml`
+  family, `pkg_dir`, `import_pkg`, ...) stay in `questions/90-derived.yml`
   at the end of the chain.
 
 Enforced by `test_question_references_are_forward_only` and
@@ -131,9 +131,9 @@ lives on one side of the line:
   question's `when` / `default` / `choices` when it is reached in ask order,
   so a question sees exactly the prefix of the include chain built so far:
   raw answers *and* any internal already defined earlier
-  (`has_data_science` in questions/data_science.yml, `has_web_api` in
-  questions/web_api.yml, `oj_bare` / `online_judge` in
-  questions/_common_b.yml, `include_web_api` in questions/_combo.yml, ...).
+  (`has_data_science` / `has_web_api` / `include_web_api` in
+  questions/08-layers.yml, `oj_bare` / `online_judge` in
+  questions/07-online-judge.yml, ...).
   A reference to anything later is a forward reference — Undefined (falsy)
   — and the question silently never asks. The rule is include order, not
   vocabulary, and it is mechanically enforced by
@@ -144,7 +144,7 @@ lives on one side of the line:
   `template/` paths), `_tasks.jinja` and copier.yml's `_tasks` blocks see
   every answer, and they should read the `*_effective` family (plus the
   effective `web_api` / `data_science`, `pkg_dir`, `import_pkg`, ...) from
-  `questions/_internal.yml`, so "the base *or* the combo opt-in" is
+  `questions/90-derived.yml`, so "the base *or* the combo opt-in" is
   resolved in exactly one place and render conditions cannot drift from the
   layer rules they encode.
 
@@ -156,11 +156,11 @@ you change one, mirror the other. Two pinned consequences:
 - `include_mcp.when` spells out
   `(project_type == 'cli' or project_type == 'web_api' or include_web_api)`
   instead of the `web_api` alias. The alias lives in
-  `questions/_internal.yml`, which the include chain puts *after*
-  `questions/_common_b.yml`, so referencing it from the question would be a
+  `questions/90-derived.yml`, which the include chain puts *after*
+  `questions/14-integrations.yml`, so referencing it from the question would be a
   forward reference (Undefined — the question would silently never ask).
   `has_web_api` *would* resolve — it is defined earlier, in
-  `questions/_combo.yml`, so the include-order rule permits it — but raw
+  `questions/08-layers.yml`, so the include-order rule permits it — but raw
   answers suffice at ask time, so the gate spells its base out in raw
   form. This is the documented exception pattern to "one predicate, one
   definition": an ask-time gate that cannot reach its render-time twin is
@@ -348,8 +348,8 @@ one-line root cause.
 
 `git_platform` offers `github.com` (default) and `gitlab.com`. The platform
 distinction is enforced in two places: the `is_github` / `is_gitlab`
-internals (questions/_internal.yml) gate whole files by filename, and
-the `repo_url` / `docs_url` internals in `questions/_internal.yml` decide URL
+internals (questions/90-derived.yml) gate whole files by filename, and
+the `repo_url` / `docs_url` internals in `questions/90-derived.yml` decide URL
 bytes. What that means for a `gitlab.com` render:
 
 Shipped, following the platform:
@@ -458,7 +458,7 @@ in your change.
 
 ## Structured answers: lists the user can edit
 
-`questions/_structured.yml` holds two answers whose value is a list rather
+`questions/91-structured.yml` holds two answers whose value is a list rather
 than a scalar: `dependencies` (rendered into `[project] dependencies`) and
 `src_dirs` (the `src/` sub-directories). Both are **asked questions with a
 derived default**, and that shape is forced by copier, not chosen for style:
@@ -474,8 +474,8 @@ derived default**, and that shape is forced by copier, not chosen for style:
 - The questionnaire's own **forward-only rules** decide where the fragment
   goes. `test_question_references_are_forward_only` requires an asked
   question's `default` to reference only earlier variables, so
-  `questions/_structured.yml` is the **last `!include`** — after
-  `questions/_internal.yml`, whose `*_effective` internals and `ds_stack` /
+  `questions/91-structured.yml` is the **last `!include`** — after
+  `questions/90-derived.yml`, whose `*_effective` internals and `ds_stack` /
   `pkg_scaffold` the derived defaults read.
 - A `_`-prefixed name is a copier *setting*, not a question: `_derived_*`
   keys are silently swallowed by the loader and never become questions (the

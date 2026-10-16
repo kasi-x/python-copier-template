@@ -244,13 +244,13 @@ def test_example_answers_keeps_every_gate_off():
 def test_agent_gate_stays_absent_from_the_example_fixture():
     """example-answers.yml deliberately does NOT state `use_recommended_agent`.
 
-    The question is asked only for library / cli (questions/_common_a.yml's
+    The question is asked only for library / cli (questions/05-agent.yml's
     `when`), and the example is a data_science project -- so the key would
     change nothing about the example itself. But example-answers.yml is also
     the base fixtures/support.py `copy_project` derives its library / cli
     renders from, and copier uses a data-supplied value even for a question
     whose `when` is false: a `false` here would flip `agent_scaffold` on
-    (questions/_internal.yml) for every derived fixture. The non-recommended
+    (questions/90-derived.yml) for every derived fixture. The non-recommended
     agent route is exercised where it belongs instead -- the cli witness leaf
     `project_type=cli/gate=off:use_recommended_agent` and
     test_example_layers.py's `use_recommended_agent=False` renders.

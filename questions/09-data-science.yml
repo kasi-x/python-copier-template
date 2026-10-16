@@ -1,7 +1,7 @@
 # Data-science gate and follow-up questions (asked when has_data_science:
 # project_type == 'data_science', or the include_data_science combo opt-in).
 # The gate keeps its canonical position (after toolchain); its derived
-# variables (duo / care / use_gpu_effective) stay in questions/_internal.yml
+# variables (duo / care / use_gpu_effective) stay in questions/90-derived.yml
 # since nothing asks them.
 
 use_recommended_data_science:

@@ -6,14 +6,14 @@
 # built so far — raw answers and any internal defined earlier — while
 # everything render-side (template bodies, file-name conditions,
 # _tasks.jinja, the copier.yml tasks) reads the EFFECTIVE internals: the
-# has_* booleans below and the *_effective family in questions/_internal.yml.
+# has_* booleans below and the *_effective family in questions/90-derived.yml.
 # The include_*.when gates here are the ask-time half of that rule; the
 # internals at the bottom are its render-time half.
 #
 # Ask order matters (enforced by
 # tests/test_copier_structure.py::test_question_references_are_forward_only):
-# this fragment sits after questions/online_judge.yml (it references kaggle)
-# and before questions/data_science.yml and questions/web_api.yml (their gates
+# this fragment sits after questions/07-online-judge.yml (it references kaggle)
+# and before questions/09-data-science.yml and questions/15-web-api.yml (their gates
 # reference has_data_science / has_web_api defined here).
 
 include_data_science:
@@ -93,11 +93,11 @@ scraping_engine:
 include_bot:
     type: bool
     # The `include_web_api` clause mirrors include_mcp's when
-    # (questions/_common_b.yml) and bot_effective's base guard
-    # (questions/_internal.yml): the long-running layer rides the effective
+    # (questions/14-integrations.yml) and bot_effective's base guard
+    # (questions/90-derived.yml): the long-running layer rides the effective
     # web_api too, so a library project with the web_api layer must be asked
     # about the bot the same way it is asked about MCP. The effective `web_api`
-    # alias cannot be referenced here — questions/_internal.yml is included
+    # alias cannot be referenced here — questions/90-derived.yml is included
     # after this fragment, so it would be a forward reference (Undefined — the
     # question would never ask) — hence the raw disjunction, hand-synced.
     # Pinned by tests/test_bot_layer.py::

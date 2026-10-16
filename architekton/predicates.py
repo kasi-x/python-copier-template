@@ -749,7 +749,7 @@ def _ask_time_gate(entry: dict[str, Any]) -> bool:
     (tests/test_predicate_classifier.py). A condition spelled in several
     question whens is a shared ask-time gate of the questionnaire, and its
     naming home is the questionnaire itself -- today's is
-    `has_web_api and not use_recommended_web_api`, the guard on web_api.yml's
+    `has_web_api and not use_recommended_web_api`, the guard on 15-web-api.yml's
     prometheus / rate_limit / cors questions. The naming list exists for
     conditions that re-spell a *template* predicate, so these are reported
     but never suggested.

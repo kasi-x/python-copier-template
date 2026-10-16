@@ -126,7 +126,7 @@ macro plus two tests:
   pair with no vendored prose.
 
 Two guards close the gaps this shape leaves. The linter is **pinned**: the
-`daimonion_spec` internal (`questions/_internal.yml`) names one daimonion
+`daimonion_spec` internal (`questions/90-derived.yml`) names one daimonion
 commit, and every generated `uvx --from` call uses it, so the prose a render
 gets is fixed by the template tag rather than by daimonion's `main` (a
 hash-pinned PyPI release replaces the git URL once daimonion is published).

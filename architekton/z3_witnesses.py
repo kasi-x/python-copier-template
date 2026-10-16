@@ -23,7 +23,7 @@ are encoded as Z3 constraints:
   to a question copier never asks and the leaf is not a real branch of the
   questionnaire. Those `when` conditions are *projected* onto the leaf space
   below (the derived `has_data_science` / `has_web_api` / `kaggle` /
-  `combinable` internals from questions/_internal.yml are inlined there).
+  `combinable` internals from questions/90-derived.yml are inlined there).
   copier.yml stays the source of truth: every question is loaded through
   the one parser (architekton/questionnaire.py, via when_model.load_questions), a
   gate/include with no projection is an error, and
@@ -106,7 +106,7 @@ INVARIANTS = invariants.load()
 # tests/test_recommended_path.py's.
 BASE: dict[str, Any] = answers.BASE
 
-# The opt-in layers (questions/_combo.yml) that make up the include
+# The opt-in layers (questions/08-layers.yml) that make up the include
 # dimension of the leaf space. include_mcp / include_sentry are detail
 # questions behind use_recommended_integrations, not layers.
 INCLUDE_LAYERS: tuple[str, ...] = (

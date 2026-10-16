@@ -160,7 +160,7 @@ class Facts:
 
     ``traits`` holds the questionnaire's derived internals, keyed by ``TRAITS``:
     the web_api and data_science layers move where the package lives
-    (questions/_internal.yml's ``pkg_dir`` switch) and the kaggle judge brings
+    (questions/90-derived.yml's ``pkg_dir`` switch) and the kaggle judge brings
     its own workspace, so a row about a package directory has to select on them.
     ``bot_platform`` is the effective platform (the question's copier default
     when the answers omit it); ``bot_platform_asked`` remembers whether the

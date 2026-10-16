@@ -33,7 +33,7 @@ What is refused, and why:
 - **Answers to unasked questions** — a forced value copier keeps but the
   render discards (e.g. `include_scraping: true` on a `web_api` base).
 - **Layers on non-combinable bases** — `include_web_api: true` on `ros2`
-  trips the `combinable` / `has_*` guard in `questions/_combo.yml`.
+  trips the `combinable` / `has_*` guard in `questions/08-layers.yml`.
 - **Derived internals** — `combinable`, `has_web_api` and friends are
   computed at render time and must not be answered.
 

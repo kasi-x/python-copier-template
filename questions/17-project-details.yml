@@ -1,0 +1,74 @@
+# Project details: names, repository and author. Asked last among the
+# real questions; their defaults read earlier answers.
+
+package_name:
+    type: str
+    help: |
+        Name of the python import package.
+        Must be a valid python identifier, i.e. my_package.
+        ASCII characters only (a-z, A-Z, 0-9, _).
+    default: my_package
+    validator: >-
+        {% if not (package_name | regex_search('^[a-zA-Z][a-zA-Z_0-9]+$')) %}
+        {{ package_name }} is not a valid python package name. Use ASCII letters, digits and underscores only.
+        {% endif %}
+
+description:
+    type: str
+    help: A short description of your project
+    default: A Python project generated from architekton-py
+
+git_platform:
+    type: str
+    help: Git platform hosting the repository
+    choices:
+        - github.com
+        - gitlab.com
+    default: github.com
+
+github_org:
+    type: str
+    help: |
+        GitHub organisation or username that will contain this repo.
+        Set to your GitHub username (e.g. kasi-x) for a personal repo,
+        or the name of an organisation you belong to.
+    when: "{{ git_platform == 'github.com' }}"
+    default: my-org
+
+gitlab_group:
+    type: str
+    help: |
+        GitLab group (or username) that will contain this repo.
+    when: "{{ git_platform == 'gitlab.com' }}"
+    default: my-group
+
+repo_name:
+    type: str
+    help: |
+        Name of the repository.
+        Generally the package name with underscores replaced by dashes.
+    default: "{{ package_name | replace('_', '-') }}"
+    validator: >-
+        {% if not (repo_name | regex_search('^[a-zA-Z][a-zA-Z_\\.\\-0-9]+$')) %}
+        {{ repo_name }} is not a valid repo name. Use ASCII letters, digits, dashes and underscores only.
+        {% endif %}
+
+distribution_name:
+    type: str
+    help: |
+        Name of the python distribution package that will be created.
+        This is what people will `pip install`.
+        Generally the same as the repo name unless there is a name clash on PyPI.
+    default: "{{ repo_name }}"
+
+author_name:
+    type: str
+    help: Your full name
+    default: Your Name
+    placeholder: FirstName LastName
+
+author_email:
+    type: str
+    help: Your email address
+    default: you@example.com
+    placeholder: email@example.com

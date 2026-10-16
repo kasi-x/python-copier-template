@@ -1,6 +1,6 @@
 """Maintenance checks: the MicroPython pin and the artifacts it drives.
 
-The questionnaire owns the pin (``micropython_version``, questions/_internal.yml);
+The questionnaire owns the pin (``micropython_version``, questions/90-derived.yml);
 the firmware freeze script and the stub requirements only consume it. These
 checks read that value back out of the questionnaire's own parser and prove a
 real render carries it to both generated artifacts -- a template that hardcoded

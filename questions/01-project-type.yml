@@ -1,0 +1,39 @@
+# The first question: every area gate and several defaults depend on it.
+
+project_type:
+    type: str
+    help: |
+        What kind of project is this?
+        - library: a Python library/package.
+        - web_api: a web API service (Docker included).
+        - cli: a command-line tool.
+        - data_science: a data science project with notebooks, data/,
+          models/, reports/ and experiment extras. GPU Dockerfile and
+          Quarto paper are included.
+        - online_judge: a competitive-programming / Kaggle project. The
+          rules for AI coding agents differ per judge, and the agent
+          guide's wording defers to them.
+        - script: a minimal script, no package layout.
+        - ros2: a ROS 2 package (ament_python or ament_cmake). Built with
+          colcon + rosdep; not a uv/pixi/poetry project.
+        - micropython: MicroPython firmware for a microcontroller (esp32,
+          rp2, ...). Deployed with mpremote; the CPython dev toolchain
+          (uv/ruff/pytest/basedpyright) coexists for testing and type-checking
+          against micropython-<port>-stubs.
+
+        Many of these configurations ship as ready-made presets
+        (presets/: bare, bot, cli, data-science, library, mcp-server,
+        micropython, online-judge-atcoder, online-judge-codeforces,
+        online-judge-kattis, ros2, web-api). For a non-interactive run,
+        use `architekton-py new <name> --preset <preset>` instead of answering
+        here.
+    choices:
+        - library
+        - web_api
+        - cli
+        - data_science
+        - online_judge
+        - script
+        - ros2
+        - micropython
+    default: library

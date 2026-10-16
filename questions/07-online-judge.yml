@@ -111,9 +111,9 @@ oj_ctf:
 # (deployed with mpremote, never pip-installed) and the bare code-submission
 # workspaces (oj_code). Both skip setuptools_scm and the logging_setup hooks
 # and collapse the dependencies/testpaths gates to the package-less form.
-# Defined here (not in questions/micropython.yml) because oj_code — its
+# Defined here (not in questions/04-micropython.yml) because oj_code — its
 # later operand — is defined above, and this fragment is included after
-# questions/micropython.yml, so both operands already exist.
+# questions/04-micropython.yml, so both operands already exist.
 no_pkg:
     type: bool
     default: "{{ micropython_pkg or oj_code }}"

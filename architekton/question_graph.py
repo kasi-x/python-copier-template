@@ -42,7 +42,7 @@ Three capabilities:
    anything that will read it, and (repo convention, see
    docs/explanations/template-dev.md) internals that questions reference
    live in their genre fragment before the asking gate, render-only
-   internals at the end of questions/_internal.yml.
+   internals at the end of questions/90-derived.yml.
 
 Usage:
 
@@ -96,7 +96,7 @@ class Node:
 
     name: str
     kind: str  # QUESTION or INTERNAL
-    fragment: str  # repo-relative file the definition lives in, e.g. questions/_internal.yml
+    fragment: str  # repo-relative file the definition lives in, e.g. questions/90-derived.yml
     line: int  # 1-based line of the definition's top-level key in that file
     order: int  # index in the definition order (= copier's ask order)
 
@@ -284,11 +284,11 @@ def _placement_note(kind: str, *, exists: bool) -> str:
     if exists:
         return (
             "internals a question references live in that question's genre fragment before the"
-            " asking gate; render-only internals stay in questions/_internal.yml at the end of the chain"
+            " asking gate; render-only internals stay in questions/90-derived.yml at the end of the chain"
         )
     return (
         "if a question must reference this internal, it belongs in that question's genre fragment"
-        " BEFORE the asking gate; if only render-side code reads it, questions/_internal.yml at the"
+        " BEFORE the asking gate; if only render-side code reads it, questions/90-derived.yml at the"
         " end of the chain is the conventional spot"
     )
 

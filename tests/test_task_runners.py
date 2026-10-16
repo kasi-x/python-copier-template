@@ -224,7 +224,7 @@ RUNNER_SWITCH_WORKFLOWS = ("_tasks.yml", "_test.yml", "_docs.yml")
 def test_every_runner_switch_handles_every_task_runner_choice():
     """Every workflow that dispatches on the runner covers every answer.
 
-    The questionnaire's task_runner choices (`_common_a.yml`) plus `pixi` --
+    The questionnaire's task_runner choices (`questions/06-toolchain.yml`) plus `pixi` --
     the toolchain answer that replaces the question -- must each have a branch
     in each switch, and the switch must keep failing loudly on anything else.
     """

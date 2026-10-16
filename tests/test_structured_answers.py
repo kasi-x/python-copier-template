@@ -1,7 +1,7 @@
 """The structured answers: `dependencies` and `src_dirs`.
 
 These two questionnaire answers are lists whose defaults are *derived* from
-the rest of the answers (questions/_structured.yml), and both are recorded in
+the rest of the answers (questions/91-structured.yml), and both are recorded in
 `.copier-answers.yml` so a user can edit them and re-render. That refactor
 replaced a ~1800-character single-line Jinja expression in
 `_shared/pyproject-deps.toml.jinja` and four separately-gated `src/` trees,

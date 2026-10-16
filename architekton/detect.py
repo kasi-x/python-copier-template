@@ -21,7 +21,7 @@ Conditions that name a derived flag (`render_docs`, `tests_scaffold`,
 `pkg_scaffold`, ...) are resolved through that flag's `when: false` default in
 the live questionnaire (architekton/questionnaire.py owns that shape; this module
 only caches the live read), so moving a protection clause into `questions/
-_internal.yml` does not hide it from this report either. The question-name
+questions/90-derived.yml` does not hide it from this report either. The question-name
 scan and the `_skip_if_exists` read live there too.
 
 Usage:

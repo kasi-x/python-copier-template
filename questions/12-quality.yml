@@ -1,0 +1,46 @@
+# Area gate: type checker and lint strictness.
+
+use_recommended_quality:
+    type: bool
+    default: true
+    help: |
+        Use the recommended type checker & strictness level?
+        Recommended: basedpyright (primary) + pyrefly (additional static
+        analysis), strictness "recommended" (ruff ALL rules,
+        typos/vulture/deptry/pip-audit).
+        Answer No to pick a different secondary checker or strictness level.
+
+type_checker:
+    type: str
+    when: "{{ not use_recommended_quality }}"
+    help: |
+        Which additional static-analysis checker should run alongside
+        basedpyright? (basedpyright is always the primary type checker.)
+        - pyrefly: Meta's lightweight type checker. Recommended: it has been
+          used by this template longest and is stable in production.
+        - ty: Astral's fast Rust type checker (complements basedpyright with
+          a second, independent analysis pass; currently in beta).
+    choices:
+        - pyrefly
+        - ty
+    default: pyrefly
+
+strictness:
+    type: str
+    when: "{{ not use_recommended_quality }}"
+    help: |
+        How strict should the toolchain be? One axis controls both the
+        type-annotation requirements and the static-analysis toolchain.
+        - none: pytest + ruff (minimal rules), no type checking.
+        - basic: pytest + ruff, no type checking.
+        - recommended: ruff (ALL rules), basedpyright + the secondary checker
+          (pyrefly by default), typos/vulture/deptry/pip-audit, driven by your
+          chosen task runner. Recommended default.
+        - full: recommended + strict type checking (Any forbidden),
+          minimized ruff ignores, full annotations required.
+    choices:
+        - none
+        - basic
+        - recommended
+        - full
+    default: recommended

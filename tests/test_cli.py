@@ -354,7 +354,7 @@ def test_main_dispatches_the_scaffold_subcommand(monkeypatch: pytest.MonkeyPatch
             "--default",
             "true",
             "--file",
-            "questions/_common_c.yml",
+            "questions/17-project-details.yml",
             "--dry-run",
         ]
     }

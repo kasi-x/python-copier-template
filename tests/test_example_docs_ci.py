@@ -983,7 +983,7 @@ def test_readme_hides_type_check_below_recommended_strictness(tmp_path: Path):
 
 
 def test_derived_toolchain_flags_match_the_answers_they_rename():
-    """The _internal.yml shorthands resolve exactly like the literals they
+    """The questions/90-derived.yml shorthands resolve exactly like the literals they
     replace (the byte-identical-render precondition for the R1 renames)."""
     from architekton.answers import BASE  # noqa: E402
     from copier._main import Worker
