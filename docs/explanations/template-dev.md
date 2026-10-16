@@ -416,7 +416,7 @@ up:
 | `foundations` | `answers`, `questionnaire`, `when_model`, `render_inputs`, `support_ledger` | the questionnaire model and shared primitives: data and meaning, no behavior on real trees |
 | `machinery` | `file_merge`, `pyproject_merge`, `invariants`, `z3_witnesses`, `gen_docs_model`, `gen_docs_prose`, `gen_docs_sections`, `gen_docs_graph`, `gen_docs_blocks` | pure transformations and verifiers over template/adoption artifacts |
 | `drivers` | `detect`, `batch`, `adopt`, `adopt_cli`, `adopt_confirm`, `adopt_crash`, `adopt_journal`, `adopt_merge`, `adopt_report`, `adopt_revision`, `adopt_run`, `adopt_tree`, `adopt_types`, `git`, `predicates`, `question_graph`, `render_delta`, `answers_for`, `update_rehearsal`, `suggest` | act on real trees with copier/subprocess; consume the machinery |
-| `frontends` | `cli`, `explain`, `gen_docs`, `mcp_server` | the entry points a human or an agent calls; consume the drivers |
+| `frontends` | `cli`, `explain`, `gen_docs`, `mcp_server`, `where` | the entry points a human or an agent calls; consume the drivers |
 
 Rules:
 

@@ -4,7 +4,7 @@
     "test-fast": {
       "task": "test-fast",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1236,
+      "collected": 1245,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -67,10 +67,11 @@
         "tests/test_update_path.py": 2,
         "tests/test_update_rehearsal.py": 5,
         "tests/test_when_model.py": 3,
+        "tests/test_where.py": 9,
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "e5437773895492c00dcfc5b7f801e2d86b26a13c70bb5f0870c39880efaee196",
+      "ids_sha256": "c72f76e44334334d5f6b90151b351d863af9cbc371097ccde638956038a9dfa6",
       "wall_seconds": 18.6,
       "measured": "2026-09-20",
       "budget_seconds": 30,
@@ -133,7 +134,7 @@
     "test": {
       "task": "test",
       "expression": "",
-      "collected": 1305,
+      "collected": 1314,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -198,10 +199,11 @@
         "tests/test_update_path.py": 6,
         "tests/test_update_rehearsal.py": 6,
         "tests/test_when_model.py": 3,
+        "tests/test_where.py": 9,
         "tests/test_witness_matrix.py": 287,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "9e508ce28851a2cf108b6758eaa5dab55cceba6e3a4f1aa9fc66d4cfc52d8734",
+      "ids_sha256": "c1931197da39074845c1a6575e10178bbe8f6dfa65012b52a279b943efb7abe7",
       "wall_seconds": 178.6,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q --cov --cov-report term",
@@ -210,7 +212,7 @@
     "test-randomly": {
       "task": "test-randomly",
       "expression": "not heavy and not slow and not meta and not network",
-      "collected": 1236,
+      "collected": 1245,
       "files": {
         "tests/test_adopt.py": 38,
         "tests/test_adopt_stateful.py": 1,
@@ -273,10 +275,11 @@
         "tests/test_update_path.py": 2,
         "tests/test_update_rehearsal.py": 5,
         "tests/test_when_model.py": 3,
+        "tests/test_where.py": 9,
         "tests/test_witness_matrix.py": 278,
         "tests/test_workflow_security.py": 14
       },
-      "ids_sha256": "e5437773895492c00dcfc5b7f801e2d86b26a13c70bb5f0870c39880efaee196",
+      "ids_sha256": "c72f76e44334334d5f6b90151b351d863af9cbc371097ccde638956038a9dfa6",
       "wall_seconds": 22.3,
       "measured": "2026-09-17",
       "command": "uv run --no-sync pytest -q -p randomly -m \"not heavy and not slow and not meta and not network\"",

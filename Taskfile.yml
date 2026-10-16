@@ -188,6 +188,10 @@ tasks:
       match by rendering it; --json for the machine report)
     cmd: uv run --locked python architekton/answers_for.py {{ .CLI_ARGS }}
 
+  where:
+    desc: 'Show every file a question touches -- where to edit to change it (e.g. task where -- task_runner)'
+    cmd: uv run --locked python architekton/where.py {{ .CLI_ARGS }}
+
   question-graph:
     desc: >-
       Show the questionnaire's dependency graph: the definition order grouped by fragment,

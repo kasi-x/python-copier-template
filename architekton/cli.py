@@ -72,6 +72,7 @@ from architekton import detect  # noqa: E402
 from architekton import explain  # noqa: E402
 from architekton import suggest  # noqa: E402
 from architekton import verify  # noqa: E402
+from architekton import where  # noqa: E402
 from architekton.git import run as run_git  # noqa: E402
 
 PRESETS = answers.PRESETS
@@ -301,6 +302,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     new_command.add_argument("--dry-run", action="store_true", help="plan only; write nothing")
     _add_verify_command(subcommands)
     _add_explain_command(subcommands)
+    _add_where_command(subcommands)
     _add_suggest_command(subcommands)
     _add_scaffold_command(subcommands)
     return parser.parse_args(argv)
@@ -335,6 +337,16 @@ def _add_explain_command(subcommands: Any) -> None:
         metavar=("QUESTION", "VALUE"),
         help="explain what changes if QUESTION takes VALUE",
     )
+
+
+def _add_where_command(subcommands: Any) -> None:
+    """Register the `where` subcommand: the same shape as `architekton/where.py` parses."""
+    where_command = subcommands.add_parser(
+        "where", help="show every file a question touches (where to edit to change it)"
+    )
+    where_command.add_argument("name", help="question or derived-value name, or a fragment of one (e.g. sentry)")
+    where_command.add_argument("--json", action="store_true", help="print the machine report")
+    where_command.add_argument("--all", action="store_true", help="list every file instead of the first few")
 
 
 def _add_suggest_command(subcommands: Any) -> None:
@@ -546,6 +558,11 @@ def _dispatch_explain(args: argparse.Namespace) -> int:
     return explain.main(_explain_argv(args))
 
 
+def _dispatch_where(args: argparse.Namespace) -> int:
+    """Run the `where` subcommand through `architekton/where.py`."""
+    return where.main([args.name, *(["--json"] if args.json else []), *(["--all"] if args.all else [])])
+
+
 def _dispatch_suggest(args: argparse.Namespace) -> int:
     """Run the `suggest` subcommand through `architekton/suggest.py`."""
     return suggest.main(_suggest_argv(args))
@@ -592,6 +609,7 @@ def _dispatch_scaffold(args: argparse.Namespace) -> int:
 _DISPATCH: dict[str, Callable[[argparse.Namespace], int]] = {
     "verify": _dispatch_verify,
     "explain": _dispatch_explain,
+    "where": _dispatch_where,
     "suggest": _dispatch_suggest,
     "scaffold": _dispatch_scaffold,
 }

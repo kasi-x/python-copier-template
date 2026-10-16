@@ -34,7 +34,7 @@ next to the other structural rules):
                  and the constrained proposal gate over copier's own pass
                  (suggest)
     frontends    the entry points an agent or a human calls: cli, explain,
-                 gen_docs, mcp_server
+                 gen_docs, mcp_server, where
 
 The rule: a module may import modules of its own layer or any layer BELOW it.
 An import that points up fails here, unless the pair is declared in
@@ -140,6 +140,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
                 "mcp_server",
                 "mcp_shared",
                 "mcp_witness",
+                "where",
             }
         ),
     ),
