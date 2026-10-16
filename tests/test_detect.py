@@ -205,7 +205,7 @@ def test_synthetic_template_conditions_are_parsed(tmp_path: Path):
         path.write_text("x")
 
     place("{% if not existing_project %}README.md{% endif %}.jinja")
-    place("{% if not existing_project or 'gitignore' not in adopt_protect %}.gitignore{% endif %}.jinja")
+    place("{% if render_gitignore %}.gitignore{% endif %}.jinja")
     place("{% if not existing_project %}docs{% endif %}/{% if docs %}index.md{% endif %}")
     place(".gitleaks.toml")
     place("{{ package_name }}/__init__.py")

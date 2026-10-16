@@ -473,6 +473,41 @@ daimonion_spec:
     default: "git+https://github.com/politeuma/daimonion@5ec9539fd10cb5c5bb09539261e00b7e087dbd33"
     when: false
 
+# File gates: named conditions that template/ file and directory names use,
+# so `ls template/` reads `{% if render_readme %}README.md{% endif %}`
+# instead of the whole expression. In adopt mode (`existing_project`) a file
+# the adopter protected with `adopt_protect` is not written.
+ci_github_actions:
+    type: bool
+    default: "{{ ci_provider == 'github_actions' }}"
+    when: false
+
+render_readme:
+    type: bool
+    default: "{{ not existing_project or 'readme' not in adopt_protect }}"
+    when: false
+
+render_license:
+    type: bool
+    default: "{{ not existing_project or 'license' not in adopt_protect }}"
+    when: false
+
+render_gitignore:
+    type: bool
+    default: "{{ not existing_project or 'gitignore' not in adopt_protect }}"
+    when: false
+
+render_python_version:
+    type: bool
+    default: "{{ not existing_project or 'python_version' not in adopt_protect }}"
+    when: false
+
+# ros2 C++ packages are CMake projects: no pyproject.toml.
+render_pyproject:
+    type: bool
+    default: "{{ (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp }}"
+    when: false
+
 # AGENTS.md effective setting. Every project ships the agent guide: the
 # library / cli / script bases, the web_api / data_science layers (including
 # combo opt-ins), ros2 / micropython (all types ship the guide, whose empty

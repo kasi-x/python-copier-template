@@ -434,7 +434,7 @@ def test_zizmor_cli_pin_is_inside_the_actions_allowlist():
         TOP
         / "template"
         / "{% if is_github %}.github{% endif %}"
-        / "{% if ci_provider == 'github_actions' %}workflows{% endif %}"
+        / "{% if ci_github_actions %}workflows{% endif %}"
         / "{% if cicd_extras %}security.yml{% endif %}.jinja"
     ).read_text(encoding="utf-8")
     assert action_m.group(0) in jinja, (

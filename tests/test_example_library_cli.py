@@ -192,11 +192,7 @@ def test_gitignore_same():
             lines.add(stripped)
         return lines
 
-    template = normalized(
-        TOP
-        / "template"
-        / "{% if not existing_project or 'gitignore' not in adopt_protect %}.gitignore{% endif %}.jinja"
-    )
+    template = normalized(TOP / "template" / "{% if render_gitignore %}.gitignore{% endif %}.jinja")
     root = normalized(TOP / ".gitignore")
     assert template - root == set(), f"missing from root .gitignore: {sorted(template - root)}"
     assert root - template == set(), f"stale in root .gitignore: {sorted(root - template)}"

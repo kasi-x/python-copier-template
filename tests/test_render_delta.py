@@ -62,7 +62,7 @@ def test_a_context_change_candidates_exactly_the_leaves_that_changed():
 def test_a_changed_template_file_candidates_the_leaves_that_render_it():
     """Content flow: the changed bytes only reach leaves whose render includes them."""
     partial = "partials/pyproject-deps.toml.jinja"
-    parent = "{% if (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp %}pyproject.toml{% endif %}.jinja"
+    parent = "{% if render_pyproject %}pyproject.toml{% endif %}.jinja"
     changed = {partial: "v1"}
     old = _state(
         {"l1": "c", "l2": "c"},
@@ -87,7 +87,7 @@ def test_the_include_closure_spreads_the_candidates():
     the comparison runs over the stripped output names (`_output_name`).
     """
     partial = "partials/pyproject-deps.toml.jinja"
-    parent = "{% if (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp %}pyproject.toml{% endif %}.jinja"
+    parent = "{% if render_pyproject %}pyproject.toml{% endif %}.jinja"
     graph = {parent: {partial}}
     old = _state(
         {"l1": "c", "l2": "c"},

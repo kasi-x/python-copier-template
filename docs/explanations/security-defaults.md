@@ -27,7 +27,7 @@ permissions, SHA pins, zizmor) lives in
 | Default | File | Change for production |
 |---|---|---|
 | `.env.example` carries only placeholders / commented values | `template/{% if needs_env_example %}.env.example{% endif %}.jinja` | Copy to `.env`, fill real values there; never commit `.env` |
-| `.env`, `.envs/`, `*.pem` git-ignored | `template/{% if not existing_project or 'gitignore' not in adopt_protect %}.gitignore{% endif %}.jinja`, `template/{% if docker %}.dockerignore{% endif %}.jinja` | Keep ignoring them; inject prod secrets from the environment or a secret manager |
+| `.env`, `.envs/`, `*.pem` git-ignored | `template/{% if render_gitignore %}.gitignore{% endif %}.jinja`, `template/{% if docker %}.dockerignore{% endif %}.jinja` | Keep ignoring them; inject prod secrets from the environment or a secret manager |
 | `SENTRY_DSN` unset; `sentry_sdk.init(..., traces_sample_rate=1.0)` when `include_sentry` is on | `template/{% if needs_env_example %}.env.example{% endif %}.jinja`, `template/{% if pkg_scaffold %}{{ pkg_dir }}{% endif %}/__main__.py.jinja` | Set the DSN from the environment, lower the sample rate, scrub PII before enabling |
 | LLM demo keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) commented out; the offline demo needs no key | `template/{% if needs_env_example %}.env.example{% endif %}.jinja` | Fill them only where the agent scaffold runs, via the environment |
 
@@ -36,7 +36,7 @@ permissions, SHA pins, zizmor) lives in
 | Default | File | Change for production |
 |---|---|---|
 | `DATABASE_URL` points at local Postgres with `postgres:postgres` | `template/{% if web_api %}app{% endif %}/settings.py.jinja`, `template/{% if needs_env_example %}.env.example{% endif %}.jinja` | Rotate the credential; inject the real URL from the environment / secret manager |
-| `POSTGRES_PASSWORD: postgres` in the local stack and CI service | `template/{% if web_api and docker %}compose.local.yml{% endif %}.jinja`, `template/{% if is_github %}.github{% endif %}/{% if ci_provider == 'github_actions' %}workflows{% endif %}/ci.yml.jinja` | Local/CI only — never reuse for production data |
+| `POSTGRES_PASSWORD: postgres` in the local stack and CI service | `template/{% if web_api and docker %}compose.local.yml{% endif %}.jinja`, `template/{% if is_github %}.github{% endif %}/{% if ci_github_actions %}workflows{% endif %}/ci.yml.jinja` | Local/CI only — never reuse for production data |
 | `alembic.ini` carries no URL; `env.py` reads app settings | `template/{% if web_api %}alembic{% endif %}/alembic.ini.jinja`, `template/{% if web_api %}alembic{% endif %}/env.py.jinja` | Rotating `DATABASE_URL` covers migrations too |
 | Binds `0.0.0.0:8000` (settings default, Dockerfile `ENV`, compose `command`) | `template/{% if web_api %}app{% endif %}/settings.py.jinja`, `template/{% if docker or cicd_extras %}Dockerfile{% endif %}.jinja`, `template/{% if web_api and docker %}compose.local.yml{% endif %}.jinja` | Keep behind TLS termination + firewall; do not publish beyond the reverse proxy |
 | CORS deny-by-default (`cors_origins: []`, no middleware) when `cors` is on | `template/{% if web_api %}app{% endif %}/settings.py.jinja`, `template/{% if web_api %}app{% endif %}/main.py.jinja` | Set `CORS_ORIGINS` to exact origins, never `*` (`allow_credentials` is on) |
@@ -44,7 +44,7 @@ permissions, SHA pins, zizmor) lives in
 | `GET /health` unauthenticated, DB-independent | `template/{% if web_api %}app{% endif %}/routers/health.py.jinja` | Keep it (orchestrator probe); keep sensitive data out of it |
 | `GET /metrics` unauthenticated when `prometheus` is on | `template/{% if web_api %}app{% endif %}/{% if prometheus_effective %}metrics.py{% endif %}.jinja` | Scrape on a private interface or protect it |
 | Demo list endpoint `5/minute` per IP (`slowapi`, `get_remote_address`); nothing when `rate_limit` is off | `template/{% if web_api %}app{% endif %}/routers/items.py.jinja`, `template/{% if web_api %}app{% endif %}/{% if rate_limit_effective %}rate_limit.py{% endif %}.jinja` | Set per-endpoint limits; behind a proxy, forward the client IP so the key is the caller |
-| `uvicorn ... --reload` in the guide/README is the dev loop | `template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja`, `template/{% if not existing_project or 'readme' not in adopt_protect %}README.md{% endif %}.jinja` | Run production uvicorn without `--reload` (the Dockerfile/ compose `ENTRYPOINT` already does) |
+| `uvicorn ... --reload` in the guide/README is the dev loop | `template/{% if agents_md_effective %}AGENTS.md{% endif %}.jinja`, `template/{% if render_readme %}README.md{% endif %}.jinja` | Run production uvicorn without `--reload` (the Dockerfile/ compose `ENTRYPOINT` already does) |
 | Runtime image runs as non-root `appuser`, read-only root FS in compose | `template/{% if docker or cicd_extras %}Dockerfile{% endif %}.jinja`, `template/{% if web_api and docker %}compose.local.yml{% endif %}.jinja` | Keep; add dropped capabilities / seccomp where your platform supports it |
 
 ## MCP (`include_mcp` on cli / web_api)
