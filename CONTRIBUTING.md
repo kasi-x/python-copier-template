@@ -50,6 +50,10 @@ lives in one of them:
 | the text of a field rule (licenses, personal data, ...) | not here: [law-map](https://github.com/politeuma/law-map/tree/main/guidance/sections) (see [Field rules](#field-rules)) |
 | the docs | `docs/`; blocks marked `GENERATED` are rewritten by `task regen`, so edit their source instead |
 
+Data files say at the top who reads them and what happens next, so you can
+follow the flow from any of them; `copier.yml` draws the whole render flow
+in its first lines.
+
 `architekton/` holds the CLI and the checks. You only need to open it to
 change the tooling itself; [its map](architekton/README.md) says which
 module does what.

@@ -1,0 +1,74 @@
+# Requirement words -> the preset signal they raise.
+#
+# Read by: architekton/suggest.py, i.e. `architekton-py suggest "internal API, postgres"`.
+# Flow:    the requirement is split into words; each word listed below raises
+#          its signal; a preset scores once per signal its pinned answers
+#          (presets/*.yml) carry; the report prints each group's reason.
+# Next:    after editing, `task test-fast` (tests/test_suggest.py).
+#
+# Kept minimal on purpose: these are the families presets/*.yml pin, not a
+# feature catalogue. scraping and ctf words are deliberately absent: no preset
+# pins include_scraping or include_ctf, so those signals could never rank one.
+
+signals:
+  web_api:
+    - reason: serves an API (web-api scaffold)
+      words: [api, rest, fastapi]
+    - reason: runs as a service (web-api scaffold)
+      words: [service]
+    # The web-api family is the database-backed stack (SQLAlchemy + Alembic,
+    # per tests/matrix/support.yml's measured `why`): a database requirement
+    # names it, not a new catalogue entry.
+    - reason: needs Postgres (the web-api stack's database)
+      words: [postgres]
+    - reason: needs a database (the web-api stack's database)
+      words: [database]
+    - reason: needs a database (the web-api stack's SQL layer)
+      words: [sql]
+  data:
+    - reason: works with datasets (data-science layout)
+      words: [data, analysis, ml]
+    - reason: works with notebooks (data-science layout)
+      words: [notebook]
+  bot:
+    - reason: runs a chat bot (bot layer)
+      words: [bot, chat]
+    - reason: runs a Discord bot (bot layer)
+      words: [discord]
+    - reason: runs a Slack bot (bot layer)
+      words: [slack]
+  mcp:
+    - reason: serves MCP tools (mcp layer)
+      words: [mcp]
+  cli:
+    - reason: ships a command-line entry point
+      words: [cli, command, tool]
+  micropython:
+    - reason: targets microcontroller firmware
+      words: [firmware, esp32, micropython]
+  ros2:
+    - reason: integrates with ROS 2
+      words: [ros, robot]
+  oj:
+    - reason: is a competitive-programming workspace
+      words: [judge]
+  oj:atcoder:
+    - reason: targets AtCoder
+      words: [atcoder]
+  oj:codeforces:
+    - reason: targets Codeforces
+      words: [codeforces]
+  oj:kattis:
+    - reason: targets Kattis
+      words: [kattis]
+  library:
+    - reason: ships as an importable library
+      words: [library, package]
+
+# Filler words dropped before matching: they would otherwise match every
+# preset's comment.
+ignored_words: [
+  a, an, and, the, with, for, our, team, needs, need, want, wants, project,
+  internal, company, please, new, using, use, plus, that, this, build, create,
+  make, app,
+]

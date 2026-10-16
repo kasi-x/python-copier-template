@@ -1,3 +1,6 @@
+# Next: these values are read by questions/99-files.yml (which files exist)
+# and by template/ + partials/ (what the files contain).
+#
 # Internal derived variables (when: false — never asked, computed from
 # answers at render time). These are only referenced by template files (and
 # by other internal variables), never by question `when`/`default`/`choices`,

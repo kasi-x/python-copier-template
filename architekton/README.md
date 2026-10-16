@@ -16,7 +16,7 @@ a module missing here fails the test.)
 | `cli.py` | `architekton-py new` and the subcommands below it |
 | `where.py` | Every file a question touches: where to edit to change it |
 | `explain.py` | Why a preset or an answer has its value, from the questions' own help text |
-| `suggest.py` | Propose presets and answers for stated requirements, then validate them |
+| `suggest.py` | Propose presets and answers for stated requirements, then validate them (its word list: `suggest.yml`) |
 | `answers_for.py` | The reverse direction: name the features, get the answers that produce them |
 | `scaffold.py` | Generate the skeleton of a new question, opt-in layer or preset |
 | `verify.py` | Check a generated project's composition contract |

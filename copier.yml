@@ -1,5 +1,18 @@
 # The questionnaire, as a table of contents.
 #
+# How a render flows, top to bottom:
+#
+#   questions/01..17-*.yml   the answers (asked in file-number order)
+#        |
+#   questions/90-derived.yml values computed from the answers (never asked)
+#   questions/91-structured  the dependency and src/ directory lists
+#        |
+#   questions/99-files.yml   which generated files exist, one row per path
+#        |
+#   template/ + partials/    what each generated file contains (Jinja)
+#        |
+#   _tasks (below)           commands run after the files are written
+#
 # Every question lives in questions/, one file per area, and the number in
 # the file name IS the ask order: copier asks 01 first and 99 last. To change
 # a question, open the file whose name matches its area; to see everything a

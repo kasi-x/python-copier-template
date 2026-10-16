@@ -66,16 +66,17 @@ TEMPLATE_DIR = TOP / "template"
 
 RenderState = Literal["overwrite", "omit"]
 
-# The adopt_protect tokens, in questionnaire order. Facts map onto these.
-PROTECT_TOKENS: tuple[str, ...] = (
-    "readme",
-    "license",
-    "pyproject",
-    "gitignore",
-    "python_version",
-    "scaffold",
-    "docs",
-)
+
+@cache
+def protect_tokens() -> tuple[str, ...]:
+    """The adopt_protect tokens, in questionnaire order.
+
+    They are the question's own choices (questions/02-adoption.yml), read
+    when first needed: an installed CLI with no checkout imports this module
+    before it delegates to one.
+    """
+    return tuple(str(choice) for choice in questionnaire.questions_by_name()["adopt_protect"].choices)
+
 
 # Fallback for a condition that only says `not existing_project` (the tree
 # before adopt_protect existed) -- display only: whether a file is rendered
@@ -731,7 +732,7 @@ def detect(target: Path, template_dir: Path | None = None, *, takeover: bool = F
     detection.protections = protection_facts(target)
     proposed = {
         "existing_project": True,
-        "adopt_protect": [token for token in PROTECT_TOKENS if detection.protections[token]],
+        "adopt_protect": [token for token in protect_tokens() if detection.protections[token]],
         **derive_answers(target, notes),
     }
     asked = template_questions(template_dir)
