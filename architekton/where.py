@@ -50,8 +50,7 @@ from architekton import when_model  # noqa: E402
 
 #: The payload trees: the generated project and the partials it includes.
 PAYLOAD_ROOT = "template"
-PARTIAL_ROOTS = ("partials",)
-PARTIAL_FILES = ("partials/tasks.jinja",)
+PARTIAL_ROOT = "partials"
 
 #: Where a name is spelled out rather than branched on.
 PRESET_GLOB = "presets/*.yml"
@@ -149,10 +148,10 @@ def _scan_payload(top: Path, watched: set[str], hits: Touchpoints) -> None:
             hits.file_gated.append(relative)
         elif jinja_reads(_read_text(path)) & watched:
             hits.content.append(relative)
-    partials = [path for root in PARTIAL_ROOTS for path in _payload_files(top / root)]
-    partials += [top / name for name in PARTIAL_FILES if (top / name).is_file()]
     hits.partials = [
-        path.relative_to(top).as_posix() for path in sorted(partials) if jinja_reads(_read_text(path)) & watched
+        path.relative_to(top).as_posix()
+        for path in _payload_files(top / PARTIAL_ROOT)
+        if jinja_reads(_read_text(path)) & watched
     ]
 
 
@@ -212,7 +211,7 @@ def report(hits: Touchpoints, *, limit: int = 12) -> str:
     lines.append("")
     lines += _section("Generated files that exist only depending on it", hits.file_gated, limit=limit)
     lines += _section("Generated files whose content depends on it", hits.content, limit=limit)
-    lines += _section("Shared partials (partials/, partials/tasks.jinja)", hits.partials, limit=limit)
+    lines += _section("Snippets the generated files include (partials/)", hits.partials, limit=limit)
     lines += _section("Presets that set it", hits.presets, limit=limit)
     lines += _section("Tests that name it", hits.tests, limit=limit)
     lines += _section("Docs that name it", hits.docs, limit=limit)

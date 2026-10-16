@@ -18,6 +18,7 @@ task test-fast   # the edit loop: no venv builds, no network (30 s budget)
 task check       # lint + type-check + hygiene + test
 task regen       # after a questionnaire change: witnesses, batch, tiers, docs
 task docs        # build the documentation site
+task where -- X  # every file setting X touches
 ```
 
 Run `task fix` before committing, then the cheapest tier that covers the
@@ -30,14 +31,22 @@ then `task test-fast`.
 
 ## Where to edit
 
-- Questionnaire: `copier.yml` and its fragments in `questions/`
+Before editing, run `task where -- <setting>` (or `--json`): it names the
+`questions/` file that defines a setting, the derived values it feeds, every
+`template/` and `partials/` file that branches on it, and the presets, tests
+and docs that name it. Edit those files rather than searching.
+
+- Questionnaire: `questions/NN-<area>.yml`, one file per area; NN is the ask
+  order and a question may only read answers from lower numbers.
+  `copier.yml` only lists the files and holds template settings.
 - Generated project payload: `template/` (file and directory names carry
-  copier's `{% if %}` conditionals) and the shared partials in `partials/`;
-  the generated task-runner model is `partials/tasks.jinja`
-- Template tooling (witnesses, batch runner, docs generator, MCP server,
-  CLI): `architekton/`
+  copier's `{% if %}` conditionals) and the snippets in `partials/`; the
+  generated task-runner model is `partials/tasks.jinja`
+- Presets: `presets/<name>.yml`
+- Template tooling (CLI, witnesses, batch runner, docs generator, MCP
+  server): `architekton/`, mapped by job in `architekton/README.md`
 - Tests: `tests/` (cost tiers are pytest markers; `tests/matrix/` holds the
-  witness leaves, invariants and the tier ledger)
+  witness leaves, invariants, support tiers and the tier ledger)
 - Docs: `README.md` and `docs/`. Blocks marked as generated come from
   `architekton/gen_docs.py --write`; edit their sources, not the output.
 

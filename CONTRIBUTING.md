@@ -1,76 +1,122 @@
-# Contribute to the template
-Contributions and issues are most welcome! All issues and pull requests are handled through [GitHub](https://github.com/politeuma/architekton-py/issues). Also, please check for any existing issues before filing a new one. If you have a great idea but it involves big changes, please file a ticket before making a pull request! We want to make sure you don't spend your time coding something that might not fit the scope of the project.
+# Contributing to architekton-py
 
-## Security
+Contributions and issues are welcome. This page gets you from "I want to
+change X" to a pull request without first learning how the template is
+built.
 
-Please do not open a public issue for security vulnerabilities. Report them
-privately via the [Security Advisory workflow](https://github.com/politeuma/architekton-py/security/advisories/new) — see [SECURITY.md](SECURITY.md) for details.
+## Set up once
 
-## Issue or Discussion?
+```shell
+git clone https://github.com/politeuma/architekton-py.git && cd architekton-py
+uv sync --locked --all-extras
+task            # prints the everyday commands
+```
 
-Github also offers [discussions](https://github.com/politeuma/architekton-py/discussions) as a place to ask questions and share ideas. If your issue is open ended and it is not obvious when it can be "closed", please raise it as a discussion instead.
+You need [uv](https://docs.astral.sh/uv) and [Task](https://taskfile.dev).
 
-## Getting changes into the template
+## Change something in three steps
 
-This template is a place to pull together agreed best practices from various sources. As such, it is difficult to demonstrate a change without seeing it in action in another repo. Please link to a repo that has the desired behaviour when proposing changes to the template.
+### 1. Find the files
 
+Ask the repository. Name the setting (a question, or part of its name):
 
-## Ethics / regional / operational rule sections
+```console
+$ task where -- task_runner
+task_runner — question
+  defined in  questions/06-toolchain.yml:39
+  asks        Which task runner would you like to use to drive lint / type-check /
+  feeds       task_runner_effective, runner_just, runner_task
 
-The section texts live in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guidance/sections)
-(CC BY 4.0), which owns their content, sources, and review cadence. New sections and
-corrections are pull requests there, not here; obligation-level changes go
-through [law-map](https://github.com/politeuma/law-map)'s Legal
-RFC issue. This repo owns only the wiring — the derived `when` conditions
-(`partials/daimonion-when.jinja`) — governed by [GOVERNANCE.md](.github/GOVERNANCE.md).
+Generated files that exist only depending on it (5)
+  template/{% if not existing_project and task_runner_effective == 'just' %}justfile{% endif %}.jinja
+  ...
+Snippets the generated files include (partials/) (3)
+  partials/tasks.jinja
+  ...
+Then run:
+  edited the question (questions/)?    task regen && task test-fast
+  edited a generated file or partial?  task test-fast && task verify-delta
+```
 
-## Blast radius
+No setting in mind? The repository has four parts, and the change you want
+lives in one of them:
 
-What a change touches decides what must pass before the PR. CI gates the
-render matrix by change scope (the docs-only detector in ci.yml), so the
-table below is what *you* run locally — the cheapest tier that covers the
-blast radius, never the whole suite.
-
-| Change scope | Required verification |
+| To change … | Edit |
 | --- | --- |
-| Docs only (`README.md`, `docs/*.md`) | `task lint type-check` — CI skips the render matrix for docs-only PRs, so typos and format debt must be caught locally |
-| Template payload (`template/`, `partials/`, `questions/`) | `task test-fast` plus `task verify-delta` — the render twin proves which witness leaves the change can affect: a semantic diff narrows the candidate set, then only candidates are re-rendered from a baseline checkout and compared by manifest (file list + sha256, answers normalized); it exits 0 when every candidate is byte-identical |
-| Questionnaire (`copier.yml`, `questions/*.yml`) | `task regen` then `task test-fast` — regen is the one-command pipeline: witness leaves, batch verdicts, tier ledger, generated docs, predicate report |
-| Repo tooling / CI plumbing (`architekton/`, `.github/workflows/`, `Taskfile.yml`, `tests/`) | `task check` — this scope is where local↔CI drift bites hardest (hygiene, type-check, ledger); run the whole gate, not a subset |
+| a question: its wording, default, choices, or when it is asked | `questions/NN-<area>.yml` (NN is the ask order) |
+| what a generated file contains | the file under `template/`, or the snippet in `partials/` it includes |
+| whether a generated file exists | the `{% if %}` in that file's name under `template/` |
+| a ready-made answer set | `presets/<name>.yml` |
+| the text of a field rule (licenses, personal data, ...) | not here: [law-map](https://github.com/politeuma/law-map/tree/main/guidance/sections) (see [Field rules](#field-rules)) |
+| the docs | `docs/`; blocks marked `GENERATED` are rewritten by `task regen`, so edit their source instead |
 
-**Universal floor**: regardless of scope, `task hygiene` (merge markers,
-trailing newlines, YAML validity, oversized files) must pass — it mirrors
-`_hygiene.yml` locally.
+`architekton/` holds the CLI and the checks. You only need to open it to
+change the tooling itself; [its map](architekton/README.md) says which
+module does what.
 
-## Contributing 101
+### 2. Edit
 
-The cheapest real change an outsider can make: add or correct an ethics /
-regional / operational rule section in
+Template files are Jinja: `{{ package_name }}` inserts an answer, and
+`{% if docs %} ... {% endif %}` includes a block only for some answers.
+Derived values (`when: false` entries in `questions/90-derived.yml`, such
+as `docs` or `is_uv`) combine several answers; prefer them over repeating
+the condition. A question may only read answers asked *before* it, which is
+why the file names are numbered.
+
+### 3. Prove it
+
+Run the cheapest check that covers what you touched:
+
+| You changed | Run |
+| --- | --- |
+| docs only (`README.md`, `docs/`) | `task lint type-check` |
+| `template/`, `partials/` | `task test-fast` and `task verify-delta`: it works out which answer combinations your edit can affect, re-renders only those, and shows what changed |
+| `questions/` or `copier.yml` | `task regen`, then `task test-fast`: regen re-enumerates the answer combinations, re-judges them and refreshes the generated docs |
+| `architekton/`, `tests/`, `.github/workflows/`, `Taskfile.yml` | `task check` |
+
+Whatever you changed, `task hygiene` (merge markers, trailing newlines,
+YAML, file sizes) must pass; CI runs it too. Run `task fix` before
+committing.
+
+## Adding a question, an opt-in layer or a preset
+
+`architekton-py scaffold question|layer|preset <name>` writes the skeleton
+in the right files and prints the remaining steps. The checklist behind it,
+and what catches each omission, is
+[Extending the questionnaire](docs/explanations/extending.md).
+
+## When a check fails and you want to know why
+
+The checks are explained in
+[What each check can and cannot prove](docs/explanations/verification.md)
+and [Authoring template sources](docs/explanations/template-dev.md). You do
+not need either page until a check fails.
+
+## Field rules
+
+The rule texts (licensing drift, personal data, EU CRA, ...) live in
 [law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guidance/sections)
-(copy its `guidance/sections/_template.md`, fill every field, run
-`just manifest`). It needs no knowledge of this template's questionnaire.
-Section files are `guidance/sections/<tier>/<slug>.md` (YAML front matter
-plus prose body); the generated index is `guidance/sections/MANIFEST.yml`.
-In this repo, the next-cheapest change is a docs fix — see the blast-radius table
-above.
+under CC BY 4.0; fixes and new rules are pull requests there. This
+repository only decides which conditions a project declares
+(`partials/daimonion-when.jinja`), under [GOVERNANCE.md](.github/GOVERNANCE.md).
 
+## Showing a change in a real project
 
-## Checking your changes before making a PR
+Tests render projects but do not run their CI or publish their docs. For a
+change that affects those, push a branch and update a demonstration repo
+from it, then link that repo in the pull request:
 
-The template has tests for:
+```shell
+uvx copier update --trust --vcs-ref=<your-branch>
+```
 
-- Generating a new project from scratch
-- Updating the [example project](https://github.com/politeuma/architekton-py-example)
-- Checking that both of the above produce the same results
+## Pull requests, issues and security
 
-However, this does not test whether processes like CI and docs work correctly. You can ensure that these are checked by:
-
-- Making your changes on a branch of <https://github.com/politeuma/architekton-py>
-- Running `uvx copier update --vcs-ref=<branch_name>` in the repo where you would like to demonstrate the behaviour
-- Linking to that demonstration repo in the PR
-
-## Developer Information
-
-It is recommended that developers use a [vscode devcontainer](https://code.visualstudio.com/docs/devcontainers/containers). This repository contains configuration to set up a containerized development environment that suits its own needs.
-
-For more information on common tasks like setting up a developer environment, running the tests, and the lint workflow, see the [How-to guides](https://politeuma.github.io/architekton-py/main/how-to.html)
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/)
+  (`feat:`, `fix:`, ...); release notes are generated from them.
+- For a large change, open an issue first so you do not spend time on
+  something outside the project's scope. Open-ended ideas go to
+  [Discussions](https://github.com/politeuma/architekton-py/discussions).
+- Report vulnerabilities privately through a
+  [security advisory](https://github.com/politeuma/architekton-py/security/advisories/new),
+  never a public issue ([SECURITY.md](SECURITY.md)).
