@@ -1,13 +1,24 @@
 version: '3'
 
-tasks:
-  default:
-    desc: Show available tasks
-    cmd: task --list
+# Plain `task` prints the handful of everyday commands; `task --list` shows
+# all of them. Tasks are grouped below in the same order.
 
-  lint:
-    desc: Check formatting and lint (ruff, check-only)
-    cmd: uv run --locked ruff format --check . && uv run --locked ruff check .
+tasks:
+  # --- Everyday: the commands a contributor needs (shown by plain `task`)
+
+  default:
+    desc: Show the everyday commands (task --list shows every task)
+    silent: true
+    cmd: |
+      echo "Everyday commands:"
+      echo "  task fix                 auto-fix formatting and lint"
+      echo "  task test-fast           the edit loop (~30 s, offline)"
+      echo "  task where -- <setting>  which files to edit to change a setting"
+      echo "  task regen               after changing a question in questions/"
+      echo "  task check               everything CI checks, before a PR"
+      echo "  task docs                build the docs site"
+      echo ""
+      echo "Every other command: task --list"
 
   fix:
     desc: Auto-fix formatting and lint (run before committing)
@@ -15,12 +26,47 @@ tasks:
       - uv run --locked ruff check --fix .
       - uv run --locked ruff format .
 
-  hygiene:
-    desc: Check merge markers, oversized files, trailing newlines and YAML (CI-mirrored)
-    cmd: uv run --locked python -m architekton.hygiene
+  test-fast:
+    desc: 'Run the tests that neither build a venv nor touch the network (edit loop)'
+    cmd: >-
+      uv run --locked pytest -q
+      -m "not heavy and not slow and not meta and not network"
+      {{ .CLI_ARGS }}
+
+  where:
+    desc: 'Show every file a question touches -- where to edit to change it (e.g. task where -- task_runner)'
+    cmd: uv run --locked python architekton/where.py {{ .CLI_ARGS }}
+
+  regen:
+    desc: >-
+      One-command definition-of-done pipeline after a questionnaire change: witness
+      leaves -> batch verdicts -> tier ledger -> generated docs ->
+      predicate report (JOBS=N, CLI_ARGS=...)
+    vars:
+      JOBS: '{{ .JOBS | default numCPU }}'
+    cmds:
+      - uv run --locked python architekton/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
+      - uv run --locked python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
+      - UPDATE_TIERS=1 uv run --locked pytest -q -m meta
+      - uv run --locked python architekton/gen_docs.py --write
+      - uv run --locked python architekton/predicates.py --json
+
+  check:
+    desc: Run all quality checks
+    deps: [lint, hygiene, type-check, test, docs]
+
+  docs:
+    desc: Run docs build with zensical
+    cmd: uv run --locked zensical build
+
+  # --- Checks, one at a time (`check` runs lint, hygiene, type-check, test and docs)
+
+  lint:
+    desc: Check formatting and lint (ruff, check-only)
+    cmd: uv run --locked ruff format --check . && uv run --locked ruff check .
 
   type-check:
-    desc: Run basedpyright + pyrefly + 静的解析
+    desc: Type-check (basedpyright + pyrefly) and static analysis (vulture, deptry, typos)
     cmds:
       - uv run --locked basedpyright
       - uv run --locked pyrefly check
@@ -28,16 +74,13 @@ tasks:
       - uv run --locked deptry .
       - uv run --locked typos .
 
+  hygiene:
+    desc: Check merge markers, oversized files, trailing newlines and YAML (CI-mirrored)
+    cmd: uv run --locked python -m architekton.hygiene
+
   test:
     desc: Run tests with coverage
     cmd: uv run --locked pytest --cov --cov-report term --cov-report xml:.cache/cov.xml
-
-  test-fast:
-    desc: 'Run the tests that neither build a venv nor touch the network (edit loop)'
-    cmd: >-
-      uv run --locked pytest -q
-      -m "not heavy and not slow and not meta and not network"
-      {{ .CLI_ARGS }}
 
   test-slow:
     desc: 'Run the slow tier: the serial 272-leaf witness batch runner (~2 min)'
@@ -58,13 +101,90 @@ tasks:
     desc: "Run the cost ledger's own guards (marker scan, tier membership, stale measurements)"
     cmd: uv run --locked pytest -q -m meta {{ .CLI_ARGS }}
 
-  mcp:
-    desc: 'Run the repo MCP server (CLI_ARGS="--transport streamable-http")'
-    cmd: uv run --locked python architekton/mcp_server.py {{ .CLI_ARGS }}
+  verify-delta:
+    desc: >-
+      Prove which witness leaves the working tree can affect (Layer A semantic diff
+      narrows, Layer B re-renders only candidates; CLI_ARGS pass through, e.g.
+      --audit 5)
+    cmd: uv run --locked python architekton/render_delta.py {{ .CLI_ARGS }}
 
-  docs:
-    desc: Run docs build with zensical
-    cmd: uv run --locked zensical build
+  update-rehearsal:
+    desc: >-
+      Replay copier update for every witness leaf, release tag -> HEAD (CLI_ARGS
+      pass through, e.g. --only ctf --jobs 8 --fresh; nightly rehearsal)
+    cmd: uv run --locked python architekton/update_rehearsal.py {{ .CLI_ARGS }}
+
+  pipeline:
+    # order: upstream→downstream -- thin wrapper over the existing contract
+    # tests (contract manifest, then when-model); no new logic.
+    desc: Run the ecosystem pipeline contract slice
+    cmd: uv run pytest -q tests/test_contract_manifest.py tests/test_when_model.py
+
+  audit:
+    desc: >-
+      Audit dependencies for known vulnerabilities (network; not part of check).
+      Weekly verified by the Thursday dependency-audit.yml schedule (issue filed
+      on failure); PR CI never runs it because check must stay offline.
+    cmd: uv run --locked pip-audit
+
+  # --- Questionnaire analysis (regen runs witness + gen_docs + predicates for you)
+
+  witness:
+    desc: 'Regenerate the 272 witness leaves and judge them all (JOBS=N, CLI_ARGS=...)'
+    vars:
+      JOBS: '{{ .JOBS | default numCPU }}'
+    cmds:
+      - uv run --locked python architekton/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
+      - uv run --locked python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
+
+  batch:
+    desc: 'Run a JSONL batch of copier requests and verdict each line (FILE=... CLI_ARGS=...)'
+    cmd: uv run --locked python architekton/batch.py {{ .FILE | default "tests/batches/smoke.jsonl" }} {{ .CLI_ARGS }}
+
+  predicates:
+    desc: >-
+      Classify every condition site (question whens, internals, template body/filename ifs,
+      _tasks whens) over the 272 witness leaves: classification tree, equivalence classes,
+      unification candidates and shortcut suggestions (--json for the machine report)
+    cmd: uv run --locked python architekton/predicates.py {{ .CLI_ARGS }}
+
+  answers-for:
+    desc: >-
+      The inverse template: name the features, get the answers that produce them, e.g.
+      --require use_gpu_effective=true --require kaggle=true (--render proves the top
+      match by rendering it; --json for the machine report)
+    cmd: uv run --locked python architekton/answers_for.py {{ .CLI_ARGS }}
+
+  question-graph:
+    desc: >-
+      Show the questionnaire's dependency graph: the definition order grouped by fragment,
+      what each question/internal reads and feeds, recomputed forward-reference violations
+      (the tests check this after the fact; a backward reference silently reads falsy), and
+      a placement guide -- --where NAME [--refs A,B,C] answers where a new internal/question
+      may live and what occupies that spot (--json for the machine report)
+    cmd: uv run --locked python architekton/question_graph.py {{ .CLI_ARGS }}
+
+  # --- Adopting the template into an existing project
+
+  detect:
+    desc: 'Report what a target project already has and which mode fits (DIR=... CLI_ARGS=...)'
+    cmd: uv run --locked python architekton/detect.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
+
+  adopt:
+    desc: 'Adopt into an existing project, transactionally (DIR=... CLI_ARGS="--dry-run")'
+    cmd: uv run --locked python architekton/adopt.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
+
+  # --- Docs: serve, link-check, Japanese translation
+
+  docs-serve:
+    desc: Run docs server with zensical
+    cmd: uv run --locked zensical serve {{ .CLI_ARGS }}
+
+  docs-linkcheck:
+    desc: Check all links in docs/ and README.md with lychee
+    cmds:
+      - command -v lychee >/dev/null 2>&1 || (echo "lychee is not installed. Install it (e.g. 'cargo install lychee' or 'brew install lychee') or run the Link Checker job in CI."; exit 1)
+      - lychee --no-progress --exclude-path site README.md docs zensical.toml
 
   docs-ja:
     desc: Build the Japanese docs site (requires `lattice docs sync` output under docs-i18n/)
@@ -88,10 +208,6 @@ tasks:
     cmd: >-
       ${LATTICE_BIN:-lattice} docs absorb {{ .CLI_ARGS }}
 
-  docs-serve:
-    desc: Run docs server with zensical
-    cmd: uv run --locked zensical serve {{ .CLI_ARGS }}
-
   docs-i18n:
     desc: Build the translated docs site from docs-i18n/<lang>/ (DOCS_LANG=ja) into build/docs-i18n/<lang>/site
     vars:
@@ -108,11 +224,11 @@ tasks:
       - uv run --locked python architekton/docs_i18n.py {{ .DOCS_LANG }}
       - uv run --locked zensical serve -f build/docs-i18n/{{ .DOCS_LANG }}/zensical.toml {{ .CLI_ARGS }}
 
-  docs-linkcheck:
-    desc: Check all links in docs/ and README.md with lychee
-    cmds:
-      - command -v lychee >/dev/null 2>&1 || (echo "lychee is not installed. Install it (e.g. 'cargo install lychee' or 'brew install lychee') or run the Link Checker job in CI."; exit 1)
-      - lychee --no-progress --exclude-path site README.md docs zensical.toml
+  # --- Repo tooling
+
+  mcp:
+    desc: 'Run the repo MCP server (CLI_ARGS="--transport streamable-http")'
+    cmd: uv run --locked python architekton/mcp_server.py {{ .CLI_ARGS }}
 
   act:
     desc: >-
@@ -124,97 +240,6 @@ tasks:
       EVENT: '{{ .EVENT | default "push" }}'
     cmd: act {{ .EVENT }} -W .github/workflows/{{ .WORKFLOW }} {{ if .JOB }}--job {{ .JOB }}{{ end }} {{ .CLI_ARGS }}
 
-  audit:
-    desc: >-
-      Audit dependencies for known vulnerabilities (network; not part of check).
-      Weekly verified by the Thursday dependency-audit.yml schedule (issue filed
-      on failure); PR CI never runs it because check must stay offline.
-    cmd: uv run --locked pip-audit
-
-  batch:
-    desc: 'Run a JSONL batch of copier requests and verdict each line (FILE=... CLI_ARGS=...)'
-    cmd: uv run --locked python architekton/batch.py {{ .FILE | default "tests/batches/smoke.jsonl" }} {{ .CLI_ARGS }}
-
   changelog:
     desc: 'Regenerate CHANGELOG.md with git-cliff (uvx git-cliff -o)'
     cmd: uvx git-cliff -o CHANGELOG.md
-
-  verify-delta:
-    desc: >-
-      Prove which witness leaves the working tree can affect (Layer A semantic diff
-      narrows, Layer B re-renders only candidates; CLI_ARGS pass through, e.g.
-      --audit 5)
-    cmd: uv run --locked python architekton/render_delta.py {{ .CLI_ARGS }}
-
-  update-rehearsal:
-    desc: >-
-      Replay copier update for every witness leaf, release tag -> HEAD (CLI_ARGS
-      pass through, e.g. --only ctf --jobs 8 --fresh; nightly rehearsal)
-    cmd: uv run --locked python architekton/update_rehearsal.py {{ .CLI_ARGS }}
-
-  witness:
-    desc: 'Regenerate the 272 witness leaves and judge them all (JOBS=N, CLI_ARGS=...)'
-    vars:
-      JOBS: '{{ .JOBS | default numCPU }}'
-    cmds:
-      - uv run --locked python architekton/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
-      - uv run --locked python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
-
-  regen:
-    desc: >-
-      One-command definition-of-done pipeline after a questionnaire change: witness
-      leaves -> batch verdicts -> tier ledger -> generated docs ->
-      predicate report (JOBS=N, CLI_ARGS=...)
-    vars:
-      JOBS: '{{ .JOBS | default numCPU }}'
-    cmds:
-      - uv run --locked python architekton/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
-      - uv run --locked python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
-      - UPDATE_TIERS=1 uv run --locked pytest -q -m meta
-      - uv run --locked python architekton/gen_docs.py --write
-      - uv run --locked python architekton/predicates.py --json
-
-  predicates:
-    desc: >-
-      Classify every condition site (question whens, internals, template body/filename ifs,
-      _tasks whens) over the 272 witness leaves: classification tree, equivalence classes,
-      unification candidates and shortcut suggestions (--json for the machine report)
-    cmd: uv run --locked python architekton/predicates.py {{ .CLI_ARGS }}
-
-  answers-for:
-    desc: >-
-      The inverse template: name the features, get the answers that produce them, e.g.
-      --require use_gpu_effective=true --require kaggle=true (--render proves the top
-      match by rendering it; --json for the machine report)
-    cmd: uv run --locked python architekton/answers_for.py {{ .CLI_ARGS }}
-
-  where:
-    desc: 'Show every file a question touches -- where to edit to change it (e.g. task where -- task_runner)'
-    cmd: uv run --locked python architekton/where.py {{ .CLI_ARGS }}
-
-  question-graph:
-    desc: >-
-      Show the questionnaire's dependency graph: the definition order grouped by fragment,
-      what each question/internal reads and feeds, recomputed forward-reference violations
-      (the tests check this after the fact; a backward reference silently reads falsy), and
-      a placement guide -- --where NAME [--refs A,B,C] answers where a new internal/question
-      may live and what occupies that spot (--json for the machine report)
-    cmd: uv run --locked python architekton/question_graph.py {{ .CLI_ARGS }}
-
-  detect:
-    desc: 'Report what a target project already has and which mode fits (DIR=... CLI_ARGS=...)'
-    cmd: uv run --locked python architekton/detect.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
-
-  adopt:
-    desc: 'Adopt into an existing project, transactionally (DIR=... CLI_ARGS="--dry-run")'
-    cmd: uv run --locked python architekton/adopt.py {{ .DIR | default "." }} {{ .CLI_ARGS }}
-
-  check:
-    desc: Run all quality checks
-    deps: [lint, hygiene, type-check, test, docs]
-
-  pipeline:
-    # order: upstream→downstream -- thin wrapper over the existing contract
-    # tests (contract manifest, then when-model); no new logic.
-    desc: Run the ecosystem pipeline contract slice
-    cmd: uv run pytest -q tests/test_contract_manifest.py tests/test_when_model.py
