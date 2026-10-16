@@ -312,8 +312,8 @@ def _register_suite_tools(server: Any) -> None:  # noqa: C901  -- three suite/fi
     def template_fingerprint() -> dict[str, Any]:
         """Report the sha256 of the render inputs -- what a render is a function of.
 
-        The digest covers every file present under `template/` and `_shared/`, plus
-        `copier.yml` and `_tasks.jinja`, as sorted relative path + content hash.
+        The digest covers every file present under `template/` and `partials/`, plus
+        `copier.yml` and `partials/tasks.jinja`, as sorted relative path + content hash.
         Copier renders a *dirty* working tree as it finds it, so this is a
         content-based key rather than a git revision: an unchanged fingerprint
         means the same answers still render the same bytes, and a changed one means
@@ -366,7 +366,7 @@ def _register_mcp_resources(server: Any) -> None:
 
     @server.resource("template://support")
     def support_resource() -> str:
-        """The declared support contract (`support.yml`) as JSON.
+        """The declared support contract (`tests/matrix/support.yml`) as JSON.
 
         What the project promises to have executed, per combination and per leaf
         class, each entry carrying the measured `why`. Read through

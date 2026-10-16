@@ -26,7 +26,7 @@ owner (the architekton/explain.py precedent).
 
 The questionnaire itself is untouched: copier's ask-time `when` semantics,
 the `combinable` / `has_*` render-time guards (questions/08-layers.yml) and the
-support.yml refusal rules are reused, never re-spelled. The question order
+tests/matrix/support.yml refusal rules are reused, never re-spelled. The question order
 and the no-model CLI/questionnaire path keep working exactly as before.
 """
 
@@ -105,7 +105,7 @@ _KEYWORDS: dict[str, tuple[str, str]] = {
     "fastapi": ("web_api", "serves an API (web-api scaffold)"),
     "service": ("web_api", "runs as a service (web-api scaffold)"),
     # The web-api family is the database-backed stack (SQLAlchemy + Alembic
-    # per support.yml's measured `why`): a Postgres requirement names it,
+    # per tests/matrix/support.yml's measured `why`): a Postgres requirement names it,
     # not a new catalogue entry.
     "postgres": ("web_api", "needs Postgres (the web-api stack's database)"),
     "database": ("web_api", "needs a database (the web-api stack's database)"),
@@ -170,12 +170,12 @@ def _closest(name: str, known: list[str], limit: int = 3) -> list[str]:
 
 
 def _base_is_promised(support: dict[str, Any], project_type: str) -> bool:
-    """Whether any support.yml row carries the `project_type` base to a tier."""
+    """Whether any tests/matrix/support.yml row carries the `project_type` base to a tier."""
     return support_ledger.base_is_promised(support, project_type)
 
 
 def _support_note(answers: dict[str, Any]) -> str | None:
-    """The support.yml row the answer set names without a tier promise, if any.
+    """The tests/matrix/support.yml row the answer set names without a tier promise, if any.
 
     Matches textually (the architekton/explain.py precedent): a row is "named" when
     the combination mentions the project_type value, and no row carries the
@@ -190,7 +190,7 @@ def _support_note(answers: dict[str, Any]) -> str | None:
     if not project_type or _base_is_promised(support, project_type):
         return None  # some tier promises this base; not our warning to give
     return (
-        f"project_type {project_type!r} is not named by any support.yml row: "
+        f"project_type {project_type!r} is not named by any tests/matrix/support.yml row: "
         "it renders, but no tier is promised (see docs/reference/support.md)"
     )
 
@@ -319,7 +319,7 @@ def _copier_verdicts(
 
 
 def _support_warning(known: dict[str, Any], errors: list[dict[str, str]]) -> dict[str, str] | None:
-    """The advisory support.yml warning, or None when nothing is owed."""
+    """The advisory tests/matrix/support.yml warning, or None when nothing is owed."""
     if not known or any("unknown question" in error["reason"] for error in errors):
         return None
     note = _support_note(known)
@@ -377,7 +377,7 @@ def validate_answers(answers: dict[str, Any]) -> ValidationResult:
       questions/08-layers.yml `when` / `combinable` / `has_*` trio);
     - a layer include on a base that cannot carry it is rejected (the
       `combinable` half of the same trio: `include_web_api=true` on ros2);
-    - an answer set whose base no support.yml row promises earns a warning
+    - an answer set whose base no tests/matrix/support.yml row promises earns a warning
       reason, not a rejection (support refusal is advisory here; the render
       still runs).
 

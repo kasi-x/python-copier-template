@@ -7,7 +7,7 @@
 //! no commit, no journal -- nothing to recover with.  If this file ever
 //! verifies clean, the main model's proof guards nothing; CI
 //! (.github/workflows/quint.yml) runs this check inverted and fails when the
-//! mutant passes.  See models/README.md for the exact commands.
+//! mutant passes.  See tests/models/README.md for the exact commands.
 //!
 //! VARIANT of `adopt_crash.qnt`: the journal write is late by one step.
 //!

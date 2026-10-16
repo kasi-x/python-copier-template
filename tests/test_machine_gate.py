@@ -32,7 +32,7 @@ from architekton.render_inputs import render_input_paths  # noqa: E402
 
 
 def test_all_jinja_sources_parse():
-    """Every .jinja source (template/ + _shared/ + _tasks.jinja) parses."""
+    """Every .jinja source (template/ + partials/ + partials/tasks.jinja) parses."""
     env = jinja2.Environment()
     broken = []
     for f in template_files():
@@ -44,12 +44,12 @@ def test_all_jinja_sources_parse():
             broken.append(f"{f.relative_to(TOP)}: {e}")
         except (UnicodeDecodeError, OSError):
             continue
-    # _tasks.jinja has no .jinja suffix but is a Jinja source
-    tasks = TOP / "_tasks.jinja"
+    # partials/tasks.jinja has no .jinja suffix but is a Jinja source
+    tasks = TOP / "partials/tasks.jinja"
     try:
         env.parse(tasks.read_text(encoding="utf-8"))
     except jinja2.TemplateSyntaxError as e:
-        broken.append(f"_tasks.jinja: {e}")
+        broken.append(f"partials/tasks.jinja: {e}")
     assert not broken, "unparsable Jinja sources:\n" + "\n".join(broken)
 
 
@@ -74,7 +74,7 @@ def test_resolved_questionnaire_loads():
 
 
 def test_shared_partials_are_all_consumed():
-    """Every _shared/*.jinja partial is included from somewhere.
+    """Every partials/*.jinja partial is included from somewhere.
 
     An orphan partial is dead code that silently stops tracking its
     consumer's conditions — either wire it or delete it.
@@ -90,7 +90,7 @@ def test_shared_partials_are_all_consumed():
         consumers.append(text)
     blob = "\n".join(consumers)
     orphaned = [p.name for p in shared_files() if p.name not in blob]
-    assert not orphaned, f"orphan _shared/ partials (not included anywhere): {orphaned}"
+    assert not orphaned, f"orphan partials/ partials (not included anywhere): {orphaned}"
 
 
 # The include/import tag form the render-inputs module can attribute: a plain
@@ -150,15 +150,15 @@ def test_the_include_scanner_judges_only_double_quoted_literals_visible():
     """The scanner's verdicts on inline fixtures: probes are how this repo
     keeps a detector honest (the PROBE pattern of tests/test_marker_drift.py,
     tests/test_copier_structure.py's injected-bug meta tests)."""
-    assert _untrackable_include_lines('{% include "_shared/x.jinja" %}') == []
-    assert _untrackable_include_lines('{%- import "_tasks.jinja" as _t with context -%}') == []
+    assert _untrackable_include_lines('{% include "partials/x.jinja" %}') == []
+    assert _untrackable_include_lines('{%- import "partials/tasks.jinja" as _t with context -%}') == []
     # `{% from %}` pulls the file in just the same, but the graph's regex only
     # knows the `include`/`import` keywords: it is untrackable too, so it
     # stays in the guarded class (write `{% import %}` instead).
-    assert _untrackable_include_lines('{% from "_shared/macros.jinja" import python_version %}') != []
+    assert _untrackable_include_lines('{% from "partials/macros.jinja" import python_version %}') != []
     # The graph's regex spans newlines, so a literal opening on the tag's
     # first line is seen however the tag is wrapped.
-    assert _untrackable_include_lines('{% import\n    "_shared/macros.jinja" as m %}') == []
+    assert _untrackable_include_lines('{% import\n    "partials/macros.jinja" as m %}') == []
     # A tag inside a comment or a raw block is not a tag.
     assert _untrackable_include_lines('{# {% include "ghost.jinja" %} #}') == []
     assert _untrackable_include_lines("{% raw %}{% include raw.jinja %}{% endraw %}") == []
@@ -169,7 +169,7 @@ def test_the_include_scanner_judges_only_double_quoted_literals_visible():
     # matches the leading quote and resolves nothing, so it is invisible too.
     assert _untrackable_include_lines('{% include "pre_" ~ name %}') != []
     # A single-quoted literal is not the graph's form either.
-    assert _untrackable_include_lines("{% import '_shared/macros.jinja' as m %}") != []
+    assert _untrackable_include_lines("{% import 'partials/macros.jinja' as m %}") != []
     # A literal and a dynamic tag on one line: the line is flagged.
     assert _untrackable_include_lines('{% include "a.jinja" %} {% include b %}') != []
 

@@ -104,7 +104,7 @@ def test_every_witness_leaf_has_a_declared_tier() -> None:
     """The tier a leaf was run at is a tier its class declares.
 
     A leaf whose recorded tier no row declares is a class the file does not
-    describe -- the drift `support.yml`'s tier_policy and the ledger would hide
+    describe -- the drift `tests/matrix/support.yml`'s tier_policy and the ledger would hide
     from each other.
     """
     recorded = _declared_tiers()

@@ -50,8 +50,8 @@ from architekton import when_model  # noqa: E402
 
 #: The payload trees: the generated project and the partials it includes.
 PAYLOAD_ROOT = "template"
-PARTIAL_ROOTS = ("_shared",)
-PARTIAL_FILES = ("_tasks.jinja",)
+PARTIAL_ROOTS = ("partials",)
+PARTIAL_FILES = ("partials/tasks.jinja",)
 
 #: Where a name is spelled out rather than branched on.
 PRESET_GLOB = "presets/*.yml"
@@ -212,7 +212,7 @@ def report(hits: Touchpoints, *, limit: int = 12) -> str:
     lines.append("")
     lines += _section("Generated files that exist only depending on it", hits.file_gated, limit=limit)
     lines += _section("Generated files whose content depends on it", hits.content, limit=limit)
-    lines += _section("Shared partials (_shared/, _tasks.jinja)", hits.partials, limit=limit)
+    lines += _section("Shared partials (partials/, partials/tasks.jinja)", hits.partials, limit=limit)
     lines += _section("Presets that set it", hits.presets, limit=limit)
     lines += _section("Tests that name it", hits.tests, limit=limit)
     lines += _section("Docs that name it", hits.docs, limit=limit)

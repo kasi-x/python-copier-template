@@ -51,26 +51,26 @@ permissions, SHA pins, zizmor) lives in
 
 | Default | File | Change for production |
 |---|---|---|
-| stdio transport, localhost-only HTTP bind | `_shared/mcp_server.py.jinja` | Keep stdio unless you need HTTP |
-| Non-local `--host` (e.g. `0.0.0.0` in Docker) requires `MCP_ALLOWED_HOSTS` — refuses to start without it | `_shared/mcp_server.py.jinja`, `template/{% if docker or cicd_extras %}Dockerfile{% endif %}.jinja` | Set the exact host allowlist + `MCP_ALLOWED_ORIGINS` |
-| `GET /health` unauthenticated | `_shared/mcp_server.py.jinja` | Keep it (orchestrator probe); keep sensitive data out of it |
+| stdio transport, localhost-only HTTP bind | `partials/mcp_server.py.jinja` | Keep stdio unless you need HTTP |
+| Non-local `--host` (e.g. `0.0.0.0` in Docker) requires `MCP_ALLOWED_HOSTS` — refuses to start without it | `partials/mcp_server.py.jinja`, `template/{% if docker or cicd_extras %}Dockerfile{% endif %}.jinja` | Set the exact host allowlist + `MCP_ALLOWED_ORIGINS` |
+| `GET /health` unauthenticated | `partials/mcp_server.py.jinja` | Keep it (orchestrator probe); keep sensitive data out of it |
 
 ## Bots (`include_bot` on cli / web_api)
 
 | Default | File | Change for production |
 |---|---|---|
-| `DISCORD_BOT_TOKEN` required — refuses to start without it | `_shared/bot-discord.py.jinja` | Inject from the environment; never bake into the image |
-| `SLACK_BOT_TOKEN` (xoxb-) + `SLACK_APP_TOKEN` (xapp-) required — refuses to start without either | `_shared/bot-slack.py.jinja` | Same; Socket Mode is an outbound WebSocket (no listening port) |
-| `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN` required — refuses to start without either; missing secret fails webhooks closed (HTTP 500, no reply) | `_shared/bot-line.py.jinja` | Same; webhook listens on all interfaces (`BOT_PORT`, default 8000) — expose over HTTPS only |
-| `GMAIL_CREDENTIALS_JSON` / `GMAIL_TOKEN_JSON` required file paths — refuses to start without either | `_shared/bot-gmail.py.jinja` | Mount read-only (e.g. `/run/secrets/`); the token file IS the inbox; both git-ignored (`_shared/gitignore-gmail.jinja`) |
+| `DISCORD_BOT_TOKEN` required — refuses to start without it | `partials/bot-discord.py.jinja` | Inject from the environment; never bake into the image |
+| `SLACK_BOT_TOKEN` (xoxb-) + `SLACK_APP_TOKEN` (xapp-) required — refuses to start without either | `partials/bot-slack.py.jinja` | Same; Socket Mode is an outbound WebSocket (no listening port) |
+| `LINE_CHANNEL_SECRET` + `LINE_CHANNEL_ACCESS_TOKEN` required — refuses to start without either; missing secret fails webhooks closed (HTTP 500, no reply) | `partials/bot-line.py.jinja` | Same; webhook listens on all interfaces (`BOT_PORT`, default 8000) — expose over HTTPS only |
+| `GMAIL_CREDENTIALS_JSON` / `GMAIL_TOKEN_JSON` required file paths — refuses to start without either | `partials/bot-gmail.py.jinja` | Mount read-only (e.g. `/run/secrets/`); the token file IS the inbox; both git-ignored (`partials/gitignore-gmail.jinja`) |
 
 ## Scraping (`include_scraping` on cli)
 
 | Default | File | Change for production |
 |---|---|---|
-| `FETCHER_CONTACT` placeholder (`contact@example.com`) in the User-Agent | `_shared/fetcher-httpx.py.jinja`, `template/{% if needs_env_example %}.env.example{% endif %}.jinja` | Set a reachable address before any real crawl |
-| 1 req/s per host floor, robots.txt, disk cache | `_shared/fetcher-httpx.py.jinja`, `template/{% if scraping_effective %}CHARTER.md{% endif %}.jinja` | Keep; confirm per-source (see `LEGAL.md`) |
-| Cache / browser profiles git-ignored (`.cache/fetcher/`, `.cache/ms-playwright/`) | `_shared/gitignore-scraping.jinja` | Keep harvests out of git |
+| `FETCHER_CONTACT` placeholder (`contact@example.com`) in the User-Agent | `partials/fetcher-httpx.py.jinja`, `template/{% if needs_env_example %}.env.example{% endif %}.jinja` | Set a reachable address before any real crawl |
+| 1 req/s per host floor, robots.txt, disk cache | `partials/fetcher-httpx.py.jinja`, `template/{% if scraping_effective %}CHARTER.md{% endif %}.jinja` | Keep; confirm per-source (see `LEGAL.md`) |
+| Cache / browser profiles git-ignored (`.cache/fetcher/`, `.cache/ms-playwright/`) | `partials/gitignore-scraping.jinja` | Keep harvests out of git |
 
 ## MicroPython
 
@@ -82,5 +82,5 @@ permissions, SHA pins, zizmor) lives in
 
 | Default | File | Change for production |
 |---|---|---|
-| `.kattisrc` + downloaded `test/` cases git-ignored | `_shared/gitignore-oj.jinja` | Never commit submission tokens or harvested cases |
-| `challenges/**/vuln`, `challenges/**/flag*` git-ignored | `_shared/gitignore-ctf.jinja` | Never commit targets or flags |
+| `.kattisrc` + downloaded `test/` cases git-ignored | `partials/gitignore-oj.jinja` | Never commit submission tokens or harvested cases |
+| `challenges/**/vuln`, `challenges/**/flag*` git-ignored | `partials/gitignore-ctf.jinja` | Never commit targets or flags |

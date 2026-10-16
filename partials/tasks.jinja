@@ -1,4 +1,4 @@
-{% import "_shared/macros.jinja" as m with context %}{#
+{% import "partials/macros.jinja" as m with context %}{#
   Canonical task list, included (not copied — this file lives outside
   `template/`) by each of the task-runner outputs so
   the task set is defined once and only formatted differently per tool:
@@ -30,7 +30,7 @@
   - The serializers themselves are the `macro`s at the end of this file
     (`taskfile`, `justfile`, `makefile`, `invoke_tasks`, `duty_duties`,
     `poe_tasks`, `pixi_tasks`). Each runner template is now only
-    `{% import "_tasks.jinja" as _t %}` plus one call, so adding a task
+    `{% import "partials/tasks.jinja" as _t %}` plus one call, so adding a task
     cannot need seven edits. A macro reads `tasks` from this module's
     scope and takes no arguments; the whitespace inside it is
     significant (it is the runner's output, newlines included).

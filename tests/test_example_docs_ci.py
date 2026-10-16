@@ -296,7 +296,7 @@ def test_license_check_gate_is_armed_for_every_offered_license():
     against every choice the questionnaire offers -- not a Python restatement
     of its branches, which would agree with any rewrite of the template.
     """
-    source = (TOP / "_tasks.jinja").read_text(encoding="utf-8")
+    source = (TOP / "partials/tasks.jinja").read_text(encoding="utf-8")
     match = re.search(r"\{% set license_fail_on = (.+?)%\}", source)
     assert match, "the license fail-on policy moved or was renamed"
 
@@ -615,7 +615,7 @@ def test_template_scorecard_opt_in(tmp_path: Path):
 
 
 def test_template_readme_badges(tmp_path: Path):
-    copy_project(tmp_path)  # example-answers.yml uses package_manager: uv
+    copy_project(tmp_path)  # tests/example-answers.yml uses package_manager: uv
     readme = (tmp_path / "README.md").read_text()
     # only officially-documented tool badges: no unofficial/inferred ones
     # (e.g. uv, pixi have no official "used by" badge upstream)

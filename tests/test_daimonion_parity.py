@@ -9,10 +9,10 @@ old registry gates must equal the set selected by law-map guidance's
 `applies()` over the derived `when` set.
 
 Two deliberate self-containments (the sibling slice deletes architekton/ethics.py
-and _shared/ethics/REGISTRY.yml, so neither may be imported here):
+and partials/ethics/REGISTRY.yml, so neither may be imported here):
 
 - the old side's active gates are a FROZEN constant copied from
-  _shared/ethics/REGISTRY.yml `status==active` rows (verified 0 mismatches
+  partials/ethics/REGISTRY.yml `status==active` rows (verified 0 mismatches
   over all 272 leaves at derivation time), evaluated by a ~40-line
   restricted evaluator over a `leaf_context` mirror;
 - the guidance side is read from law-map's `guidance/sections/MANIFEST.yml`
@@ -49,7 +49,7 @@ GUIDANCE_DIR = Path(
     )
 )
 
-# Frozen copy of _shared/ethics/REGISTRY.yml `status==active` rows' gates
+# Frozen copy of partials/ethics/REGISTRY.yml `status==active` rows' gates
 # (id -> gate string). Verified identical to guidance applies() over the
 # derived `when` set for all 272 leaves before the registry was deleted.
 FROZEN_GATES: dict[str, str] = {

@@ -1,6 +1,6 @@
-"""The declared support contract (`support.yml`): the reader and its doc renderer.
+"""The declared support contract (`tests/matrix/support.yml`): the reader and its doc renderer.
 
-`support.yml` is the human-approved declaration of which witness-leaf
+`tests/matrix/support.yml` is the human-approved declaration of which witness-leaf
 combinations this template keeps working, at which verification tier, and
 with what measured evidence (`why`). Two consumers read it, so the reading
 and the table rendering live in one place: the docs
@@ -32,7 +32,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
-SUPPORT_YML = TOP / "support.yml"
+SUPPORT_YML = TOP / "tests/matrix/support.yml"
 """The declared support contract (W4 owns the file; no file, no blocks)."""
 
 SUPPORT_DOC = TOP / "docs" / "reference" / "support.md"
@@ -57,11 +57,11 @@ SECTIONS = ("supported", "best_effort", "tier_policy")
 
 
 class SupportLedgerError(Exception):
-    """`support.yml` is missing, malformed, or has a hole a renderer needs."""
+    """`tests/matrix/support.yml` is missing, malformed, or has a hole a renderer needs."""
 
 
 def load_support(path: Path = SUPPORT_YML) -> dict[str, Any]:
-    """Read `support.yml`."""
+    """Read `tests/matrix/support.yml`."""
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         msg = f"{path.name} must hold a mapping"
@@ -70,10 +70,10 @@ def load_support(path: Path = SUPPORT_YML) -> dict[str, Any]:
 
 
 def support_section(support: dict[str, Any], key: str) -> list[Any]:
-    """One `support.yml` section, validated as a non-empty list of mappings."""
+    """One `tests/matrix/support.yml` section, validated as a non-empty list of mappings."""
     rows = support.get(key)
     if not isinstance(rows, list) or not rows:
-        msg = f"support.yml has no non-empty `{key}:` list"
+        msg = f"tests/matrix/support.yml has no non-empty `{key}:` list"
         raise SupportLedgerError(msg)
     return rows
 
@@ -81,7 +81,7 @@ def support_section(support: dict[str, Any], key: str) -> list[Any]:
 TIERED_SECTIONS = ("supported", "best_effort")
 """The sections that promise a tier: a row names a combination, textually.
 
-Substring checks, because support.yml writes its combinations as prose
+Substring checks, because tests/matrix/support.yml writes its combinations as prose
 (`project_type=cli/gate=off:use_recommended_agent`,
 `task_runner = make | poe | invoke | duty`): an answer matches a row when
 its name and value spellings both appear in the combination text. The
@@ -94,7 +94,7 @@ def rows_naming(question: str, value: str | None = None) -> list[str]:
 
     `value=None` matches rows naming the question at all (the "which
     combinations involve this question" reading). Each line carries the
-    section, the tier and the measured `why`. An unreadable support.yml
+    section, the tier and the measured `why`. An unreadable tests/matrix/support.yml
     reads as no rows -- the callers' verdicts stay advisory, never loud.
     """
     try:
@@ -185,7 +185,7 @@ def matrix_rows(rows: list[Any], *, drop: tuple[str, ...] = (), plain: tuple[str
 
 
 def render_support_table(support: dict[str, Any], *, full_link: str) -> str:
-    """The catalogue's compact support summary, from `support.yml`.
+    """The catalogue's compact support summary, from `tests/matrix/support.yml`.
 
     One row per combination and no `why` column: the full matrix and its
     evidence live in `docs/reference/support.md`, which the summary links to

@@ -51,7 +51,7 @@ quint is pinned at 0.32.0 (npm: `@informalsystems/quint`).  From the
 repository root:
 
 ```console
-$ quint verify --backend=tlc models/adopt_crash.qnt \
+$ quint verify --backend=tlc tests/models/adopt_crash.qnt \
     --invariant=crash_window_covered,crash_point_recoverable,recovery_restores
 ...
 153 states generated, 51 distinct states found, 0 states left on queue.
@@ -63,7 +63,7 @@ counterexample (TLC prints the trace: state 1 init, state 2 `mutate_create`,
 state 3 `crash` with `journal |-> FALSE` and a changed tree):
 
 ```console
-$ quint verify --backend=tlc models/adopt_crash_journal_late.qnt \
+$ quint verify --backend=tlc tests/models/adopt_crash_journal_late.qnt \
     --invariant=crash_point_recoverable
 ...
 Error: Invariant q_inv is violated.
@@ -76,7 +76,7 @@ exists for must actually be reachable.  That check is deliberately inverted
 and expects a violation, so it is not part of CI:
 
 ```console
-$ quint verify --backend=tlc models/adopt_crash.qnt --invariant='not(kill_window_reached)'
+$ quint verify --backend=tlc tests/models/adopt_crash.qnt --invariant='not(kill_window_reached)'
 ...
 [violation] Found an issue        # good: the window is reachable
 ```

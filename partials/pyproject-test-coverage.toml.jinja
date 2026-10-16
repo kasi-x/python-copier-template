@@ -57,7 +57,7 @@ extend-exclude = ["site"]
 paths = ["{{ 'firmware' if micropython_pkg else pkg_dir }}"]
 min_confidence = 80
 
-{# The deptry table (the per_rule_ignores assembly) is shared (see _shared/pyproject-deptry.toml.jinja). #}{% include "_shared/pyproject-deptry.toml.jinja" %}
+{# The deptry table (the per_rule_ignores assembly) is shared (see partials/pyproject-deptry.toml.jinja). #}{% include "partials/pyproject-deptry.toml.jinja" %}
 
 [tool.pyproject_fmt]
 keep-full-version = true

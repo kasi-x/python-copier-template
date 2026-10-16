@@ -5,7 +5,7 @@ A first-time user should be able to judge one choice without reading the
 whole feature catalogue. The single source of the explanation is the
 questionnaire itself: `questions/*.yml` `help` text, the questions'
 `choices` / `when` context, the preset files' leading comments, and
-`support.yml`'s measured `why` lines. No explanation-only data file, no
+`tests/matrix/support.yml`'s measured `why` lines. No explanation-only data file, no
 second support table, no new choice catalogue -- the three public functions
 below assemble prose from exactly those sources:
 
@@ -206,7 +206,7 @@ def _support_block(question: str, value: str) -> list[str]:
     notes = _support_notes(question, value)
     if notes:
         return ["Support rows naming this combination:", *(f"  - {note}" for note in notes)]
-    return ["No support.yml row names this exact combination -- it renders, but no tier is promised."]
+    return ["No tests/matrix/support.yml row names this exact combination -- it renders, but no tier is promised."]
 
 
 def explain_answer(question: str, value: str | None = None) -> str:

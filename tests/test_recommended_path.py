@@ -1,7 +1,7 @@
 """Smoke-test the recommended (fast) path of the questionnaire.
 
 The heavy integration tests in the `test_example_*.py` modules exercise the
-long tail: they copy with example-answers.yml, which sets every
+long tail: they copy with tests/example-answers.yml, which sets every
 `use_recommended_*` gate to false so every detail question is asked. What they
 never render is the path a real user actually takes -- accept every "use the
 recommended ...?" default and only answer project_type + Project Details.

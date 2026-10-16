@@ -71,7 +71,7 @@ CI_JINJA = TEMPLATE_DIR / (
     "{% if is_github %}.github{% endif %}/{% if ci_provider == 'github_actions' %}workflows{% endif %}/ci.yml.jinja"
 )
 ROS2_QUESTIONS = QUESTIONS_DIR / "03-ros2.yml"
-MACROS_JINJA = TEMPLATE_DIR.parent / "_shared" / "macros.jinja"
+MACROS_JINJA = TEMPLATE_DIR.parent / "partials" / "macros.jinja"
 
 
 @dataclass
@@ -275,9 +275,9 @@ def _extract_platform_pins() -> list[Pin]:
 
 
 def _load_combined_pyproject_sources() -> str:
-    """Load pyproject template along with all _shared partials."""
+    """Load pyproject template along with all partials partials."""
     src = PYPROJECT_JINJA.read_text()
-    for partial in sorted((TOP / "_shared").glob("pyproject-*.toml.jinja")):
+    for partial in sorted((TOP / "partials").glob("pyproject-*.toml.jinja")):
         src += "\n" + partial.read_text()
     return src
 

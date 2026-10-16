@@ -5,7 +5,7 @@
 # question `when:` runs at ask time and sees the prefix of the include chain
 # built so far — raw answers and any internal defined earlier — while
 # everything render-side (template bodies, file-name conditions,
-# _tasks.jinja, the copier.yml tasks) reads the EFFECTIVE internals: the
+# partials/tasks.jinja, the copier.yml tasks) reads the EFFECTIVE internals: the
 # has_* booleans below and the *_effective family in questions/90-derived.yml.
 # The include_*.when gates here are the ask-time half of that rule; the
 # internals at the bottom are its render-time half.
@@ -169,13 +169,13 @@ combinable:
 # domains genuinely co-occur -- a face-recognition model that also touches
 # patient data selects both, and the emitted `.daimonion.yml` must then carry
 # both conditions. Each choice maps to a guidance `when` condition (see the
-# derivation in `_shared/daimonion-when.jinja`) and, where it applies, to packages.
+# derivation in `partials/daimonion-when.jinja`) and, where it applies, to packages.
 #
 # Asked on every base rather than under data-science: the condition that fires
 # is chosen by *purpose*, not by layout -- a FastAPI service that verifies
 # faces is in scope, and so is an MCP server that exposes a recognition tool.
 # The derivation from this answer to the `when` list lives in
-# `_shared/daimonion-when.jinja`; the predicate that holds it to this answer
+# `partials/daimonion-when.jinja`; the predicate that holds it to this answer
 # lives in tests/test_render_invariants.py (`_domain_traits`).
 domain_traits:
     type: str

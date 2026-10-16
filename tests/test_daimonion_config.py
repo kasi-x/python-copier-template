@@ -9,7 +9,7 @@ and an EMPTY marker pair in AGENTS.md that
 selected guidance sections in the questionnaire's language (`en` renders the
 sections' `en:` titles/summaries, `ja` the Japanese prose). Both
 `.daimonion.yml` and the composition manifest's `when:` derive from the
-single `_shared/daimonion-when.jinja` macro, so the two must agree.
+single `partials/daimonion-when.jinja` macro, so the two must agree.
 """
 
 from __future__ import annotations

@@ -472,7 +472,7 @@ def test_renovate_baseline_matches_generated_template(tmp_path: Path, render_cac
     documents -- the generated one comes from a real render, so a jinja
     branch (docker/pypi/docs/...) that emits invalid JSON fails here too.
     """
-    root = json.loads((TOP / "renovate.json").read_text(encoding="utf-8"))
+    root = json.loads((TOP / ".github" / "renovate.json").read_text(encoding="utf-8"))
     render_cache.render(tmp_path, {**BASE, "project_type": "library"})
     generated = json.loads((tmp_path / "renovate.json").read_text(encoding="utf-8"))
 

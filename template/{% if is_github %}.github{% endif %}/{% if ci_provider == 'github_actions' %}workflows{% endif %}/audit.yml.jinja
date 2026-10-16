@@ -1,10 +1,10 @@
-{# Weekly dependency audit: the on-purpose one-off from _tasks.jinja (the
+{# Weekly dependency audit: the on-purpose one-off from partials/tasks.jinja (the
    `audit` task runs pip-audit, which needs the network, so it stays out of
    `type-check`/`check` — both must run offline). Dispatched through the
    project's task runner via the shared _tasks.yml reusable workflow, the
    same dispatch ci.yml.jinja uses for lint, so no runner installs its own
    steps here. The `audit` task exists only outside ros2 at
-   recommended/full strictness (quality_tasks in _tasks.jinja); other
+   recommended/full strictness (quality_tasks in partials/tasks.jinja); other
    configurations keep a valid workflow that skips with a notice instead of
    calling a task that does not exist — the _hygiene.yml self-skip idiom. #}
 {% raw %}name: Audit

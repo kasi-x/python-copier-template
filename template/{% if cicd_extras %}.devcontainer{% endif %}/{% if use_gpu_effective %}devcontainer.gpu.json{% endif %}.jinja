@@ -13,7 +13,7 @@
     "customizations": {
         "vscode": {
             "settings": {
-                "python.defaultInterpreterPath": "{% if package_manager == 'uv' %}/app/.venv/bin/python{% else %}/app/.pixi/envs/default/bin/python{% endif %}"
+                "python.defaultInterpreterPath": "{% if is_uv %}/app/.venv/bin/python{% else %}/app/.pixi/envs/default/bin/python{% endif %}"
             },
             "extensions": [
                 "ms-python.python",

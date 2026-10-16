@@ -6,7 +6,7 @@ costs, and the rules a new check has to satisfy before it lands.
 This page is the written contract behind three things that already exist:
 the tier selectors in `Taskfile.yml` / `pyproject.toml`, the witness tiers in
 `tests/test_witness_matrix.py`, and the support levels in
-[`support.yml`](../reference/support.md). Every number here is measured; the
+[`tests/matrix/support.yml`](../reference/support.md). Every number here is measured; the
 source command for each one is listed in
 [Where the numbers come from](#where-the-numbers-come-from).
 
@@ -226,7 +226,7 @@ that has not been made yet.
    (and `network` when it talks to the network), no exceptions.
 5. **Which support level does it get?** `supported` if CI executes it end to
    end, `best_effort` if it is declared and rendered but never executed — and it
-   goes into `support.yml` with a measured `why`.
+   goes into `tests/matrix/support.yml` with a measured `why`.
 
 ## Non-goals
 
@@ -279,7 +279,7 @@ execution proves the toolchain.
 
 ## Support levels
 
-`support.yml` (repository root) is the machine-readable declaration of what
+`tests/matrix/support.yml` (repository root) is the machine-readable declaration of what
 this template keeps working. It uses two levels:
 
 - **`supported`** — executed end to end by the witness `full` tier: `uv sync`,
@@ -291,14 +291,14 @@ this template keeps working. It uses two levels:
   renders and ruff-checks these leaves; a regression that only breaks install or
   run is not caught for them.
 
-Two related pieces of the same vocabulary live in `support.yml` as well: the
+Two related pieces of the same vocabulary live in `tests/matrix/support.yml` as well: the
 per-entry `why` (the measured evidence for the assigned tier) and
 `tier_policy`, which maps a *class* of leaf to a tier. `none` is reserved for a
 future exclusion and is declared per leaf as `tier: none` plus a `reason` in
 `tests/matrix/witnesses.json`; no leaf uses it today, because every declared
 leaf has a recorded run.
 
-`support.yml` is the source, not the documentation: `architekton/gen_docs.py --write`
+`tests/matrix/support.yml` is the source, not the documentation: `architekton/gen_docs.py --write`
 renders [the support matrix](../reference/support.md) and the README summary
 from it, and `--check` fails CI when those drift.
 

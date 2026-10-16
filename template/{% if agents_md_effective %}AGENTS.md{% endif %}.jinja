@@ -1,4 +1,4 @@
-{% import "_tasks.jinja" as _t with context -%}# Agent Guide for `{{ repo_name }}`
+{% import "partials/tasks.jinja" as _t with context -%}# Agent Guide for `{{ repo_name }}`
 
 This file is for AI coding agents working in this repository. It states how
 to run the checks and where edits belong. The human-facing contribution
@@ -51,7 +51,7 @@ guide is [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 ## Commands
 The `{{ task_runner_effective }}` task runner drives the common commands:
 
-```sh{# The rows below are the `_tasks.jinja` model, not a hand-written table:
+```sh{# The rows below are the `partials/tasks.jinja` model, not a hand-written table:
    a row is printed only when the task exists in this render. Presentation
    (comments on the `task` runner, the fix comment on `just`) is kept as is. #}
 {% for task_name in _t.agent_cmd_specs if task_name in (_t.tasks | map(attribute='name')) and (runner_task or task_name != 'type-check') %}{{ _t.agent_prefix }} {% if task_name in _t.agent_commented %}{{ task_name }}{{ (15 - (task_name | length)) * ' ' }}# {{ _t.agent_cmd_specs[task_name] }}{% else %}{{ task_name }}{% endif %}
@@ -101,7 +101,7 @@ Keep 100% coverage where it exists; do not lower it.
 Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
 `reports/`) are analysis artifacts — keep generated outputs out of git.
 {% endif %}
-{% include "_shared/security-defaults.md.jinja" %}
+{% include "partials/security-defaults.md.jinja" %}
 ## Commits and CI
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/)

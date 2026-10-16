@@ -45,15 +45,15 @@ def _state(  # noqa: PLR0913  WHYNOT: a fixture factory over the State's own fie
 
 def test_identical_states_have_no_candidates():
     """A no-op change must propose zero re-renders: that is the whole point."""
-    state = _state({"l1": "c1", "l2": "c2"}, {"_tasks.jinja": "t1"})
+    state = _state({"l1": "c1", "l2": "c2"}, {"partials/tasks.jinja": "t1"})
     candidates, _report = rd.compute_candidates(state, state)
     assert not candidates, "an identical state cannot affect any leaf"
 
 
 def test_a_context_change_candidates_exactly_the_leaves_that_changed():
     """Value flow: one leaf's internals moved, the other did not."""
-    old = _state({"l1": "c1", "l2": "c2"}, {"_tasks.jinja": "t1"})
-    new = _state({"l1": "c1-CHANGED", "l2": "c2"}, {"_tasks.jinja": "t1"})
+    old = _state({"l1": "c1", "l2": "c2"}, {"partials/tasks.jinja": "t1"})
+    new = _state({"l1": "c1-CHANGED", "l2": "c2"}, {"partials/tasks.jinja": "t1"})
     candidates, report = rd.compute_candidates(old, new)
     assert candidates == {"l1"}, "only the leaf whose context moved is a candidate"
     assert "the render context changed" in report["reasons"]["l1"][0]
@@ -61,7 +61,7 @@ def test_a_context_change_candidates_exactly_the_leaves_that_changed():
 
 def test_a_changed_template_file_candidates_the_leaves_that_render_it():
     """Content flow: the changed bytes only reach leaves whose render includes them."""
-    partial = "_shared/pyproject-deps.toml.jinja"
+    partial = "partials/pyproject-deps.toml.jinja"
     parent = "{% if (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp %}pyproject.toml{% endif %}.jinja"
     changed = {partial: "v1"}
     old = _state(
@@ -86,7 +86,7 @@ def test_the_include_closure_spreads_the_candidates():
     The manifest keys are destination names and the reach is template-side, so
     the comparison runs over the stripped output names (`_output_name`).
     """
-    partial = "_shared/pyproject-deps.toml.jinja"
+    partial = "partials/pyproject-deps.toml.jinja"
     parent = "{% if (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp %}pyproject.toml{% endif %}.jinja"
     graph = {parent: {partial}}
     old = _state(

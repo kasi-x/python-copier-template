@@ -8,12 +8,12 @@ otherwise would be less honest than saying so plainly.
 
 The project is maintained as a **BDFL-style project** with a single
 maintainer: [kasi-x](https://github.com/kasi-x) (also the sole entry in
-[.github/CODEOWNERS](.github/CODEOWNERS)). The maintainer:
+[.github/CODEOWNERS](CODEOWNERS)). The maintainer:
 
 - decides the roadmap and the scope boundaries (see the "What this is
   deliberately not" section of
-  [docs/explanations/vision.md](docs/explanations/vision.md) and the
-  [design principles](docs/explanations/design-principles.md));
+  [docs/explanations/vision.md](../docs/explanations/vision.md) and the
+  [design principles](../docs/explanations/design-principles.md));
 - merges or rejects pull requests;
 - is, for now, the bus factor. This is a known risk and the reason the
   next section exists.
@@ -25,7 +25,7 @@ A second maintainer will be added when someone has:
 1. a track record here — several merged, non-trivial PRs, or substantial
    reviewed feedback on the questionnaire/design surfaces;
 2. demonstrated agreement with the design principles
-   ([docs/explanations/design-principles.md](docs/explanations/design-principles.md))
+   ([docs/explanations/design-principles.md](../docs/explanations/design-principles.md))
    — in particular the reluctance to add a new `project_type` or option
    without a "what existing layer does this sit on?" answer;
 3. time to review, not only to build.
@@ -34,14 +34,14 @@ The invitation is made by the current maintainer, publicly in an issue.
 
 ## Layer ownership
 
-The questionnaire's layers are listed in [.github/CODEOWNERS](.github/CODEOWNERS)
+The questionnaire's layers are listed in [.github/CODEOWNERS](CODEOWNERS)
 by path (question fragment, template files, preset, per-layer tests). Each
 layer may have a distinct owner once contributors exist.
 
 **Ownerless-layer rule**: a layer whose row lists no owner besides the
 maintainer is *supported* but not *staffed*. When the maintainer stops
 reviewing a layer's area, that layer's leaves drop to the `experimental`
-tier in [docs/reference/support.md](docs/reference/support.md) — they keep
+tier in [docs/reference/support.md](../docs/reference/support.md) — they keep
 rendering, but the support matrix says so honestly rather than implying a
 reviewer exists. Regaining `supported` requires a named owner who reviews
 that layer's PRs.
@@ -71,7 +71,7 @@ If there is no owner, the option must remain experimental or the proposal
 must be declined. Do not treat a passing render, a larger witness matrix, or
 the presence of generated files as proof that a path is fully supported.
 Keep support claims aligned with the evidence in
-[the support matrix](docs/reference/support.md). Prefer strengthening
+[the support matrix](../docs/reference/support.md). Prefer strengthening
 existing paths over expanding the questionnaire; remove or narrow paths when
 their maintenance cost is no longer justified.
 
@@ -94,7 +94,7 @@ confidence the evidence does not provide.
 ## How contributions are reviewed
 
 - **Big changes start as an issue first** (also stated in
-  [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)). "Big" means: a new
+  [CONTRIBUTING.md](../CONTRIBUTING.md)). "Big" means: a new
   question, project type, layer, or anything that changes generated files
   for existing answers.
 - Every change that adds behavior must add a test that fails without it.
@@ -104,7 +104,7 @@ confidence the evidence does not provide.
   fragment union, forward-only references, and the Z3 satisfiability sweep
   (`tests/test_copier_structure.py`).
 - Template defaults and pins must respect the freshness policy
-  ([docs/explanations/template-dev.md](docs/explanations/template-dev.md))
+  ([docs/explanations/template-dev.md](../docs/explanations/template-dev.md))
   and, where a value is hardcoded, the upstream-check tooling
   (`architekton/check_upstream.py`).
 
@@ -115,7 +115,7 @@ The rule sections live in [law-map's guidance tree](https://github.com/politeuma
 linter renders into guides: section texts, sources, and review cadence are pull
 requests there. This repo owns only the wiring — the derived `when`
 conditions the template emits into the generated `.daimonion.yml`
-(`_shared/daimonion-when.jinja`), which `daimonion agents-md --write` matches
+(`partials/daimonion-when.jinja`), which `daimonion agents-md --write` matches
 against the guidance sections. The template states rules of thumb, it does not give legal advice.
 
 ## Relationship to upstream

@@ -2,7 +2,7 @@
 
 This file is for AI coding agents working in this repository. It states how
 to run the checks and where edits belong. The human-facing contribution
-guide is [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md); this repo is the
+guide is [CONTRIBUTING.md](CONTRIBUTING.md); this repo is the
 copier template itself, so its shape follows the `AGENTS.md` it generates.
 
 ## Commands
@@ -22,8 +22,8 @@ task docs        # build the documentation site
 
 Run `task fix` before committing, then the cheapest tier that covers the
 change (the blast-radius table in
-[.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)): docs-only changes need
-`task lint type-check`; template payload (`template/`, `_shared/`,
+[CONTRIBUTING.md](CONTRIBUTING.md)): docs-only changes need
+`task lint type-check`; template payload (`template/`, `partials/`,
 `questions/`) needs `task test-fast` plus `task verify-delta`; a
 questionnaire change (`copier.yml`, `questions/*.yml`) needs `task regen`
 then `task test-fast`.
@@ -32,17 +32,14 @@ then `task test-fast`.
 
 - Questionnaire: `copier.yml` and its fragments in `questions/`
 - Generated project payload: `template/` (file and directory names carry
-  copier's `{% if %}` conditionals) and the shared partials in `_shared/`;
-  the generated task-runner model is `_tasks.jinja`
+  copier's `{% if %}` conditionals) and the shared partials in `partials/`;
+  the generated task-runner model is `partials/tasks.jinja`
 - Template tooling (witnesses, batch runner, docs generator, MCP server,
   CLI): `architekton/`
 - Tests: `tests/` (cost tiers are pytest markers; `tests/matrix/` holds the
   witness leaves, invariants and the tier ledger)
 - Docs: `README.md` and `docs/`. Blocks marked as generated come from
   `architekton/gen_docs.py --write`; edit their sources, not the output.
-
-`notes/` is internal working material, not documentation: do not cite it
-from `docs/` or code.
 
 ## Commits and CI
 

@@ -80,7 +80,7 @@ def test_missing_trailing_newline_fails(tmp_path: Path) -> None:
 def test_jinja_partial_without_newline_passes(tmp_path: Path) -> None:
     """`.jinja` partials end without a newline on purpose (the render adds one)."""
     repo = _repo(tmp_path)
-    _write(repo, "payload.txt.jinja", "{% include '_shared/x.jinja' %}")
+    _write(repo, "payload.txt.jinja", "{% include 'partials/x.jinja' %}")
     assert _hygiene(repo).returncode == 0
 
 

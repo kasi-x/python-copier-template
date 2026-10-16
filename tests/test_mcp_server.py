@@ -304,7 +304,9 @@ async def test_run_batch_reports_a_verdict(client: Client, tmp_path: Path):
 
 @pytest.mark.anyio
 async def test_list_batch_requests_reads_the_shipped_batch(client: Client):
-    requests = (await call(client, "list_batch_requests", {"jsonl": str(TOP / "batches" / "smoke.jsonl")}))["requests"]
+    requests = (await call(client, "list_batch_requests", {"jsonl": str(TOP / "tests" / "batches" / "smoke.jsonl")}))[
+        "requests"
+    ]
     assert requests, "the shipped batch lists its requests"
     assert any(request["has_update"] for request in requests), "the listing reports the update phase"
 
@@ -497,7 +499,7 @@ async def test_support_resource_serves_the_declared_contract(client: Client):
     """The declaration the docs and the support tests read, on the MCP surface.
 
     The point of the resource is a caller asking "what has CI actually run?",
-    so the payload must be the live `support.yml` and not a copy of it: every
+    so the payload must be the live `tests/matrix/support.yml` and not a copy of it: every
     declared `supported` combination is cross-checked against the witness
     inventory the sibling tool reports.
     """
@@ -591,8 +593,8 @@ def test_template_fingerprint_hashes_the_render_inputs(monkeypatch: pytest.Monke
 
     first = mcp_server.template_fingerprint()
     assert first["inputs"] == {
-        "dirs": ["template", "_shared"],
-        "files": ["copier.yml", "_tasks.jinja"],
+        "dirs": ["template", "partials"],
+        "files": ["copier.yml", "partials/tasks.jinja"],
         "paths": 3,
         "bytes": len("x = 1\n") + len("# {{ repo_name }}\n") + len("repo_name:\n  type: str\n"),
     }

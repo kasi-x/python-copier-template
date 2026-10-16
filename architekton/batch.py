@@ -8,7 +8,7 @@ finds -- so a batch run needs no eyeballing: either it exits 0 or it names
 the request, the check and the observed value that failed.
 
 Why this exists rather than more pytest cases: the same request list can be
-produced by a human, by CI, or by a generator (see notes/PLAN-improvements.md
+produced by a human, by CI, or by a generator (see architekton-internal:notes/architekton-py/PLAN-improvements.md
 W3, which turns Z3 witnesses of the questionnaire into exactly this format),
 and it runs the *real* copier against the *real* template working tree.
 
@@ -45,9 +45,9 @@ Schema (one line per request; unknown keys anywhere are an error):
 that phase is present.
 
 Usage:
-    python architekton/batch.py batches/smoke.jsonl
-    python architekton/batch.py batches/smoke.jsonl --only web-api --keep
-    python architekton/batch.py batches/smoke.jsonl --json > verdict.json
+    python architekton/batch.py tests/batches/smoke.jsonl
+    python architekton/batch.py tests/batches/smoke.jsonl --only web-api --keep
+    python architekton/batch.py tests/batches/smoke.jsonl --json > verdict.json
     python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs 16
 
 Concurrency (`--jobs N`, default 1 = strictly serial in file order):

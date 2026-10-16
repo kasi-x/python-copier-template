@@ -1,4 +1,4 @@
-{% import "_shared/macros.jinja" as m with context %}{% if strictness in ['recommended', 'full'] %}
+{% import "partials/macros.jinja" as m with context %}{% if strictness in ['recommended', 'full'] %}
 [tool.basedpyright]
 typeCheckingMode = "{{ 'strict' if strictness == 'full' else 'recommended' }}"
 # Pin the language version to what the project actually targets

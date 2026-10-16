@@ -31,7 +31,7 @@
    and interpolate the macro beneath it with `-}}` so no blank line slips
    between the items and whatever follows:
 
-       {% import "_shared/daimonion-when.jinja" as dw with context %}
+       {% import "partials/daimonion-when.jinja" as dw with context %}
        when:
        {{ dw.daimonion_when() -}}
 #}

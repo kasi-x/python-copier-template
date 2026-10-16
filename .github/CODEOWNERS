@@ -8,7 +8,7 @@
 /.github/workflows/ @kasi-x
 /.github/zizmor.yml @kasi-x
 /.github/actionlint.yaml @kasi-x
-/renovate.json @kasi-x
+/.github/renovate.json @kasi-x
 SECURITY.md @kasi-x
 copier.yml @kasi-x
 
@@ -23,4 +23,4 @@ copier.yml @kasi-x
 # Cross-cutting layers (daimonion conditions, scraping, bot, mcp) share the
 # questionnaire fragments; ownership stays with the maintainer until a
 # second maintainer exists.
-/_shared/daimonion-when.jinja @kasi-x
+/partials/daimonion-when.jinja @kasi-x

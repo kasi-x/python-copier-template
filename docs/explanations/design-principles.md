@@ -110,7 +110,7 @@ Contributors classify their change before choosing a verification path:
 | Class | Examples | Verification |
 |---|---|---|
 | docs-only | `README.md`, `docs/*.md` | `task lint type-check` (CI skips the render matrix) |
-| render-only | template files, `_shared/` | twin render + fast tier |
+| render-only | template files, `partials/` | twin render + fast tier |
 | questionnaire | `copier.yml`, `questions/` | `task regen` — full regeneration |
 
 See the [test-loop guide](../how-to/test-loop.md) for verification commands.

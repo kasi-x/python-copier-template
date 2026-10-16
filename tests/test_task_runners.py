@@ -1,6 +1,6 @@
 """Conformance and runtime guards for the generated task-runner outputs.
 
-`_tasks.jinja` builds the task model ONCE (a single declarative list) and
+`partials/tasks.jinja` builds the task model ONCE (a single declarative list) and
 every runner file serializes that same list. Both failure classes that
 happened for real are guarded here:
 
@@ -13,7 +13,7 @@ happened for real are guarded here:
 The contract is pinned structurally — each runner's parsed task table
 (names AND dependency structure) must equal the model, read out of the
 pixi `[tool.pixi.feature.dev.tasks]` table, which is a direct
-serialization of `_tasks.jinja` — and in the workflows' own dispatch: every
+serialization of `partials/tasks.jinja` — and in the workflows' own dispatch: every
 `case "$TASK_RUNNER"` switch in the shipped `_*.yml` files must handle every
 runner the questionnaire offers, because a missing branch is the runtime
 `Unknown task runner` failure that reached users through `_test.yml` and

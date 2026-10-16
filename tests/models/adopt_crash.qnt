@@ -7,7 +7,7 @@
 //! hold -- `crash_window_covered`, `crash_point_recoverable`,
 //! `recovery_restores`.  From every crash point, a tree that has drifted is
 //! either the committed result of a verified run or still covered by the
-//! journal that `--recover` undoes.  See models/README.md for the commands.
+//! journal that `--recover` undoes.  See tests/models/README.md for the commands.
 //!
 //! Skeleton model of the adopt protocol in `tools/adopt.py` (V1: on-disk
 //! journal + `--recover`), written for the crash-safety question only.

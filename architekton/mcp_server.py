@@ -41,7 +41,7 @@ Two protocol facts shape the implementation:
   network) and what is returned.
   tests/test_mcp_server.py fails when a tool's docstring stops saying both.
 
-The generated scaffold's MCP server (`_shared/mcp_server.py.jinja`, rendered
+The generated scaffold's MCP server (`partials/mcp_server.py.jinja`, rendered
 into a `cli` / `web_api` project when `include_mcp` is on) is a **separate
 server on purpose**. That one is the worked example a generated project
 starts from -- typed tools, a `ToolError`, resources, a prompt, the
@@ -57,7 +57,7 @@ docs/how-to/mcp-tools.md.
 
 None of these tools guess the questionnaire: the shape questions
 (`project_type`, `include_*`, ...) stay the caller's decision, per
-notes/SPEC-adoption.md section 12.
+architekton-internal:notes/architekton-py/SPEC-adoption.md section 12.
 
 Layout: this module is the entry point only. The `server` object lives in
 `architekton/mcp_shared.py`; each `architekton/mcp_*.py` module registers one

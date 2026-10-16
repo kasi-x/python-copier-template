@@ -1,8 +1,8 @@
 # Authoring Template Sources (.jinja)
 
 Rules for editing this repository's *template sources* — the `template/`
-tree, the `questions/` questionnaire fragments, and the root `_shared/` /
-`_tasks.jinja` partials. These are the recurring failure modes we have hit;
+tree, the `questions/` questionnaire fragments, and the root `partials/` /
+`partials/tasks.jinja` partials. These are the recurring failure modes we have hit;
 each rule is backed by a real bug. Where a rule is enforced by a test, the
 test name is linked so a future change can verify itself.
 
@@ -30,21 +30,21 @@ Enforced by
 `test_generated_files_end_with_single_newline` in
 `tests/test_generated_lint.py` (runs over every recommended render path).
 
-## Share large conditional bodies via `_shared/` includes
+## Share large conditional bodies via `partials/` includes
 
 When the same body must be generated at different paths per project type
 (e.g. `logging_setup.py` lives in `<pkg>/` for library/cli/... and in the
-top-level `app/` for web_api), keep the body once in a root `_shared/*.jinja`
+top-level `app/` for web_api), keep the body once in a root `partials/*.jinja`
 partial and include it from thin per-location wrappers:
 
 ```jinja
 {# template/<pkg>/logging_setup.py.jinja #}
-{% include "_shared/logging_setup.py.jinja" %}
+{% include "partials/logging_setup.py.jinja" %}
 ```
 
 - The include path is repo-root-relative (copier's Jinja loader searchpath is
-  the repository root), so `_shared/` needs no `template/` prefix.
-- `_shared/` is never copied into a generated project (it is outside
+  the repository root), so `partials/` needs no `template/` prefix.
+- `partials/` is never copied into a generated project (it is outside
   `template/`), and the wrapper picks the location.
 - Any self-reference inside the shared body that differs per location
   (e.g. `from <pkg>.logging_setup import logger` vs
@@ -55,14 +55,14 @@ partial and include it from thin per-location wrappers:
   after* the `{% include %}` tag, or the render gains a trailing blank line.
 - When a direct template file is replaced by a shared partial, keep the render
   byte-identical: put the wrapper on a *single line* —
-  `{# ... #}{% include "_shared/....jinja" %}` with no trailing newline. A
+  `{# ... #}{% include "partials/....jinja" %}` with no trailing newline. A
   two-line wrapper (comment line, then the include) emits the comment's
   newline as a leading blank line in the output. (`logging_setup.py`'s
   two-line wrappers predate this rule and carry that leading blank line as
 The same pattern applies to single-location conditional blocks that are
 edited often enough to cause hunk-boundary mistakes: the CTF `ctf` extra
-(`_shared/pyproject-ctf-extra.toml.jinja`) and the `challenges/` ruff
-ignores (`_shared/pyproject-ctf-lint.toml.jinja`) are included from
+(`partials/pyproject-ctf-extra.toml.jinja`) and the `challenges/` ruff
+ignores (`partials/pyproject-ctf-lint.toml.jinja`) are included from
 `template/pyproject.toml.jinja`. Verify with a baseline-vs-current render
 Current inventory (all byte-identical verified over 9 render paths —
 library / cli / web_api / data_science / atcoder / kaggle / micropython /
@@ -78,7 +78,7 @@ Out of scope: inline single-line conditionals with no edit-hotspot of their
 own (README badges and the like) — extracting those would scatter one-line
 logic across files with no hunk-boundary benefit.
 
-Enforced by `_template_files()` walking `_shared/` in
+Enforced by `_template_files()` walking `partials/` in
 `tests/test_copier_structure.py` (variables inside shared partials must be
 defined questionnaire keys).
 
@@ -141,7 +141,7 @@ lives on one side of the line:
   `tests/test_copier_structure.py`.
 - **Everything render-side runs at render time and reads the effective
   internal.** Template bodies, file-name conditions (`{% if ... %}` in
-  `template/` paths), `_tasks.jinja` and copier.yml's `_tasks` blocks see
+  `template/` paths), `partials/tasks.jinja` and copier.yml's `_tasks` blocks see
   every answer, and they should read the `*_effective` family (plus the
   effective `web_api` / `data_science`, `pkg_dir`, `import_pkg`, ...) from
   `questions/90-derived.yml`, so "the base *or* the combo opt-in" is
@@ -383,7 +383,7 @@ roadmap — full parity would be a project of its own):
 - the OpenSSF Scorecard badge (already gated off via `scorecard_effective`);
 - README links that append GitHub routes to `repo_url` — `/issues` and
   `/releases` (GitLab's routes are `/-/issues`, `/-/releases`) — and the
-  contributing section's link to `.github/CONTRIBUTING.md`, which a GitLab
+  contributing section's link to `CONTRIBUTING.md`, which a GitLab
   render does not ship.
 
 Enforced by `test_template_gitlab_urls` in `tests/test_example_library_cli.py`
@@ -516,7 +516,7 @@ section in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/m
 declaring its abstract `when` and `placement` (see
 [Ethics Content Lives in Kanon](ethics-external.md)). This repo derives the
 matching `when` conditions from its answers in
-`_shared/daimonion-when.jinja` — one macro both the generated
+`partials/daimonion-when.jinja` — one macro both the generated
 `.daimonion.yml` and the composition manifest interpolate, so the derivation
 is spelled once. A new abstract condition (or a new answer implying an
 existing one) extends that macro; nothing is vendored, so the leaf space

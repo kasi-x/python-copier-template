@@ -85,7 +85,7 @@ nothing about the answers. Every other byte is compared as it is.
 | --- | --- |
 | `template://questionnaire` | the full questionnaire as JSON, internal variables included |
 | `template://witnesses` | each witness leaf with its recorded tier and result, plus the ledger's coverage counters -- sorted and declaration-ordered, so it diffs between runs |
-| `template://support` | the declared support contract (`support.yml`): what CI promises to execute per combination and per leaf class, each entry with the measured `why` |
+| `template://support` | the declared support contract (`tests/matrix/support.yml`): what CI promises to execute per combination and per leaf class, each entry with the measured `why` |
 | `template://ethics` | the guidance section index the linter matches against: one row per section with its id, title and triggers — `daimonion agents-md --write` renders the matching sections into the guide |
 
 ## The HTTP transport and its allowlist
@@ -112,7 +112,7 @@ allowed `Host` completing an `initialize` handshake at 200.
 
 Two MCP servers exist in this repository, and they stay separate on purpose:
 
-| | `architekton/mcp_server.py` (this one) | `_shared/mcp_server.py.jinja` |
+| | `architekton/mcp_server.py` (this one) | `partials/mcp_server.py.jinja` |
 | --- | --- | --- |
 | Serves | the template's maintenance loop | the generated project, after `include_mcp` |
 | Audience | an agent editing the template | the project's own users and their hosts |
@@ -130,7 +130,7 @@ deliberately: the generated scaffold's deptry config ignores the starlette
 import its `custom_route` needs (`DEP001=starlette`, plus `DEP003`), while this
 repository declares `starlette` in its dev group and imports it directly.
 
-Fix a generated project's server in `_shared/mcp_server.py.jinja` (and
+Fix a generated project's server in `partials/mcp_server.py.jinja` (and
 [the MCP how-to](mcp.md) describes what it ships); add a maintenance tool to
 `architekton/mcp_server.py` and the table above.
 

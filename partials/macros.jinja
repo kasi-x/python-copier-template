@@ -1,7 +1,7 @@
 {# Single-source facts that several render paths would otherwise duplicate.
-   Import where needed (the same pattern as _tasks.jinja):
+   Import where needed (the same pattern as partials/tasks.jinja):
 
-       {% import "_shared/macros.jinja" as m with context %}
+       {% import "partials/macros.jinja" as m with context %}
 
    and call `m.run_prefix()` / `m.python_version()` / `m.classifiers()` /
    `m.experiment_pep508()` / `m.experiment_pixi()`.

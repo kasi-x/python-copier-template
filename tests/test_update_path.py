@@ -13,7 +13,7 @@ then `copier update` to HEAD and assert (a) no conflict residue, (b)
 `git diff --check` is clean, and (c) the recorded `_commit` moved to the
 target revision.
 
-Refs (see notes/PLAN-improvements.md C1): `vcs_ref` is always resolved from
+Refs (see architekton-internal:notes/architekton-py/PLAN-improvements.md C1): `vcs_ref` is always resolved from
 this local repository -- the release tag on the old side, HEAD on the new one
 -- so the test is offline. `vcs_ref="HEAD"` renders the *working tree*, which
 is what a reviewer's uncommitted edit would ship. That makes the assertions
@@ -84,7 +84,7 @@ def _fast_path_cases() -> list[dict[str, object]]:
     return cases
 
 
-EXAMPLE_ANSWERS: dict[str, Any] = yaml.safe_load((TOP / "example-answers.yml").read_text())
+EXAMPLE_ANSWERS: dict[str, Any] = yaml.safe_load((TOP / "tests/example-answers.yml").read_text())
 
 # (case id, answers) for the released-ref side of the matrix: the exhaustive
 # answers file, plus the recommended path's three single-type layouts.
@@ -204,7 +204,7 @@ def released_ref() -> str:
     ref = release_tag(TOP)
     assert ref is not None, (
         "no release tag in this repository, so `copier update` has no released questionnaire to start "
-        "from (see notes/PLAN-improvements.md W0)"
+        "from (see architekton-internal:notes/architekton-py/PLAN-improvements.md W0)"
     )
     return ref
 

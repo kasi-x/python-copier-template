@@ -26,7 +26,7 @@ def test_a_question_reports_its_fragment_feeds_and_payload():
     assert hits.defined.startswith("questions/06-toolchain.yml:")
     assert "task_runner_effective" in hits.feeds
     assert any(path.endswith("justfile{% endif %}.jinja") for path in hits.file_gated)
-    assert "_tasks.jinja" in hits.partials
+    assert "partials/tasks.jinja" in hits.partials
     assert "tests/test_task_runners.py" in hits.tests
 
 

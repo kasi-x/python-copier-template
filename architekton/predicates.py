@@ -16,8 +16,8 @@ capabilities:
    render + question surface -- question `when:`s, boolean internal variables
    (`when: false`, bool-typed defaults; string-valued internals like `pkg_dir`
    are not predicates), `{% if %}`/`{% elif %}` tags in template file NAMES,
-   the same tags in file bodies across `template/`, `_shared/*.jinja` and
-   `_tasks.jinja`, and the `when:` of each `_tasks:` entry. Each site records
+   the same tags in file bodies across `template/`, `partials/*.jinja` and
+   `partials/tasks.jinja`, and the `when:` of each `_tasks:` entry. Each site records
    its location, the expression as written, and its kind.
 2. **Evaluation** (``evaluate``): for every leaf answer set, copier's own pass
    runs once (the tests/test_when_model.py oracle pattern: `Worker._ask` +
@@ -93,8 +93,8 @@ BODY = "body"
 TASK = "task"
 
 #: The template surfaces body conditions are scanned in (repo-relative).
-TASKS_FILE = "_tasks.jinja"
-SHARED_GLOB = "_shared/*.jinja"
+TASKS_FILE = "partials/tasks.jinja"
+SHARED_GLOB = "partials/*.jinja"
 TEMPLATE_DIR = "template"
 
 # Jinja block tags: the ones this scanner tracks, and the raw blocks it must
@@ -225,7 +225,7 @@ def _filename_sites() -> list[Site]:
 
 
 def _body_files() -> list[Path]:
-    """Every file copier renders as a template body: template/, _shared/*.jinja, _tasks.jinja."""
+    """Every file copier renders as a template body: template/, partials/*.jinja, partials/tasks.jinja."""
     root = TOP / TEMPLATE_DIR
     files = sorted(path for path in root.rglob("*") if path.is_file())
     files += sorted(TOP.glob(SHARED_GLOB))

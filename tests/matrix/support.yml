@@ -22,7 +22,7 @@
 # second machine: tests/test_support_matrix.py reads only `supported` /
 # `best_effort` / `tier_policy`, and the tier_policy `none` row already
 # names the exclusion mechanism (tests/matrix/witnesses.json `tier: none` +
-# `reason`). A row that meets a trigger is moved by a normal support.yml
+# `reason`). A row that meets a trigger is moved by a normal tests/matrix/support.yml
 # edit (the generated docs follow through architekton/gen_docs.py); this section
 # only says which moves are legitimate, so a removal is a policy
 # application rather than a silent scope cut.
@@ -138,7 +138,7 @@ demotion:
     when:
       - "no CODEOWNERS row names an owner for the layer besides the maintainer (evidence: .github/CODEOWNERS)"
       - "the maintainer has stopped reviewing that layer's area (evidence: GOVERNANCE.md 'Ownerless-layer rule')"
-    restore: "a named owner who reviews that layer's PRs (evidence: the CODEOWNERS row); the support.yml row moves back with the same edit"
+    restore: "a named owner who reviews that layer's PRs (evidence: the CODEOWNERS row); the tests/matrix/support.yml row moves back with the same edit"
     why: "this is the layer-owner rule restated as a trigger: 'supported but not staffed' is honest only while the maintainer still reviews; otherwise the tier overclaims"
   - trigger: "no execution evidence"
     moves: "supported -> best_effort, or best_effort -> none for an answer nobody renders"

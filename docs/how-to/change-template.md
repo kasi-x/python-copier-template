@@ -9,12 +9,12 @@ page skips it.
 | You want to … | Touch | Prove it with |
 |---|---|---|
 | Fix prose (README, docs, comments) | the file itself | `task lint type-check` |
-| Change what a render produces (`template/`, `_shared/`, `questions/`) | the source file(s) | `task verify-delta` — narrows the 272 witness leaves to the ones your edit can affect, re-renders only those, and exits 0 when every candidate is byte-identical |
+| Change what a render produces (`template/`, `partials/`, `questions/`) | the source file(s) | `task verify-delta` — narrows the 272 witness leaves to the ones your edit can affect, re-renders only those, and exits 0 when every candidate is byte-identical |
 | Change the questions (`copier.yml`, `questions/*.yml`) | the fragment, in ask order | `task regen` then `task test-fast` |
 | Add a field rule (licensing drift, personal data, …) | nothing here — see below | — |
 
 The full blast-radius table (what CI gates per scope) is in
-[CONTRIBUTING](https://github.com/politeuma/architekton-py/blob/main/.github/CONTRIBUTING.md).
+[CONTRIBUTING](https://github.com/politeuma/architekton-py/blob/main/CONTRIBUTING.md).
 
 ## Field rules live upstream
 
@@ -23,7 +23,7 @@ in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/main/guid
 (`guidance/sections/<tier>/<slug>.md`, plain Markdown with YAML front
 matter; the generated index is `guidance/sections/MANIFEST.yml`). This
 template only derives the abstract `when` conditions in
-`_shared/daimonion-when.jinja`. So a rule fix is a law-map pull request
+`partials/daimonion-when.jinja`. So a rule fix is a law-map pull request
 (copy `guidance/sections/_template.md`, run `just manifest`); only a *new*
 condition extends the macro here — see [How to add an ethics section](ethics-section.md).
 

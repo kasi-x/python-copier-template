@@ -7,8 +7,8 @@ line); the runner renders each one with the real template, judges the
 inspected by eye.
 
 ```shell
-task batch                                   # runs batches/smoke.jsonl
-task batch FILE=batches/my-batch.jsonl CLI_ARGS="--only '^library' --keep"
+task batch                                   # runs tests/batches/smoke.jsonl
+task batch FILE=tests/batches/my-batch.jsonl CLI_ARGS="--only '^library' --keep"
 ```
 
 Exit codes: `0` every line passed, `1` a check failed, `2` the request list
@@ -59,10 +59,10 @@ that phase is present.
 ## Example
 
 ```json
-{"id":"script-recommended","answers_file":"batches/base.yml","answers":{"project_type":"script"},"expect":{"files":["smoke_example/__init__.py"],"absent":["src"],"toml":[{"path":"pyproject.toml","key":"project.name","equals":"smoke-example"}]}}
+{"id":"script-recommended","answers_file":"tests/batches/base.yml","answers":{"project_type":"script"},"expect":{"files":["smoke_example/__init__.py"],"absent":["src"],"toml":[{"path":"pyproject.toml","key":"project.name","equals":"smoke-example"}]}}
 ```
 
-`batches/smoke.jsonl` is the shipped sample: ten lines covering the fast
+`tests/batches/smoke.jsonl` is the shipped sample: ten lines covering the fast
 paths (library / web_api / script / data-science combo / ros2 /
 micropython / kaggle / bare / gitlab), including one `update` line
 (`library-update-in-place`). Running it needs no network and takes a few

@@ -42,12 +42,12 @@ jobs:
           EXAMPLE_OWNER: ${{ github.repository_owner }}
         run: |
           git init /tmp/example
-          # --defaults answers questions added after example-answers.yml was
+          # --defaults answers questions added after tests/example-answers.yml was
           # written (e.g. new opt-in layers) without an interactive session.
           uvx copier copy \
             --trust \
             --defaults \
-            --data-file example-answers.yml \
+            --data-file tests/example-answers.yml \
             --data github_org="$EXAMPLE_OWNER" \
             --vcs-ref=HEAD . /tmp/example
           sed -i "s|_src_path: .*|_src_path: ${TEMPLATE_URL}|" /tmp/example/.copier-answers.yml

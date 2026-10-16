@@ -1,4 +1,4 @@
-{% import "_shared/macros.jinja" as m with context %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
+{% import "partials/macros.jinja" as m with context %}{% if type_checker=="pyrefly" and strictness in ['recommended', 'full'] %}
 [tool.pyrefly]
 # Match requires-python / .python-version: the interpreter the project
 # actually targets (ros2 humble -> 3.10, ros2 jazzy -> 3.12, else 3.11).

@@ -37,7 +37,7 @@ What is refused, and why:
 - **Derived internals** — `combinable`, `has_web_api` and friends are
   computed at render time and must not be answered.
 
-A combination no `support.yml` row promises is a warning, not a rejection:
+A combination no `tests/matrix/support.yml` row promises is a warning, not a rejection:
 it renders, but no tier is promised (see
 [Support](../reference/support.md)).
 

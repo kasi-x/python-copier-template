@@ -11,7 +11,7 @@ It is deliberately an *inventory*, not a questionnaire oracle: it reports
 observable facts and the one answer that follows deterministically from them
 (which mode, and which of your files the template protects). It does not
 guess `project_type`, `include_*` or any other shape question from your code
--- see notes/SPEC-adoption.md section 12, which keeps that a non-goal.
+-- see architekton-internal:notes/architekton-py/SPEC-adoption.md section 12, which keeps that a non-goal.
 
 What it derives from the template tree, not from a hardcoded list: which
 outputs exist and under which `existing_project` / `adopt_protect` condition
@@ -395,7 +395,7 @@ def derive_answers(target: Path, notes: list[str]) -> dict[str, Any]:
     """Project Details that have exactly one answer on disk.
 
     Shape questions (project_type, include_*, docs_type, ...) are *not*
-    guessed: notes/SPEC-adoption.md section 12 keeps that out of scope, and a
+    guessed: architekton-internal:notes/architekton-py/SPEC-adoption.md section 12 keeps that out of scope, and a
     wrong guess here would be silently baked into a generated project.
     """
     derived: dict[str, Any] = {}

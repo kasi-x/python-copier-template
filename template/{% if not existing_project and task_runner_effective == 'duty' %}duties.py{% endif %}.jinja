@@ -1,6 +1,6 @@
-{% import "_tasks.jinja" as _t with context %}"""Development tasks, run via `duty <task>`."""
+{% import "partials/tasks.jinja" as _t with context %}"""Development tasks, run via `duty <task>`."""
 
-{% import "_shared/oj-recipes.jinja" as _oj with context -%}
+{% import "partials/oj-recipes.jinja" as _oj with context -%}
 {% if oj_code %}{% if oj_kind != 'atcoder' %}import pathlib
 {% endif %}import shlex
 

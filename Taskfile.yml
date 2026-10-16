@@ -74,7 +74,7 @@ tasks:
 
   docs-ja-config:
     desc: Regenerate zensical.ja.toml from zensical.toml (docs-i18n/ja layout)
-    cmd: uv run --locked python scripts/gen_zensical_ja.py
+    cmd: uv run --locked python architekton/gen_zensical_ja.py
     sources: [zensical.toml]
     generates: [zensical.ja.toml]
 
@@ -133,7 +133,7 @@ tasks:
 
   batch:
     desc: 'Run a JSONL batch of copier requests and verdict each line (FILE=... CLI_ARGS=...)'
-    cmd: uv run --locked python architekton/batch.py {{ .FILE | default "batches/smoke.jsonl" }} {{ .CLI_ARGS }}
+    cmd: uv run --locked python architekton/batch.py {{ .FILE | default "tests/batches/smoke.jsonl" }} {{ .CLI_ARGS }}
 
   changelog:
     desc: 'Regenerate CHANGELOG.md with git-cliff (uvx git-cliff -o)'

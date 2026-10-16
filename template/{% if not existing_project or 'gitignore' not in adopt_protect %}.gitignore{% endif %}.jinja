@@ -87,11 +87,6 @@ data/external/*
 !data/external/.gitkeep
 models/*
 !models/.gitkeep
-# un-ignored so the repo's own adopt-protocol Quint models (models/*.qnt,
-# re-verified by .github/workflows/quint.yml) and a directory README stay
-# trackable; inert in a generated project until such files exist
-!models/README.md
-!models/*.qnt
 reports/figures/*
 !reports/figures/.gitkeep
 outputs/*
@@ -156,4 +151,4 @@ typings/
 build/micropython-src/
 
 # Local test database (web API tests fall back to SQLite when no DATABASE_URL)
-.test.db{# CTF, OJ, scraping and gmail bodies are shared (_shared/gitignore-*.jinja). #}{% include "_shared/gitignore-ctf.jinja" %}{% include "_shared/gitignore-oj.jinja" %}{% include "_shared/gitignore-scraping.jinja" %}{% include "_shared/gitignore-gmail.jinja" %}
+.test.db{# CTF, OJ, scraping and gmail bodies are shared (partials/gitignore-*.jinja). #}{% include "partials/gitignore-ctf.jinja" %}{% include "partials/gitignore-oj.jinja" %}{% include "partials/gitignore-scraping.jinja" %}{% include "partials/gitignore-gmail.jinja" %}

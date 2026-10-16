@@ -23,7 +23,7 @@ def test_template_defaults(tmp_path: Path):
     container_doc = tmp_path / "docs" / "how-to" / "run-container.md"
     pyproject_toml = tmp_path / "pyproject.toml"
     assert container_doc.exists()
-    # example-answers.yml uses strictness: recommended
+    # tests/example-answers.yml uses strictness: recommended
     assert 'typeCheckingMode = "recommended"' in pyproject_toml.read_text()
     run("uvx --from go-task-bin task check")
     if not run_pipe("git tag --points-at HEAD"):
@@ -67,7 +67,7 @@ def test_template_library_dependencies_come_from_the_log_choice(tmp_path: Path):
     default (structlog) lands as the one dependency, and the standard-library
     choice renders the empty list the audit described.
     """
-    # The RECOMMENDED path keeps the pin independent of example-answers.yml's
+    # The RECOMMENDED path keeps the pin independent of tests/example-answers.yml's
     # own overrides (sentry and friends): the deps read here are the
     # log_library mechanism's, nothing else.
     copy_project_recommended(tmp_path, project_type="library")
@@ -178,7 +178,7 @@ def test_gitignore_same():
     # directions: exact parity catches stale root-only lines (e.g. a
     # removed input//exp/) and missing template lines, which a one-way
     # substring check would hide. the gated .gitignore template shares its
-    # CTF / scraping bodies via {% include %} (_shared/gitignore-*.jinja),
+    # CTF / scraping bodies via {% include %} (partials/gitignore-*.jinja),
     # so those are inlined before normalizing.
     def normalized(path: Path) -> set[str]:
         lines = set()

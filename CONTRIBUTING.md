@@ -4,7 +4,7 @@ Contributions and issues are most welcome! All issues and pull requests are hand
 ## Security
 
 Please do not open a public issue for security vulnerabilities. Report them
-privately via the [Security Advisory workflow](https://github.com/politeuma/architekton-py/security/advisories/new) — see [SECURITY.md](../SECURITY.md) for details.
+privately via the [Security Advisory workflow](https://github.com/politeuma/architekton-py/security/advisories/new) — see [SECURITY.md](SECURITY.md) for details.
 
 ## Issue or Discussion?
 
@@ -22,7 +22,7 @@ The section texts live in [law-map's guidance tree](https://github.com/politeuma
 corrections are pull requests there, not here; obligation-level changes go
 through [law-map](https://github.com/politeuma/law-map)'s Legal
 RFC issue. This repo owns only the wiring — the derived `when` conditions
-(`_shared/daimonion-when.jinja`) — governed by [GOVERNANCE.md](../GOVERNANCE.md).
+(`partials/daimonion-when.jinja`) — governed by [GOVERNANCE.md](.github/GOVERNANCE.md).
 
 ## Blast radius
 
@@ -34,7 +34,7 @@ blast radius, never the whole suite.
 | Change scope | Required verification |
 | --- | --- |
 | Docs only (`README.md`, `docs/*.md`) | `task lint type-check` — CI skips the render matrix for docs-only PRs, so typos and format debt must be caught locally |
-| Template payload (`template/`, `_shared/`, `questions/`) | `task test-fast` plus `task verify-delta` — the render twin proves which witness leaves the change can affect: a semantic diff narrows the candidate set, then only candidates are re-rendered from a baseline checkout and compared by manifest (file list + sha256, answers normalized); it exits 0 when every candidate is byte-identical |
+| Template payload (`template/`, `partials/`, `questions/`) | `task test-fast` plus `task verify-delta` — the render twin proves which witness leaves the change can affect: a semantic diff narrows the candidate set, then only candidates are re-rendered from a baseline checkout and compared by manifest (file list + sha256, answers normalized); it exits 0 when every candidate is byte-identical |
 | Questionnaire (`copier.yml`, `questions/*.yml`) | `task regen` then `task test-fast` — regen is the one-command pipeline: witness leaves, batch verdicts, tier ledger, generated docs, predicate report |
 | Repo tooling / CI plumbing (`architekton/`, `.github/workflows/`, `Taskfile.yml`, `tests/`) | `task check` — this scope is where local↔CI drift bites hardest (hygiene, type-check, ledger); run the whole gate, not a subset |
 

@@ -6,7 +6,7 @@ The same handful of values used to be literals in seven places --
 `tests/test_batch.py`, `test_example.py`'s `copy_project_recommended`
 (the split moved it to `tests/support.py`), `architekton/z3_witnesses.py` (whose
 comment admitted it "mirrors tests/test_recommended_path.py:25-34"),
-`example-answers.yml` and `batches/base.yml` (whose own comment made the same
+`tests/example-answers.yml` and `tests/batches/base.yml` (whose own comment made the same
 promise). Nothing compared them, so tightening a validator (the e-mail, the
 URLs derived from `github_org`) meant finding all seven by hand.
 
@@ -18,7 +18,7 @@ owner of question *names* and defaults, but these values are the choices the
 suite makes (a real-shaped e-mail, a real-looking org), not the questionnaire's.
 
 `tests/test_questionnaire.py` checks every answer key any fixture uses against
-the live questionnaire, and checks `batches/base.yml` against this dict, so a
+the live questionnaire, and checks `tests/batches/base.yml` against this dict, so a
 rename in `copier.yml` or a hand-edited sample fails there instead of quietly
 rendering a default.
 

@@ -41,8 +41,8 @@ import test_task_runners  # noqa: E402
 # and which values each accepts.
 QUESTIONS = {question.name: question for question in questionnaire.load_questions()[0]}
 
-EXAMPLE_ANSWERS = yaml.safe_load((TOP / "example-answers.yml").read_text(encoding="utf-8"))
-BATCH_BASE = yaml.safe_load((TOP / "batches" / "base.yml").read_text(encoding="utf-8"))
+EXAMPLE_ANSWERS = yaml.safe_load((TOP / "tests/example-answers.yml").read_text(encoding="utf-8"))
+BATCH_BASE = yaml.safe_load((TOP / "tests" / "batches" / "base.yml").read_text(encoding="utf-8"))
 
 GATE_PREFIX = "use_recommended_"
 
@@ -56,7 +56,7 @@ DEFAULT_REPEATS_ALLOWED: dict[str, dict[str, str]] = {
         " from, so dropping the key would rewrite byte-frozen fixtures; it leaves only with a"
         " deliberate witness regeneration",
     },
-    "batches/base.yml": {
+    "tests/batches/base.yml": {
         "git_platform": "must equal answers.BASE (checked below), so it repeats what the witness bytes pin",
     },
     "test_mcp_server.BASE_ANSWERS": {
@@ -135,8 +135,8 @@ def _fixtures() -> Mapping[str, Sequence[Mapping[str, Any]]]:
     """
     return {
         "architekton/answers.py BASE": [answers.BASE],
-        "example-answers.yml": [EXAMPLE_ANSWERS],
-        "batches/base.yml": [BATCH_BASE],
+        "tests/example-answers.yml": [EXAMPLE_ANSWERS],
+        "tests/batches/base.yml": [BATCH_BASE],
         "test_recommended_path.FAST_PATHS": test_recommended_path.FAST_PATHS,
         "test_generated_typecheck.TYPECHECK_PATHS": test_generated_typecheck.TYPECHECK_PATHS,
         "test_machine_gate.RENDER_MATRIX": test_machine_gate.RENDER_MATRIX,
@@ -176,7 +176,7 @@ def test_every_fixture_choice_is_offered_by_its_question():
     The same value-level reading holds against the default: each
     fixture is defaults() plus its override diff, so a value equal to its
     question's default renders identically if dropped and the next editor
-    cannot tell intent from boilerplate. example-answers.yml is exactly that
+    cannot tell intent from boilerplate. tests/example-answers.yml is exactly that
     shape (every gate off plus its non-default overrides); the repeats in
     DEFAULT_REPEATS_ALLOWED are the declared, load-bearing exceptions.
     """
@@ -226,7 +226,7 @@ def _default_repeats() -> dict[str, list[str]]:
 
 
 def test_example_answers_keeps_every_gate_off():
-    """example-answers.yml exists to take the long path: all gates off, every detail asked."""
+    """tests/example-answers.yml exists to take the long path: all gates off, every detail asked."""
     gates = {name: value for name, value in EXAMPLE_ANSWERS.items() if name.startswith(GATE_PREFIX)}
     assert gates, "the fixture no longer turns any gate off"
     assert set(gates.values()) == {False}, f"a gate is no longer false: {gates}"
@@ -242,11 +242,11 @@ def test_example_answers_keeps_every_gate_off():
 
 
 def test_agent_gate_stays_absent_from_the_example_fixture():
-    """example-answers.yml deliberately does NOT state `use_recommended_agent`.
+    """tests/example-answers.yml deliberately does NOT state `use_recommended_agent`.
 
     The question is asked only for library / cli (questions/05-agent.yml's
     `when`), and the example is a data_science project -- so the key would
-    change nothing about the example itself. But example-answers.yml is also
+    change nothing about the example itself. But tests/example-answers.yml is also
     the base fixtures/support.py `copy_project` derives its library / cli
     renders from, and copier uses a data-supplied value even for a question
     whose `when` is false: a `false` here would flip `agent_scaffold` on
@@ -256,15 +256,15 @@ def test_agent_gate_stays_absent_from_the_example_fixture():
     test_example_layers.py's `use_recommended_agent=False` renders.
     """
     assert "use_recommended_agent" not in EXAMPLE_ANSWERS, (
-        "use_recommended_agent in example-answers.yml leaks agent_scaffold=true into"
+        "use_recommended_agent in tests/example-answers.yml leaks agent_scaffold=true into"
         " every library / cli render copy_project derives from this file; see this"
         " test's docstring before changing that on purpose"
     )
 
 
 def test_batch_sample_base_is_the_shared_answer_set():
-    """batches/base.yml is documented as the same starting point the tests use."""
+    """tests/batches/base.yml is documented as the same starting point the tests use."""
     assert BATCH_BASE == answers.BASE, (
-        "batches/base.yml and architekton/answers.py BASE diverge, so `task batch` renders a different "
+        "tests/batches/base.yml and architekton/answers.py BASE diverge, so `task batch` renders a different "
         f"project than the pytest fast paths:\n  batch: {BATCH_BASE}\n  tests: {answers.BASE}"
     )

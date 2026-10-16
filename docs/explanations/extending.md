@@ -34,7 +34,7 @@ layers (input space, render invariants, execution) the checks live in.
 | --- | --- | --- |
 | 1 | Question + gate in `questions/08-layers.yml` (raw `when`; never reference an effective there) | Z3 satisfiability sweep + the forward-reference tests in `tests/test_copier_structure.py`; `task question-graph` shows where definitions may live |
 | 2 | Effective internals in `questions/90-derived.yml` (`*_effective`, per-platform variants), placed where the forward-reference order allows | forward-reference tests; `task question-graph` for placement |
-| 3 | Scaffold bodies in `_shared/` + single-line wrappers per placement (one line, comment + include, no trailing newline) | `test_machine_gate` (Jinja parses), the single-newline test |
+| 3 | Scaffold bodies in `partials/` + single-line wrappers per placement (one line, comment + include, no trailing newline) | `test_machine_gate` (Jinja parses), the single-newline test |
 | 4 | Dependencies, entry points, `.env.example` gate, `_tasks` model rows | `test_pyproject_fmt` / `test_generated_lint` / the agent command table (derived from the same `_tasks` model) |
 | 5 | `tests/matrix/invariants.yml` rows claiming the new dimension | load-time refusal of unclaimed dimensions (`architekton/invariants.py`) |
 | 6 | `task witness` — regenerate `witnesses.jsonl` / `witnesses.json` | the freshness check fails with the exact command |

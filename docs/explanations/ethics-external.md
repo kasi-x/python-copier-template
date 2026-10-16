@@ -1,7 +1,7 @@
 # Ethics Content Lives in Law-Map Guidance; the Template Emits Conditions
 
-The ethics appendix used to be vendored prose: `_shared/ethics/` carried a
-pinned snapshot of rule sections, `_shared/ethics/REGISTRY.yml` gated each
+The ethics appendix used to be vendored prose: `partials/ethics/` carried a
+pinned snapshot of rule sections, `partials/ethics/REGISTRY.yml` gated each
 one on template flags, and the generated `AGENTS.md` shipped the matching
 prose inline. That changed twice: first **content moved to kanon, the linter
 owned the wiring, and this template only emitted configuration**; then kanon
@@ -69,7 +69,7 @@ reference a template flag":
 
 | Moved to guidance + daimonion | Stays here |
 | --- | --- |
-| Section bodies (prose, triggers, `review_by` dates, sources) | `_shared/daimonion-when.jinja` — the single answer-to-condition derivation macro |
+| Section bodies (prose, triggers, `review_by` dates, sources) | `partials/daimonion-when.jinja` — the single answer-to-condition derivation macro |
 | The `when:`/audience mapping (which abstract condition selects which section: the generated `guidance/sections/MANIFEST.yml`) | The emitted `.daimonion.yml` (the project's declared conditions, in the guidance `when` vocabulary) |
 | Section selection and block rendering (`daimonion --lang <agents_md_language> agents-md --write`) | The empty marker pair in the generated `AGENTS.md` (`<!-- daimonion:rules:begin -->` / `<!-- daimonion:rules:end -->`) |
 | Presence triggers and `check_ethics` matching | The composition manifest's `when:` list (the same macro, the public record `verify` reads) |
@@ -83,7 +83,7 @@ Guidance holds **flag-agnostic content**: each section is
 matter by `law-map manifest` (never edited by hand). It never names a
 template flag.
 This repo maps its answers onto the guidance abstract vocabulary once, in
-`_shared/daimonion-when.jinja`:
+`partials/daimonion-when.jinja`:
 
 - `library` ← `project_type == 'library'`, `cli` ← `project_type == 'cli'`,
   `embedded` ← `project_type == 'micropython'`;
@@ -152,7 +152,7 @@ through the linter, reviewable as a normal `agents-md --write` diff.
 
 ## Status
 
-The move is done: `_shared/ethics/`, its registry, and the appendix include
+The move is done: `partials/ethics/`, its registry, and the appendix include
 chain are deleted; `architekton/ethics.py` and its MCP surface are deleted with
 them. The remaining references:
 

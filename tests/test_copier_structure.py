@@ -138,17 +138,17 @@ def _is_known(name: str, keys: set[str]) -> bool:
 
 
 def template_files() -> list[Path]:
-    """Every file in template/ plus the root _tasks.jinja and _shared/
+    """Every file in template/ plus the root partials/tasks.jinja and partials/
     partials (both included by template files via {% import %}/{% include %})."""
     files = [Path(p) for p in TEMPLATE_DIR.rglob("*")]
-    files.append(TOP / "_tasks.jinja")
+    files.append(TOP / "partials/tasks.jinja")
     files.extend(shared_files())
     return files
 
 
 def shared_files() -> list[Path]:
-    """Root-level shared partials (_shared/*.jinja) that template files include."""
-    return sorted((TOP / "_shared").glob("*.jinja"))
+    """Root-level shared partials (partials/*.jinja) that template files include."""
+    return sorted((TOP / "partials").glob("*.jinja"))
 
 
 def _template_local_vars(files: list[Path]) -> set[str]:
@@ -174,7 +174,7 @@ def _template_local_vars(files: list[Path]) -> set[str]:
             local |= {p.split("=", 1)[0].strip() for p in params.split(",") if p.strip()}
         # A loop may bind several names: {% for a, b in ... %} binds `a` AND
         # `b`, so the captured list is split rather than added whole. (It was
-        # added whole until a multi-name loop landed in _shared/macros.jinja
+        # added whole until a multi-name loop landed in partials/macros.jinja
         # and the undefined-variable check reported `name`; cliff.toml.jinja's
         # `{% for group, commits in ... %}` had the same latent hole, its
         # names simply never being referenced where the check looks.)
@@ -322,7 +322,7 @@ def test_no_dead_internal_variables():
 # package) and the `micropython_pkg … oj_code` pair (now the `no_pkg`
 # internal — renders no installable/importable CPython package). These tests
 # keep the named internals authoritative: the raw forms must not reappear in
-# template/ file names or bodies, _shared/ partials, _tasks.jinja or
+# template/ file names or bodies, partials/ partials, partials/tasks.jinja or
 # copier.yml, and the internals themselves must keep their documented
 # derivations (so a "simplification" of `oj_bare` to `oj_code` — which would
 # push ctf's package-less workspace through the package gates — cannot drift
@@ -343,8 +343,8 @@ _PAIR_IN_ONE_CONDITION = re.compile(
 
 def _rot_guard_sources() -> list[str]:
     """File names + bodies the raw predicate forms are banned from: template/
-    (paths carry copier's {% if %} name conditionals), _shared/ partials,
-    _tasks.jinja and copier.yml. questions/ is deliberately excluded — it
+    (paths carry copier's {% if %} name conditionals), partials/ partials,
+    partials/tasks.jinja and copier.yml. questions/ is deliberately excluded — it
     holds the internals' documented definitions, asserted separately below.
     """
     sources = [COPIER_YML.read_text(encoding="utf-8")]

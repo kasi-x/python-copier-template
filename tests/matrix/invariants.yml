@@ -27,7 +27,7 @@
 #                   list does not (layout=data_science's de-identification
 #                   guide) or an absence no witness `expect` declares.
 #   tier            optional. The witness tier this class is CI-gated for,
-#                   mirroring support.yml's tier_policy (the human-approved
+#                   mirroring tests/matrix/support.yml's tier_policy (the human-approved
 #                   declaration; the `why` quotes its measured evidence).
 #   why             why the row says what it says.
 #
@@ -88,7 +88,7 @@ predicates:
 # the enumeration silently.
 excluded:
   - project_type: web_django
-    why: "generation aborts by design: the _tasks.jinja web_django task exits 1"
+    why: "generation aborts by design: the partials/tasks.jinja web_django task exits 1"
   - question: include_sentry
     why: "an integration detail question behind use_recommended_integrations, not a leaf-space layer; every leaf keeps it at its default false"
   - question: oj_sample
@@ -496,7 +496,7 @@ leaf_classes:
     predicates: []
     tier:
       name: fast
-      why: "a project_type=*/gate=off:use_recommended_* detailed branch is rendered and ruff-checked (support.yml tier_policy); the cli variant is the branch-only leaf in the execution sample, and its project_type=cli row carries that full tier"
+      why: "a project_type=*/gate=off:use_recommended_* detailed branch is rendered and ruff-checked (tests/matrix/support.yml tier_policy); the cli variant is the branch-only leaf in the execution sample, and its project_type=cli row carries that full tier"
     why: "the prompts/ directory is rendered only when the agent gate is off for library/cli"
 
   - id: gate_off=other
@@ -539,7 +539,7 @@ leaf_classes:
     predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the trait adds guidance conditions, no artifact of its own (support.yml tier_policy)"
+      why: "render + ruff: the trait adds guidance conditions, no artifact of its own (tests/matrix/support.yml tier_policy)"
     why: "the personal-data domain trait: .daimonion.yml gains the personal_data condition (the linter renders the privacy section: minimise what you collect and log, give deletion a path, know what leaves the process). Biometric and health data are special categories of personal data, so the face-recognition and medtech traits select this row too -- the derivation spells that disjunction and the daimonion-config predicate mirrors it."
 
   - id: domain=face-recognition
@@ -549,7 +549,7 @@ leaf_classes:
     predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the trait adds guidance conditions and a dependency, no artifact of its own (support.yml tier_policy)"
+      why: "render + ruff: the trait adds guidance conditions and a dependency, no artifact of its own (tests/matrix/support.yml tier_policy)"
     why: "the face-recognition domain trait: .daimonion.yml gains the face_recognition condition (the linter renders the biometric-identification section), plus personal_data, since biometric data is a special category of personal data."
 
   - id: domain=medtech
@@ -576,7 +576,7 @@ leaf_classes:
     predicates: [daimonion-config]
     tier:
       name: fast
-      why: "render + ruff: the answer adds a guidance condition, no artifact of its own (support.yml tier_policy)"
+      why: "render + ruff: the answer adds a guidance condition, no artifact of its own (tests/matrix/support.yml tier_policy)"
     why: "the `commercial` distribution answer: .daimonion.yml gains the commercial condition (the linter renders the EU CRA section: 24-hour vulnerability reporting, SBOM, an explicit support period). Monetisation is what lifts the regulation's free-software exemption, which is why the condition is derived from this answer rather than from the project type."
 
   - id: distribution=oss

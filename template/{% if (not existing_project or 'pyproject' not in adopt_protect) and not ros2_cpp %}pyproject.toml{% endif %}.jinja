@@ -1,4 +1,4 @@
-{% import "_shared/macros.jinja" as m with context -%}
+{% import "partials/macros.jinja" as m with context -%}
 [build-system]
 build-backend = "setuptools.build_meta"
 requires = [ "setuptools>=77"{% if not ros2_pkg and not no_pkg %}, "setuptools-scm[toml]>=8"{% endif %} ]
@@ -24,7 +24,7 @@ classifiers = [
 {% elif online_judge %}version = "0.1.0"
 {% else %}dynamic = [ "version" ]
 {% endif %}
-{# The runtime `dependencies` one-liner is shared (see _shared/pyproject-deps.toml.jinja). #}{% include "_shared/pyproject-deps.toml.jinja" %}
+{# The runtime `dependencies` one-liner is shared (see partials/pyproject-deps.toml.jinja). #}{% include "partials/pyproject-deps.toml.jinja" %}
 {% if is_gitlab %}urls.Homepage{% else %}urls.GitHub{% endif %} = "{{ repo_url }}"
 {% if not web_api and not online_judge and not ros2_pkg and not micropython_pkg %}scripts.{{ repo_name }} = "{{ package_name }}.__main__:main"
 {% endif %}{% if mcp_effective %}scripts.mcp-server-{{ repo_name }} = "{{ import_pkg }}.mcp_server:main"
@@ -93,7 +93,7 @@ dev = [
     # pixi: `[tool.pixi.feature.experiment]` として分離。
 {{ m.experiment_pep508() }}]
 {% endif %}
-{# CTF extra body is shared (see _shared/pyproject-ctf-extra.toml.jinja). #}{% include "_shared/pyproject-ctf-extra.toml.jinja" %}
+{# CTF extra body is shared (see partials/pyproject-ctf-extra.toml.jinja). #}{% include "partials/pyproject-ctf-extra.toml.jinja" %}
 
 {% if is_pixi and not ros2_pkg %}[tool.pixi.workspace]
 channels = ["conda-forge"]
@@ -118,7 +118,7 @@ dev = { features = ["dev"], solve-group = "default" }
    [tool.pixi.feature.dev.tasks] below) — one definition regardless of
    package_manager. #}
 {% if task_runner_effective == 'pixi' %}
-{% import "_tasks.jinja" as _t with context %}
+{% import "partials/tasks.jinja" as _t with context %}
 [tool.pixi.feature.dev.tasks]
 {{ _t.pixi_tasks() }}
 {% endif %}
@@ -159,11 +159,11 @@ fallback_version = "0.0.0"
 # ros2 ament_python: no git-tag versioning; setup.py / package.xml own the version.
 {% endif %}
 {% endif %}
-{# basedpyright body is shared (see _shared/pyproject-basedpyright.toml.jinja). #}{% include "_shared/pyproject-basedpyright.toml.jinja" %}{# pyrefly/ty bodies are shared (see _shared/pyproject-ty-checkers.toml.jinja). #}{% include "_shared/pyproject-ty-checkers.toml.jinja" -%}
-{# pytest/coverage/typos/vulture/deptry bodies are shared (see _shared/pyproject-test-coverage.toml.jinja). #}{% include "_shared/pyproject-test-coverage.toml.jinja" %}
+{# basedpyright body is shared (see partials/pyproject-basedpyright.toml.jinja). #}{% include "partials/pyproject-basedpyright.toml.jinja" %}{# pyrefly/ty bodies are shared (see partials/pyproject-ty-checkers.toml.jinja). #}{% include "partials/pyproject-ty-checkers.toml.jinja" -%}
+{# pytest/coverage/typos/vulture/deptry bodies are shared (see partials/pyproject-test-coverage.toml.jinja). #}{% include "partials/pyproject-test-coverage.toml.jinja" %}
 
 {% if task_runner_effective == 'poe' %}
-{% import "_tasks.jinja" as _t with context %}
+{% import "partials/tasks.jinja" as _t with context %}
 [tool.poe.tasks]
 {{ _t.poe_tasks() }}
 {% endif %}
@@ -178,7 +178,7 @@ line-length = {{ 88 if not allow_japanese else 120 }}
 unsafe-fixes = false
 {% if not no_pkg %}lint.logger-objects = ["{{ import_pkg }}.logging_setup.get_logger"]
 {% endif %}
-{# ruff select/ignore/task-tags bodies are shared (see _shared/pyproject-ruff-lint.toml.jinja). #}{% include "_shared/pyproject-ruff-lint.toml.jinja" %}
+{# ruff select/ignore/task-tags bodies are shared (see partials/pyproject-ruff-lint.toml.jinja). #}{% include "partials/pyproject-ruff-lint.toml.jinja" %}
 
 [tool.ruff.format]
 quote-style = "double"
@@ -212,7 +212,7 @@ force-single-line = true
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "parents"
-{# Scraping banned-api body is shared (see _shared/pyproject-scraping-banned-api.toml.jinja). #}{% include "_shared/pyproject-scraping-banned-api.toml.jinja" -%}
+{# Scraping banned-api body is shared (see partials/pyproject-scraping-banned-api.toml.jinja). #}{% include "partials/pyproject-scraping-banned-api.toml.jinja" -%}
 
 [tool.ruff.lint.flake8-type-checking]
 exempt-modules = ["typing", "typing_extensions"]
@@ -272,7 +272,7 @@ suppress-none-returning = false
     "E501",   # line-too-long  CONTEXT: test_qa.py の assert メッセージ
     "PLR0912",# too-many-branches  CONTEXT: test_qa.py の依存宣言チェックは複数分岐が自然
 ]
-{# CTF / scraping / analysis lint bodies are shared (see _shared/pyproject-*-lint.toml.jinja). #}{% include "_shared/pyproject-ctf-lint.toml.jinja" %}{% include "_shared/pyproject-scraping-lint.toml.jinja" %}{% include "_shared/pyproject-analysis-lint.toml.jinja" -%}
+{# CTF / scraping / analysis lint bodies are shared (see partials/pyproject-*-lint.toml.jinja). #}{% include "partials/pyproject-ctf-lint.toml.jinja" %}{% include "partials/pyproject-scraping-lint.toml.jinja" %}{% include "partials/pyproject-analysis-lint.toml.jinja" -%}
 {% if micropython_pkg %}"firmware/main.py" = [
     "PLC0415", # import-outside-top-level  CONTEXT: machine は unix/windows ポートに
                #   存在しないため、実機（LED 有り）の時だけ遅延 import する。

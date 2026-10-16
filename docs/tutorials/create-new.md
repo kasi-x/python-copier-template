@@ -40,7 +40,7 @@ the family, so adding a preset of your own is a two-line YAML file. See the
 [Presets Reference](../reference/presets.md) for the exact questions and answers
 pinned by each preset (and what each declines). For a
 fixture that sets every option instead, copy
-[`example-answers.yml`](https://github.com/politeuma/architekton-py/blob/main/example-answers.yml)
+[`tests/example-answers.yml`](https://github.com/politeuma/architekton-py/blob/main/tests/example-answers.yml)
 from the template root — it turns every area gate off (so every detailed
 question is answered) on a `data_science` base, it is what the template's own
 CI renders, and it works as a `copier copy --data-file` answers file.
@@ -79,7 +79,7 @@ No `--vcs-ref` is needed here either: copier then expands this fork's **newest
 release tag**, and since the 6.0.0 fork detach that tag is the fork's own
 release. Pass `--vcs-ref=6.0.0` (or another release tag) only to pin an exact
 release and make the generation reproducible. Add `--defaults` to accept every
-default, and `--data-file example-answers.yml` (the
+default, and `--data-file tests/example-answers.yml` (the
 [fixture in the preset section](#the-one-command-way)) for a fully specified run.
 
 This will:

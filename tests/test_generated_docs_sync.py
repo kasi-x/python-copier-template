@@ -11,7 +11,7 @@ that gate, and pin the three properties it depends on:
   (CTF, scraping, the license check);
 - the task-runner bullet marks the questionnaire's default, not a former one.
 
-The support matrix is only generated when `support.yml` exists (W4 owns that
+The support matrix is only generated when `tests/matrix/support.yml` exists (W4 owns that
 file), so it is exercised here against a synthetic file instead.
 """
 
@@ -154,14 +154,14 @@ def test_task_runner_bullet_marks_the_questionnaires_default():
 
 
 def test_support_table_is_generated_only_with_support_yml(tmp_path: Path):
-    """Without `support.yml` no support block is targeted (W4 owns the file)."""
+    """Without `tests/matrix/support.yml` no support block is targeted (W4 owns the file)."""
     blocks = gen_docs.generated_blocks(support=tmp_path / "support.yml")
     assert "support-table" not in {block.block for block in blocks}
     assert {block.block for block in blocks} >= {"features-areas", "features-mermaid", "areas"}
 
 
 def test_support_table_follows_the_support_yml_columns(tmp_path: Path):
-    """With `support.yml` present the table is generated from its entries."""
+    """With `tests/matrix/support.yml` present the table is generated from its entries."""
     support = tmp_path / "support.yml"
     support.write_text(
         "supported:\n"

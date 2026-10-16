@@ -678,7 +678,7 @@ def test_combo_guards_reject_incompatible_bases(tmp_path: Path):
 
 # The OJ daily-loop recipes are parameterized, so they cannot live in the
 # canonical task model: each of the five line-runners defines them natively,
-# gated on oj_code, from the shared _shared/oj-recipes.jinja partial.
+# gated on oj_code, from the shared partials/oj-recipes.jinja partial.
 
 
 # The judge CLIs are user-installed, not project deps, so every recipe that

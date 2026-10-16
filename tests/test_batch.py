@@ -89,7 +89,7 @@ def test_rejects_a_toml_expectation_without_equals(tmp_path: Path):
 
 def test_shipped_smoke_batch_parses():
     """The sample batch is part of the contract: a typo in it fails here."""
-    requests = batch.load_requests([TOP / "batches" / "smoke.jsonl"])
+    requests = batch.load_requests([TOP / "tests" / "batches" / "smoke.jsonl"])
     assert any(r.update is not None for r in requests), "the sample must exercise the update phase"
     assert any(r.expect for r in requests), "and judge what a render produced"
 

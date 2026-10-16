@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""M0 read-only prototype for PLAN S5 (notes/plan-S5-derived-invariants.md, §3 M0).
+"""M0 read-only prototype for PLAN S5 (architekton-internal:notes/architekton-py/plan-S5-derived-invariants.md, §3 M0).
 
 Recompute the file-sets of the D1-D5 rows of tests/matrix/invariants.yml
 from live machinery and print the diff table against the hand-written values
@@ -111,8 +111,8 @@ CONTENT_ORIGINS: dict[str, list[tuple[str, str, str, str | None, bool]]] = {
         ("AGENTS.md", "regions.yml", "AGENTS.md.jinja", "web_api", False),
     ],
     "oj_kind=kaggle": [("pyproject.toml", "torch", "questions/91-structured.yml", "kaggle", True)],
-    "oj_kind=ctf": [("pyproject.toml", "pwntools", "_shared/pyproject-ctf-extra.toml.jinja", "ctf_effective", False)],
-    "oj_kind=code": [("pyproject.toml", "dependencies = []", "_shared/pyproject-deps.toml.jinja", None, False)],
+    "oj_kind=ctf": [("pyproject.toml", "pwntools", "partials/pyproject-ctf-extra.toml.jinja", "ctf_effective", False)],
+    "oj_kind=code": [("pyproject.toml", "dependencies = []", "partials/pyproject-deps.toml.jinja", None, False)],
     "include=include_bot/bot_platform=slack": [
         ("pyproject.toml", "slack-bolt", "questions/91-structured.yml", "bot_slack_effective", True)
     ],
@@ -833,7 +833,7 @@ def _derive_m1_files(model: Model) -> dict[str, dict[str, object]]:
     - content: [pyproject.toml, <needle>] where <needle> is the live dependency
       substring wired under bot_*_effective in questions/91-structured.yml and verified
       textually plus by the dependencies vector from the rendered context.
-    The differentiation uses (i) template membership via _shared/*.jinja presence and
+    The differentiation uses (i) template membership via partials/*.jinja presence and
     (ii) the per-leaf ``dependencies`` list from copier's rendered context -- the
     two live sources the witness expect already trusts.
     """

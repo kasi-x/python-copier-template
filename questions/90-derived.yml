@@ -108,7 +108,7 @@ bot_effective:
 # Bot platform selection. use_recommended_bot keeps its default (true) when
 # unasked (include_bot off); bot_platform keeps its default (discord). Discord,
 # Slack, LINE and Gmail are the generated platforms: adding another is a new
-# choice here plus a new _shared body, not a new project type.
+# choice here plus a new partials body, not a new project type.
 bot_discord_effective:
     type: bool
     default: "{{ bot_effective and (use_recommended_bot or bot_platform == 'discord') }}"
