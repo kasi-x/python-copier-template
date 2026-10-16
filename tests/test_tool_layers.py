@@ -52,6 +52,7 @@ the guess was right.
 from __future__ import annotations
 
 import ast
+import re
 from pathlib import Path
 
 TOP = Path(__file__).resolve().parent.parent
@@ -314,4 +315,20 @@ def test_every_declared_exception_is_a_live_upward_import_with_a_reason() -> Non
     assert not stale, (
         "ALLOWED_UPWARD_IMPORTS declares an exception that no longer holds, so the registry is stale"
         " and must drop or fix the entry:\n  " + "\n  ".join(sorted(stale))
+    )
+
+
+def test_every_tool_module_is_on_the_directory_map() -> None:
+    """architekton/README.md lists every module by job, and lists nothing that is gone.
+
+    The map is how a newcomer reads this directory without opening 50 files;
+    a module added without a row, or a row left behind by a removal, makes
+    it lie.
+    """
+    readme = (TOOLS / "README.md").read_text(encoding="utf-8")
+    listed = set(re.findall(r"^\| `([a-z_0-9]+)\.py` \|", readme, flags=re.MULTILINE))
+    on_disk = set(_tools_modules())
+    assert listed == on_disk, (
+        f"architekton/README.md is out of date: missing rows {sorted(on_disk - listed)}, "
+        f"rows for missing modules {sorted(listed - on_disk)}"
     )
