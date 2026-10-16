@@ -223,7 +223,7 @@ def report(hits: Touchpoints, *, limit: int = 12) -> str:
     if hits.feeds:
         lines.append(f"  feeds       {', '.join(hits.feeds)}")
     if hits.read_by:
-        lines.append(f"  read by     {', '.join(hits.read_by)} (questions asked only depending on it)")
+        lines.append(f"  read by     {', '.join(hits.read_by)} (asked questions whose `when` or `default` reads it)")
     lines.append("")
     lines += _section("Which files exist (edit the condition here)", hits.file_gated, limit=limit)
     lines += _section("Generated files whose content depends on it", hits.content, limit=limit)

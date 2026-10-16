@@ -97,14 +97,12 @@ settings. Rules:
   live in their genre fragment *before* that question — a back-reference
   renders as Undefined (falsy) and silently picks the wrong branch.
 - The same ordering trap applies *inside* `questions/90-derived.yml`: copier
-  evaluates `when: false` defaults in definition order, so an internal
-  variable must be defined *before* any internal variable that references it
-  (e.g. `web_api` / `data_science` come first, ahead of `mcp_effective`,
-  `prometheus_effective` / `rate_limit_effective` / `cors_effective`,
-  `use_src_layout`, `pkg_dir`, ...). Referencing a later internal renders as
-  Undefined (falsy) — the questionnaire structure test does *not* catch this
-  (it skips `when: false` in the forward-only check), so verify with an
-  actual render.
+  evaluates `when: false` defaults in definition order, so a row may read
+  only the rows above it (e.g. `web_api` / `data_science` sit above
+  `mcp_effective`, the web-API details, `use_src_layout` and `pkg_dir`).
+  Referencing a later row renders as Undefined (falsy);
+  `tests/test_copier_structure.py::test_internal_variable_references_are_forward_only`
+  catches it.
 - Internal variables that only feed template rendering (the `*_effective`
   family, `pkg_dir`, `import_pkg`, ...) stay in `questions/90-derived.yml`
   at the end of the chain.

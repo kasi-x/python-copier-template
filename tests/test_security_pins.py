@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
@@ -98,8 +99,8 @@ def test_zizmor_drift_rule_tracks_both_halves_of_the_pair():
 
 def test_daimonion_pin_is_extracted_offline():
     """The generated project's daimonion install stays commit-pinned to the spec."""
-    internal = (TOP / "questions" / "90-derived.yml").read_text(encoding="utf-8")
-    spec = re.search(r'daimonion_spec:\n    type: str\n    default: "git\+[^"]+@([0-9a-f]{40})"', internal)
+    internal = yaml.safe_load((TOP / "questions" / "90-derived.yml").read_text(encoding="utf-8"))
+    spec = re.fullmatch(r"git\+[^@]+@([0-9a-f]{40})", internal["daimonion_spec"]["default"])
     assert spec, "daimonion_spec lost its commit pin in questions/90-derived.yml"
     pins = _pins()
     assert pins["daimonion pin (questions/90-derived.yml)"].current == spec.group(1)

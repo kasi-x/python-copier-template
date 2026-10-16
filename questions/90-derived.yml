@@ -1,525 +1,264 @@
-# Next: these values are read by questions/99-files.yml (which files exist)
-# and by template/ + partials/ (what the files contain).
+# Values computed from the answers, never asked.
 #
-# Internal derived variables (when: false — never asked, computed from
-# answers at render time). These are only referenced by template files (and
-# by other internal variables), never by question `when`/`default`/`choices`,
-# so they live at the end of the include order. Genre-derived internal
-# variables that questions DO reference (micropython_pkg, online_judge,
-# kaggle, oj_code) live in their genre fragment instead, before the asking
-# gate.
+# One row per value, always the same two lines:
+#
+#   <name>: {type: bool, when: false, default:
+#       "{{ <expression over answers and the rows above> }}"}
+#
+# `when: false` is what makes a row internal: copier computes it from the
+# answers instead of asking. Rows are computed top to bottom, so a row may
+# read any answer and only the rows above it.
+#
+# A row exists for one of two reasons:
+# - a condition several files would otherwise re-spell gets one name here;
+# - a `*_effective` row is a layer answer AND the project types that can host
+#   the layer. The question is only asked on those types, but a data file or
+#   a render test can force the answer on any type, so the guard lives here.
+#
+# Rows are grouped by feature; each group's `from:` line names the questions
+# it reads. A group marked "one per ..." is a family: every member has the
+# same shape, so adding a member is copying a row and changing two words.
+# Values a question's own `when` / `default` reads (micropython_pkg,
+# online_judge, kaggle, oj_code, has_*) live in that question's file instead.
+#
+# Next: questions/91-structured.yml (dependency and src/ lists) and
+# questions/99-files.yml (which files exist) read these rows, then template/
+# and partials/ (what the files contain). `task where -- <name>` lists every
+# reader of a row; after editing, `task test-fast`.
 
-# Platform identity. git_platform is asked in Project Details, so the raw
-# comparison cannot gate a question's `when` and render-side paths and bodies
-# used to re-spell it per site. Defined FIRST so the effective settings
-# below can compose it.
-is_github:
-    type: bool
-    default: "{{ git_platform == 'github.com' }}"
-    when: false
+# --- Git platform and CI
+#     from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+# git_platform is asked late, so it can gate files but never a question.
+is_github: {type: bool, when: false, default:
+    "{{ git_platform == 'github.com' }}"}
+is_gitlab: {type: bool, when: false, default:
+    "{{ git_platform == 'gitlab.com' }}"}
+ci_github_actions: {type: bool, when: false, default:
+    "{{ ci_provider == 'github_actions' }}"}
 
-is_gitlab:
-    type: bool
-    default: "{{ git_platform == 'gitlab.com' }}"
-    when: false
+# --- Security files (GitHub only)
+#     from: questions/16-security.yml security_policy, scorecard; 14-integrations cicd_extras
+# SECURITY.md and the Scorecard workflow are GitHub machinery; copier.yml's
+# _tasks warns when a GitLab render discards these answers.
+security_policy_effective: {type: bool, when: false, default:
+    "{{ security_policy and is_github }}"}
+scorecard_effective: {type: bool, when: false, default:
+    "{{ scorecard and is_github and cicd_extras }}"}
 
-# Security & compliance effective settings. security_policy / scorecard keep
-# their defaults when unasked (gate on); the git_platform guard here is what
-# keeps GitHub-only files (SECURITY.md / scorecard.yml) out of GitLab
-# projects — git_platform is asked in Project Details, so it can only be
-# applied at render time, not in the questions' `when`.
-security_policy_effective:
-    type: bool
-    default: "{{ security_policy and is_github }}"
-    when: false
+# --- Project type
+#     from: questions/08-layers.yml has_web_api, has_data_science
+# The base project_type, or the matching combo opt-in. Most rows below read
+# these, so they come early.
+web_api: {type: bool, when: false, default:
+    "{{ has_web_api }}"}
+data_science: {type: bool, when: false, default:
+    "{{ has_data_science }}"}
 
-scorecard_effective:
-    type: bool
-    default: "{{ scorecard and is_github and cicd_extras }}"
-    when: false
+# --- Opt-in layers
+#     from: questions/08-layers.yml include_mcp, include_scraping, include_bot; 05-agent
+# Each layer rides an executable host (cli, or web_api for mcp and bot);
+# the agent scaffold renders when the recommended agent guide is declined.
+mcp_effective: {type: bool, when: false, default:
+    "{{ include_mcp and (project_type == 'cli' or web_api) }}"}
+scraping_effective: {type: bool, when: false, default:
+    "{{ include_scraping and project_type == 'cli' }}"}
+bot_effective: {type: bool, when: false, default:
+    "{{ include_bot and (project_type == 'cli' or web_api) }}"}
+agent_scaffold: {type: bool, when: false, default:
+    "{{ not use_recommended_agent and project_type in ['library', 'cli'] }}"}
 
-# Project-type derived booleans (render-time only; the ones questions
-# reference live in their genre fragments). web_api / data_science are the
-# effective booleans: the matching base project_type, or the corresponding
-# combo opt-in from questions/08-layers.yml. They come FIRST in this file:
-# copier evaluates `when: false` defaults in definition order, so every
-# consumer below (mcp_effective, prometheus/rate_limit/cors_effective,
-# use_src_layout, pkg_dir, ...) must see them resolved.
-web_api:
-    type: bool
-    default: "{{ has_web_api }}"
-    when: false
+# --- Scraping engines (one per engine)
+#     from: questions/08-layers.yml use_recommended_scraping, scraping_engine
+# Recommended = httpx, the only engine with no new runtime dependency.
+# `all` ships every engine. httpx stays on beside memorious and playwright:
+# their starters reuse its politeness core. memorious forces AGPL-3.0
+# (license_effective below).
+scraping_httpx_effective: {type: bool, when: false, default:
+    "{{ scraping_effective and (use_recommended_scraping or scraping_engine in ['httpx', 'memorious', 'playwright', 'all']) }}"}
+scraping_scrapy_effective: {type: bool, when: false, default:
+    "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['scrapy', 'all'] }}"}
+scraping_memorious_effective: {type: bool, when: false, default:
+    "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['memorious', 'all'] }}"}
+scraping_playwright_effective: {type: bool, when: false, default:
+    "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['playwright', 'all'] }}"}
 
-data_science:
-    type: bool
-    default: "{{ has_data_science }}"
-    when: false
+# --- Chat bots (one per platform)
+#     from: questions/08-layers.yml use_recommended_bot, bot_platform
+# Recommended = discord; exactly one platform is ever on. Discord, Slack and
+# Gmail dial out (Gmail polls, and its credentials are file paths); LINE
+# receives a webhook, so its module owns a FastAPI app and a port. Adding a
+# platform is a choice in 08-layers, a row here and a body in partials/.
+bot_discord_effective: {type: bool, when: false, default:
+    "{{ bot_effective and (use_recommended_bot or bot_platform == 'discord') }}"}
+bot_slack_effective: {type: bool, when: false, default:
+    "{{ bot_effective and not use_recommended_bot and bot_platform == 'slack' }}"}
+bot_line_effective: {type: bool, when: false, default:
+    "{{ bot_effective and not use_recommended_bot and bot_platform == 'line' }}"}
+bot_gmail_effective: {type: bool, when: false, default:
+    "{{ bot_effective and not use_recommended_bot and bot_platform == 'gmail' }}"}
 
-# MCP effective settings. include_mcp keeps its default (false) when unasked
-# (gate on); the base guard here is what keeps the mcp dependency,
-# mcp_server.py and its test out of project types that render no package
-# module (online_judge / ros2 / micropython) or no runnable-server reason to
-# ship one (library) — include_mcp is only asked for the types below, but
-# data can force it in render-time tests, so the guard must live here.
-# (web_api is the effective boolean: the web_api base or the include_web_api
-# combo opt-in.)
-mcp_effective:
-    type: bool
-    default: "{{ include_mcp and (project_type == 'cli' or web_api) }}"
-    when: false
-# Web-fetching effective setting. include_scraping is only asked for the cli
-# base (a CLI-owned fetching layer); the guard here keeps fetcher.py and its
-# test out of other project types when render tests force the answer on them
-# (mcp_effective / ctf_effective precedent).
-scraping_effective:
-    type: bool
-    default: "{{ include_scraping and project_type == 'cli' }}"
-    when: false
-# Scraping engine selection. use_recommended_scraping keeps its default
-# (true) when unasked (include_scraping off); scraping_engine keeps its
-# default (httpx). The httpx fetcher is the recommended engine and the only
-# one with zero new runtime dependencies. `all` ships every engine (the
-# httpx fetcher stays the politeness core the other starters reuse).
-scraping_httpx_effective:
-    type: bool
-    default: "{{ scraping_effective and (use_recommended_scraping or scraping_engine in ['httpx', 'memorious', 'playwright', 'all']) }}"
-    when: false
-scraping_scrapy_effective:
-    type: bool
-    default: "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['scrapy', 'all'] }}"
-    when: false
-scraping_memorious_effective:
-    type: bool
-    default: "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['memorious', 'all'] }}"
-    when: false
-scraping_playwright_effective:
-    type: bool
-    default: "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['playwright', 'all'] }}"
-    when: false
-# Long-running bot layer effective settings. include_bot is only asked for the
-# cli / web_api bases (the long-running layer rides an executable host, the
-# same reason include_mcp skips library — see the TODO's layer model); the
-# base guard here keeps the bot module, its dependency and its console script
-# out of project types that render no package module when render tests force
-# the answer on them (mcp_effective / scraping_effective precedent).
-# (web_api is the effective boolean: the web_api base or the include_web_api
-# combo opt-in.)
-bot_effective:
-    type: bool
-    default: "{{ include_bot and (project_type == 'cli' or web_api) }}"
-    when: false
-# Bot platform selection. use_recommended_bot keeps its default (true) when
-# unasked (include_bot off); bot_platform keeps its default (discord). Discord,
-# Slack, LINE and Gmail are the generated platforms: adding another is a new
-# choice here plus a new partials body, not a new project type.
-bot_discord_effective:
-    type: bool
-    default: "{{ bot_effective and (use_recommended_bot or bot_platform == 'discord') }}"
-    when: false
-# The other half of the Bot platform selection above: the four are mutually
-# exclusive (this one is recommended-or-discord; the next three are
-# custom-and-<platform>), so exactly one bot module is ever rendered.
-bot_slack_effective:
-    type: bool
-    default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'slack' }}"
-    when: false
-# LINE is the one platform that cannot dial out: the Messaging API delivers
-# events to a webhook, so its module owns a FastAPI app and a listening port
-# where discord/slack own a client connection (bot_line.py's docstring).
-bot_line_effective:
-    type: bool
-    default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'line' }}"
-    when: false
-# Gmail polls outward on an interval, so it is back in discord/slack's camp:
-# a client connection that dials the Gmail API, no listening port and no
-# webhook (bot_gmail.py's docstring). Its credentials are files rather than
-# environment strings — the only platform whose .env entries are paths.
-bot_gmail_effective:
-    type: bool
-    default: "{{ bot_effective and not use_recommended_bot and bot_platform == 'gmail' }}"
-    when: false
-# The agent scaffold: pydantic-ai prompts/ + <pkg>.tools/ demo, rendered when
-# the recommended agent guide is declined on a library / cli base. It names
-# the predicate that used to repeat across the
-# pkg tree's agent gates, prompts/, tests/, the agent dependency and the
-# setuptools flat-layout guard (the `oj_bare`/`no_pkg` pattern recurring
-# for a predicate that had no internal yet).
-agent_scaffold:
-    type: bool
-    default: "{{ not use_recommended_agent and project_type in ['library', 'cli'] }}"
-    when: false
-# .env.example exists whenever any rendered feature documents environment
-# variables: the effective layers (web_api / mcp / scraping / bot), the
-# include_sentry leaf — raw by design (template-dev.md), which is why this
-# internal composes a raw answer with effective ones — or the agent scaffold.
-# It un-names the ~130-char OR that repeated on the file name and in the
-# README body.
-needs_env_example:
-    type: bool
-    default: "{{ web_api or mcp_effective or scraping_effective or include_sentry or bot_effective or agent_scaffold }}"
-    when: false
-# oj_category == 'ctf'). The base guard keeps the CTF deps and workspace out
-# of other project types when render tests force the answer on them
-# (mcp_effective precedent).
-ctf_effective:
-    type: bool
-    default: "{{ oj_ctf or (include_ctf and project_type in ['library', 'cli']) }}"
-    when: false
+# --- CTF and .env.example
+#     from: questions/07-online-judge.yml oj_ctf, 08-layers include_ctf, 14-integrations include_sentry; the layers above
+# .env.example exists when any rendered feature documents environment
+# variables. include_sentry is read raw on purpose (template-dev.md).
+needs_env_example: {type: bool, when: false, default:
+    "{{ web_api or mcp_effective or scraping_effective or include_sentry or bot_effective or agent_scaffold }}"}
+ctf_effective: {type: bool, when: false, default:
+    "{{ oj_ctf or (include_ctf and project_type in ['library', 'cli']) }}"}
 
-# web_api effective settings. prometheus / rate_limit / cors keep their
-# defaults (true) when unasked by use_recommended_web_api; the web_api
-# guard here is what keeps FastAPI-only deps and app/ code out of other
-# project types when render tests force the detail answers on them.
-prometheus_effective:
-    type: bool
-    default: "{{ web_api and (use_recommended_web_api or prometheus) }}"
-    when: false
+# --- Web API details
+#     from: questions/15-web-api.yml use_recommended_web_api, prometheus, rate_limit, cors
+# Recommended = all three on.
+prometheus_effective: {type: bool, when: false, default:
+    "{{ web_api and (use_recommended_web_api or prometheus) }}"}
+rate_limit_effective: {type: bool, when: false, default:
+    "{{ web_api and (use_recommended_web_api or rate_limit) }}"}
+cors_effective: {type: bool, when: false, default:
+    "{{ web_api and (use_recommended_web_api or cors) }}"}
 
-rate_limit_effective:
-    type: bool
-    default: "{{ web_api and (use_recommended_web_api or rate_limit) }}"
-    when: false
+# --- Data science and layout
+#     from: questions/09-data-science.yml use_gpu; 10-polish layout; 07-online-judge kaggle, oj_ctf
+# ds_stack: the data_science layout and the kaggle workspace share the src/
+# data/ features/ models/ tree and the analysis dependencies.
+# use_src_layout keeps its own exclusion list, NOT layout.when's (script is
+# guarded against a forced answer, oj_ctf is re-admitted); pinned by
+# tests/test_copier_structure.py::test_layout_exclusion_lists_stay_deliberately_different.
+data_science_layout: {type: bool, when: false, default:
+    "{{ data_science }}"}
+ds_stack: {type: bool, when: false, default:
+    "{{ data_science_layout or kaggle }}"}
+use_src_layout: {type: bool, when: false, default:
+    "{{ layout == 'src' and (oj_ctf or project_type not in ['script', 'online_judge', 'ros2', 'micropython']) and not web_api }}"}
+use_gpu_effective: {type: bool, when: false, default:
+    "{{ (use_gpu and data_science) or kaggle }}"}
 
-cors_effective:
-    type: bool
-    default: "{{ web_api and (use_recommended_web_api or cors) }}"
-    when: false
+# --- Repository and docs URLs
+#     from: questions/17-project-details.yml git_platform, github_org / gitlab_group, repo_name
+# The untaken branch's unasked name is never evaluated (Jinja's inline `if`
+# is lazy). GitLab Pages is https://<group>.gitlab.io/<repo>, group lowercased.
+# Which consumers follow the platform and which stay GitHub-only:
+# docs/explanations/template-dev.md, "GitLab scope".
+repo_url: {type: str, when: false, default:
+    "{{ 'https://gitlab.com/' ~ gitlab_group ~ '/' ~ repo_name if git_platform == 'gitlab.com' else 'https://github.com/' ~ github_org ~ '/' ~ repo_name }}"}
+docs_url: {type: str, when: false, default:
+    "{{ 'https://' ~ (gitlab_group | lower) ~ '.gitlab.io/' ~ repo_name if git_platform == 'gitlab.com' else 'https://' ~ (github_org | lower) ~ '.github.io/' ~ repo_name }}"}
 
-data_science_layout:
-    type: bool
-    default: "{{ data_science }}"
-    when: false
+# --- Docs site
+#     from: questions/11-docs.yml docs_type
+# A micropython project has nothing for sphinx autodoc to import, so a sphinx
+# answer becomes zensical there (copier.yml's _tasks warns).
+# api_docs_zensical: API pages only when there is a package to document.
+sphinx: {type: bool, when: false, default:
+    "{{ docs_type == 'sphinx' and not micropython_pkg }}"}
+zensical: {type: bool, when: false, default:
+    "{{ docs_type == 'zensical' or (micropython_pkg and docs_type == 'sphinx') }}"}
+api_docs_zensical: {type: bool, when: false, default:
+    "{{ zensical and not oj_code }}"}
+great_docs: {type: bool, when: false, default:
+    "{{ docs_type == 'great-docs' }}"}
+docs: {type: bool, when: false, default:
+    "{{ docs_type != 'README' }}"}
 
-# The data-science analysis stack. `data_science or kaggle` used to repeat
-# across the payload: the src/ working tree's data/ features/ models/
-# .gitkeep sentinels are byte-identical between the data_science layout and
-# the kaggle competition workspace (kaggle adds configs/input/logs/notebook/
-# output/scripts beside them and shares pkg_dir=src/utils), and the analysis
-# dependencies (duckdb / pyarrow / polars / ipykernel / ...) gate on the same
-# union. Neither owner alone spells it: data_science_layout misses kaggle (an
-# online_judge genre that use_src_layout excludes), and kaggle misses the
-# data_science base.
-ds_stack:
-    type: bool
-    default: "{{ data_science_layout or kaggle }}"
-    when: false
+# --- ROS 2
+#     from: questions/01-project-type.yml project_type, 03-ros2 pkg_language
+ros2_pkg: {type: bool, when: false, default:
+    "{{ project_type == 'ros2' }}"}
+ros2_cpp: {type: bool, when: false, default:
+    "{{ ros2_pkg and pkg_language == 'cpp' }}"}
+ros2_python: {type: bool, when: false, default:
+    "{{ ros2_pkg and pkg_language == 'python' }}"}
 
-use_src_layout:
-    type: bool
-    # Own exclusion list — NOT layout.when's: script is excluded here as a
-    # forced-answer guard (layout.when no longer asks the question there, but
-    # copier applies a data-file answer even to a question whose `when` is
-    # false, so a forced layout=src on a script project must still not
-    # produce a src/ tree without a package), oj_ctf is re-admitted, and
-    # web_api is excluded by the `not web_api` clause (layout.when never asks
-    # it, but the default `layout == 'src'` would otherwise apply). Pinned by
-    # tests/test_copier_structure.py::
-    # test_layout_exclusion_lists_stay_deliberately_different.
-    default: "{{ layout == 'src' and (oj_ctf or project_type not in ['script', 'online_judge', 'ros2', 'micropython']) and not web_api }}"
-    when: false
+# --- Generated trees (adopt mode can protect each)
+#     from: questions/02-adoption.yml existing_project, adopt_protect
+# The package tree and the tests tree exclude different project types on
+# purpose (online_judge/micropython/web_api/ros2 vs ros2/micropython).
+pkg_scaffold: {type: bool, when: false, default:
+    "{{ (not existing_project or 'scaffold' not in adopt_protect) and not online_judge and not micropython_pkg and not web_api and not ros2_pkg }}"}
+tests_scaffold: {type: bool, when: false, default:
+    "{{ (not existing_project or 'scaffold' not in adopt_protect) and not ros2_pkg and not micropython_pkg }}"}
+prompts_scaffold: {type: bool, when: false, default:
+    "{{ (not existing_project or 'scaffold' not in adopt_protect) and agent_scaffold }}"}
+render_docs: {type: bool, when: false, default:
+    "{{ docs and not (existing_project and 'docs' in adopt_protect) }}"}
 
-use_gpu_effective:
-    type: bool
-    default: "{{ (use_gpu and data_science) or kaggle }}"
-    when: false
+# --- Toolchain shorthands
+#     from: questions/06-toolchain.yml package_manager, task_runner(_pixi); 12-quality strictness
+# Under pixi the task runner comes from task_runner_pixi. The four strictness
+# levels make `not strictness_minimal` mean recommended-or-full.
+task_runner_effective: {type: str, when: false, default:
+    "{{ task_runner_pixi if package_manager == 'pixi' else task_runner }}"}
+is_uv: {type: bool, when: false, default:
+    "{{ package_manager == 'uv' }}"}
+is_poetry: {type: bool, when: false, default:
+    "{{ package_manager == 'poetry' }}"}
+is_pixi: {type: bool, when: false, default:
+    "{{ package_manager == 'pixi' }}"}
+runner_just: {type: bool, when: false, default:
+    "{{ task_runner_effective == 'just' }}"}
+runner_task: {type: bool, when: false, default:
+    "{{ task_runner_effective == 'task' }}"}
+strictness_minimal: {type: bool, when: false, default:
+    "{{ strictness in ['none', 'basic'] }}"}
 
-# Platform-conditional repository URLs. The Jinja conditional expression is
-# lazily evaluated, so the untaken branch's (unasked) variable — gitlab_group
-# on GitHub renders, github_org on GitLab renders — is never resolved; the
-# github.com branch renders the same bytes as the pre-GitLab hardcoded value.
-# Consumers that FOLLOW the platform (they want the project's real home):
-# pyproject.toml [project.urls], zensical.toml site_url/repo_url,
-# CITATION.cff repository-code, REUSE.toml SPDX-PackageDownloadLocation,
-# README clone/source links, ros2 package.xml, great-docs, LICENSE notice,
-# docs/tutorials/installation.md. Consumers that stay GITHUB-specific even
-# when built on these URLs (GitHub routes the repo_url is appended to):
-# the README CI badge ({{repo_url}}/actions/...), codecov/scorecard badges
-# ({{github_org}}-based), {{repo_url}}/issues and /releases links, and the
-# .github/ templates (filename-gated to github.com anyway). The full list
-# lives in docs/explanations/template-dev.md ("GitLab scope").
-repo_url:
-    type: str
-    default: "{{ 'https://gitlab.com/' ~ gitlab_group ~ '/' ~ repo_name if git_platform == 'gitlab.com' else 'https://github.com/' ~ github_org ~ '/' ~ repo_name }}"
-    when: false
+# --- License and data governance
+#     from: questions/13-license.yml license, fair; 16-security license_check; 09-data-science, 08-layers domain_traits
+# memorious4 is AGPL-3.0, so choosing it overrides the license answer
+# (validators cannot rewrite answers; copier.yml's _tasks warns).
+# reuse_effective is off in adopt mode: the adopter's LICENSE is not rendered.
+# care: the CARE sheet lives in data/, so it needs the data-science layout;
+# a medtech project without one gets the SaMD guidance section instead.
+license_effective: {type: str, when: false, default:
+    "{{ 'AGPL-3.0' if scraping_memorious_effective else license }}"}
+proprietary: {type: bool, when: false, default:
+    "{{ license_effective in ['Proprietary', 'Confidential'] }}"}
+license_check_effective: {type: bool, when: false, default:
+    "{{ use_recommended_security or license_check }}"}
+reuse_effective: {type: bool, when: false, default:
+    "{{ fair and not proprietary and not existing_project }}"}
+duo: {type: bool, when: false, default:
+    "{{ data_reusable and data_science_layout }}"}
+care: {type: bool, when: false, default:
+    "{{ (data_ethics or 'medtech' in domain_traits) and data_science_layout }}"}
+license_year: {type: str, when: false, default:
+    "{{ '%Y' | strftime }}"}
 
-# GitLab Pages convention: https://<group>.gitlab.io/<repo> (project websites
-# are namespaced under the group's user page; the group path is lowercased).
-# docs_url consumers that follow the platform: zensical.toml site_url, the
-# README documentation badge/link, docs how-to links. The docs *deployment*
-# itself stays GitHub-specific (gh-pages via GitHub Actions; no GitLab Pages
-# job is generated) — see the GitLab scope note in template-dev.md.
-docs_url:
-    type: str
-    default: "{{ 'https://' ~ (gitlab_group | lower) ~ '.gitlab.io/' ~ repo_name if git_platform == 'gitlab.com' else 'https://' ~ (github_org | lower) ~ '.github.io/' ~ repo_name }}"
-    when: false
+# --- Package directory
+#     from: the project type and layout above
+# web_api's application is the top-level app/ package; kaggle's is src/utils;
+# a bare online-judge workspace has none (`.`).
+pkg_dir: {type: str, when: false, default:
+    "{{ 'app' if web_api else ('src/utils' if kaggle else ('.' if online_judge and not oj_ctf else (('src/' if use_src_layout else '') + package_name))) }}"}
+import_pkg: {type: str, when: false, default:
+    "{{ 'app' if web_api else package_name }}"}
 
-sphinx:
-    type: bool
-    # docs_type keeps static choices (needed for --data-file validation), so
-    # micropython users can still answer sphinx even though the firmware is
-    # not a CPython-importable package and autodoc has nothing to import.
-    # Redirect that answer to zensical (the only offered micropython site
-    # tool) at render time — the same place the license AGPL override lives.
-    default: "{{ docs_type == 'sphinx' and not micropython_pkg }}"
-    when: false
+# --- Pinned versions
+#     from: nothing asked: bump here
+# micropython_version: freeze.py clones this tag and the community
+# micropython-<port>-stubs pin the same version; confirm with
+# architekton/check_upstream.py. daimonion_spec: one commit, so a render never
+# runs whatever lands on daimonion's main (move to a hashed PyPI pin once
+# published).
+micropython_version: {type: str, when: false, default:
+    "v1.29.0"}
+daimonion_spec: {type: str, when: false, default:
+    "git+https://github.com/politeuma/daimonion@5ec9539fd10cb5c5bb09539261e00b7e087dbd33"}
 
-zensical:
-    type: bool
-    default: "{{ docs_type == 'zensical' or (micropython_pkg and docs_type == 'sphinx') }}"
-    when: false
+# --- Files an adopter can protect (one per file)
+#     from: questions/02-adoption.yml existing_project, adopt_protect
+# ros2 C++ packages are CMake projects, hence no pyproject.toml.
+render_readme: {type: bool, when: false, default:
+    "{{ not existing_project or 'readme' not in adopt_protect }}"}
+render_license: {type: bool, when: false, default:
+    "{{ not existing_project or 'license' not in adopt_protect }}"}
+render_gitignore: {type: bool, when: false, default:
+    "{{ not existing_project or 'gitignore' not in adopt_protect }}"}
+render_python_version: {type: bool, when: false, default:
+    "{{ not existing_project or 'python_version' not in adopt_protect }}"}
+render_pyproject: {type: bool, when: false, default:
+    "{{ (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp }}"}
 
-# autodoc pages: the zensical API pages (modules.md, the mkdocstrings plugin,
-# the Modules nav entry) and the code imports the sphinx tree keeps (conf.py,
-# reference _api, pyproject's logging_setup per-file ignores) render only
-# when the docs site has something importable to document -- never in a bare
-# code-submission workspace (oj_code).
-api_docs_zensical:
-    type: bool
-    default: "{{ zensical and not oj_code }}"
-    when: false
-
-great_docs:
-    type: bool
-    default: "{{ docs_type == 'great-docs' }}"
-    when: false
-
-docs:
-    type: bool
-    default: "{{ docs_type != 'README' }}"
-    when: false
-
-ros2_pkg:
-    type: bool
-    default: "{{ project_type == 'ros2' }}"
-    when: false
-
-ros2_cpp:
-    type: bool
-    default: "{{ ros2_pkg and pkg_language == 'cpp' }}"
-    when: false
-
-ros2_python:
-    type: bool
-    default: "{{ ros2_pkg and pkg_language == 'python' }}"
-    when: false
-
-# Tree gates: one line each owns a whole subtree's policy, so child path
-# segments reference the name instead of re-spelling the parent condition
-#. pkg_scaffold is the pkg tree's parent
-# gate PLUS the ros2 exclusion its three inner `{% if project_type != 'ros2'
-# %}` file gates used to carry (ros2 walked the whole tree and rendered
-# nothing from it, so folding it into the parent is byte-identical). The
-# tests tree and the pkg tree keep their deliberately different exclusion
-# lists (ros2+micropython vs oj+micropython+web_api) — named now, so the
-# difference is reviewable instead of silent.
-pkg_scaffold:
-    type: bool
-    default: "{{ (not existing_project or 'scaffold' not in adopt_protect) and not online_judge and not micropython_pkg and not web_api and not ros2_pkg }}"
-    when: false
-
-tests_scaffold:
-    type: bool
-    default: "{{ (not existing_project or 'scaffold' not in adopt_protect) and not ros2_pkg and not micropython_pkg }}"
-    when: false
-
-# The prompts/ tree: the agent guide's prompt half (the pydantic-ai demo
-# package half lives under pkg_scaffold's tools/ gate below). Same scaffold
-# adopt-protect clause pkg_scaffold / tests_scaffold carry -- the agent
-# scaffold is scaffold, so adopt mode protecting 'scaffold' protects it too --
-# composed with agent_scaffold, which alone would re-render the guide into a
-# protected project. Spelled as one named flag so the prompts/ path follows
-# the same convention as the pkg/tests trees: a tree gate references a name,
-# and the child path (agent.md) re-states nothing.
-prompts_scaffold:
-    type: bool
-    default: "{{ (not existing_project or 'scaffold' not in adopt_protect) and agent_scaffold }}"
-    when: false
-
-# The docs tree: docs_type != README, minus the adopter's own docs (adopt
-# mode protects them instead of overwriting).
-render_docs:
-    type: bool
-    default: "{{ docs and not (existing_project and 'docs' in adopt_protect) }}"
-    when: false
-
-# MicroPython release the frozen-firmware build tracks (freeze.py clones this
-# tag). The micropython-<port>-stubs type stubs (from the community
-# josverl/micropython-stubs project, NOT official) are pinned to the same
-# version so the stubs match the firmware. Bump all three together, and run
-# architekton/check_upstream.py to confirm against the official
-# micropython/micropython releases.
-micropython_version:
-    type: str
-    default: "v1.29.0"
-    when: false
-
-task_runner_effective:
-    type: str
-    default: "{{ task_runner_pixi if package_manager == 'pixi' else task_runner }}"
-    when: false
-
-# Package-manager shorthands (the `package_manager == ...`
-# ternaries repeated across the README / Dockerfile / pyproject / CI bodies).
-# Raw answers, not effective settings: the ROS environment's
-# ros2_package_manager is a different variable and keeps its own spelling.
-is_uv:
-    type: bool
-    default: "{{ package_manager == 'uv' }}"
-    when: false
-
-is_poetry:
-    type: bool
-    default: "{{ package_manager == 'poetry' }}"
-    when: false
-
-is_pixi:
-    type: bool
-    default: "{{ package_manager == 'pixi' }}"
-    when: false
-
-# Task-runner shorthands. Composed on task_runner_effective (not the raw
-# task_runner answer: under package_manager == 'pixi' the runner comes from
-# task_runner_pixi), so the README / AGENTS.md / CONTRIBUTING tables read a
-# name instead of re-spelling the comparison.
-runner_just:
-    type: bool
-    default: "{{ task_runner_effective == 'just' }}"
-    when: false
-
-runner_task:
-    type: bool
-    default: "{{ task_runner_effective == 'task' }}"
-    when: false
-
-# Strictness shorthand. The questionnaire offers exactly four levels (none /
-# basic / recommended / full), so `not strictness_minimal` is the same set as
-# `strictness in ['recommended', 'full']` wherever the quality gates branch.
-strictness_minimal:
-    type: bool
-    default: "{{ strictness in ['none', 'basic'] }}"
-    when: false
-
-license_effective:
-    type: str
-    default: "{{ 'AGPL-3.0' if scraping_memorious_effective else license }}"
-    when: false
-
-# memorious4 is AGPL-3.0: linking it forces the whole project AGPL-3.0.
-# The effective license above hard-forces AGPL-3.0 (not a validator abort:
-# validators cannot rewrite answers, and copier asks license before the
-# scraping engine, so the later engine answer must win silently).
-proprietary:
-    type: bool
-    default: "{{ license_effective in ['Proprietary', 'Confidential'] }}"
-    when: false
-
-license_check_effective:
-    type: bool
-    default: "{{ use_recommended_security or license_check }}"
-    when: false
-
-reuse_effective:
-    type: bool
-    # adopt mode protects the adopter's own LICENSE (no LICENSE file is
-    # rendered), so REUSE scaffolding -- which references that LICENSE --
-    # would ship broken; skip it there.
-    default: "{{ fair and not proprietary and not existing_project }}"
-    when: false
-
-duo:
-    type: bool
-    default: "{{ data_reusable and data_science_layout }}"
-    when: false
-
-care:
-    type: bool
-    # CARE is the data-governance sheet that lives in data/, so it needs a
-    # data-science layout to have a home -- and it is reached two ways:
-    # `data_ethics` (the question asked under has_data_science) or the
-    # `medtech` domain trait. The trait alone is not enough: a medical web
-    # service or a clinical MCP tool has no data/ tree and no CARE sheet --
-    # the ethical substance it needs (human-in-the-loop, change envelopes,
-    # post-market monitoring) is the guidance SaMD section, which the linter renders
-    # for the `medtech` condition and needs no layout. That is why this is `or`
-    # on the trigger and `and` on the layout, rather than routing medtech into CARE
-    # itself.
-    default: "{{ (data_ethics or 'medtech' in domain_traits) and data_science_layout }}"
-    when: false
-
-license_year:
-    type: str
-    # strftime filter (copier-native): now() is deprecated for removal.
-    default: "{{ '%Y' | strftime }}"
-    when: false
-
-pkg_dir:
-    type: str
-    default: "{{ 'app' if web_api else ('src/utils' if kaggle else ('.' if online_judge and not oj_ctf else (('src/' if use_src_layout else '') + package_name))) }}"
-    when: false
-
-# The importable package that owns logging_setup.py and is the import root
-# for generated code. web_api has no <pkg> library: its application lives in
-# the top-level app/ package, so the import root is `app` there; every other
-# project type imports the <pkg> library package.
-import_pkg:
-    type: str
-    default: "{{ 'app' if web_api else package_name }}"
-    when: false
-
-# The daimonion linter every generated project runs through uvx (the copier
-# post-gen task, the ethics-block / legal-check tasks, the CI ethics-block
-# job, the AGENTS.md hint), pinned to one commit so a render never executes
-# whatever lands on daimonion's main. Move this to a PyPI release pinned
-# with a hash (`daimonion==X --hash ...`) once daimonion is published.
-daimonion_spec:
-    type: str
-    default: "git+https://github.com/politeuma/daimonion@5ec9539fd10cb5c5bb09539261e00b7e087dbd33"
-    when: false
-
-# File gates: named conditions that template/ file and directory names use,
-# so `ls template/` reads `{% if render_readme %}README.md{% endif %}`
-# instead of the whole expression. In adopt mode (`existing_project`) a file
-# the adopter protected with `adopt_protect` is not written.
-ci_github_actions:
-    type: bool
-    default: "{{ ci_provider == 'github_actions' }}"
-    when: false
-
-render_readme:
-    type: bool
-    default: "{{ not existing_project or 'readme' not in adopt_protect }}"
-    when: false
-
-render_license:
-    type: bool
-    default: "{{ not existing_project or 'license' not in adopt_protect }}"
-    when: false
-
-render_gitignore:
-    type: bool
-    default: "{{ not existing_project or 'gitignore' not in adopt_protect }}"
-    when: false
-
-render_python_version:
-    type: bool
-    default: "{{ not existing_project or 'python_version' not in adopt_protect }}"
-    when: false
-
-# ros2 C++ packages are CMake projects: no pyproject.toml.
-render_pyproject:
-    type: bool
-    default: "{{ (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp }}"
-    when: false
-
-# AGENTS.md effective setting. Every project ships the agent guide: the
-# library / cli / script bases, the web_api / data_science layers (including
-# combo opt-ins), ros2 / micropython (all types ship the guide, whose empty
-# rules marker block `daimonion agents-md --write` fills from the guidance sections), and
-# online_judge too — there the guide's AI wording defers to the contest:
-# Placed LAST so every internal it referenced must be earlier — the constant
-# keeps the position (copier evaluates when:false in definition order, and
-# future gating should go back through the genre internals).
-agents_md_effective:
-    type: bool
-    default: true
-    when: false
+# --- Agent guide
+#     from: every project type
+# Always on; a name so the guide's gate can change in one place.
+agents_md_effective: {type: bool, when: false, default:
+    true}

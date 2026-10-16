@@ -62,9 +62,9 @@ module does what.
 
 Template files are Jinja: `{{ package_name }}` inserts an answer, and
 `{% if docs %} ... {% endif %}` includes a block only for some answers.
-Derived values (`when: false` entries in `questions/90-derived.yml`, such
-as `docs` or `is_uv`) combine several answers; prefer them over repeating
-the condition. A question may only read answers asked *before* it, which is
+Derived values (the rows of `questions/90-derived.yml`, such as `docs` or
+`is_uv`, grouped by feature) combine several answers; prefer them over
+repeating the condition. A question may only read answers asked *before* it, which is
 why the file names are numbered.
 
 ### 3. Prove it

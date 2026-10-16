@@ -58,6 +58,8 @@ from datetime import UTC
 from datetime import datetime as datetime_
 from pathlib import Path
 
+import yaml
+
 TOP = Path(__file__).resolve().parent.parent
 QUESTIONS_DIR = TOP / "questions"
 TEMPLATE_DIR = TOP / "template"
@@ -213,19 +215,16 @@ def eol_date(product: str, cycle: str) -> str | None:
     return None
 
 
+def _derived_default(name: str) -> str | None:
+    """A pinned value's `default:` in questions/90-derived.yml (None when the row is gone)."""
+    rows = yaml.safe_load((QUESTIONS_DIR / "90-derived.yml").read_text(encoding="utf-8"))
+    row = rows.get(name) if isinstance(rows, dict) else None
+    return str(row["default"]) if isinstance(row, dict) and "default" in row else None
+
+
 def _extract_micropython_pins() -> list[Pin]:
     """Extract MicroPython version and stubs pin from copier config."""
-    version = "?"
-    sources = [TOP / "copier.yml", *QUESTIONS_DIR.glob("*.yml")]
-    for src in sources:
-        ver_m = re.search(
-            r"^micropython_version:\n    type: str\n    default: \"([^\"]+)\"",
-            src.read_text(),
-            re.MULTILINE,
-        )
-        if ver_m:
-            version = ver_m.group(1)
-            break
+    version = _derived_default("micropython_version") or "?"
     return [
         Pin(name="MicroPython tag (micropython_version)", current=version, checkable=True),
         Pin(
@@ -376,11 +375,8 @@ def _extract_security_pins() -> list[Pin]:
 
 def _extract_daimonion_pin() -> list[Pin]:
     """Extract the commit-pinned daimonion uvx spec from the questionnaire."""
-    internal_src = (QUESTIONS_DIR / "90-derived.yml").read_text()
-    spec_m = re.search(
-        r"daimonion_spec:\n    type: str\n    default: \"git\+https://github\.com/politeuma/daimonion@([0-9a-f]{40})\"",
-        internal_src,
-    )
+    spec = _derived_default("daimonion_spec") or ""
+    spec_m = re.fullmatch(r"git\+https://github\.com/politeuma/daimonion@([0-9a-f]{40})", spec)
     return [
         Pin(
             name="daimonion pin (questions/90-derived.yml)",
