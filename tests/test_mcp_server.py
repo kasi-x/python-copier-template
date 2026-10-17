@@ -327,6 +327,13 @@ async def test_update_project_runs_only_this_templates_tasks(client: Client, tmp
     refused = await client.call_tool("update_project", {"path": str(vendored)})
     assert refused.is_error is True and "refusing to run its tasks" in str(refused.content)
 
+    # A bare name is a relative path to copier: the project's own directory.
+    bare = tmp_path / "bare"
+    (bare / "architekton-py").mkdir(parents=True)
+    (bare / ".copier-answers.yml").write_text("_src_path: architekton-py\n")
+    refused = await client.call_tool("update_project", {"path": str(bare)})
+    assert refused.is_error is True and "refusing to run its tasks" in str(refused.content)
+
 
 @pytest.mark.anyio
 async def test_adopt_project_refuses_a_foreign_template(client: Client, tmp_path: Path):

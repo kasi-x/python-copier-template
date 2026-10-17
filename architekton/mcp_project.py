@@ -76,15 +76,7 @@ def run_update(
     if mode != "update":
         msg = f"{target} is mode {mode!r}, not 'update'; call {mcp_interface.next_for_mode(mode)}"
         raise ToolError(msg)
-    # copier update reads `.copier-answers.yml` -- not whichever answers file
-    # made detect_mode say "update" -- and runs that template's tasks.
-    recorded = _recorded_src(target)
-    if recorded is None or not detect.src_is_trusted_for_update(recorded, repo_root()):
-        msg = (
-            f"{target}/.copier-answers.yml records the template source {recorded!r}, which is not this "
-            "template's upstream URL or this checkout; refusing to run its tasks. Check it with the user."
-        )
-        raise ToolError(msg)
+    _refuse_untrusted_src(target)  # early, so a refusal comes before any clone
     status = batch.git(target, "status", "--porcelain")
     if status.returncode != 0:
         msg = f"{target} is not a git repository: copier updates only committed projects; commit it first"
@@ -101,6 +93,9 @@ def run_update(
         if cloned.returncode != 0:
             msg = f"cannot clone {target} for the dry run: {cloned.stderr.strip()}"
             raise ToolError(msg)
+    # Checked again in the tree copier is about to run on: a dry run's clone
+    # holds the committed file, which need not be the one read above.
+    _refuse_untrusted_src(where)
     from_commit = _recorded_commit(where)
     try:
         with batch.report_stream_only():
@@ -129,6 +124,21 @@ def _after_update(*, dry_run: bool, conflicts: bool) -> str:
     if conflicts:
         return "resolve the conflicts, then commit"
     return "review `git diff`, run the project's checks, then commit"
+
+
+def _refuse_untrusted_src(project: Path) -> None:
+    """Refuse an update whose `.copier-answers.yml` names a template that is not this one.
+
+    copier update reads that file -- not whichever answers file made
+    detect_mode say "update" -- and runs the named template's tasks.
+    """
+    recorded = _recorded_src(project)
+    if recorded is None or not detect.src_is_trusted_for_update(recorded, repo_root()):
+        msg = (
+            f"{project}/.copier-answers.yml records the template source {recorded!r}, which is not this "
+            "template's upstream URL or this checkout; refusing to run its tasks. Check it with the user."
+        )
+        raise ToolError(msg)
 
 
 def _recorded_src(project: Path) -> str | None:
