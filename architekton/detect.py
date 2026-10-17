@@ -528,14 +528,15 @@ def src_is_trusted_for_update(src: str, checkout: Path = TOP) -> bool:
     """True when `copier update` may run the template `src` names with its tasks enabled.
 
     Stricter than `_src_is_ours`, which only decides the mode: an update
-    executes the recorded template's tasks, so `src` must be, exactly, one of
-    this template's URLs (upstream, this checkout's own origin, or a legacy
-    URL that migrate_legacy_src rewrites to upstream) or an absolute path
-    that is `checkout` itself. No bare names and no relative paths: copier
-    resolves those inside the project, whose content the project controls.
+    executes the recorded template's tasks, so `src` must be, byte for byte,
+    one of this template's URLs (upstream or this checkout's own origin) or an
+    absolute path that is `checkout` itself. No bare names and no relative
+    paths: copier resolves those inside the project, whose content the
+    project controls. Legacy URLs are not trusted either: call
+    migrate_legacy_src first and judge what it left.
     """
-    value = src.strip()
-    urls = {NEW_SRC_PATH, NEW_SRC_PATH.removesuffix(".git"), "gh:politeuma/architekton-py", *LEGACY_SRC_PATHS}
+    value = src
+    urls = {NEW_SRC_PATH, NEW_SRC_PATH.removesuffix(".git"), "gh:politeuma/architekton-py"}
     origin = _git(checkout, "remote", "get-url", "origin")
     if origin:
         urls |= {origin, origin.removesuffix(".git")}

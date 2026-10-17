@@ -327,6 +327,18 @@ async def test_update_project_runs_only_this_templates_tasks(client: Client, tmp
     refused = await client.call_tool("update_project", {"path": str(vendored)})
     assert refused.is_error is True and "refusing to run its tasks" in str(refused.content)
 
+    # The legacy URL is rewritten by a first-occurrence text replace; a
+    # comment holding it first leaves `_src_path` on the old repository.
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    batch.git(legacy, "init", "-q")
+    (legacy / ".copier-answers.yml").write_text(
+        "# https://github.com/politeuma/daimonion\n_src_path: https://github.com/politeuma/daimonion\n"
+    )
+    batch.git_snapshot(legacy, "test")
+    refused = await client.call_tool("update_project", {"path": str(legacy)})
+    assert refused.is_error is True and "refusing to run its tasks" in str(refused.content)
+
     # A bare name is a relative path to copier: the project's own directory.
     bare = tmp_path / "bare"
     (bare / "architekton-py").mkdir(parents=True)
