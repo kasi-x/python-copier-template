@@ -34,6 +34,7 @@ from architekton import batch  # noqa: E402
 from architekton import detect  # noqa: E402
 from architekton import mcp_interface  # noqa: E402
 from architekton import questionnaire  # noqa: E402
+from architekton.mcp_shared import repo_root  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 
 
@@ -74,6 +75,15 @@ def run_update(
         raise ToolError(str(exc)) from exc
     if mode != "update":
         msg = f"{target} is mode {mode!r}, not 'update'; call {mcp_interface.next_for_mode(mode)}"
+        raise ToolError(msg)
+    # copier update reads `.copier-answers.yml` -- not whichever answers file
+    # made detect_mode say "update" -- and runs that template's tasks.
+    recorded = _recorded_src(target)
+    if recorded is None or not detect.src_is_trusted_for_update(recorded, repo_root()):
+        msg = (
+            f"{target}/.copier-answers.yml records the template source {recorded!r}, which is not this "
+            "template's upstream URL or this checkout; refusing to run its tasks. Check it with the user."
+        )
         raise ToolError(msg)
     status = batch.git(target, "status", "--porcelain")
     if status.returncode != 0:
@@ -121,6 +131,16 @@ def _after_update(*, dry_run: bool, conflicts: bool) -> str:
     return "review `git diff`, run the project's checks, then commit"
 
 
+def _recorded_src(project: Path) -> str | None:
+    """The `_src_path` in the answers file copier update reads."""
+    try:
+        data = yaml.safe_load((project / batch.ANSWERS_FILE).read_text(encoding="utf-8"))
+    except (yaml.YAMLError, OSError):
+        return None
+    src = data.get("_src_path") if isinstance(data, dict) else None
+    return src if isinstance(src, str) else None
+
+
 def _recorded_commit(project: Path) -> str | None:
     """The template revision the project's .copier-answers.yml records."""
     for answers in sorted(project.glob(".copier-answers*.yml")):
@@ -159,10 +179,6 @@ def register_project(server: Any) -> None:
         commits_behind_latest_tag and dirty (uncommitted template changes are
         included in renders from this checkout). Cost: git and filesystem, ~50 ms.
         """
-        from architekton.mcp_shared import (
-            repo_root,  # noqa: E402, PLC0415  -- the shim owns TOP; leaves read it lazily.
-        )
-
         top = repo_root()
         describe = batch.git(top, "describe", "--tags", "--abbrev=0").stdout.strip()
         head = batch.git(top, "rev-parse", "--short", "HEAD").stdout.strip()

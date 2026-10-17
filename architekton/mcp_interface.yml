@@ -36,11 +36,11 @@ effects:
     destructive: true
     idempotent: false
     network: true
-  test:
-    says: runs this repository's test suite
+  run:
+    says: runs commands (a batch file's checks, this repository's tests); can do anything they do
     read_only: false
-    destructive: false
-    idempotent: true
+    destructive: true
+    idempotent: false
     network: true
 
 audiences:
@@ -82,11 +82,11 @@ audiences:
       - name: Run the checks
         tools:
           list_batch_requests: {effect: read, use: "the requests in a batch file"}
-          run_batch: {effect: render, use: "a batch file's verdict"}
+          run_batch: {effect: run, use: "a batch file's verdict"}
           list_witnesses: {effect: read, use: "the answer combinations the suite covers"}
           recommend_answers: {effect: render, use: "the covered combinations that match named constraints"}
-          run_witness: {effect: test, use: "those combinations' verdicts, by tier"}
-          run_tests: {effect: test, use: "the repository's own test tiers"}
+          run_witness: {effect: run, use: "those combinations' verdicts, by tier"}
+          run_tests: {effect: run, use: "the repository's own test tiers"}
           template_fingerprint: {effect: read, use: "a hash of everything a render depends on"}
 
 # inspect_project's `mode` -> what to call next (returned as its `next` field).

@@ -305,6 +305,30 @@ async def test_update_project_plans_in_a_clone_then_applies(client: Client, tmp_
 
 
 @pytest.mark.anyio
+async def test_update_project_runs_only_this_templates_tasks(client: Client, tmp_path: Path):
+    """copier update executes the tasks of the template `.copier-answers.yml`
+    names, so a decoy answers file that makes the directory look like ours, or
+    a local template whose git origin merely claims to be ours, is refused
+    before anything runs."""
+    decoy = tmp_path / "decoy"
+    decoy.mkdir()
+    (decoy / ".copier-answers.ours.yml").write_text("_src_path: https://github.com/politeuma/architekton-py.git\n")
+    (decoy / ".copier-answers.yml").write_text("_src_path: https://example.invalid/evil-template.git\n")
+    refused = await client.call_tool("update_project", {"path": str(decoy)})
+    assert refused.is_error is True and "evil-template" in str(refused.content)
+
+    impostor = tmp_path / "impostor-template"
+    impostor.mkdir()
+    batch.git(impostor, "init", "-q")
+    batch.git(impostor, "remote", "add", "origin", "https://github.com/politeuma/architekton-py.git")
+    vendored = tmp_path / "vendored"
+    vendored.mkdir()
+    (vendored / ".copier-answers.yml").write_text(f"_src_path: {impostor}\n")
+    refused = await client.call_tool("update_project", {"path": str(vendored)})
+    assert refused.is_error is True and "refusing to run its tasks" in str(refused.content)
+
+
+@pytest.mark.anyio
 async def test_adopt_project_refuses_a_foreign_template(client: Client, tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/other/template.git\n")
     result = await client.call_tool("adopt_project", {"path": str(tmp_path)})

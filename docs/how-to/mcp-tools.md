@@ -39,19 +39,20 @@ uv run mcp dev architekton/mcp_server.py                     # MCP Inspector (ne
 ## Tools only developers get
 
 Besides the users' ten, the developers' server adds these. The effect column
-is the same classification as on the users' page; `test` runs this
-repository's test suite.
+is the same classification as on the users' page, plus `run`: the tool
+runs commands (a batch file's checks, this repository's tests) and can do
+anything they do, so hosts ask before calling it.
 
 | Tool | Use it for | Effect |
 | --- | --- | --- |
 | `render_diff` | two answer sets rendered and compared file by file | render |
 | `lint_render` | a render linted the way the generated project lints | render |
 | `list_batch_requests` | the requests in a batch file | read |
-| `run_batch` | a batch file's verdict | render |
+| `run_batch` | a batch file's verdict | run |
 | `list_witnesses` | the answer combinations the suite covers | read |
 | `recommend_answers` | the covered combinations that match named constraints | render |
-| `run_witness` | those combinations' verdicts, by tier | test |
-| `run_tests` | the repository's own test tiers | test |
+| `run_witness` | those combinations' verdicts, by tier | run |
+| `run_tests` | the repository's own test tiers | run |
 | `template_fingerprint` | a hash of everything a render depends on | read |
 
 `render_project` takes `validate=False` here to force an answer combination
