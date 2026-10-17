@@ -13,7 +13,7 @@ tree, not here.
 """
 
 # WHYNOT: the functions below are registered through
-# @server.tool()/@server.resource() inside register_*(); their call edge
+# @mcp_interface.tool(server)/@server.resource() inside register_*(); their call edge
 # is the decorator, invisible to the checker.
 # pyright: reportUnusedFunction=false
 
@@ -35,6 +35,7 @@ if str(TOP) not in sys.path:
 
 from architekton import answers_for  # noqa: E402
 from architekton import batch  # noqa: E402
+from architekton import mcp_interface  # noqa: E402
 from architekton import questionnaire  # noqa: E402
 from architekton import support_ledger  # noqa: E402
 from architekton.mcp_shared import OUTPUT_LIMIT  # noqa: E402
@@ -195,69 +196,43 @@ def register_witness(server: Any) -> None:
 def _register_witness_tools(server: Any) -> None:  # noqa: C901  -- two witness tools; the bodies are the pre-split implementations.
     """Register the witness-ledger tools on `server`."""
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def list_witnesses() -> dict[str, Any]:
-        """List the questionnaire's Z3 witness leaves and what has executed them.
+        """The answer combinations the test suite covers, with their recorded verdicts.
 
-        The 272 leaves are `tests/matrix/witnesses.jsonl` -- the request list
-        `architekton/z3_witnesses.py` enumerates, one answer combination each -- and
-        `tier` / `result` are the deepest verdict `tests/matrix/witnesses.json`
-        records for that leaf, so this is the "what is already verified" answer.
-        Returns `total`, `coverage` (the ledger's counters), `tiers` and `results`
-        (leaf counts per value) and `leaves`: {id, tier, result} in declaration
-        order. Filesystem only -- no render, no network.
+        Returns total, coverage (the ledger counters), tiers and results (leaf
+        counts per value) and leaves ({id, tier, result}). Cost: filesystem only.
         """
         return witness_inventory()
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def recommend_answers(constraints: list[str], *, render: bool = False) -> dict[str, Any]:
-        """Find the witness answers that produce the features you name (the inverse template).
+        """The covered answer combinations that match named constraints.
 
-        Each constraint is `name`, `name=value`, `-name` or `name!=value`, naming
-        any question or derived internal the render context exposes (`docker`,
-        `mcp_effective`, `sphinx`, `license_effective`, ...); an unknown name is
-        rejected with the closest real names. Returns {"constraints", "matched",
-        "shown", "leaves", "diagnostic", "render"}: every matching witness leaf
-        with its full `answers`, the same answers as a `--data-file`-ready YAML
-        string (`answers_yaml`) and the artifacts its class ships (`ships`). The
-        match is exact over the declared 272-leaf space, so a combination no leaf
-        carries is reported as such, not guessed: with no match, `diagnostic`
-        names the constraint that eliminated the most leaves and the nearest leaf
-        with what it misses. `render=True` also renders the top match and proves
-        every constraint against the rendered tree (a fresh context pass over the
-        render's own recorded answers, plus the name-gated artifacts -- e.g.
-        `docker` -> `.dockerignore`, `use_gpu_effective` -> `Dockerfile.gpu`);
-        that is one real render (~1-2s, no install, no network). Without it:
-        filesystem + copier's questionnaire pass -- ~50 ms warm, ~25 s on the
-        first call (cached under `.cache/answers-for/` until the questionnaire or
-        the witnesses move).
+        Each constraint is `name`, `name=value`, `-name` or `name!=value` over
+        any question or derived value; an unknown name is refused with the
+        closest real names. Returns constraints, matched, shown, leaves (each
+        with answers, answers_yaml and ships), diagnostic (when nothing matches:
+        the nearest leaf and what it misses) and render (`render=True` renders
+        the top match and checks every constraint against it). Cost: filesystem
+        only, ~50 ms warm and ~25 s on the first call; one render with `render=True`.
         """
         try:
             return answers_for.recommend(constraints, render=render, keep=True)
         except answers_for.ConstraintError as exc:
             raise ToolError(str(exc)) from exc
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def run_witness(
         tier: Literal["fast", "slow", "full"], *, only: str | None = None, timeout: int | None = None
     ) -> dict[str, Any]:
-        """Run one tier of the witness suite and return a verdict per test.
+        """Run the covered combinations at one tier and return a verdict per test.
 
-        `tests/test_witness_matrix.py` executes the leaves; this runs it in a
-        subprocess so a caller gets its verdict instead of pytest's text. `tier` is
-        the marker expression: `fast` renders and lints every leaf (no venv; a few
-        seconds under the suite's `-n auto`), `slow` runs the serial 272-leaf batch
-        runner (~2 min), `full` adds the sampled leaves' venv builds and their
-        network. `only` narrows the selection with pytest's `-k` expression -- a
-        leaf keyword, for one case -- and `timeout` overrides the tier's budget
-        (seconds).
-
-        Returns `ok` (pytest's exit status), the exact `command` so it can be
-        rerun by hand, `seconds`, `counts` (passed / failed / skipped), `output`
-        (the tail, only when the run failed) and `lines`: one entry per executed
-        test in `run_batch`'s verdict shape -- `id`, `ok`, `seconds`, `checks`
-        ({name, ok, detail}) -- with a skip reported as `name: "skipped"` rather
-        than a failure.
+        `tier` is fast (seconds, renders only), slow (minutes) or full (builds
+        venvs, network, tens of minutes); `only` is a pytest -k expression over
+        leaf ids; `timeout` overrides the tier's budget in seconds. Returns ok,
+        command, seconds, counts, output (on failure) and lines ({id, ok,
+        seconds, checks}). Cost: renders; venv installs and network at `full`.
         """
         if tier not in WITNESS_MARKERS:
             msg = f"unknown tier {tier!r}; expected one of {', '.join(sorted(WITNESS_MARKERS))}"
@@ -270,29 +245,17 @@ def _register_witness_tools(server: Any) -> None:  # noqa: C901  -- two witness 
 def _register_suite_tools(server: Any) -> None:  # noqa: C901  -- three suite/fingerprint tools; the bodies are the pre-split implementations.
     """Register the suite-tier runners and the fingerprint tool on `server`."""
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def run_tests(
         tier: Literal["fast", "heavy", "slow", "meta", "all"], *, only: str | None = None, timeout: int | None = None
     ) -> dict[str, Any]:
-        """Run one tier of this repository's own suite and return a verdict per test.
+        """Run one of the repository's own test tiers and return a verdict per test.
 
-        `run_witness` covers the witness tiers; this is the rest of the suite, so a
-        caller gets a structured verdict instead of pytest's text. `tier` names a
-        Taskfile task: `fast` is the edit loop (no venv, no network), `heavy`
-        builds virtualenvs and installs dependencies, `slow` is the serial
-        272-leaf batch runner (~2 min), `meta` runs the cost ledger's own guards,
-        `all` runs everything (~80 s warm, minutes cold). The marker expression is
-        read from `tests/matrix/tiers.json`, the record the suite's own drift
-        guard holds against `Taskfile.yml`. `only` narrows the selection with
-        pytest's `-k` expression, and `timeout` overrides the tier's budget
-        (seconds).
-
-        Returns `ok` (pytest's exit status), `tier`, `only`, the exact `command`
-        so it can be rerun by hand, `seconds`, `counts` (passed / failed /
-        skipped), `output` (the tail, only when the run failed) and `lines`: one
-        entry per executed test in `run_batch`'s verdict shape -- `id`, `ok`,
-        `seconds`, `checks` ({name, ok, detail}) -- with a skip reported as
-        `name: "skipped"` rather than a failure.
+        `tier` is fast, heavy, slow, meta or all; `only` is a pytest -k
+        expression; `timeout` overrides the tier's budget in seconds. Returns ok,
+        tier, only, command, seconds, counts, output (on failure) and lines
+        ({id, ok, seconds, checks}). Cost: shells out to pytest; heavy and all
+        build venvs and use the network.
         """
         task = TIER_TASKS.get(tier)
         if task is None:
@@ -308,23 +271,14 @@ def _register_suite_tools(server: Any) -> None:  # noqa: C901  -- three suite/fi
         limit = timeout or TIER_TIMEOUTS[tier]
         return run_pytest_tier(tier, expression, None, only=only, timeout=limit)
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def template_fingerprint() -> dict[str, Any]:
-        """Report the sha256 of the render inputs -- what a render is a function of.
+        """A sha256 over every input a render depends on.
 
-        The digest covers every file present under `template/` and `partials/`, plus
-        `copier.yml` and `partials/tasks.jinja`, as sorted relative path + content hash.
-        Copier renders a *dirty* working tree as it finds it, so this is a
-        content-based key rather than a git revision: an unchanged fingerprint
-        means the same answers still render the same bytes, and a changed one means
-        every render you are holding -- the one in `dest` of a previous call, a
-        project's checked-in `.copier-answers.yml` render, the suite's session
-        render cache -- is stale. Returns that `fingerprint`, the `algorithm`, and
-        `inputs`: the trees and files covered, the path count and the total bytes.
-        Hashes the working tree only -- no render, no network (~224 paths, 0.8 MB,
-        ~5 ms). The digest comes from `architekton/render_inputs.py`, the same one the
-        test suite's render cache namespaces its entries by, so the two cannot
-        disagree.
+        Returns fingerprint, algorithm and inputs (dirs, files, path count,
+        bytes). An unchanged fingerprint means the same answers render the same
+        bytes; a changed one means earlier renders are stale. Cost: hashes
+        ~0.8 MB, ~5 ms.
         """
         from architekton.mcp_shared import (
             repo_root,  # noqa: E402, PLC0415  -- the shim owns TOP; leaves read it lazily.
@@ -341,8 +295,6 @@ def _register_suite_tools(server: Any) -> None:  # noqa: C901  -- three suite/fi
                 "bytes": total,
             },
         }
-
-    _register_mcp_resources(server)
 
 
 def _register_mcp_resources(server: Any) -> None:

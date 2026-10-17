@@ -24,7 +24,7 @@ question names fail with exit 2 and list the valid names.
 
 The same explanations are available to agents over MCP as `explain_choice`
 (`preset=`, `question=` + `value=`, or `deviate_question=` +
-`deviate_value=`; see [Use the template's own MCP server](mcp-tools.md)).
+`deviate_value=`; see [Generate a Project With an AI Agent](../tutorials/with-an-agent.md)).
 The logic lives in `architekton/explain.py`; the CLI subcommand and the MCP tool
 are thin shells over it.
 

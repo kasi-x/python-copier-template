@@ -230,7 +230,7 @@ do), `1` failed and rolled back (a signal included), `2` invalid request
 its journal behind — recover it first.
 
 The same operation is available over MCP as `adopt_project`
-([Use the template's own MCP server](mcp-tools.md)), where `dry_run`
+([Generate a Project With an AI Agent](../tutorials/with-an-agent.md)), where `dry_run`
 defaults to `true` and a failed adoption raises rather than returning a
 half-valid result.
 

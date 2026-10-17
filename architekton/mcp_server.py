@@ -8,7 +8,11 @@ shelling out and parsing text.
 
 Run it over stdio (how an MCP host launches a server):
 
-    uv run python architekton/mcp_server.py
+    uv run python architekton/mcp_server.py                     # every tool (developers)
+    uv run python architekton/mcp_server.py --audience users    # generate/adopt/update only
+
+What the agent is told -- the tools per audience, what each may touch, which
+to call when -- is architekton/mcp_interface.yml, not this file.
 
 Or serve it over HTTP, for a host that connects to a URL:
 
@@ -70,14 +74,10 @@ callers (`architekton/mcp_server.py` as `python architekton/mcp_server.py`, `tas
 
 from __future__ import annotations
 
-import argparse
-import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
-from typing import Literal
-from typing import cast
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
@@ -102,6 +102,8 @@ from architekton.mcp_render_loop import register_render_loop  # noqa: E402
 from architekton.mcp_render_loop import render_and_prepare  # noqa: E402
 from architekton.mcp_render_loop import validate_diff_target  # noqa: E402
 from architekton.mcp_shared import OUTPUT_LIMIT  # noqa: E402
+from architekton.mcp_shared import allowed_hosts as _allowed_hosts  # noqa: E402
+from architekton.mcp_shared import serve  # noqa: E402
 from architekton.mcp_shared import server  # noqa: E402
 from architekton.mcp_witness import TIER_LEDGER  # noqa: E402
 from architekton.mcp_witness import TIER_TASKS  # noqa: E402
@@ -117,9 +119,6 @@ from architekton.mcp_witness import output_tail  # noqa: E402
 from architekton.mcp_witness import register_witness  # noqa: E402
 from architekton.mcp_witness import run_pytest_tier  # noqa: E402
 from architekton.mcp_witness import witness_inventory  # noqa: E402
-from mcp.server.transport_security import TransportSecuritySettings  # noqa: E402
-from starlette.requests import Request  # noqa: E402
-from starlette.responses import JSONResponse  # noqa: E402
 
 register_questionnaire(server)
 register_project(server)
@@ -191,6 +190,7 @@ __all__ = [
     "template_status",
     "tree",
     "unified",
+    "update_project",
     "validate_answers",
     "validate_diff_target",
     "witness_inventory",
@@ -218,30 +218,6 @@ _format_pytest_tier_result = format_pytest_tier_result
 _run_pytest_tier = run_pytest_tier
 
 
-@server.custom_route("/health", methods=["GET"])
-async def health(_request: Request) -> JSONResponse:
-    """Liveness probe for an orchestrator (unauthenticated, no data).
-
-    A custom route is a plain Starlette route, so it bypasses the Host
-    allowlist that guards /mcp -- the same trade the generated scaffold makes,
-    and why this one answers nothing but "the process is up".
-    """
-    return JSONResponse({"status": "ok"})
-
-
-def _allowed_hosts() -> TransportSecuritySettings | None:
-    """Turn MCP_ALLOWED_HOSTS / MCP_ALLOWED_ORIGINS into the SDK's settings."""
-    raw_hosts = os.environ.get("MCP_ALLOWED_HOSTS")
-    if not raw_hosts:
-        return None
-    hosts = [host.strip() for host in raw_hosts.split(",") if host.strip()]
-    raw_origins = os.environ.get("MCP_ALLOWED_ORIGINS")
-    if not raw_origins:
-        return TransportSecuritySettings(allowed_hosts=hosts)
-    origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
-    return TransportSecuritySettings(allowed_hosts=hosts, allowed_origins=origins)
-
-
 # Back-compat plain tool functions: the pre-split module exposed these as
 # module-level callables (tests call e.g. `mcp_server.template_status()`
 # directly and monkeypatch `mcp_server.TOP`). They delegate to the registered
@@ -258,6 +234,7 @@ validate_answers = _tool("validate_answers")
 inspect_project = _tool("inspect_project")
 template_status = _tool("template_status")
 adopt_project = _tool("adopt_project")
+update_project = _tool("update_project")
 render_project = _tool("render_project")
 list_batch_requests = _tool("list_batch_requests")
 run_batch = _tool("run_batch")
@@ -271,24 +248,8 @@ template_fingerprint = _tool("template_fingerprint")
 
 
 def main(args: Sequence[str] | None = None) -> None:
-    """Run the MCP server with stdio (default) or Streamable HTTP."""
-    parser = argparse.ArgumentParser(description="MCP server for architekton-py")
-    parser.add_argument("--transport", choices=["stdio", "streamable-http"], default="stdio")
-    parser.add_argument("--host", default="127.0.0.1", help="Host to bind (streamable-http)")
-    parser.add_argument("--port", type=int, default=8000, help="Port to bind (streamable-http)")
-    parsed = parser.parse_args(args)
-    transport = cast(Literal["stdio", "streamable-http"], parsed.transport)
-    if transport == "streamable-http":
-        host = cast(str, parsed.host)
-        if host not in ("127.0.0.1", "localhost", "::1") and not os.environ.get("MCP_ALLOWED_HOSTS"):
-            parser.error(
-                "binding to a non-local host requires MCP_ALLOWED_HOSTS "
-                "(comma-separated host allowlist) so the server does not "
-                "accept every Host header"
-            )
-        server.run(transport=transport, host=host, port=cast(int, parsed.port), transport_security=_allowed_hosts())
-    else:
-        server.run(transport="stdio")
+    """Run the developers' server (every tool); `--audience users` narrows it."""
+    serve(args, audience="developers", description="MCP server for architekton-py (developers)")
 
 
 if __name__ == "__main__":

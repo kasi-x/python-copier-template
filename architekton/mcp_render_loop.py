@@ -12,7 +12,7 @@ plus the generated project's own ruff), `list_batch_requests` / `run_batch`
 module owns only the tool shapes around them.
 """
 
-# WHYNOT: the functions below are registered through @server.tool()
+# WHYNOT: the functions below are registered through @mcp_interface.tool(server)
 # inside register_*(); their call edge is the decorator, invisible to
 # the checker.
 # pyright: reportUnusedFunction=false
@@ -31,7 +31,10 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 from architekton import batch  # noqa: E402
+from architekton import detect  # noqa: E402
+from architekton import mcp_interface  # noqa: E402
 from architekton import mcp_render  # noqa: E402
+from architekton import suggest  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 
 
@@ -56,6 +59,28 @@ def render_and_prepare(answers: dict[str, Any], work: Path, *, prepare: bool) ->
     failed = [check for check in checks if not check.ok]
     if failed:
         msg = f"render succeeded but prepare failed: {failed[0].detail}"
+        raise ToolError(msg)
+
+
+def refuse_invalid(answers: dict[str, Any]) -> None:
+    """Raise validate_answers' errors as one tool error the caller can act on."""
+    with batch.report_stream_only():
+        verdict = suggest.validate_answers(dict(answers))
+    if verdict.ok:
+        return
+    reasons = "; ".join(f"{error['question']}: {error['reason']}" for error in verdict.errors)
+    msg = f"answers rejected, nothing rendered; fix each and call again -- {reasons}"
+    raise ToolError(msg)
+
+
+def refuse_occupied(dest: Path) -> None:
+    """A render only fills a missing or empty directory; anything else has its own tool."""
+    try:
+        mode = detect.detect_mode(dest)
+    except detect.DetectError as exc:
+        raise ToolError(str(exc)) from exc
+    if mode != "fresh":
+        msg = f"dest {dest} is not empty (mode {mode!r}); call {mcp_interface.next_for_mode(mode)}"
         raise ToolError(msg)
 
 
@@ -110,40 +135,32 @@ def lint_checks(dest: Path) -> list[batch.Check]:
 def register_render_loop(server: Any) -> None:  # noqa: C901  -- registers render_project, then delegates to the batch and diff helpers below.
     """Register the render-loop tools on `server`."""
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def render_project(
-        answers: dict[str, Any], *, dest: str | None = None, prepare: bool = False, diff_against: str | None = None
+        answers: dict[str, Any],
+        *,
+        dest: str | None = None,
+        prepare: bool = False,
+        diff_against: str | None = None,
+        validate: bool = True,
     ) -> dict[str, Any]:
-        """Render the template with `answers` and report what it produced.
+        """Generate a new project from `answers` (inspect_project mode `fresh`).
 
-        `answers` are the copier answers; unset questions fall back to their
-        defaults (this is `--defaults`), so usually only `project_type` and the
-        Project Details are needed. The render happens from this checkout, so
-        uncommitted template changes are included -- run `inspect_project` first
-        if the target may be an existing project.
-
-        `dest` defaults to a fresh temporary directory. `prepare=True` also runs
-        the project's install command (`uv sync` / `pixi install` / `poetry
-        install`, chosen from what was rendered), which needs the network on a
-        cold cache.
-
-        Returns the destination path, the file count, `top_level` and `files`: one
-        entry per rendered file, {path, sha256} with the digest over the file's
-        own bytes, so the payload feeds a regression check without re-reading the
-        tree.
-
-        `diff_against` optionally names a previous render's directory: the payload
-        then also carries `diff`, the manifest comparison in `render_diff`'s shape
-        with `a` the diff target and `b` this render -- `same_count` (paths on
-        both sides with equal bytes), `changed` ({path, sha256_a, sha256_b} per
-        differing path), `only_in_a` (paths only in the diff target) and
-        `only_in_b` (paths only in this render). `.copier-answers.yml` is compared
-        with copier's per-render stamps masked, like every render comparison here.
-        A `diff_against` path that is not a directory raises before anything is
-        rendered. One render plus a byte comparison; no install, no network unless
-        `prepare`.
+        Unset questions take their defaults. The answers are validated first;
+        an invalid set is refused with validate_answers' errors (`validate=False`
+        skips that, for forcing a combination on purpose). `dest` must be
+        missing or empty (default: a new temporary directory).
+        `prepare=True` also installs the project's environment. `diff_against`
+        names a previous render to compare with. Returns dest, file_count,
+        top_level, files ({path, sha256}) and, with diff_against, diff
+        (same_count, changed, only_in_a, only_in_b). Cost: one render; network
+        for the post-generation tasks and for `prepare`.
         """
         previous = validate_diff_target(diff_against)
+        if validate:
+            refuse_invalid(answers)
+        if dest:
+            refuse_occupied(Path(dest).resolve())
         work = Path(dest).resolve() if dest else Path(tempfile.mkdtemp(prefix="mcp-render-"))
         work.mkdir(parents=True, exist_ok=True)
         render_and_prepare(answers, work, prepare=prepare)
@@ -165,15 +182,13 @@ def register_render_loop(server: Any) -> None:  # noqa: C901  -- registers rende
 def _register_batch_tools(server: Any) -> None:  # noqa: C901  -- two batch tools; the bodies are the pre-split implementations.
     """Register the batch listing/runner tools on `server`."""
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def list_batch_requests(jsonl: str) -> dict[str, Any]:
-        """List the requests in a batch file (see docs/how-to/batch.md).
+        """The requests in a batch file (docs/how-to/batch.md), without running them.
 
-        Returns {"count", "requests"}: each request's id, note, destination and
-        whether it carries an `update` phase, so a caller can pick one to run
-        instead of running all of them. Filesystem only -- no render, no network,
-        while `run_batch` on the same file renders every request it selects. A
-        malformed request list raises rather than returning a partial listing.
+        Returns {"count", "requests"}: each id, note, dest, has_update and the
+        number of checks, so `run_batch(only=...)` can pick some.
+        Cost: filesystem only.
         """
         try:
             requests = batch.load_requests([Path(jsonl)])
@@ -192,23 +207,17 @@ def _register_batch_tools(server: Any) -> None:  # noqa: C901  -- two batch tool
         ]
         return {"count": len(listed), "requests": listed}
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def run_batch(
         jsonl: str, *, only: str | None = None, prepare: bool = False, keep: bool = False, jobs: int = 1
     ) -> dict[str, Any]:
-        """Run a batch of generation requests and return the verdict.
+        """Run a batch file's requests and return the verdict.
 
-        `jsonl` is a request list (docs/how-to/batch.md); `only` is a regular
-        expression selecting ids. Each line renders with the real template, runs
-        its commands and judges its `expect` block, so this is the "did the
-        change break a combination" check. `ok` is true only when every selected
-        line passed; `lines[].checks[].detail` carries the observed value for a
-        failure. Renders are real (uncommitted template changes included) and
-        `prepare=True` additionally installs each project (network on a cold
-        cache). `jobs` renders up to that many requests concurrently in worker
-        processes (default 1: serial, in file order; rendering is not
-        thread-safe). `keep=True` leaves the rendered projects on disk and reports
-        their directory.
+        `only` is a regular expression over request ids; `jobs` renders in
+        parallel; `prepare=True` installs each project; `keep=True` keeps the
+        renders. Returns ok (every selected line passed), work and lines
+        (each with checks {name, ok, detail}). Cost: one render per line;
+        network with `prepare`.
         """
         try:
             requests = batch.load_requests([Path(jsonl)])
@@ -237,30 +246,15 @@ def _register_batch_tools(server: Any) -> None:  # noqa: C901  -- two batch tool
 def _register_diff_tools(server: Any) -> None:  # noqa: C901  -- two comparison tools; the bodies are the pre-split implementations.
     """Register the render-comparison tools on `server`."""
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def render_diff(answers_a: dict[str, Any], answers_b: dict[str, Any], *, keep: bool = False) -> dict[str, Any]:
-        """Render `answers_a` and `answers_b` and compare the two trees file by file.
+        """Render two answer sets and compare the trees file by file.
 
-        Returns `identical` (every path exists on both sides with the same bytes),
-        `file_count` and `identical_count`, `only_in_a` / `only_in_b` (paths on one
-        side only), `answers_commit` (the `_commit` copier recorded in
-        `.copier-answers.yml` on each side) and `changed`: one entry per path
-        present on both sides with different bytes, carrying `bytes_a` / `bytes_b`
-        / `sha256_a` / `sha256_b` and a `diff` (unified, at most 40 lines, first 25
-        changed files, with `diff_truncated` when it was cut). Files that match are
-        counted, not listed. Answer sets fall back to their defaults like
-        `render_project`.
-
-        `.copier-answers.yml` is compared with that `_commit` stamp normalized: for
-        a dirty template copier stamps a synthetic commit it creates per render, so
-        the raw file differs between two renders of *identical* answers -- the one
-        difference that says nothing about the answers. Everything else is byte
-        for byte.
-
-        Two renders, no install, no network: this is the "did my change alter an
-        unrelated combination" check, and the one-call form of the audit's manual
-        comparison of 1684 rendered files. `keep=True` leaves both renders on disk
-        and reports their directories.
+        Returns identical, file_count, identical_count, changed_count,
+        only_in_a / only_in_b, answers_commit and changed (per differing file:
+        sizes, sha256 digests and a unified diff, capped). Copier's per-render
+        stamp in .copier-answers.yml is ignored. `keep=True` keeps both renders.
+        Cost: two renders, no install.
         """
         work = Path(tempfile.mkdtemp(prefix="mcp-diff-"))
         first, second = work / "a", work / "b"
@@ -288,22 +282,13 @@ def _register_diff_tools(server: Any) -> None:  # noqa: C901  -- two comparison 
             },
         }
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def lint_render(answers: dict[str, Any]) -> dict[str, Any]:
-        """Render `answers` and lint the result the way the generated project does.
+        """Render `answers` and run the generated project's ruff format and ruff check.
 
-        Runs `ruff format --check` and `ruff check` under the rendered
-        `pyproject.toml`, so a template change that renders unformatted or
-        unlintable Python fails here instead of later in
-        `tests/test_generated_lint.py`. No venv and no network: one render plus two
-        ruff runs. The ruff is this checkout's (a rendered project has no
-        environment of its own to lint with).
-
-        Returns `checked` -- false when the render ships no Python or no
-        `[tool.ruff]` section, in which case `note` says which -- plus the
-        `run_batch` verdict shape: `ok`, `dest`, `seconds`, `error` and `checks`
-        ({name, ok, detail}, one per ruff command, `detail` carrying ruff's own
-        output).
+        Returns checked (false when the render has no Python or no ruff
+        config, with `note`), ok, dest, seconds, error and checks
+        ({name, ok, detail}). Cost: one render plus two ruff runs, no venv.
         """
         work = Path(tempfile.mkdtemp(prefix="mcp-lint-"))
         work.mkdir(parents=True, exist_ok=True)

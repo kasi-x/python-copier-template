@@ -69,7 +69,7 @@ combination no leaf carries (`docker=true`, say: every leaf keeps that
 question's default) is reported as such, not guessed. `--json` puts the same
 payload on stdout, `task answers-for` is the task wrapper, and the MCP server
 exposes it as `recommend_answers`
-(see [Drive the template's tools over MCP](../how-to/mcp-tools.md)).
+(see [Generate a Project With an AI Agent](../tutorials/with-an-agent.md)).
 
 ## Troubleshooting
 

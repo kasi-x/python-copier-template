@@ -16,6 +16,7 @@ nav = [
       { "Create New Project" = "tutorials/create-new.md" },
       { "Installation" = "tutorials/installation.md" },
       { "Adopt Existing" = "tutorials/adopt-existing.md" },
+      { "Generate With an AI Agent" = "tutorials/with-an-agent.md" },
   ]},
   { "Explanations" = [
       { "Overview" = "explanations.md" },
@@ -58,7 +59,7 @@ nav = [
       { "Run Tests" = "how-to/run-tests.md" },
       { "Run CI Locally" = "how-to/local-ci.md" },
       { "Check a Change Without the Full Suite" = "how-to/test-loop.md" },
-      { "Use the Template MCP Server" = "how-to/mcp-tools.md" },
+      { "Develop the Template With Its MCP Server" = "how-to/mcp-tools.md" },
       { "Run a Batch of Generation Requests" = "how-to/batch.md" },
       { "Linting" = "how-to/lint.md" },
       { "Static Analysis" = "how-to/static-analysis.md" },

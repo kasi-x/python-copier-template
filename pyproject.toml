@@ -7,10 +7,11 @@ name = "architekton-py"
 dynamic = ["version"]
 requires-python = ">=3.11"
 # The installed entry point (uvx --from git+..., pip wheel) imports copier,
-# yaml, tomlkit and jinja2 through the architekton/ chain at module load, so they
-# must ride along as runtime dependencies; the dev group keeps its own
-# copies for the repo's own tooling.
-dependencies = ["copier>=9,<10", "jinja2>=3.1,<4", "pyyaml>=6.0,<7", "tomlkit>=0.13,<1"]
+# yaml, tomlkit and jinja2 through the architekton/ chain at module load, and
+# `architekton-py mcp` (the users' MCP server) imports the MCP SDK, so they must
+# ride along as runtime dependencies; the dev group keeps its own copies for
+# the repo's own tooling.
+dependencies = ["copier>=9,<10", "jinja2>=3.1,<4", "mcp>=2.0,<3", "pyyaml>=6.0,<7", "tomlkit>=0.13,<1"]
 
 [project.scripts]
 architekton-py = "architekton.cli:main"

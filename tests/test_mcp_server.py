@@ -39,32 +39,16 @@ if str(TOP) not in sys.path:
 
 from architekton import answers  # noqa: E402
 from architekton import answers_for  # noqa: E402
+from architekton import batch  # noqa: E402
+from architekton import mcp_interface  # noqa: E402
 from architekton import mcp_server  # noqa: E402
 
 # The shared Project Details (architekton/answers.py) with this tool's own package
 # name; repo_name/distribution_name are copier's derivation, not restated here.
 BASE_ANSWERS = {**answers.BASE, "package_name": "mcp_example"}
 
-TOOL_NAMES = {
-    "adopt_project",
-    "explain_choice",
-    "inspect_project",
-    "lint_render",
-    "list_batch_requests",
-    "list_questions",
-    "list_presets",
-    "list_witnesses",
-    "recommend_answers",
-    "render_diff",
-    "render_project",
-    "run_batch",
-    "run_tests",
-    "run_witness",
-    "suggest_config",
-    "validate_answers",
-    "template_fingerprint",
-    "template_status",
-}
+# Every tool, from the one list of them (architekton/mcp_interface.yml).
+TOOL_NAMES = set(mcp_interface.tools())
 
 # The convention docs/how-to/test-loop.md states: the docstring is the tool
 # description the model reads, so it says what the call costs and what comes
@@ -239,6 +223,8 @@ async def test_render_project_files_carry_digests_and_can_diff_against(client: C
             "answers": {**BASE_ANSWERS, "project_type": "script", "allow_japanese": True},
             "dest": str(tmp_path / "third"),
             "diff_against": str(first_dest),
+            # forcing a hidden answer is the point, so skip the refusal users get
+            "validate": False,
         },
     )
     moved_diff = moved["diff"]
@@ -272,6 +258,50 @@ async def test_adopt_project_plans_then_applies(client: Client, tmp_path: Path):
     assert (tmp_path / "README.md").read_text() == "# mine\n"
     assert (tmp_path / ".gitleaks.toml").exists()
     assert "dependency-groups" in tomllib.loads((tmp_path / "pyproject.toml").read_text())
+
+
+@pytest.mark.anyio
+async def test_render_project_refuses_invalid_answers_and_an_occupied_dest(client: Client, tmp_path: Path):
+    """Both refusals say what to do instead, and render nothing."""
+    bad = await client.call_tool("render_project", {"answers": {"project_type": "nope"}, "dest": str(tmp_path / "a")})
+    assert bad.is_error is True
+    assert "project_type" in str(bad.content) and "'library'" in str(bad.content), "the error names the valid choices"
+    assert not (tmp_path / "a").exists()
+
+    (tmp_path / "b").mkdir()
+    (tmp_path / "b" / "README.md").write_text("# mine\n")
+    occupied = await client.call_tool(
+        "render_project", {"answers": {"project_type": "script"}, "dest": str(tmp_path / "b")}
+    )
+    assert occupied.is_error is True
+    assert "adopt_project" in str(occupied.content), "the error names the tool that fits the directory"
+    assert sorted(p.name for p in (tmp_path / "b").iterdir()) == ["README.md"]
+
+
+@pytest.mark.anyio
+async def test_update_project_plans_in_a_clone_then_applies(client: Client, tmp_path: Path):
+    """A project generated at the 7.0.0 release, updated to HEAD: the dry run
+    leaves the project untouched, applying changes it, and a dirty tree is refused."""
+    project = tmp_path / "project"
+    with batch.report_stream_only():
+        batch.render(str(TOP), project, {**BASE_ANSWERS, "project_type": "cli"}, "7.0.0", skip_tasks=True)
+    assert batch.git_snapshot(project, "test").ok
+    assert (await call(client, "inspect_project", {"path": str(project)}))["next"].startswith("update_project")
+
+    plan = await call(client, "update_project", {"path": str(project), "ref": "HEAD"})
+    assert plan["applied"] is False and plan["from_commit"] == "7.0.0"
+    assert plan["changed"], "HEAD renders differently from 7.0.0"
+    assert batch.git(project, "status", "--porcelain").stdout == "", "a dry run writes nothing into the project"
+
+    applied = await call(client, "update_project", {"path": str(project), "ref": "HEAD", "dry_run": False})
+    assert applied["applied"] is True
+    assert {entry["path"] for entry in applied["changed"]} == {entry["path"] for entry in plan["changed"]}
+    assert batch.git(project, "status", "--porcelain").stdout != ""
+
+    dirty = await client.call_tool("update_project", {"path": str(project)})
+    assert dirty.is_error is True and "uncommitted" in str(dirty.content)
+    fresh = await client.call_tool("update_project", {"path": str(tmp_path / "empty")})
+    assert fresh.is_error is True and "render_project" in str(fresh.content), "a fresh directory is pointed elsewhere"
 
 
 @pytest.mark.anyio

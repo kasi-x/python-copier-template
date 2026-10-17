@@ -9,7 +9,7 @@ function it names. Filesystem only, no render, no network (validation runs
 copier's own questionnaire pass, which is still not a render).
 """
 
-# WHYNOT: the functions below are registered through @server.tool()
+# WHYNOT: the functions below are registered through @mcp_interface.tool(server)
 # inside register_*(); their call edge is the decorator, invisible to
 # the checker.
 # pyright: reportUnusedFunction=false
@@ -26,6 +26,7 @@ if str(TOP) not in sys.path:
 
 from architekton import cli  # noqa: E402
 from architekton import explain  # noqa: E402
+from architekton import mcp_interface  # noqa: E402
 from architekton import suggest  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 
@@ -51,38 +52,30 @@ def explain_text(
 def register_questionnaire(server: Any) -> None:
     """Register the questionnaire tools on `server`."""
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def list_questions(*, asked_only: bool = True) -> dict[str, Any]:
-        """List this template's questionnaire in ask order.
+        """Every question in ask order, with its type, default, condition, help and choices.
 
-        Returns {"count", "questions"}; each entry has name, type, default (as written -- defaults are Jinja
-        expressions), when, help, choices and source file. `internal` marks the
-        derived `when: false` variables, which `asked_only=True` (the default)
-        excludes. Call this before `render_project`: it is the only way to know
-        which answers are valid and what each question defaults to. Two questions
-        (`package_manager`, `oj_kind`) carry a `choices_template` instead of a
-        resolved list, because their choices narrow themselves from earlier
-        answers.
+        Returns {"count", "questions"}. `asked_only=False` also lists the derived
+        values (`internal: true`): they are computed, never answered. A question
+        with `choices_template` instead of `choices` narrows its choices from
+        earlier answers. Cost: filesystem only.
         """
         schema = suggest.questionnaire_schema(asked_only=asked_only)
         return {"count": schema["count"], "questions": schema["questions"]}
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def list_presets() -> dict[str, Any]:
-        """List the ready-made answer files under presets/.
+        """The ready-made answer sets: each preset's name and the answers it pins.
 
-        Returns {"count", "presets"}; each entry has `name` (what the CLI's
-        `--preset` flag and `new`'s preset parameter accept) and `answers` (the
-        mapping the file supplies on top of copier's defaults -- the family
-        keys only, never the full questionnaire). `recommend_answers` builds an
-        answer set from named constraints; `list_presets` is the cheaper inverse:
-        the named starting points that already exist. Filesystem only -- no
-        render, no network.
+        Returns {"count", "presets"}: each `name` and the `answers` it pins (a
+        starting point for an answer set; the CLI's `--preset` takes the name).
+        Cost: filesystem only.
         """
         presets = [{"name": name, "answers": cli.preset_answers(name)} for name in cli.available_presets()]
         return {"count": len(presets), "presets": presets}
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def explain_choice(
         question: str | None = None,
         value: str | None = None,
@@ -90,14 +83,12 @@ def register_questionnaire(server: Any) -> None:
         deviate_question: str | None = None,
         deviate_value: str | None = None,
     ) -> dict[str, Any]:
-        """Explain a preset or an answer choice from the questionnaire's own words.
+        """Why a preset or an answer, in the questionnaire's own words.
 
-        Pass `preset` to explain one preset (why it pins what it pins),
-        `question` (plus optional `value`) to explain one question's recommended
-        setting, or `deviate_question` + `deviate_value` for what changes when
-        that question takes that value instead (which questions appear or
-        disappear, which support rows name the combination). Returns {"explanation"}
-        with the human-readable text. Filesystem only -- no render, no network.
+        Pass `preset`, or `question` (and optionally `value`), or
+        `deviate_question` + `deviate_value` for what changes when that answer
+        differs from the recommendation. Returns {"explanation"}.
+        Cost: filesystem only.
         """
         try:
             text = explain_text(question, value, preset, deviate_question, deviate_value)
@@ -105,32 +96,23 @@ def register_questionnaire(server: Any) -> None:
             raise ToolError(str(exc)) from exc
         return {"explanation": text}
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def suggest_config(requirements: str) -> dict[str, Any]:
-        """Propose preset candidates for requirement words (the constrained assistant's first step).
+        """Rank the presets against requirement words ("an internal API with Postgres").
 
-        Pass what the project needs ("an internal API with Postgres", "a Discord
-        bot", "firmware for esp32"); returns {"requirements", "matches"} with each
-        match's preset name, score, human reasons and the answers it pins. The
-        ranking is a deterministic keyword match over the preset files -- no
-        model, no render. Next: draft the full answer set, check it with
-        `validate_answers`, then generate with `architekton-py new --preset` or an
-        answers file. Filesystem only -- no render, no network.
+        Returns {"requirements", "matches"}: each match's preset, score, reasons
+        and pinned answers. Deterministic keyword matching, not a model.
+        Cost: filesystem only.
         """
         matches = suggest.suggest_presets([requirements])
         return {"requirements": requirements, "matches": [match.as_dict() for match in matches]}
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def validate_answers(answers: dict[str, Any]) -> dict[str, Any]:
-        """Check a proposed answer set against the questionnaire's own machinery.
+        """Check a proposed answer set before generating from it.
 
-        Pass the candidate answers (e.g. {"project_type": "web_api"}); returns
-        {"ok", "errors"} where errors are {question, reason} pairs in ask order:
-        unknown questions, answers to derived internals, values outside the
-        choices, validator failures, answers to questions copier would never ask,
-        and layer includes on a non-combinable base are all rejected. An approved
-        set (`ok: true`) is what `render_project` or `architekton-py new --preset`
-        may generate from. Reads the questionnaire and runs copier's own
-        questionnaire pass -- no render, no network.
+        Returns {"ok", "errors"}; each error is {question, reason} and names the
+        valid choices when a value is outside them. Fix every error, then
+        generate. Cost: reads the questionnaire, no render, no network.
         """
         return suggest.validate_answers(dict(answers)).as_dict()

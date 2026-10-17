@@ -1,27 +1,28 @@
-# Use the template's own MCP server
+# Develop the Template With Its MCP Server
 
-`architekton/mcp_server.py` exposes **this repository's** tooling over MCP, so an
-agent editing the template calls `template_status`, `render_project`,
-`render_diff`, `run_witness` and friends instead of shelling out and parsing
-text. It is the maintenance-loop counterpart of
-[the MCP server a generated project gets](mcp.md): that one is scaffolding for
-your project, this one is how you drive the template itself.
+The template's MCP server has two audiences, and this page is for the second:
 
-Nothing to configure: the repository ships a project-scope `.mcp.json`, and an
-MCP host that reads one (Claude Code, VS Code, Cursor, ...) picks the server
-up as soon as you open the checkout.
+- **Users** generate, adopt or update a project. They install
+  `architekton-py mcp` and get only those tools:
+  [Generate a Project With an AI Agent](../tutorials/with-an-agent.md).
+- **Developers** change the template itself (`template/`, `partials/`,
+  `questions/`). In this checkout the server also serves the tools below,
+  which prove that an edit changed only what it meant to.
+
+Nothing to configure: the repository ships a project-scope `.mcp.json`, and
+an MCP host that reads one (Claude Code, VS Code, Cursor, ...) starts the
+developers' server as soon as you open the checkout.
 
 ## Run it
 
 ```shell
-task mcp                                     # stdio -- what an MCP host launches
-uv run --locked python architekton/mcp_server.py   # the same command, unpacked
-task mcp CLI_ARGS="--transport streamable-http"   # serve it on 127.0.0.1:8000
-uv run mcp dev architekton/mcp_server.py           # MCP Inspector (needs npx)
+task mcp                                                     # stdio, every tool
+uv run --locked python architekton/mcp_server.py --audience users   # what users get
+task mcp CLI_ARGS="--transport streamable-http"              # serve it on 127.0.0.1:8000
+uv run mcp dev architekton/mcp_server.py                     # MCP Inspector (needs npx)
 ```
 
-`.mcp.json` registers exactly that stdio command, which is also what `task mcp`
-runs:
+`.mcp.json` registers the same stdio command `task mcp` runs:
 
 ```json
 {
@@ -35,58 +36,59 @@ runs:
 }
 ```
 
-## Tools
+## Tools only developers get
 
-Every tool states its cost and its return shape -- the docstring *is* the
-description the model reads, and `tests/test_mcp_server.py` fails if a tool
-stops saying what it costs and what comes back. Ask the cheap questions
-first: `template_status` is ~50 ms, a render ~1.5 s, and the `slow` / `full`
-witness tiers run into minutes.
+Besides the users' ten, the developers' server adds these. The effect column
+is the same classification as on the users' page; `test` runs this
+repository's test suite.
 
-| Tool | What it answers | Cost |
+| Tool | Use it for | Effect |
 | --- | --- | --- |
-| `template_status` | this checkout: question count, latest tag, commits behind it, dirty or not | git + questionnaire (~50 ms) |
-| `list_questions` | the questionnaire in ask order, with defaults, help and choices | filesystem |
-| `list_presets` | the ready-made answer files under `presets/` -- each name (what `--preset` accepts) with the answer mapping it supplies | filesystem |
-| `explain_choice` | why a preset pins what it pins / what changes when an answer deviates, from the questionnaire's own words | filesystem |
-| `suggest_config` | preset candidates for requirement words, each with reasons and pinned answers (the assistant's first step) | filesystem |
-| `validate_answers` | whether a proposed answer set is askable and copier-valid, with {question, reason} rejections | questionnaire + copier's own pass, no render |
-| `template_fingerprint` | sha256 of the render inputs: what a render is a function of | hashes ~0.8 MB (~5 ms) |
-| `inspect_project` | what a target already has, which mode fits it, which files would be overwritten | filesystem |
-| `render_project` | render a set of answers, and report the files it produced (`{path, sha256}` per file; `diff_against` a previous render for a manifest diff) | one render; `prepare=True` adds an install (network on a cold cache) |
-| `render_diff` | two answer sets rendered and compared file by file | two renders, no install |
-| `lint_render` | render, then `ruff format --check` + `ruff check` under the generated config | one render + two ruff runs, no venv |
-| `run_batch` | a batch file's verdict (`architekton/batch.py` semantics, structured) | one render per line; `prepare=True` adds installs |
-| `run_witness` | a witness tier's verdict, one entry per executed test | `fast` a few seconds (272 renders, no venv), `slow` ~2 min, `full` adds venvs and network (tens of minutes) |
-| `run_tests` | the same verdict shape for the suite's own tiers: `fast` / `heavy` / `slow` / `meta` / `all` | the tier you name; the marker expression comes from the cost ledger |
-| `check_ethics` | which guidance rules the given text trips (matched by the linter's trigger index): each match carries the section's id and title — the generated `license-check` gate stays as the offline L2 enforcement | filesystem |
+| `render_diff` | two answer sets rendered and compared file by file | render |
+| `lint_render` | a render linted the way the generated project lints | render |
+| `list_batch_requests` | the requests in a batch file | read |
+| `run_batch` | a batch file's verdict | render |
+| `list_witnesses` | the answer combinations the suite covers | read |
+| `recommend_answers` | the covered combinations that match named constraints | render |
+| `run_witness` | those combinations' verdicts, by tier | test |
+| `run_tests` | the repository's own test tiers | test |
+| `template_fingerprint` | a hash of everything a render depends on | read |
 
-Two calls cover most of the loop:
+`render_project` takes `validate=False` here to force an answer combination
+the questionnaire would never ask.
 
-- `render_diff(answers_a, answers_b)` replaces "render both, diff two trees by
-  hand" -- `identical`, `file_count`, `identical_count`, `only_in_a` /
-  `only_in_b`, and one entry per changed file with its sizes, its two sha256
-  digests and a unified diff.
-- `run_witness("fast", only="ros2 and use_recommended_license")` returns
-  `run_batch`-shaped verdicts (`id`, `ok`, `checks`), so a failing leaf is read
-  without interpreting pytest output. `only` is pytest's `-k` expression, which
-  cannot contain `=`; select leaves by the words in their id (`ros2`,
-  `use_recommended_license`).
+## Change what agents are told
 
-`render_diff` compares `.copier-answers.yml` with copier's `_commit` stamp
-normalized and reports the two stamps in `answers_commit`: for a *dirty*
-template copier stamps a synthetic commit it creates per render, so the raw
-file differs between two renders of identical answers, and that difference says
-nothing about the answers. Every other byte is compared as it is.
+What an agent learns on connect -- the tools per audience, the step each
+belongs to, what each may touch, what to call after `inspect_project` -- is
+one data file, `architekton/mcp_interface.yml`. It becomes the server's
+`instructions`, each tool's MCP annotations and the users' tool set.
+Preview what an audience is told:
+
+```shell
+uv run --locked python architekton/mcp_interface.py --audience users
+```
+
+A tool's own contract (its arguments, return shape and cost) is its
+docstring, written for the agent: what it does, what it returns, what it
+costs, nothing about how it works inside. Put maintainer notes in code
+comments. `tests/test_mcp_interface.py` keeps the file, the server and the
+two pages' tables in step; `tests/test_mcp_server.py` checks every
+docstring names its return shape and its cost.
+
+Which entry point loads what is the distribution boundary:
+`architekton/mcp_users.py` imports only the users' modules, so
+`architekton-py mcp` runs on the package's runtime dependencies;
+`architekton/mcp_server.py` adds `architekton/mcp_witness.py`, which needs the
+dev group (z3, pytest).
 
 ## Resources
 
 | Resource | Payload |
 | --- | --- |
 | `template://questionnaire` | the full questionnaire as JSON, internal variables included |
-| `template://witnesses` | each witness leaf with its recorded tier and result, plus the ledger's coverage counters -- sorted and declaration-ordered, so it diffs between runs |
-| `template://support` | the declared support contract (`tests/matrix/support.yml`): what CI promises to execute per combination and per leaf class, each entry with the measured `why` |
-| `template://ethics` | the guidance section index the linter matches against: one row per section with its id, title and triggers — `daimonion agents-md --write` renders the matching sections into the guide |
+| `template://witnesses` | each witness leaf with its recorded tier and result, plus the ledger's coverage counters |
+| `template://support` | the declared support contract (`tests/matrix/support.yml`) |
 
 ## The HTTP transport and its allowlist
 
@@ -131,8 +133,8 @@ import its `custom_route` needs (`DEP001=starlette`, plus `DEP003`), while this
 repository declares `starlette` in its dev group and imports it directly.
 
 Fix a generated project's server in `partials/mcp_server.py.jinja` (and
-[the MCP how-to](mcp.md) describes what it ships); add a maintenance tool to
-`architekton/mcp_server.py` and the table above.
+[the MCP how-to](mcp.md) describes what it ships); add a tool to one of the `architekton/mcp_*.py` modules and list it in
+`architekton/mcp_interface.yml`.
 
 ## Related
 

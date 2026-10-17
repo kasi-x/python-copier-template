@@ -107,21 +107,7 @@ def _answers(project: Path) -> dict[str, Any]:
 
 def _conflict_residue(project: Path) -> list[str]:
     """Files copier left conflict markers or `.rej` hunks in."""
-    residue: list[str] = []
-    for path in project.rglob("*"):
-        if not path.is_file() or ".git" in path.parts:
-            continue
-        relative = path.relative_to(project).as_posix()
-        if path.suffix == ".rej":
-            residue.append(relative)
-            continue
-        try:
-            text = path.read_text()
-        except UnicodeDecodeError:
-            continue  # a binary artifact cannot carry an inline conflict
-        if any(line.startswith(("<<<<<<< ", ">>>>>>> ", "||||||| ")) for line in text.splitlines()):
-            residue.append(relative)
-    return residue
+    return batch.conflict_residue(project)
 
 
 def _manifest(project: Path) -> dict[str, str]:

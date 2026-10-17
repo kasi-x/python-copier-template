@@ -82,13 +82,16 @@ a module missing here fails the test.)
 
 | Module | What it does |
 | --- | --- |
-| `mcp_server.py` | Entry point (`task mcp`) |
-| `mcp_shared.py` | The server instance and path conventions |
+| `mcp_interface.yml` | What an agent is told: the tools per audience, their effects, what to call next |
+| `mcp_interface.py` | Turns that file into instructions, annotations and the audience's tool set |
+| `mcp_users.py` | The users' server (`architekton-py mcp`): generate, adopt, update; runtime deps only |
+| `mcp_server.py` | The developers' server (`task mcp`, `.mcp.json`): every tool |
+| `mcp_shared.py` | The server instance, transport and path conventions |
 | `mcp_questionnaire.py` | Ask order, presets, explanations, proposals |
 | `mcp_render.py` | The single render entry point and tree comparison |
 | `mcp_render_loop.py` | Render, diff, lint, run a batch |
 | `mcp_witness.py` | Leaves, inverse lookup, tier runners |
-| `mcp_project.py` | Project inspection and adoption |
+| `mcp_project.py` | Project inspection, adoption and update |
 
 ## Maintenance scripts (run on their own, import nothing from here)
 
