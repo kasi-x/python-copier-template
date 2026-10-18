@@ -1,0 +1,2 @@
+# from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+tests_scaffold and bot_gmail_effective

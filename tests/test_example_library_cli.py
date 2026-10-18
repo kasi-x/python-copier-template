@@ -192,10 +192,10 @@ def test_gitignore_same():
             lines.add(stripped)
         return lines
 
-    template = normalized(TOP / "template" / ".gitignore.jinja")
+    template = normalized(next((TOP / "template").glob("*.gitignore*")))
     root = normalized(TOP / ".gitignore")
     assert template - root == set(), f"missing from root .gitignore: {sorted(template - root)}"
-    # Lines only this repository needs: its template/test/ (the ros2 package's
+    # Lines only this repository needs: its template/{% if ros2_python %}test{% endif %}/ (the ros2 package's
     # test directory) would otherwise match the OJ `test/` ignore, and copier
     # drops ignored files from dirty-checkout renders.
     root_only = {"!/template/test/"}

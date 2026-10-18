@@ -12,7 +12,7 @@ package_name:
         {% if not (package_name | regex_search('^[a-zA-Z][a-zA-Z_0-9]+$')) %}
         {{ package_name }} is not a valid python package name. Use ASCII letters, digits and underscores only.
         {% elif (layout == 'flat' or project_type == 'script') and package_name in ['alembic', 'app', 'challenges', 'data', 'docs', 'ethics', 'firmware', 'include', 'models', 'notebooks', 'outputs', 'paper', 'prompts', 'references', 'reports', 'resource', 'slides', 'test', 'tests', 'tools'] %}
-        {{ package_name }} would be a top-level directory that the template also generates for some answers (questions/99-files.yml); pick another name, or the src layout.
+        {{ package_name }} would be a top-level directory that the template also generates for some answers (the gated template/ paths); pick another name, or the src layout.
         {% endif %}
 
 description:

@@ -159,8 +159,20 @@ jobs:
     secrets:
       EXAMPLE_DEPLOY_KEY: ${{ secrets.EXAMPLE_DEPLOY_KEY }}
 
+  static:
+    needs: test
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/_static.yml
+
+  dist-branch:
+    needs: test
+    if: github.ref_name == 'main' && github.event_name == 'push'
+    uses: ./.github/workflows/_dist_branch.yml
+    permissions:
+      contents: write
+
   release:
-    needs: [test, docs]
+    needs: [test, docs, static]
     if: github.ref_type == 'tag'
     uses: ./.github/workflows/_release.yml
     permissions:

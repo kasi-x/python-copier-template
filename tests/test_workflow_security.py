@@ -13,7 +13,7 @@ checks from drifting in this repo's own CI:
 All but the renovate contract are static, offline assertions over
 `.github/workflows/*.yml`, in the same spirit as test_copier_structure.py /
 test_micropython_maintenance.py; the renovate contract parses a real render
-of `template/renovate.json.jinja` (see render_cache.py).
+of `template/{% if cicd_extras %}renovate.json{% endif %}.jinja` (see render_cache.py).
 """
 
 import json
@@ -430,7 +430,8 @@ def test_zizmor_cli_pin_is_inside_the_actions_allowlist():
     # The shipped copy is what generated projects actually run, and it is a
     # separate file (a .jinja, not a symlink): a fix applied to one side only
     # would leave every generated project red. Compare the pin lines.
-    jinja = (TOP / "template" / ".github" / "workflows" / "security.yml.jinja").read_text(encoding="utf-8")
+    # Path segments may carry {% if %} gates (the file-gate names); glob for it.
+    jinja = next((TOP / "template").rglob("*security.yml*")).read_text(encoding="utf-8")
     assert action_m.group(0) in jinja, (
         "template security.yml.jinja pins a different zizmor action than the root workflow"
     )

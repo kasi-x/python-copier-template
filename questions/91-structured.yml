@@ -1,6 +1,6 @@
-# Next: partials/pyproject-deps.toml.jinja renders `dependencies` into the
-# generated pyproject.toml; the src/ directories come from template/ and
-# copier.yml's `_tasks`.
+# Next: partials/types/<branch>/pyproject.toml.jinja renders `dependencies`
+# into the generated pyproject.toml; the src/ directories come from
+# template/ and copier.yml's `_tasks`.
 #
 # The structured-data pair: the dependency list and the src/
 # directory list, as *questions* whose defaults are derived from the rest of
@@ -29,7 +29,7 @@
 # questionnaire entirely (the default then renders as None). Built with
 # `{% set %}` + append so the branches read as data rather than as one
 # concatenated expression: the previous form was a single ~1800-character
-# Jinja line in partials/pyproject-deps.toml.jinja, which is what made "what
+# Jinja line inside the pyproject template, which is what made "what
 # does this project actually depend on" unanswerable without rendering it.
 # The rendered result must stay byte-identical (values, order, and the
 # trailing comma the template's one-line list format carries), which

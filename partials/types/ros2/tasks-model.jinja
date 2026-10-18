@@ -1,0 +1,31 @@
+{% import "partials/macros.jinja" as m with context %}
+{#
+  ros2 tasks model — the ament/colcon workspace's task set. Flat: every
+  conditional here is *about* ROS (ros2_package_manager), not about being
+  ROS — `partials/tasks-model.jinja` dispatches on ros2_pkg and delegates.
+  `run`/`tasks`/`agent_cmd_specs`/`agent_commented` are {% set %} into the
+  including module's context (include shares the context), so the
+  dispatcher and every consumer keep working unchanged.
+#}
+{% if ros2_package_manager == 'pixi' %}{% set run = '' %}
+{% set ros_source = '' %}
+{% else %}{% set run = m.run_prefix() %}
+{% set ros_source = '. /opt/ros/$ROS_DISTRO/setup.bash && ' %}
+{% endif %}
+{% set tasks = [
+    {'name': 'lint', 'desc': 'Check formatting and lint (ruff, check-only)', 'shell': true,
+     'run': [run ~ 'ruff format --check . && ' ~ run ~ 'ruff check .']},
+    {'name': 'build', 'desc': 'Build the package with colcon',
+     'run': [ros_source ~ 'colcon build --symlink-install --packages-select ' ~ package_name]},
+    {'name': 'test', 'desc': 'Run the ament test suite with colcon', 'shell': true,
+     'run': [ros_source ~ 'colcon test --packages-select ' ~ package_name
+             ~ ' && ' ~ ros_source ~ 'colcon test-result --verbose']},
+    {'name': 'check', 'desc': 'Run all quality checks', 'deps': ['lint', 'build', 'test']},
+] %}
+{# The ros2 AGENTS.md presentation: no `fix` task (lint is check-only, edits
+   are human work) and no `type-check`, so the spec table is this branch's
+   own — the guide ships since 2026-09-21. #}
+{% set agent_cmd_specs = {'lint': 'ruff format --check + ruff check (check-only)',
+                          'test': 'the ament test suite with colcon',
+                          'check': 'lint + build + test'} %}
+{% set agent_commented = ['lint', 'test', 'check'] if task_runner_effective == 'task' else [] %}

@@ -248,7 +248,11 @@ def test_render_helpers_stay_out_of_conftest():
     its existence is asserted here too.
     """
     conftest = TOP / "tests" / "conftest.py"
-    rendered = sorted((TOP / "template").glob("*tests*/conftest.py"))
+    rendered = [
+        p
+        for p in (TOP / "template").rglob("*conftest.py*")
+        if "conftest.py" in p.name and p.suffix != ".gate"  # .gate markers are editors' files, not render inputs
+    ]
     assert rendered, "the template must still ship a (symlinked) tests/conftest.py"
     for link in rendered:
         assert link.is_symlink() and link.resolve() == conftest.resolve(), (

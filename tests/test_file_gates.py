@@ -1,8 +1,11 @@
 """questions/99-files.yml: the table of which generated files exist for which answers.
 
+The table is GENERATED from the `.gate` markers under template/ by
+`architekton/gen_file_gates.py` — a sibling `name.gate` (or `dir/.gate` for a
+whole subtree) holds that path's condition; no marker means unconditional.
 copier evaluates the table itself (copier.yml's `_exclude`); these tests keep
-the table and template/ telling the same story, and keep `file_gates.py`'s
-reading of it identical to the YAML copier parses.
+the markers, the generated table and template/ telling the same story, and
+keep `file_gates.py`'s reading of it identical to the YAML copier parses.
 """
 
 import re
@@ -51,7 +54,45 @@ def test_template_names_carry_conditions_only_where_the_name_is_computed():
             if relative.parts[0].endswith("src{% endif %}"):
                 continue
             offenders.append(relative.as_posix())
-    assert not offenders, "move these conditions into questions/99-files.yml: " + ", ".join(sorted(set(offenders)))
+    assert not offenders, "move these conditions into a `.gate` marker beside the path: " + ", ".join(
+        sorted(set(offenders))
+    )
+
+
+def test_the_committed_table_is_fresh():
+    """questions/99-files.yml is regenerated, not hand-edited: `gen_file_gates --check` must pass."""
+    result = subprocess.run(
+        [sys.executable, str(TOP / "architekton" / "gen_file_gates.py"), "--check"],
+        cwd=TOP,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr or result.stdout
+
+
+def test_every_gated_path_has_a_gate_marker():
+    """A `.gate` file is the only way a plain-named path gets a condition -- a row
+    with no marker means the generator would drop it on the next regen.
+    """
+    template = TOP / "template"
+    missing = []
+    for gate in file_gates.load():
+        template_rel = gate.path.replace("{{ pkg_dir }}", "{% if pkg_scaffold %}{{ pkg_dir }}{% endif %}")
+        markers = [template / f"{template_rel}.gate", template / template_rel / ".gate"]
+        if not any(m.exists() for m in markers):
+            missing.append(gate.path)
+    assert not missing, "gated paths with no .gate marker: " + ", ".join(missing)
+
+
+def test_every_gate_marker_maps_to_a_table_row():
+    """A `.gate` file beside nothing (or one the generator cannot map) is a dead marker."""
+    from architekton import gen_file_gates  # noqa: E402
+
+    rows = {path for path, _comments, _cond in gen_file_gates.gate_rows()}
+    assert rows == {gate.path for gate in file_gates.load()}, (
+        "the committed table and the .gate markers disagree -- run `python architekton/gen_file_gates.py`"
+    )
 
 
 def test_a_path_inherits_its_directory_rows():

@@ -1,0 +1,2 @@
+# from: questions/02-adoption.yml (existing_project, adopt_protect) -> render_* in 90-derived
+render_gitignore

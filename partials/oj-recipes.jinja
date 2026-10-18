@@ -7,7 +7,7 @@
    package -- so every recipe that reaches for one first fails with an install
    hint instead of a bare "command not found".
 
-   Why this is a partial and not `partials/tasks.jinja` entries: the canonical task
+   Why this is a partial and not `partials/tasks-model.jinja` entries: the canonical task
    model is parameterless, while these recipes take a problem path / URL, and
    each runner spells parameters its own way (`just new abc086/a`,
    `task new -- abc086/a`, `make new DIR=abc086/a`, `invoke new abc086/a`,

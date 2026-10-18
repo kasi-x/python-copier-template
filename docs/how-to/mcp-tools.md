@@ -115,7 +115,7 @@ allowed `Host` completing an `initialize` handshake at 200.
 
 Two MCP servers exist in this repository, and they stay separate on purpose:
 
-| | `architekton/mcp_server.py` (this one) | `partials/mcp_server.py.jinja` |
+| | `architekton/mcp_server.py` (this one) | `template/{% if web_api %}app{% endif %}/{% if mcp_effective %}mcp_server.py{% endif %}.jinja or template/{% if pkg_scaffold %}{{ pkg_dir }}{% endif %}/{% if mcp_effective %}mcp_server.py{% endif %}.jinja` |
 | --- | --- | --- |
 | Serves | the template's maintenance loop | the generated project, after `include_mcp` |
 | Audience | an agent editing the template | the project's own users and their hosts |
@@ -133,7 +133,7 @@ deliberately: the generated scaffold's deptry config ignores the starlette
 import its `custom_route` needs (`DEP001=starlette`, plus `DEP003`), while this
 repository declares `starlette` in its dev group and imports it directly.
 
-Fix a generated project's server in `partials/mcp_server.py.jinja` (and
+Fix a generated project's server in `template/{% if web_api %}app{% endif %}/{% if mcp_effective %}mcp_server.py{% endif %}.jinja or template/{% if pkg_scaffold %}{{ pkg_dir }}{% endif %}/{% if mcp_effective %}mcp_server.py{% endif %}.jinja` (and
 [the MCP how-to](mcp.md) describes what it ships); add a tool to one of the `architekton/mcp_*.py` modules and list it in
 `architekton/mcp_interface.yml`.
 

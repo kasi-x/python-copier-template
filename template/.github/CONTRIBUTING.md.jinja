@@ -1,4 +1,4 @@
-{% import "partials/tasks.jinja" as _t with context -%}# Contribute to the project
+{% import "partials/tasks-model.jinja" as _t with context -%}# Contribute to the project
 
 Contributions and issues are most welcome! All issues and pull requests are
 handled through [GitHub]({{ repo_url }}/issues). Also, please check for any existing issues before
@@ -25,7 +25,7 @@ raise it as a discussion instead.
 
 The `{{ task_runner_effective }}` task runner drives the common commands:
 
-```sh{# The rows below are the `partials/tasks.jinja` model — the same source AGENTS.md
+```sh{# The rows below are the `partials/tasks-model.jinja` model — the same source AGENTS.md
    derives its table from — so this page cannot drift from the runner files.
    A row is printed only when the task exists in this render. #}
 {% for task_name in _t.agent_cmd_specs if task_name in (_t.tasks | map(attribute='name')) and (runner_task or task_name != 'type-check') %}{{ _t.agent_prefix }} {% if task_name in _t.agent_commented %}{{ task_name }}{{ (15 - (task_name | length)) * ' ' }}# {{ _t.agent_cmd_specs[task_name] }}{% else %}{{ task_name }}{% endif %}

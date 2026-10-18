@@ -88,7 +88,7 @@ predicates:
 # the enumeration silently.
 excluded:
   - project_type: web_django
-    why: "generation aborts by design: the partials/tasks.jinja web_django task exits 1"
+    why: "generation aborts by design: the partials/tasks-model.jinja web_django task exits 1"
   - question: include_sentry
     why: "an integration detail question behind use_recommended_integrations, not a leaf-space layer; every leaf keeps it at its default false"
   - question: oj_sample

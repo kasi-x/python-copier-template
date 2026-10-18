@@ -155,7 +155,7 @@ def scaffold_layer(
         f"3. Wire the layer through a {clean_name}_effective internal in questions/90-derived.yml "
         f'(default: "{{{{ {question_name} and ... }}}}" , when: false), '
         f"then add the layer's files under template/ with their plain names and gate each one "
-        f"with a row in questions/99-files.yml: <path>: {{{{ {clean_name}_effective }}}}"
+        f"with a gated name under template/: {{% if {clean_name}_effective %}}<path>{{% endif %}}.jinja"
     )
     print("   Then run the extending runbook (docs/explanations/extending.md): task witness + markers + docs.")
     return 0

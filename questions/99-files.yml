@@ -1,224 +1,296 @@
-# Which generated files exist for which answers.
+# Which generated files exist for which answers -- GENERATED from the .gate
+# files under template/ by `architekton/gen_file_gates.py` (`task regen`).
+# Do not edit the rows below by hand; change the `.gate` file that sits beside
+# the path instead.
 #
-# One row per path in the generated project: `<path>: {{ <condition> }}`.
+# One row per gated path in the generated project: `<path>: {{ <condition> }}`.
 # The path -- a file, or a whole directory -- is generated only when the
 # condition is true; anything not listed is always generated (if its source
 # exists under template/). A condition can use any question or derived value
 # (questions/90-derived.yml). To add a file that only some projects get, put
-# it under template/ with its plain name and add its row here.
+# it under template/ with its plain name and add `<name>.gate` beside it (or
+# `.gate` inside it, for a whole directory) holding its condition.
 #
 # Two kinds of paths keep their condition in the file name instead: names
 # that are computed from answers (`{{ pkg_dir }}`, the uv.lock / pixi.lock
 # switch), and the src/ sub-trees, which several project types fill.
 #
-# The rows are grouped by feature; each group's `from:` line names the
-# question it comes from, so a group reads as "this answer -> these files".
-# Rows under `{{ pkg_dir }}` sit in `{% if pkg_scaffold %}` blocks: the
-# package directory exists only then, and its name is computed.
-#
 # Next: copier.yml's `_exclude` turns every row whose condition is false into
 # an excluded path; what the remaining files contain is template/ (and the
 # snippets in partials/). `task where -- <setting>` shows a row in context;
 # after editing, `task test-fast` (tests/test_file_gates.py checks the rows).
+
 file_gates:
     type: yaml
     when: false
     default: |
-        # --- Files an adopter can protect
-        #     from: questions/02-adoption.yml (existing_project, adopt_protect) -> render_* in 90-derived
-        README.md: {{ render_readme }}
-        LICENSE: {{ render_license }}
-        pyproject.toml: {{ render_pyproject }}
-        .gitignore: {{ render_gitignore }}
-        .python-version: {{ render_python_version }}
-
-        # --- Agent guide
-        #     from: every project; 90-derived agents_md_effective
-        AGENTS.md: {{ agents_md_effective }}
+        # from: every project; 90-derived agents_md_effective
         .daimonion.yml: {{ agents_md_effective }}
-
-        # --- Git platform and CI
-        #     from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
-        .github: {{ is_github }}
-        .github/actions: {{ ci_github_actions }}
-        .github/workflows: {{ ci_github_actions }}
-        .github/workflows/_dist.yml: {{ not ros2_pkg }}
-        .github/workflows/_hygiene.yml: {{ not ros2_pkg }}
-        .github/workflows/_release.yml: {{ not ros2_pkg }}
-        .github/workflows/_tasks.yml: {{ not ros2_pkg }}
-        .github/workflows/_test.yml: {{ not ros2_pkg }}
-        .github/workflows/_pypi.yml: {{ pypi }}
-        .gitlab-ci.yml: {{ is_gitlab }}
-
-        # --- Editor and CI extras
-        #     from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
         .devcontainer: {{ cicd_extras }}
-        .vscode: {{ cicd_extras }}
-        .envrc: {{ cicd_extras }}
-        .gitleaks.toml: {{ cicd_extras }}
-        renovate.json: {{ cicd_extras }}
-        .github/CODEOWNERS: {{ cicd_extras }}
-        .github/ISSUE_TEMPLATE: {{ cicd_extras }}
-        .github/PULL_REQUEST_TEMPLATE: {{ cicd_extras }}
-        .github/actionlint.yaml: {{ cicd_extras }}
-        .github/zizmor.yml: {{ cicd_extras }}
-        .github/workflows/security.yml: {{ cicd_extras }}
-
-        # --- Task runner (one of these)
-        #     from: questions/06-toolchain.yml task_runner
-        justfile: {{ not existing_project and task_runner_effective == 'just' }}
-        Taskfile.yml: {{ not existing_project and task_runner_effective == 'task' }}
-        Makefile: {{ not existing_project and task_runner_effective == 'make' }}
-        tasks.py: {{ not existing_project and task_runner_effective == 'invoke' }}
-        duties.py: {{ not existing_project and task_runner_effective == 'duty' }}
-
-        # --- Tests
-        #     from: 90-derived tests_scaffold (no ros2 / micropython package tree)
-        tests: {{ tests_scaffold or micropython_pkg }}
-        tests/conftest.py: {{ tests_scaffold }}
-        tests/test_cli.py: {{ tests_scaffold and not online_judge and not web_api }}
-        tests/test_qa.py: {{ tests_scaffold and not online_judge and not web_api }}
-
-        # --- Docs
-        #     from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
-        docs: {{ render_docs }}
-        docs/index.md: {{ sphinx or zensical }}
-        docs/modules.md: {{ api_docs_zensical }}
-        zensical.toml: {{ zensical }}
-        docs/conf.py: {{ sphinx }}
-        docs/_api.rst: {{ sphinx and not oj_code }}
-        docs/_templates: {{ sphinx }}
-        docs/genindex.md: {{ sphinx }}
-        docs/how-to.md: {{ sphinx }}
-        docs/how-to/contribute.md: {{ sphinx }}
-        docs/reference.md: {{ sphinx }}
-        docs/tutorials.md: {{ sphinx }}
-        .github/workflows/_docs.yml: {{ docs }}
-        great-docs.yml: {{ great_docs }}
-        index.qmd: {{ great_docs }}
-
-        # --- Docker
-        #     from: questions/14-integrations.yml docker
-        Dockerfile: {{ docker or cicd_extras }}
-        .dockerignore: {{ docker }}
-        .github/workflows/_container.yml: {{ docker }}
-        docs/how-to/run-container.md: {{ docker }}
-        compose.local.yml: {{ web_api and docker }}
-
-        # --- License, FAIR and security policy
-        #     from: questions/13-license.yml fair, license; 16-security.yml
-        REUSE.toml: {{ reuse_effective }}
-        CITATION.cff: {{ fair }}
-        .howfairis.yml: {{ fair }}
-        .github/workflows/fair-software.yml: {{ fair }}
-        SECURITY.md: {{ security_policy_effective }}
-        .github/workflows/scorecard.yml: {{ scorecard_effective }}
-
-        # --- Secrets template
-        #     from: 90-derived needs_env_example (a layer that reads tokens or a DSN)
-        .env.example: {{ needs_env_example }}
-
-        # --- Web API layer
-        #     from: questions/01-project-type.yml web_api, or 08-layers include_web_api
-        app: {{ web_api }}
-        alembic: {{ web_api }}
-        ethics: {{ web_api }}
-        app/metrics.py: {{ prometheus_effective }}
-        app/rate_limit.py: {{ rate_limit_effective }}
-        tests/test_app.py: {{ tests_scaffold and web_api }}
-
-        # --- Data-science layer
-        #     from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
-        data: {{ data_science_layout }}
-        models: {{ data_science_layout }}
-        reports: {{ data_science_layout }}
-        notebooks: {{ data_science }}
-        outputs: {{ data_science }}
-        paper: {{ data_science }}
-        slides: {{ data_science }}
-        references: {{ data_science }}
-        _quarto.yml: {{ data_science }}
-        data/CARE.md: {{ care }}
-        data/DUO.md: {{ duo }}
-        Dockerfile.gpu: {{ use_gpu_effective }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
         .devcontainer/devcontainer.gpu.json: {{ use_gpu_effective }}
-
-        # --- Agent scaffold
-        #     from: questions/05-agent.yml use_recommended_agent -> agent_scaffold
+        # from: questions/14-integrations.yml docker
+        .dockerignore: {{ docker }}
+        # from: 90-derived needs_env_example (a layer that reads tokens or a DSN)
+        .env.example: {{ needs_env_example }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .envrc: {{ cicd_extras }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github: {{ is_github }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .github/CODEOWNERS: {{ cicd_extras }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .github/ISSUE_TEMPLATE: {{ cicd_extras }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .github/PULL_REQUEST_TEMPLATE: {{ cicd_extras }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .github/actionlint.yaml: {{ cicd_extras }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github/actions: {{ ci_github_actions }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github/workflows: {{ ci_github_actions }}
+        # from: questions/14-integrations.yml docker
+        .github/workflows/_container.yml: {{ docker }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github/workflows/_dist.yml: {{ not ros2_pkg }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        .github/workflows/_docs.yml: {{ docs }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github/workflows/_hygiene.yml: {{ not ros2_pkg }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github/workflows/_pypi.yml: {{ pypi }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github/workflows/_release.yml: {{ not ros2_pkg }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github/workflows/_tasks.yml: {{ not ros2_pkg }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .github/workflows/_test.yml: {{ not ros2_pkg }}
+        # from: questions/13-license.yml fair, license; 16-security.yml
+        .github/workflows/fair-software.yml: {{ fair }}
+        # from: questions/07-online-judge.yml oj_category, oj_kind
+        .github/workflows/oj-sample.yml: {{ oj_sample }}
+        # from: questions/13-license.yml fair, license; 16-security.yml
+        .github/workflows/scorecard.yml: {{ scorecard_effective }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .github/workflows/security.yml: {{ cicd_extras }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .github/zizmor.yml: {{ cicd_extras }}
+        # from: questions/02-adoption.yml (existing_project, adopt_protect) -> render_* in 90-derived
+        .gitignore: {{ render_gitignore }}
+        # from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+        .gitlab-ci.yml: {{ is_gitlab }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .gitleaks.toml: {{ cicd_extras }}
+        # from: questions/13-license.yml fair, license; 16-security.yml
+        .howfairis.yml: {{ fair }}
+        # from: questions/14-integrations.yml include_mcp -> mcp_effective
+        .mcp.json: {{ mcp_effective }}
+        # from: questions/02-adoption.yml (existing_project, adopt_protect) -> render_* in 90-derived
+        .python-version: {{ render_python_version }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        .vscode: {{ cicd_extras }}
+        # from: every project; 90-derived agents_md_effective
+        AGENTS.md: {{ agents_md_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        CHARTER.md: {{ scraping_effective }}
+        # from: questions/13-license.yml fair, license; 16-security.yml
+        CITATION.cff: {{ fair }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        CMakeLists.txt: {{ ros2_cpp }}
+        # from: questions/14-integrations.yml docker
+        Dockerfile: {{ docker or cicd_extras }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        Dockerfile.gpu: {{ use_gpu_effective }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        Dockerfile.ros2: {{ ros2_pkg }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        LEGAL.md: {{ scraping_effective }}
+        # from: questions/02-adoption.yml (existing_project, adopt_protect) -> render_* in 90-derived
+        LICENSE: {{ render_license }}
+        # from: questions/06-toolchain.yml task_runner
+        Makefile: {{ not existing_project and task_runner_effective == 'make' }}
+        # from: questions/02-adoption.yml (existing_project, adopt_protect) -> render_* in 90-derived
+        README.md: {{ render_readme }}
+        # from: questions/13-license.yml fair, license; 16-security.yml
+        REUSE.toml: {{ reuse_effective }}
+        # from: questions/13-license.yml fair, license; 16-security.yml
+        SECURITY.md: {{ security_policy_effective }}
+        # from: questions/06-toolchain.yml task_runner
+        Taskfile.yml: {{ not existing_project and task_runner_effective == 'task' }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        _quarto.yml: {{ data_science }}
+        # from: questions/01-project-type.yml web_api, or 08-layers include_web_api
+        alembic: {{ web_api }}
+        # from: questions/01-project-type.yml web_api, or 08-layers include_web_api
+        app: {{ web_api }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        app/bot_discord.py: {{ bot_discord_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        app/bot_gmail.py: {{ bot_gmail_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        app/bot_line.py: {{ bot_line_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        app/bot_slack.py: {{ bot_slack_effective }}
+        # from: questions/14-integrations.yml include_mcp -> mcp_effective
+        app/mcp_server.py: {{ mcp_effective }}
+        # from: questions/01-project-type.yml web_api, or 08-layers include_web_api
+        app/metrics.py: {{ prometheus_effective }}
+        # from: questions/01-project-type.yml web_api, or 08-layers include_web_api
+        app/rate_limit.py: {{ rate_limit_effective }}
+        # from: questions/07-online-judge.yml oj_category, oj_kind
+        challenges: {{ ctf_effective }}
+        # from: questions/14-integrations.yml docker
+        compose.local.yml: {{ web_api and docker }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        data: {{ data_science_layout }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        data/CARE.md: {{ care }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        data/DUO.md: {{ duo }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs: {{ render_docs }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/_api.rst: {{ sphinx and not oj_code }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/_templates: {{ sphinx }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/conf.py: {{ sphinx }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/genindex.md: {{ sphinx }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/how-to/contribute.md: {{ sphinx }}
+        # from: questions/14-integrations.yml docker
+        docs/how-to/run-container.md: {{ docker }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/how-to.md: {{ sphinx }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/index.md: {{ sphinx or zensical }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/modules.md: {{ api_docs_zensical }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/reference.md: {{ sphinx }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        docs/tutorials.md: {{ sphinx }}
+        # from: questions/06-toolchain.yml task_runner
+        duties.py: {{ not existing_project and task_runner_effective == 'duty' }}
+        # from: questions/01-project-type.yml web_api, or 08-layers include_web_api
+        ethics: {{ web_api }}
+        # from: questions/01-project-type.yml micropython; 04-micropython.yml
+        firmware: {{ micropython_pkg }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        great-docs.yml: {{ great_docs }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        include: {{ ros2_cpp }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        index.qmd: {{ great_docs }}
+        # from: questions/06-toolchain.yml task_runner
+        justfile: {{ not existing_project and task_runner_effective == 'just' }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        models: {{ data_science_layout }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        notebooks: {{ data_science }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        outputs: {{ data_science }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        package.xml: {{ ros2_pkg }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        paper: {{ data_science }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        pixi.toml: {{ ros2_pkg and ros2_package_manager == 'pixi' }}
+        # from: questions/05-agent.yml use_recommended_agent -> agent_scaffold
         prompts: {{ prompts_scaffold }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        pyproject-fmt.toml: {{ not ros2_cpp }}
+        # from: questions/02-adoption.yml (existing_project, adopt_protect) -> render_* in 90-derived
+        pyproject.toml: {{ render_pyproject }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        references: {{ data_science }}
+        # from: questions/14-integrations.yml cicd_extras (the bare preset turns it off)
+        renovate.json: {{ cicd_extras }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        reports: {{ data_science_layout }}
+        # from: questions/01-project-type.yml micropython; 04-micropython.yml
+        requirements-dev.txt: {{ micropython_pkg }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        resource: {{ ros2_python }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        setup.cfg: {{ ros2_python }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        setup.py: {{ ros2_python }}
+        # from: questions/01-project-type.yml data_science, or 08-layers include_data_science; 09-data-science.yml
+        slides: {{ data_science }}
+        # from: questions/06-toolchain.yml task_runner
+        tasks.py: {{ not existing_project and task_runner_effective == 'invoke' }}
+        # from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
+        test: {{ ros2_python }}
+        # from: 90-derived tests_scaffold (no ros2 / micropython package tree)
+        tests: {{ tests_scaffold or micropython_pkg }}
+        # from: 90-derived tests_scaffold (no ros2 / micropython package tree)
+        tests/conftest.py: {{ tests_scaffold }}
+        # from: questions/05-agent.yml use_recommended_agent -> agent_scaffold
         tests/test_agent.py: {{ tests_scaffold and agent_scaffold }}
+        # from: questions/01-project-type.yml web_api, or 08-layers include_web_api
+        tests/test_app.py: {{ tests_scaffold and web_api }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        tests/test_bot_discord.py: {{ tests_scaffold and bot_discord_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        tests/test_bot_gmail.py: {{ tests_scaffold and bot_gmail_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        tests/test_bot_line.py: {{ tests_scaffold and bot_line_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        tests/test_bot_slack.py: {{ tests_scaffold and bot_slack_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        tests/test_browser_fetch.py: {{ tests_scaffold and scraping_playwright_effective }}
+        # from: 90-derived tests_scaffold (no ros2 / micropython package tree)
+        tests/test_cli.py: {{ tests_scaffold and not online_judge and not web_api }}
+        # from: questions/01-project-type.yml micropython; 04-micropython.yml
+        tests/test_core.py: {{ micropython_pkg }}
+        # from: questions/07-online-judge.yml oj_category, oj_kind
+        tests/test_ctf_example.py: {{ tests_scaffold and ctf_effective }}
+        # from: questions/14-integrations.yml include_mcp -> mcp_effective
+        tests/test_mcp_server.py: {{ tests_scaffold and mcp_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        tests/test_memorious_crawler.py: {{ tests_scaffold and scraping_memorious_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        tests/test_pipeline.py: {{ tests_scaffold and scraping_httpx_effective }}
+        # from: 90-derived tests_scaffold (no ros2 / micropython package tree)
+        tests/test_qa.py: {{ tests_scaffold and not online_judge and not web_api }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        tests/test_scraping.py: {{ tests_scaffold and scraping_httpx_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        tests/test_scrapy_spider.py: {{ tests_scaffold and scraping_scrapy_effective }}
+        # from: questions/07-online-judge.yml oj_category, oj_kind
+        tests/test_workspace.py: {{ tests_scaffold and oj_code }}
+        # from: questions/01-project-type.yml micropython; 04-micropython.yml
+        tools: {{ micropython_pkg }}
+        # from: questions/11-docs.yml docs_type -> zensical / sphinx / great_docs in 90-derived
+        zensical.toml: {{ zensical }}
         {% if pkg_scaffold %}
+        # from: questions/05-agent.yml use_recommended_agent -> agent_scaffold
         {{ pkg_dir }}/agent.py: {{ agent_scaffold }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        {{ pkg_dir }}/bot_discord.py: {{ bot_discord_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        {{ pkg_dir }}/bot_gmail.py: {{ bot_gmail_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        {{ pkg_dir }}/bot_line.py: {{ bot_line_effective }}
+        # from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
+        {{ pkg_dir }}/bot_slack.py: {{ bot_slack_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        {{ pkg_dir }}/browser_fetch.py: {{ scraping_playwright_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        {{ pkg_dir }}/crawler.py: {{ scraping_memorious_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        {{ pkg_dir }}/fetcher.py: {{ scraping_httpx_effective }}
+        # from: questions/14-integrations.yml include_mcp -> mcp_effective
+        {{ pkg_dir }}/mcp_server.py: {{ mcp_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        {{ pkg_dir }}/pipeline.py: {{ scraping_httpx_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        {{ pkg_dir }}/spider.py: {{ scraping_scrapy_effective }}
+        # from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
+        {{ pkg_dir }}/storage.py: {{ scraping_httpx_effective }}
+        # from: questions/05-agent.yml use_recommended_agent -> agent_scaffold
         {{ pkg_dir }}/tools: {{ agent_scaffold }}
         {% endif %}
-
-        # --- MCP server
-        #     from: questions/14-integrations.yml include_mcp -> mcp_effective
-        .mcp.json: {{ mcp_effective }}
-        app/mcp_server.py: {{ mcp_effective }}
-        tests/test_mcp_server.py: {{ tests_scaffold and mcp_effective }}
-        {% if pkg_scaffold %}
-        {{ pkg_dir }}/mcp_server.py: {{ mcp_effective }}
-        {% endif %}
-
-        # --- Chat bots (one per platform)
-        #     from: questions/08-layers.yml include_bot, bot_platform -> bot_<platform>_effective
-        app/bot_discord.py: {{ bot_discord_effective }}
-        app/bot_gmail.py: {{ bot_gmail_effective }}
-        app/bot_line.py: {{ bot_line_effective }}
-        app/bot_slack.py: {{ bot_slack_effective }}
-        tests/test_bot_discord.py: {{ tests_scaffold and bot_discord_effective }}
-        tests/test_bot_gmail.py: {{ tests_scaffold and bot_gmail_effective }}
-        tests/test_bot_line.py: {{ tests_scaffold and bot_line_effective }}
-        tests/test_bot_slack.py: {{ tests_scaffold and bot_slack_effective }}
-        {% if pkg_scaffold %}
-        {{ pkg_dir }}/bot_discord.py: {{ bot_discord_effective }}
-        {{ pkg_dir }}/bot_gmail.py: {{ bot_gmail_effective }}
-        {{ pkg_dir }}/bot_line.py: {{ bot_line_effective }}
-        {{ pkg_dir }}/bot_slack.py: {{ bot_slack_effective }}
-        {% endif %}
-
-        # --- Polite web scraping (one engine)
-        #     from: questions/08-layers.yml include_scraping, scraping_engine -> scraping_<engine>_effective
-        CHARTER.md: {{ scraping_effective }}
-        LEGAL.md: {{ scraping_effective }}
-        tests/test_scraping.py: {{ tests_scaffold and scraping_httpx_effective }}
-        tests/test_pipeline.py: {{ tests_scaffold and scraping_httpx_effective }}
-        tests/test_memorious_crawler.py: {{ tests_scaffold and scraping_memorious_effective }}
-        tests/test_scrapy_spider.py: {{ tests_scaffold and scraping_scrapy_effective }}
-        tests/test_browser_fetch.py: {{ tests_scaffold and scraping_playwright_effective }}
-        {% if pkg_scaffold %}
-        {{ pkg_dir }}/fetcher.py: {{ scraping_httpx_effective }}
-        {{ pkg_dir }}/pipeline.py: {{ scraping_httpx_effective }}
-        {{ pkg_dir }}/storage.py: {{ scraping_httpx_effective }}
-        {{ pkg_dir }}/crawler.py: {{ scraping_memorious_effective }}
-        {{ pkg_dir }}/spider.py: {{ scraping_scrapy_effective }}
-        {{ pkg_dir }}/browser_fetch.py: {{ scraping_playwright_effective }}
-        {% endif %}
-
-        # --- Online judge and CTF
-        #     from: questions/07-online-judge.yml oj_category, oj_kind
-        challenges: {{ ctf_effective }}
-        .github/workflows/oj-sample.yml: {{ oj_sample }}
-        tests/test_workspace.py: {{ tests_scaffold and oj_code }}
-        tests/test_ctf_example.py: {{ tests_scaffold and ctf_effective }}
-
-        # --- MicroPython
-        #     from: questions/01-project-type.yml micropython; 04-micropython.yml
-        firmware: {{ micropython_pkg }}
-        tools: {{ micropython_pkg }}
-        requirements-dev.txt: {{ micropython_pkg }}
-        tests/test_core.py: {{ micropython_pkg }}
-
-        # --- ROS 2
-        #     from: questions/01-project-type.yml ros2; 03-ros2.yml pkg_language, ros2_package_manager
-        package.xml: {{ ros2_pkg }}
-        Dockerfile.ros2: {{ ros2_pkg }}
-        pixi.toml: {{ ros2_pkg and ros2_package_manager == 'pixi' }}
-        setup.py: {{ ros2_python }}
-        setup.cfg: {{ ros2_python }}
-        resource: {{ ros2_python }}
-        test: {{ ros2_python }}
-        include: {{ ros2_cpp }}
-        CMakeLists.txt: {{ ros2_cpp }}
-        pyproject-fmt.toml: {{ not ros2_cpp }}

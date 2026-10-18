@@ -5,7 +5,7 @@
 # question `when:` runs at ask time and sees the prefix of the include chain
 # built so far — raw answers and any internal defined earlier — while
 # everything render-side (template bodies, file-name conditions,
-# partials/tasks.jinja, the copier.yml tasks) reads the EFFECTIVE internals: the
+# partials/tasks-model.jinja, the copier.yml tasks) reads the EFFECTIVE internals: the
 # has_* booleans below and the *_effective family in questions/90-derived.yml.
 # The include_*.when gates here are the ask-time half of that rule; the
 # internals at the bottom are its render-time half.

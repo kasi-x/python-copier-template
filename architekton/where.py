@@ -150,14 +150,23 @@ def _payload_files(root: Path) -> list[Path]:
 
 
 def _scan_payload(top: Path, watched: set[str], hits: Touchpoints) -> None:
-    # Which files exist: the rows of questions/99-files.yml, plus the few
-    # template/ paths that keep their condition in their (computed) name.
-    hits.file_gated = [
-        f"{file_gates.GATES_FILE.as_posix()}:{gate.line}  {gate.path}"
-        for gate in file_gates.load(top)
-        if jinja_reads("{{ " + gate.full_condition + " }}") & watched
-    ]
+    # Which files exist: the .gate markers that generate questions/99-files.yml,
+    # plus the few template/ paths that keep their condition in their (computed)
+    # name. Row line numbers point at the generated table; the marker is what
+    # you actually edit, so report its path instead.
     template = top / PAYLOAD_ROOT
+    hits.file_gated = []
+    for gate in file_gates.load(top):
+        if not (jinja_reads("{{ " + gate.full_condition + " }}") & watched):
+            continue
+        rel = gate.path.replace("{{ pkg_dir }}", "{% if pkg_scaffold %}{{ pkg_dir }}{% endif %}")
+        markers = [template / f"{rel}.gate", template / rel / ".gate"]
+        marker = next((m for m in markers if m.exists()), None)
+        hits.file_gated.append(
+            f"{marker.relative_to(top).as_posix()}:1  {gate.path}"
+            if marker
+            else f"{file_gates.GATES_FILE.as_posix()}:{gate.line}  {gate.path}"
+        )
     for path in _payload_files(template):
         relative = path.relative_to(top).as_posix()
         if jinja_reads(path.relative_to(template).as_posix()) & watched:

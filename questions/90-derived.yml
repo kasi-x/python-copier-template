@@ -22,7 +22,7 @@
 # online_judge, kaggle, oj_code, has_*) live in that question's file instead.
 #
 # Next: questions/91-structured.yml (dependency and src/ lists) and
-# questions/99-files.yml (which files exist) read these rows, then template/
+# the `{% if %}` gates in template/ path names (which files exist) read these
 # and partials/ (what the files contain). `task where -- <name>` lists every
 # reader of a row; after editing, `task test-fast`.
 

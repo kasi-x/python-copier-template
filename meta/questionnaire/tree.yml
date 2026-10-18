@@ -1,0 +1,36 @@
+# The questionnaire's tree: which question files exist, in which order,
+# and where each template variant's follow-up questions plug in.
+#
+# `areas` is the list of files `gen_questions.py` emits into questions/.
+# Each entry's source lives at meta/questionnaire/areas/<out>. Sources are
+# plain YAML plus two markers (YAML comments, so hygiene's YAML check
+# accepts the files):
+#
+#   # !fragment <path>   splice meta/questionnaire/fragments/<path>.yml here
+#                      verbatim (shared questions, e.g. log_library).
+#   # !catalog  <name>   emit a question built from meta/catalog.yml (name is
+#                      the generator's slot, e.g. `ros_distro`).
+#
+# `plugs_in` is the user's "which extra questions does choosing this
+# template add?" table: variant -> the area file that carries its
+# follow-ups, and the fragments or catalog slots that area pulls in.
+# Adding a variant = one catalog row (python.ros.<name>) + one plugs_in row;
+# the question itself comes from the catalog.
+
+areas:
+  - 03-ros2.yml
+  - 14-integrations.yml
+
+plugs_in:
+  # Variant 'ros2' (project_type == 'ros2') asks its follow-ups in
+  # 03-ros2.yml; the distro question's choices/default/help come from
+  # catalog rows.
+  ros2:
+    area: 03-ros2.yml
+    catalog: [ros_distro]
+    asks: [pkg_language, ros_distro, ros2_package_manager]
+  # The integrations area shares the logging question with every type that
+  # ships a Python package; keep it in one fragment, referenced here.
+  integrations:
+    area: 14-integrations.yml
+    fragments: [shared/log_library]

@@ -111,8 +111,12 @@ CONTENT_ORIGINS: dict[str, list[tuple[str, str, str, str | None, bool]]] = {
         ("AGENTS.md", "regions.yml", "AGENTS.md.jinja", "web_api", False),
     ],
     "oj_kind=kaggle": [("pyproject.toml", "torch", "questions/91-structured.yml", "kaggle", True)],
-    "oj_kind=ctf": [("pyproject.toml", "pwntools", "partials/pyproject-ctf-extra.toml.jinja", "ctf_effective", False)],
-    "oj_kind=code": [("pyproject.toml", "dependencies = []", "partials/pyproject-deps.toml.jinja", None, False)],
+    "oj_kind=ctf": [
+        ("pyproject.toml", "pwntools", "partials/types/online_judge/pyproject.toml.jinja", "ctf_effective", False)
+    ],
+    "oj_kind=code": [
+        ("pyproject.toml", "dependencies = []", "partials/types/online_judge/pyproject.toml.jinja", None, False)
+    ],
     "include=include_bot/bot_platform=slack": [
         ("pyproject.toml", "slack-bolt", "questions/91-structured.yml", "bot_slack_effective", True)
     ],

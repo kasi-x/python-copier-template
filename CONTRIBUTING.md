@@ -27,11 +27,11 @@ task_runner — question
   asks        Which task runner would you like to use to drive lint / type-check /
   feeds       task_runner_effective, runner_just, runner_task
 
-Generated files that exist only depending on it (5)
-  template/justfile.jinja
+Which files exist (edit the condition here) (5)
+  template/justfile.gate:1  justfile
   ...
 Snippets the generated files include (partials/) (3)
-  partials/tasks.jinja
+  partials/tasks-model.jinja
   ...
 Then run:
   edited the question (questions/)?    task regen && task test-fast
@@ -45,7 +45,7 @@ lives in one of them:
 | --- | --- |
 | a question: its wording, default, choices, or when it is asked | `questions/NN-<area>.yml` (NN is the ask order) |
 | what a generated file contains | the file under `template/`, or the snippet in `partials/` it includes |
-| whether a generated file exists | its row in `questions/99-files.yml` (`<path>: {{ <condition> }}`) |
+| whether a generated file exists | the `.gate` marker beside it in template/ (a sibling `name.gate`, or `.gate` in a directory) — `questions/99-files.yml` is generated from them |
 | a ready-made answer set | `presets/<name>.yml` |
 | the text of a field rule (licenses, personal data, ...) | not here: [law-map](https://github.com/politeuma/law-map/tree/main/guidance/sections) (see [Field rules](#field-rules)) |
 | the docs | `docs/`; blocks marked `GENERATED` are rewritten by `task regen`, so edit their source instead |

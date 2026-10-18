@@ -156,6 +156,6 @@ def test_collector_finds_the_whole_surface_including_every_named_internal():
     missing = sorted(set(internals) - found)
     assert len(sites) >= MIN_SITES, (
         f"the collector found only {len(sites)} condition sites (< {MIN_SITES}): template/, partials/,"
-        " partials/tasks.jinja, copier.yml's _tasks and the questionnaire must all be scanned"
+        " partials/tasks-model.jinja, copier.yml's _tasks and the questionnaire must all be scanned"
     )
     assert not missing, f"boolean internal(s) {missing} missing from the collected sites: definitions are sites too"

@@ -2,7 +2,7 @@
 
 Rules for editing this repository's *template sources* — the `template/`
 tree, the `questions/` questionnaire fragments, and the root `partials/` /
-`partials/tasks.jinja` partials. These are the recurring failure modes we have hit;
+`partials/tasks-model.jinja` partials. These are the recurring failure modes we have hit;
 each rule is backed by a real bug. Where a rule is enforced by a test, the
 test name is linked so a future change can verify itself.
 
@@ -59,21 +59,21 @@ partial and include it from thin per-location wrappers:
   two-line wrapper (comment line, then the include) emits the comment's
   newline as a leading blank line in the output. (`logging_setup.py`'s
   two-line wrappers predate this rule and carry that leading blank line as
-The same pattern applies to single-location conditional blocks that are
-edited often enough to cause hunk-boundary mistakes: the CTF `ctf` extra
-(`partials/pyproject-ctf-extra.toml.jinja`) and the `challenges/` ruff
-ignores (`partials/pyproject-ctf-lint.toml.jinja`) are included from
-`template/pyproject.toml.jinja`. Verify with a baseline-vs-current render
-Current inventory (all byte-identical verified over 9 render paths —
-library / cli / web_api / data_science / atcoder / kaggle / micropython /
-ros2 / cli+ctf):
-`pyproject-basedpyright.toml.jinja`, `pyproject-ty-checkers.toml.jinja`
-(pyrefly/ty), `pyproject-test-coverage.toml.jinja` (pytest/coverage/typos/
-vulture/deptry), `pyproject-ruff-lint.toml.jinja` (select/extend-ignore/
-task-tags), `pyproject-ctf-extra.toml.jinja`, `pyproject-ctf-lint.toml.jinja`,
-`pyproject-deps.toml.jinja` (the runtime `dependencies` one-liner),
-`pyproject-deptry.toml.jinja` (the `[tool.deptry]` table with the
-`per_rule_ignores` assembly, included from the test-coverage partial).
+  accepted debt.)
+The same pattern applies to files that differ per dispatch branch: the
+generated `pyproject.toml` is split per project-type family under
+`partials/types/<branch>/pyproject.toml.jinja`, selected by the one-line
+dispatcher `template/pyproject.toml.jinja` (its `pyproject.toml.gate` marker
+holds `render_pyproject`)
+(`web_api` first — a kaggle project can opt into the web-api layer — then
+ros2, micropython, online_judge, else standard). Each variant carries only the
+branches reachable on its path; flags that are definitionally false there
+(`web_api` inside ros2, `oj_*` inside standard, ...) are already gone, so the
+file you open is the file you edit. Verify with a baseline-vs-current render
+over every preset (the CTF `ctf` extra, the `challenges/` ruff ignores and the
+runtime `dependencies` one-liner all live inside the variant that can render
+them).
+
 Out of scope: inline single-line conditionals with no edit-hotspot of their
 own (README badges and the like) — extracting those would scatter one-line
 logic across files with no hunk-boundary benefit.
@@ -138,8 +138,8 @@ lives on one side of the line:
   `test_question_references_are_forward_only` in
   `tests/test_copier_structure.py`.
 - **Everything render-side runs at render time and reads the effective
-  internal.** Template bodies, file-name conditions (`{% if ... %}` in
-  `template/` paths), `partials/tasks.jinja` and copier.yml's `_tasks` blocks see
+  internal.** Template bodies, `.gate` marker conditions, computed file-name
+  conditions (`{% if ... %}` in `template/` paths), `partials/tasks-model.jinja` and copier.yml's `_tasks` blocks see
   every answer, and they should read the `*_effective` family (plus the
   effective `web_api` / `data_science`, `pkg_dir`, `import_pkg`, ...) from
   `questions/90-derived.yml`, so "the base *or* the combo opt-in" is
@@ -172,7 +172,7 @@ you change one, mirror the other. Two pinned consequences:
   so the raw uses in the `.env.example` / README conditions stay correct
   without needing an internal.
 
-The render-side agreement between a file-name gate and the README section
+The render-side agreement between a file gate and the README section
 documenting the same file is enforced by
 `tests/test_bot_layer.py::test_env_example_gate_and_readme_section_agree`
 (the bot layer regressed exactly this way: `.env.example` shipped the bot
@@ -194,20 +194,20 @@ are GitHub-only machinery). The two non-asks: `layout` is not asked for
 `script` (`use_src_layout` would drop a src/ tree without a package) and
 `include_sentry` is not asked where no pkg tree can render `__main__.py`.
 
-## A file-name branch belongs to its parent directory's condition
+## A `.gate` marker holds the path's whole condition
 
-A branch is owned by the parent directory's name condition, and a child
-must not restate its parent's predicate — a duplicated condition is two
-definitions that can drift. When a path has to embed a condition of its
-own, prefer a derived internal flag
-(`{% if security_policy_effective %}SECURITY.md{% endif %}`) over
-re-spelling the raw derivation: the internal is the one definition the
-render side cannot drift from.
+A `.gate` line is the complete condition for its path — the generated row is
+self-contained, so a gated directory's children carry no marker at all. When
+a path has to carry a condition of its own, prefer a derived internal flag
+(`SECURITY.md.gate` holds `security_policy_effective`) over re-spelling the
+raw derivation: the internal is the one definition the render side cannot
+drift from.
 
 ## Keep the predicate inventory mechanical: `task predicates`
 
 The condition surface is large — question `when:`s, the `when: false`
-internals, `{% if %}` gates in template file names and bodies, `_tasks`
+internals, `{% if %}` gates in computed file names and template bodies, the
+`questions/99-files.yml` gate rows, `_tasks`
 guards — and the predicate unification (the `oj_bare` / `no_pkg` inventory) was done
 by hand against a snapshot that could rot. `architekton/predicates.py` keeps the
 inventory alive: it collects every boolean condition site, evaluates each
@@ -305,18 +305,26 @@ must keep the tags at the SAME indentation as the block-scalar content
 the shell script — harmless. Verified by rendering with
 `load_template_config` (machine gate) plus an actual `copier copy`.
 
-## Which files exist is a table, not file names
+## Which files exist is a `.gate` marker beside the path
 
-Whether a generated file exists is one row of `questions/99-files.yml`
-(`<path>: {{ <condition> }}`); copier.yml's `_exclude` turns every row whose
-condition is false into an excluded path, so `template/` keeps the plain
-names of the generated project. Two kinds of paths keep `{% if %}` in their
-name instead: names computed from answers (`{{ pkg_dir }}`, the
-uv.lock / pixi.lock switch), and the `src/` sub-trees that several project
-types fill (a row keyed on an output path would also hit a package that
-happens to share it). `tests/test_file_gates.py` holds that line, and
-refuses a row no template file produces. Never put conditions in
-`_skip_if_exists`: copier does not render it.
+A generated file's existence condition lives next to its source: a sibling
+`<name>.gate` (or `.gate` inside a directory, for a whole subtree) holds one
+line — the condition — plus optional `#`-comments (`# from:` names the
+question that feeds it). No marker means unconditional: adding a plain file
+never touches a second file, and adding a gated one is two files in the same
+directory. `architekton/gen_file_gates.py` scans the markers into
+`questions/99-files.yml` (`<path>: {{ <condition> }}` rows, the file is
+generated — edit `.gate`s, not it), and copier.yml's `_exclude` turns every
+row whose condition is false into an excluded path plus the static
+`*.gate` pattern that keeps the markers themselves out of the output, so
+`template/` keeps the plain names of the generated project. Two kinds of
+paths keep `{% if %}` in their name instead: names computed from answers
+(`{{ pkg_dir }}`, the uv.lock / pixi.lock switch), and the `src/` sub-trees
+that several project types fill (a marker keyed on an output path would also
+hit a package that happens to share it). `tests/test_file_gates.py` holds
+that line: it fails on a stale table, a gated path with no marker, and a
+marker beside nothing. Never put conditions in `_skip_if_exists`: copier
+does not render it.
 
 ## Documented generation commands must run without `--vcs-ref`
 
@@ -370,7 +378,7 @@ Shipped, following the platform:
   `docs/tutorials/installation.md`, the README clone/source links, the ros2
   `package.xml`, and the LICENSE notice text.
 - the hardened `.gitlab-ci.yml` instead of the GitHub Actions workflow set
-  (`.github` is a `questions/99-files.yml` row gated on `is_github`), and — because
+  (`.github` is gated on `is_github` by its path name), and — because
   `security_policy_effective` / `scorecard_effective` gate on the platform —
   no `SECURITY.md` / Scorecard workflow (see
   `docs/explanations/security.md`).

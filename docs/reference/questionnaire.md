@@ -67,8 +67,8 @@ questions depend on it.
   - **`pkg_language`** (str; default `python`) — Which language for the ROS 2 package?
     - **`python`** — ament_python (rclpy) — setup.py + package.xml + resource/.
     - **`cpp`** — ament_cmake — CMakeLists.txt + src/*.cpp + include/.
-  - **`ros_distro`** (str; default `humble`) — ROS 2 distribution. Humble (Ubuntu 22.04, Python
-    3.10) is the most widely deployed; Jazzy (Ubuntu 24.04, Python 3.12) is the current LTS.
+  - **`ros_distro`** (str; default `humble`) — ROS 2 distribution. Humble (22.04 / Python 3.10) is
+    the most widely deployed; Jazzy (24.04 / Python 3.12) is the current LTS.
     One of: `humble` (Humble (22.04 / Python 3.10)) · `jazzy` (Jazzy (24.04 / Python 3.12)).
   - **`ros2_package_manager`** (str; default `apt`) — How should the ROS 2 environment be
     provisioned?

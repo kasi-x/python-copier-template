@@ -47,7 +47,7 @@ the render sweep instead of only the recommended one. `project_type` is its
 static choices minus the excluded project
 types, and the include dimension is INCLUDE_LAYERS minus nothing: every name
 the leaf space keeps out -- web_django, which aborts generation by design
-(`partials/tasks.jinja` exits 1 for it) and so cannot render, and the integration
+(`partials/tasks-model.jinja` exits 1 for it) and so cannot render, and the integration
 detail question include_sentry behind use_recommended_integrations, which is
 not a layer -- is declared in tests/matrix/invariants.yml's `excluded` with a
 one-line reason. That file is the single source for exclusions,

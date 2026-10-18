@@ -296,7 +296,7 @@ def test_license_check_gate_is_armed_for_every_offered_license():
     against every choice the questionnaire offers -- not a Python restatement
     of its branches, which would agree with any rewrite of the template.
     """
-    source = (TOP / "partials/tasks.jinja").read_text(encoding="utf-8")
+    source = (TOP / "partials/types/standard/tasks-model.jinja").read_text(encoding="utf-8")
     match = re.search(r"\{% set license_fail_on = (.+?)%\}", source)
     assert match, "the license fail-on policy moved or was renamed"
 

@@ -39,16 +39,19 @@ and docs that name it. Edit those files rather than searching.
 - Questionnaire: `questions/NN-<area>.yml`, one file per area; NN is the ask
   order and a question may only read answers from lower numbers.
   `copier.yml` only lists the files and holds template settings.
-- Generated project payload: `template/` (plain names, as in the generated
-  project) and the snippets in `partials/`; which files exist for which
-  answers is the table in `questions/99-files.yml`; the
-  generated task-runner model is `partials/tasks.jinja`
+  Two area files (`03-ros2.yml`, `14-integrations.yml`) are GENERATED from
+  `meta/catalog.yml` + `meta/questionnaire/` — edit the meta source
+  (areas/ for the area body, fragments/shared/ for reusable questions like
+  log_library, `tree.yml` for the variant→area plug table) and run
+  `task regen`, never the generated file.
 - Presets: `presets/<name>.yml`
 - Template tooling (CLI, witnesses, batch runner, docs generator, MCP
-  server): `architekton/`, mapped by job in `architekton/README.md`
-- Tests: `tests/` (cost tiers are pytest markers; `tests/matrix/` holds the
-  witness leaves, invariants, support tiers and the tier ledger)
-- Docs: `README.md` and `docs/`. Blocks marked as generated come from
+- Generated project payload: `template/` (plain names, as in the generated
+  project) and the snippets in `partials/`; which files exist for which
+  answers is the `.gate` marker beside each path (a sibling `name.gate`, or
+  `dir/.gate` for a whole subtree — `questions/99-files.yml` is GENERATED
+  from them by `architekton/gen_file_gates.py`, never edit it); the task model is
+  `partials/tasks-model.jinja` (dispatcher) + `partials/types/<variant>/`
   `architekton/gen_docs.py --write`; edit their sources, not the output.
 
 ## Commits and CI

@@ -667,7 +667,7 @@ def test_template_fingerprint_hashes_the_render_inputs(monkeypatch: pytest.Monke
     first = mcp_server.template_fingerprint()
     assert first["inputs"] == {
         "dirs": ["template", "partials"],
-        "files": ["copier.yml", "partials/tasks.jinja"],
+        "files": ["copier.yml", "partials/tasks-model.jinja"],
         "paths": 3,
         "bytes": len("x = 1\n") + len("# {{ repo_name }}\n") + len("repo_name:\n  type: str\n"),
     }

@@ -37,6 +37,10 @@ tasks:
     desc: 'Show every file a question touches -- where to edit to change it (e.g. task where -- task_runner)'
     cmd: uv run --locked python architekton/where.py {{ .CLI_ARGS }}
 
+  static:
+    desc: Render every preset into dist/ (the static distribution; --check for drift)
+    cmd: uv run --locked python architekton/gen_static.py {{ .CLI_ARGS }}
+
   regen:
     desc: >-
       One-command definition-of-done pipeline after a questionnaire change: witness
@@ -48,6 +52,9 @@ tasks:
       - uv run --locked python architekton/z3_witnesses.py --jsonl tests/matrix/witnesses.jsonl
       - uv run --locked python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs {{ .JOBS }} {{ .CLI_ARGS }}
       - UPDATE_TIERS=1 uv run --locked pytest -q -m meta
+      - uv run --locked python architekton/gen_file_gates.py
+      - uv run --locked python architekton/gen_macros.py --write
+      - uv run --locked python architekton/gen_questions.py --write
       - uv run --locked python architekton/gen_docs.py --write
       - uv run --locked python architekton/predicates.py --json
 

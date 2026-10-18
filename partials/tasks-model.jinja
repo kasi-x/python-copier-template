@@ -1,0 +1,166 @@
+{% import "partials/macros.jinja" as m with context %}{#
+  Canonical task list, included (not copied — this file lives outside
+  `template/`) by each of the task-runner outputs so
+  the task set is defined once and only formatted differently per tool:
+    - template/{% if task_runner_effective == 'task' %}Taskfile.yml{% endif %}.jinja
+    - template/{% if task_runner_effective == 'just' %}justfile{% endif %}.jinja
+    - template/{% if task_runner_effective == 'make' %}Makefile{% endif %}.jinja
+    - template/{% if task_runner_effective == 'invoke' %}tasks.py{% endif %}.jinja
+    - template/{% if task_runner_effective == 'duty' %}duties.py{% endif %}.jinja
+    - the `[tool.poe.tasks]` table in template/pyproject.toml.jinja
+      (task_runner_effective == 'poe')
+    - the `[tool.pixi.feature.dev.tasks]` table in template/pyproject.toml.jinja
+      (task_runner_effective == 'pixi')
+    - the command table in template/AGENTS.md.jinja
+
+  The model is ONE declarative list, `tasks`: each entry is
+  {name, desc, run: [str, ...]} or {name, desc, deps: [name, ...]}, in the
+  order the tasks should be shown. Conditional groups (kaggle, docs,
+  data-science, micropython, mcp, the strictness-gated quality gates) are
+  built as named lists and one assembly concatenates them under inline
+  guards (`+ (docs_tasks if docs else [])`), so no task is ever mutated or
+  appended after the model is built. Presentation (the AGENTS.md table, the
+  CI lint job) derives from the same model and cannot drift.
+
+  - `run` holds the commands in execution order and every serializer
+    concatenates it in order: one recipe line / YAML entry / c.run call
+    per command for the line-based runners (task/just/make/invoke/duty),
+    `&&`-joined into a single shell string for pixi/poe. Serializers
+    never inspect command strings.
+  - The serializers themselves are the `macro`s at the end of this file
+    (`taskfile`, `justfile`, `makefile`, `invoke_tasks`, `duty_duties`,
+    `poe_tasks`, `pixi_tasks`). Each runner template is now only
+    `{% import "partials/tasks-model.jinja" as _t %}` plus one call, so adding a task
+    cannot need seven edits. A macro reads `tasks` from this module's
+    scope and takes no arguments; the whitespace inside it is
+    significant (it is the runner's output, newlines included).
+  - `shell: true` marks a task whose commands must chain inside ONE shell
+    invocation although they share a single `run` entry. The poe
+    serializer branches on this structural marker instead of sniffing
+    the string for `&&`.
+  - `run` entries already include the right package-manager run-prefix,
+    EXCEPT when task_runner_effective == 'pixi': pixi's own tasks already
+    run inside the activated environment, so no `pixi run` prefix is
+    needed there.
+  - For ros2 projects the commands source the ROS environment and use colcon.
+
+  `lint` is check-only (safe in CI); the `fix` task is the explicit
+  pre-commit replacement — run it before committing to auto-fix formatting
+  and lint findings. Repo hygiene (secrets, workflow linting, YAML/EOF
+  checks, conventional commits, REUSE/CFF) runs in CI via the `_hygiene.yml`
+  workflow instead of local git hooks.
+#}
+{% set agent_prefix = {
+    'task': 'task', 'just': 'just', 'make': 'make',
+    'poe': 'poe', 'invoke': 'invoke', 'duty': 'duty'}.get(task_runner_effective, 'pixi run -e dev') %}
+{% import "partials/types/ros2/tasks-model.jinja" as _ros2 with context %}
+{% import "partials/types/standard/tasks-model.jinja" as _standard with context %}
+{% if ros2_pkg %}{% set _v = _ros2 %}{% else %}{% set _v = _standard %}{% endif %}
+{% set tasks = _v.tasks %}
+{% set run = _v.run %}
+{% set agent_cmd_specs = _v.agent_cmd_specs %}
+{% set agent_commented = _v.agent_commented %}
+
+{# ---------------------------------------------------------------------------
+   Runner serializers: one macro per consumer file. Defining them here means a
+   new task reaches every runner with no per-runner edit; each runner template
+   keeps only its import line plus a single call to one of the macros below.
+   The whitespace is part of the output (the newline after a loop tag is the
+   blank line these runners put between entries), so keep the trim markers
+   exactly as they are. A macro reads `tasks` from this module's scope and
+   takes no arguments; the right-trim on each call site swallows the call
+   line's own newline, which lets the consumer source end with a newline while
+   its output ends where it did before.
+   --------------------------------------------------------------------------- #}
+{% macro taskfile() %}{% for task in tasks %}
+  {{ task.name }}:
+    desc: "{{ task.desc }}"
+{% if task.deps is defined %}
+    deps: [{{ task.deps | join(', ') }}]
+{% else %}
+    cmds:
+{% for c in task.run %}
+      - "{{ c }}"
+{% endfor %}
+{% endif -%}
+{% endfor -%}{% endmacro %}
+{% macro justfile() %}{% for task in tasks %}
+# {{ task.desc }}
+{% if task.deps is defined %}
+{{ task.name }}: {{ task.deps | join(' ') }}
+{% else %}
+{{ task.name }}:
+    {{ task.run | join('\n    ') }}
+{% endif -%}
+{% endfor -%}{% endmacro %}
+{% macro makefile() %}.PHONY: default {% for task in tasks %}{{ task.name }} {% endfor %}
+
+default:
+	@echo "Available tasks:"
+	@awk -F: '/^[a-zA-Z_-]+:/ {print "  " $$1}' Makefile | sort -u
+{% for task in tasks %}
+
+{{ task.name }}:{% if task.deps is defined %} {{ task.deps | join(" ") }}{% endif %}
+	@echo "==> {{ task.desc }}"
+{%- if task.run is defined %}
+	{{ task.run | join('\n\t') }}
+{% endif -%}
+{% endfor -%}{% endmacro %}
+{% macro invoke_tasks() %}{% for t in tasks %}
+{% if t.deps is defined %}
+@task({{ t.deps | map('replace', '-', '_') | join(', ') }})  # pyright: ignore[reportUntypedFunctionDecorator]
+def {{ t.name | replace('-', '_') }}(c: Context) -> None:
+    """{{ t.desc }}."""
+{%- for cmd in t.run %}
+    c.run(
+        "{{ cmd }}",
+    )
+{%- endfor %}
+{% else %}
+@task
+def {{ t.name | replace('-', '_') }}(c: Context) -> None:
+    """{{ t.desc }}."""
+{%- for cmd in t.run %}
+    c.run(
+        "{{ cmd }}",
+    )
+{%- endfor %}
+{% endif %}{%- endfor -%}{% endmacro %}
+{% macro duty_duties() %}{% for t in tasks %}
+{% if t.deps is defined %}
+@duty(pre=[{{ t.deps | map('tojson') | join(', ') }}])
+def {{ t.name | replace('-', '_') }}(ctx: Context) -> None:
+    """{{ t.desc }}."""
+{%- for cmd in t.run %}
+    ctx.run(
+        "{{ cmd }}",
+        title="{{ t.desc }}",
+    )
+{%- endfor %}
+{% else %}
+@duty
+def {{ t.name | replace('-', '_') }}(ctx: Context) -> None:
+    """{{ t.desc }}."""
+{%- for cmd in t.run %}
+    ctx.run(
+        "{{ cmd }}",
+        title="{{ t.desc }}",
+    )
+{%- endfor %}
+{% endif %}{%- endfor -%}{% endmacro %}
+{% macro poe_tasks() %}{% for t in tasks %}
+{% if t.deps is defined %}
+"{{ t.name }}" = { sequence = [{{ t.deps | map('tojson') | join(', ') }}] }
+{% elif t.run | length > 1 or t.get('shell', false) %}
+"{{ t.name }}" = { shell = "{{ t.run | join(' && ') }}", help = "{{ t.desc }}" }
+{% else %}
+"{{ t.name }}" = { cmd = "{{ t.run[0] }}", help = "{{ t.desc }}" }
+{% endif %}
+{% endfor %}{% endmacro %}
+{% macro pixi_tasks() %}{% for t in tasks %}
+{% if t.deps is defined %}
+"{{ t.name }}" = { depends-on = [{{ t.deps | map('tojson') | join(', ') }}] }
+{% else %}
+"{{ t.name }}" = { cmd = "{{ t.run | join(' && ') }}" }
+{% endif %}
+{% endfor %}{% endmacro %}

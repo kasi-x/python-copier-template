@@ -63,12 +63,11 @@ import yaml
 TOP = Path(__file__).resolve().parent.parent
 QUESTIONS_DIR = TOP / "questions"
 TEMPLATE_DIR = TOP / "template"
-PYPROJECT_JINJA = TEMPLATE_DIR / "pyproject.toml.jinja"
-GPU_DOCKERFILE = TEMPLATE_DIR / "Dockerfile.gpu.jinja"
-COMPOSE_JINJA = TEMPLATE_DIR / "compose.local.yml.jinja"
-CI_JINJA = TEMPLATE_DIR / (".github/workflows/ci.yml.jinja")
-ROS2_QUESTIONS = QUESTIONS_DIR / "03-ros2.yml"
-MACROS_JINJA = TEMPLATE_DIR.parent / "partials" / "macros.jinja"
+PYPROJECT_JINJA = next(TEMPLATE_DIR.glob("*pyproject.toml*"))
+GPU_DOCKERFILE = next(TEMPLATE_DIR.glob("*Dockerfile.gpu*"))
+COMPOSE_JINJA = next(TEMPLATE_DIR.glob("*compose.local.yml*"))
+CI_JINJA = next(TEMPLATE_DIR.rglob("ci.yml.jinja"))
+CATALOG = TOP / "meta" / "catalog.yml"
 
 
 @dataclass
@@ -241,12 +240,12 @@ def _extract_platform_pins() -> list[Pin]:
     cuda_m = re.search(r"FROM nvidia/cuda:([^\s]+) AS", gpu_src)
     cuda_base = cuda_m.group(1) if cuda_m else "?"
 
-    ros_src = ROS2_QUESTIONS.read_text()
-    distros = re.findall(r": (humble|jazzy|kilted|rolling)\n", ros_src)
-
-    macros_src = MACROS_JINJA.read_text()
-    floor_m = re.search(r"else '(\d+\.\d+)'\)\s*\}\}", macros_src)
-    floor = floor_m.group(1) if floor_m else "?"
+    # The catalog is the source of truth: [python.ros] rows are the offered
+    # distros (gen_questions.py emits the ros_distro choices from them) and
+    # python.floor is the requires-python floor (gen_macros.py emits it).
+    catalog = yaml.safe_load(CATALOG.read_text())
+    distros = sorted(catalog["python"]["ros"])
+    floor = catalog["python"]["floor"]["version"]
 
     compose_src = COMPOSE_JINJA.read_text()
     ci_src = CI_JINJA.read_text()
@@ -254,7 +253,9 @@ def _extract_platform_pins() -> list[Pin]:
         re.findall(r"image: (postgres:[^\s]+)", ci_src)
     )
 
-    docker_src = (TEMPLATE_DIR / "Dockerfile.jinja").read_text()
+    docker_src = next(
+        p for p in TEMPLATE_DIR.glob("*Dockerfile*") if "gpu" not in p.name and "ros2" not in p.name
+    ).read_text()
     ubuntu_tags = set(re.findall(r"(?:ubuntu:|ubuntu-devcontainer:)(\w+)", docker_src))
     base_m = re.search(r"FROM (ghcr\.io/\S+) AS developer", docker_src)
 
@@ -431,14 +432,17 @@ def _resolve_torch_index(cu: str) -> str:
     return f"index current (tops out at {versions[-1]})"
 
 
-ROS_EOL = {"humble": "2027-05", "jazzy": "2029-05", "kilted": "2026-11"}
-
-
 def _resolve_ros(current: str, today: str) -> str:
-    # REP-2000 dates, hardcoded rather than scraped: the source is a
+    # REP-2000 EOL dates live next to the distro rows in the catalog
+    # ([python.ros.*.eol], `update = "pinned"`), not scraped: the source is a
     # versioned spec document, and scraping RST is brittle.
+    catalog = yaml.safe_load(CATALOG.read_text())
+    ros_eol = {name: d["eol"] for name, d in catalog["python"]["ros"].items()}
     offered = current.split(",") if current != "?" else []
-    past = [d for d in offered if d in ROS_EOL and ROS_EOL[d] < today[:7]]
+    missing = [d for d in offered if d not in ros_eol]
+    if missing:
+        return f"offered but missing from catalog: {','.join(missing)}"
+    past = [d for d in offered if ros_eol[d] < today[:7]]
     if past:
         return f"EOL passed: {','.join(past)}"
     return f"all supported (today {today})"
@@ -736,7 +740,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    for required in (PYPROJECT_JINJA, MACROS_JINJA, GPU_DOCKERFILE, ROS2_QUESTIONS):
+    for required in (PYPROJECT_JINJA, CATALOG, GPU_DOCKERFILE):
         if not required.exists():
             msg = f"Template file not found: {required}; run from the repo root."
             sys.exit(msg)

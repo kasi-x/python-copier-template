@@ -15,10 +15,10 @@ and the output-name rule from here, and the repo MCP server's
 the render it holds is stale.
 
 What is covered: every file under `template/` and `partials/`, plus `copier.yml`
-and `partials/tasks.jinja`, as `sha256(relative path + \\0 + sha256(content))` over the
+and `partials/tasks-model.jinja`, as `sha256(relative path + \\0 + sha256(content))` over the
 sorted paths. Symlinks are followed, because copier follows them
 (`preserve_symlinks` is off): the template's payload links
-(`template/.vscode -> ../.vscode`, `template/.../tests/conftest.py -> the repo's
+(`template/{% if cicd_extras %}.vscode{% endif %} -> ../.vscode`, `template/.../tests/conftest.py -> the repo's
 tests/conftest.py`, ...) put the *linked* bytes into the render, so editing
 either side of a link must change the digest. `Path.rglob` does not descend a
 symlinked directory and a trailing `**` matches directories rather than the
@@ -81,7 +81,7 @@ def read_yaml_mapping(path: Path) -> dict[str, Any]:
 RENDER_INPUT_DIRS = ("template", "partials")
 """The trees a render expands: every file under them is a render input."""
 
-RENDER_INPUT_FILES = ("copier.yml", "partials/tasks.jinja")
+RENDER_INPUT_FILES = ("copier.yml", "partials/tasks-model.jinja")
 """The questions, defaults, `_exclude` patterns and task list that steer it."""
 
 INCLUDE_TAG = re.compile(r'\{%-?\s+(?:include|import)\s+"([^"]+)"')

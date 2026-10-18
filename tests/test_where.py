@@ -25,8 +25,8 @@ def test_a_question_reports_its_fragment_feeds_and_payload():
     assert hits.kind == question_graph.QUESTION
     assert hits.defined.startswith("questions/06-toolchain.yml:")
     assert "task_runner_effective" in hits.feeds
-    assert any(row.startswith("questions/99-files.yml:") and row.endswith("  justfile") for row in hits.file_gated)
-    assert "partials/tasks.jinja" in hits.partials
+    assert any(row.startswith("template/justfile.gate") and row.endswith("  justfile") for row in hits.file_gated)
+    assert "partials/tasks-model.jinja" in hits.partials
     assert "tests/test_task_runners.py" in hits.tests
 
 
@@ -36,6 +36,7 @@ def test_a_derived_value_follows_its_own_feeds():
     assert hits.kind == question_graph.INTERNAL
     assert "render_docs" in hits.feeds
     assert any(row.endswith("  docs") for row in hits.file_gated)
+    assert any("docs/.gate" in row for row in hits.file_gated)
 
 
 def test_presets_are_found_by_key():

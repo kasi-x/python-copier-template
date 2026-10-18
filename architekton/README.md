@@ -26,7 +26,7 @@ a module missing here fails the test.)
 | Module | What it does |
 | --- | --- |
 | `questionnaire.py` | `copier.yml` + `questions/*.yml` as data, in ask order |
-| `file_gates.py` | `questions/99-files.yml`, the table of which files exist for which answers |
+| `file_gates.py` | the `{% if %}` gates in template/ path names — which files exist for which answers |
 | `when_model.py` | The `when:` expressions, and the Jinja identifier scanner everything shares |
 | `question_graph.py` | What reads what, and where a new question may be placed |
 | `answers.py` | The project details every test render starts from |
@@ -78,6 +78,12 @@ a module missing here fails the test.)
 | `docs_i18n.py` | Stage a translated docs site |
 | `gen_zensical_ja.py` | Generate `zensical.ja.toml` for the Japanese site |
 
+## Generated artifacts (markers in, checked-in file out)
+
+| Module | What it does |
+| --- | --- |
+| `gen_file_gates.py` | Regenerate `questions/99-files.yml` from the `.gate` markers under `template/` (`--check` for drift) |
+
 ## MCP server (the same tools, for agents)
 
 | Module | What it does |
@@ -98,6 +104,9 @@ a module missing here fails the test.)
 | Module | What it does |
 | --- | --- |
 | `hygiene.py` | Merge markers, trailing newlines, YAML, file sizes (`task hygiene`) |
+| `gen_macros.py` | Regenerate `partials/macros.jinja` from `meta/catalog.yml` (drift check without `--write`) |
+| `gen_questions.py` | Regenerate catalog-owned question files (e.g. `questions/03-ros2.yml`) from `meta/catalog.yml` |
+| `gen_static.py` | Render every `presets/*.yml` into `dist/<preset>/` + `index.json` (the static distribution `--check` verifies) |
 | `check_upstream.py` | Compare pinned versions against their upstreams |
 | `check_upstream_fork.py` | New commits on the upstream template's main |
 | `check_questionnaire_diff.py` | Guard against changes that break `copier update` |

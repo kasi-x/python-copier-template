@@ -7,7 +7,6 @@
 #   questions/90-derived.yml values computed from the answers (never asked)
 #   questions/91-structured  the dependency and src/ directory lists
 #        |
-#   questions/99-files.yml   which generated files exist, one row per path
 #        |
 #   template/ + partials/    what each generated file contains (Jinja)
 #        |
@@ -32,7 +31,9 @@
 # - 90-derived holds internal values nobody is asked (when: false); 91-structured
 #   holds the dependency / src-dir lists whose defaults read 90-derived.
 # - 99-files is the table of which generated files exist for which answers;
-#   it reads everything above, so it comes last.
+#   it reads everything above, so it comes last. Paths computed from answers
+#   (`{{ pkg_dir }}`, the uv.lock / pixi.lock swap) keep `{% if %}` in their
+#   names instead; architekton/file_gates.py reads both layers back.
 #
 # Each include is its own YAML document: two `!include` tags in one document
 # would collide as the same mapping key.
@@ -84,6 +85,10 @@ _subdirectory: "template"
 
 _exclude:
     - questions
+    # `.gate` files are template-editors' markers (a sibling `name.gate` or
+    # in-dir `.gate` holds the path's condition); questions/99-files.yml is
+    # generated from them, they are never rendered themselves.
+    - "*.gate"
     # questions/99-files.yml: every path whose condition is false. `copier
     # update` also applies this list while it re-renders the project's *old*
     # template version, which may predate the table: hence the default.

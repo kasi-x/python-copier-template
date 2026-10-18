@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Which generated files exist for which answers: questions/99-files.yml as data.
 
-The table is copier's own input (copier.yml's `_exclude` turns every row whose
-condition is false into an excluded path), so this module only reads it for
-the tools that reason about the template without rendering it -- detect,
-predicates, where. It never decides anything copier would decide differently.
+The table is GENERATED from `template/`'s `.gate` markers by
+`architekton/gen_file_gates.py` (a sibling `name.gate`, or `dir/.gate` for a
+whole subtree, holds that path's condition; no marker means unconditional).
+The table is copier's own input (copier.yml's `_exclude` turns every row
+whose condition is false into an excluded path), so this module only reads
+it for the tools that reason about the template without rendering it --
+detect, predicates, where. It never decides anything copier would decide
+differently.
 
 A row is `<path>: {{ <condition> }}`, the path as it appears in the generated
 project (a file or a directory; `{{ pkg_dir }}` is allowed). Rows inside a

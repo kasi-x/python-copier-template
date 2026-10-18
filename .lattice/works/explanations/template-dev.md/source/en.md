@@ -63,7 +63,7 @@ The same pattern applies to single-location conditional blocks that are
 edited often enough to cause hunk-boundary mistakes: the CTF `ctf` extra
 (`_shared/pyproject-ctf-extra.toml.jinja`) and the `challenges/` ruff
 ignores (`_shared/pyproject-ctf-lint.toml.jinja`) are included from
-`template/pyproject.toml.jinja`. Verify with a baseline-vs-current render
+`template/{% if render_pyproject %}pyproject.toml{% endif %}.jinja`. Verify with a baseline-vs-current render
 Current inventory (all byte-identical verified over 9 render paths —
 library / cli / web_api / data_science / atcoder / kaggle / micropython /
 ros2 / cli+ctf):

@@ -1,0 +1,147 @@
+{% import "partials/tasks-model.jinja" as _t with context -%}# Agent Guide for `{{ repo_name }}`
+
+This file is for AI coding agents working in this repository. It states how
+to run the checks and where edits belong. The human-facing contribution
+guide is [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
+{% if kaggle %}
+> Kaggle competition project: shared helpers live in `src/utils/`
+> (`from utils.config import ...`); competition data goes in `src/input/`
+> and predictions are written to `src/output/`. Do not commit data,
+> predictions, or logs — they are git-ignored.
+{% elif oj_code %}
+> Code-submission workspace ({{ oj_kind }}): write solutions as single files
+> (e.g. `main.py`). Per-problem folders and `test/` sample cases are created
+> by the judge tooling at runtime — do not commit downloaded cases
+> (oj / acc for AtCoder, oj for yukicoder and Codeforces, aoj-cli for AOJ,
+> submit.py + `.kattisrc` for Kattis, the judge's editor for LeetCode/other).
+{% if oj_allow_ai %}
+> The judge's rules permit AI assistance, so agents may help build and
+> debug here. Rules override this statement: re-check them before submitting.
+{% else %}
+> Contest rules govern AI use, and they vary per contest — some ban
+> AI-generated answers outright. Do not produce submissions before the
+> current rules for {{ oj_kind }} have been checked and allow it.
+{% endif %}
+{% elif oj_ctf %}
+> CTF participant workspace: per-problem starters live in
+> `challenges/<category>/<problem>/solve.py`. Run one directly
+> (`python challenges/pwn/example/solve.py`), then adapt the offset /
+> target. Never commit binaries (`vuln`) or flags — they are git-ignored.
+{% elif data_science_layout %}
+> Data-science project: `src/` holds the importable package (`{{ pkg_dir }}/`)
+> beside the analysis pipeline stubs (`data/`, `features/`, `models/`,
+> `visualization/`, each a `.gitkeep` stub). Promote notebook cells into
+> tested modules there; the stubs are linted like any other `src/` code,
+> so new third-party imports need a `[project] dependencies` entry first.
+> Rename or extend the stubs via the `src_dirs` answer
+> (`.copier-answers.yml`).
+{% endif %}
+
+## Commands
+The `{{ task_runner_effective }}` task runner drives the common commands:
+
+```sh{# The rows below are the `partials/tasks-model.jinja` model, not a hand-written table:
+   a row is printed only when the task exists in this render. Presentation
+   (comments on the `task` runner, the fix comment on `just`) is kept as is. #}
+{% for task_name in _t.agent_cmd_specs if task_name in (_t.tasks | map(attribute='name')) and (runner_task or task_name != 'type-check') %}{{ _t.agent_prefix }} {% if task_name in _t.agent_commented %}{{ task_name }}{{ (15 - (task_name | length)) * ' ' }}# {{ _t.agent_cmd_specs[task_name] }}{% else %}{{ task_name }}{% endif %}
+{% endfor %}```
+
+{% if 'fix' in _t.tasks | map(attribute='name') %}Run `{{ task_runner_effective }} fix` before committing to apply formatting
+and lint fixes, then `{{ task_runner_effective }} check` (or `lint` + `test`
+{% if 'type-check' in (_t.tasks | map(attribute='name')) %}+ `type-check` {% endif %}individually) before finishing a change.
+{% else %}Run `{{ task_runner_effective }} check` (or its steps — `lint`, `build`, `test` —
+individually) before finishing a change.
+{% endif %}
+The repo-hygiene checks (secrets, workflow linting, YAML validity, the
+conventional PR title) run in CI, not as local hooks — the lint and
+fix tasks work anywhere, including outside a git repository.
+{% if 'type-check' in _t.tasks | map(attribute='name') %}
+Type checking uses basedpyright plus `{{ type_checker }}`; `deptry`,
+`vulture`, and `typos` also run as part of type-check.
+{% else %}
+Type checking is minimal at `strictness: {{ strictness }}` — pytest and
+ruff are the checks that matter.
+{% endif %}
+{% if 'docs' in _t.tasks | map(attribute='name') %}
+Build the docs with `{{ task_runner_effective }} docs`.
+{% endif %}
+## Where to edit
+
+- Application/package code: `{{ pkg_dir }}/`
+- Tests: `tests/`
+- Docs: `README.md`{% if docs %} and `docs/`{% endif %}
+
+Keep 100% coverage where it exists; do not lower it.
+
+{% if data_science_layout %}
+Data, notebooks, and reports (`data/`, `notebooks/`, `models/`,
+`reports/`) are analysis artifacts — keep generated outputs out of git.
+{% endif %}
+{# Consumers: the AGENTS.md template includes this file once
+   (after "Where to edit", before "Commits and CI"), so every generated
+   project carries the same production checklist. The rows are plain
+   markdown conditioned on the render's own flags -- adding a row means a
+   new gated bullet here plus a row in docs/explanations/security-defaults.md
+   (the inventory table) and a case in tests/test_security_defaults.py.
+   Generation note: this file is literal markdown with jinja conditionals,
+   not guidance prose, so daimonion never reads it -- only the AGENTS.md
+   template includes it. #}
+## Production security defaults
+
+These scaffold defaults are safe for local development and must change
+before production. Details: `docs/explanations/security-defaults.md`
+(if the render ships no docs tree, read the same page in the template
+repository).
+
+- Never commit real secrets: `.env`, `.envs/`, `*.pem` stay git-ignored
+  (`.gitignore`), and `.env.example` carries only placeholder/commented
+  values. The hygiene CI rejects committed secrets.
+
+
+
+
+
+
+{% if include_sentry %}
+- `SENTRY_DSN` ships unset and `sentry_sdk.init` samples all traces
+  (`traces_sample_rate=1.0`): set the DSN from the environment in
+  production and lower the sample rate (scrub PII before enabling it).
+{% endif %}
+
+
+{% if oj_code %}
+- Judge credentials stay out of git (`.kattisrc`, downloaded `test/` cases
+  are git-ignored): never commit tokens or harvested cases.
+{% endif %}
+{% if ctf_effective %}
+- CTF targets and flags stay out of git (`challenges/**/vuln`,
+  `challenges/**/flag*` are git-ignored): never commit binaries or flags.
+{% endif %}
+
+## Commits and CI
+
+- Use [Conventional Commits](https://www.conventionalcommits.org/)
+  (`feat:`, `fix:`, ...) in the PR title — hygiene CI checks the title
+  only, and pull requests land via squash-merge. Individual commit messages
+  are free-form.
+- CI runs lint, type-check, and tests on every push
+{% if docs %} plus a docs build{% endif %}; keep all of them green.
+{# Rules block: filled by `daimonion --lang <agents_md_language> agents-md
+   --write` from the guidance sections (see .daimonion.yml); the markers must stay. #}
+## Field rules (ethics appendix)
+
+Field rules for this project kind live in the marker block below.
+
+The block is maintained by `daimonion --lang {{ agents_md_language | default('en') }} agents-md --write`
+from the law-map guidance sections; edit `.daimonion.yml`, not the block.
+CI fails while the block is empty or stale
+(`daimonion --lang {{ agents_md_language | default('en') }} agents-md --check`);
+fill it with the `ethics-block` task or
+`uvx --from {{ daimonion_spec }} daimonion --lang {{ agents_md_language | default('en') }} agents-md --write`.
+
+To mechanically verify changed files against these triggers before committing,
+run `uvx --from {{ daimonion_spec }} daimonion scan`
+(or `... daimonion scan <path>`).
+
+<!-- daimonion:rules:begin -->
+<!-- daimonion:rules:end -->

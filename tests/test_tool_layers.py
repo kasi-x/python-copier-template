@@ -72,6 +72,8 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
                 "check_upstream",
                 "check_upstream_fork",
                 "docs_i18n",
+                "gen_macros",
+                "gen_questions",
                 "gen_zensical_ja",
                 "generate_license_template",
                 "hygiene",
@@ -87,6 +89,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
         frozenset(
             {
                 "file_merge",
+                "gen_file_gates",
                 "gen_docs_blocks",
                 "gen_docs_graph",
                 "gen_docs_model",
@@ -117,6 +120,7 @@ LAYERS: dict[str, tuple[str, frozenset[str]]] = {
                 "batch",
                 "detect",
                 "gen_invariants",
+                "gen_static",
                 "git",
                 "predicates",
                 "question_graph",

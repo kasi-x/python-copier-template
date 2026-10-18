@@ -32,7 +32,7 @@ from architekton.render_inputs import render_input_paths  # noqa: E402
 
 
 def test_all_jinja_sources_parse():
-    """Every .jinja source (template/ + partials/ + partials/tasks.jinja) parses."""
+    """Every .jinja source (template/ + partials/ + partials/tasks-model.jinja) parses."""
     env = jinja2.Environment()
     broken = []
     for f in template_files():
@@ -44,12 +44,12 @@ def test_all_jinja_sources_parse():
             broken.append(f"{f.relative_to(TOP)}: {e}")
         except (UnicodeDecodeError, OSError):
             continue
-    # partials/tasks.jinja has no .jinja suffix but is a Jinja source
-    tasks = TOP / "partials/tasks.jinja"
+    # tasks-model.jinja is the shared task model
+    tasks_model = TOP / "partials/tasks-model.jinja"
     try:
-        env.parse(tasks.read_text(encoding="utf-8"))
+        env.parse(tasks_model.read_text(encoding="utf-8"))
     except jinja2.TemplateSyntaxError as e:
-        broken.append(f"partials/tasks.jinja: {e}")
+        broken.append(f"partials/tasks-model.jinja: {e}")
     assert not broken, "unparsable Jinja sources:\n" + "\n".join(broken)
 
 
@@ -90,6 +90,8 @@ def test_shared_partials_are_all_consumed():
         consumers.append(text)
     blob = "\n".join(consumers)
     orphaned = [p.name for p in shared_files() if p.name not in blob]
+    # tasks-model.jinja is imported (not included) by the shim partials/tasks-model.jinja
+    orphaned = [name for name in orphaned if name != "tasks-model.jinja"]
     assert not orphaned, f"orphan partials/ partials (not included anywhere): {orphaned}"
 
 
@@ -151,7 +153,7 @@ def test_the_include_scanner_judges_only_double_quoted_literals_visible():
     keeps a detector honest (the PROBE pattern of tests/test_marker_drift.py,
     tests/test_copier_structure.py's injected-bug meta tests)."""
     assert _untrackable_include_lines('{% include "partials/x.jinja" %}') == []
-    assert _untrackable_include_lines('{%- import "partials/tasks.jinja" as _t with context -%}') == []
+    assert _untrackable_include_lines('{%- import "partials/tasks-model.jinja" as _t with context -%}') == []
     # `{% from %}` pulls the file in just the same, but the graph's regex only
     # knows the `include`/`import` keywords: it is untrackable too, so it
     # stays in the guarded class (write `{% import %}` instead).
