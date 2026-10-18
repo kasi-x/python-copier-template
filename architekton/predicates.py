@@ -16,8 +16,8 @@ capabilities:
    render + question surface -- question `when:`s, boolean internal variables
    (`when: false`, bool-typed defaults; string-valued internals like `pkg_dir`
    are not predicates), `{% if %}`/`{% elif %}` tags in template file NAMES,
-   the same tags in file bodies across `template/`, `_shared/*.jinja` and
-   `_tasks.jinja`, and the `when:` of each `_tasks:` entry. Each site records
+   the same tags in file bodies across `template/` and `partials/**/*.jinja`,
+   and the `when:` of each `_tasks:` entry. Each site records
    its location, the expression as written, and its kind.
 2. **Evaluation** (``evaluate``): for every leaf answer set, copier's own pass
    runs once (the tests/test_when_model.py oracle pattern: `Worker._ask` +
@@ -71,6 +71,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:  # architekton/ is no root package (pyproject.toml)
     sys.path.insert(0, str(TOP))
 
+from architekton import file_gates  # noqa: E402
 from architekton import invariants  # noqa: E402
 from architekton import questionnaire  # noqa: E402
 from architekton import when_model  # noqa: E402
@@ -93,8 +94,7 @@ BODY = "body"
 TASK = "task"
 
 #: The template surfaces body conditions are scanned in (repo-relative).
-TASKS_FILE = "_tasks.jinja"
-SHARED_GLOB = "_shared/*.jinja"
+SHARED_GLOB = "partials/**/*.jinja"
 TEMPLATE_DIR = "template"
 
 # Jinja block tags: the ones this scanner tracks, and the raw blocks it must
@@ -221,15 +221,24 @@ def _filename_sites() -> list[Site]:
             base = Path(parent, segment).as_posix()
             for ordinal, (_line, _keyword, expr, evaluated) in enumerate(_scan_blocks(segment)):
                 sites.append(_site(FILENAME, f"{base}::{ordinal}", expr, evaluated))
+    # The rows of questions/99-files.yml gate paths the same way a name
+    # condition does, so each row is a filename site at the template/ path
+    # that produces its output path.
+    entries = {file_gates.output_path(path.relative_to(root).as_posix()): path for path in sorted(root.rglob("*"))}
+    for gate in file_gates.load(TOP):
+        entry = entries.get(gate.path)
+        if entry is None:
+            continue  # a stale row: file_gates --check and its test own that failure
+        location = Path(TEMPLATE_DIR, entry.relative_to(root)).as_posix()
+        sites.append(_site(FILENAME, f"{location}::table", gate.full_condition, gate.full_condition))
     return sites
 
 
 def _body_files() -> list[Path]:
-    """Every file copier renders as a template body: template/, _shared/*.jinja, _tasks.jinja."""
+    """Every file copier renders as a template body: template/ + partials/**."""
     root = TOP / TEMPLATE_DIR
     files = sorted(path for path in root.rglob("*") if path.is_file())
     files += sorted(TOP.glob(SHARED_GLOB))
-    files.append(TOP / TASKS_FILE)
     return files
 
 
@@ -749,7 +758,7 @@ def _ask_time_gate(entry: dict[str, Any]) -> bool:
     (tests/test_predicate_classifier.py). A condition spelled in several
     question whens is a shared ask-time gate of the questionnaire, and its
     naming home is the questionnaire itself -- today's is
-    `has_web_api and not use_recommended_web_api`, the guard on web_api.yml's
+    `has_web_api and not use_recommended_web_api`, the guard on 15-web-api.yml's
     prometheus / rate_limit / cors questions. The naming list exists for
     conditions that re-spell a *template* predicate, so these are reported
     but never suggested.

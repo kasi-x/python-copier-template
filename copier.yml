@@ -1,104 +1,81 @@
----
-# Template Options
+# The questionnaire, as a table of contents.
 #
-# The questionnaire is split into fragments under questions/, included here
-# in ask order. Copier resolves `!include` relative to this file and merges
-# keys so the document order below IS the question order.
+# How a render flows, top to bottom:
 #
-# Ordering rules (enforced by tests/test_copier_structure.py):
-# - project_type is asked first: the area gates and several `default`s depend
-#   on it.
-# - The use_recommended_* gates keep their canonical relative order (see
-#   CANONICAL_GATES in the test) — each asks "use the recommended settings?"
-#   first (default: yes); answering No reveals that area's detail questions.
-# - Genre-derived internal variables (when: false) that a question references
-#   (micropython_pkg, online_judge, kaggle, oj_code) live in their genre fragment
-#   BEFORE that question, so the reference resolves.
-# - questions/_combo.yml (include_data_science / include_web_api plus the
-#   has_* effective booleans) sits after questions/online_judge.yml (it
-#   references kaggle) and before questions/data_science.yml and
-#   questions/web_api.yml (their gates reference has_data_science /
-#   has_web_api).
-
-project_type:
-    type: str
-    help: |
-        What kind of project is this?
-        - library: a Python library/package.
-        - web_api: a web API service (Docker included).
-        - cli: a command-line tool.
-        - data_science: a data science project with notebooks, data/,
-          models/, reports/ and experiment extras. GPU Dockerfile and
-          Quarto paper are included.
-        - online_judge: a competitive-programming / Kaggle project. The
-          rules for AI coding agents differ per judge, and the agent
-          guide's wording defers to them.
-        - script: a minimal script, no package layout.
-        - ros2: a ROS 2 package (ament_python or ament_cmake). Built with
-          colcon + rosdep; not a uv/pixi/poetry project.
-        - micropython: MicroPython firmware for a microcontroller (esp32,
-          rp2, ...). Deployed with mpremote; the CPython dev toolchain
-          (uv/ruff/pytest/basedpyright) coexists for testing and type-checking
-          against micropython-<port>-stubs.
-
-        Many of these configurations ship as ready-made presets
-        (presets/: bare, bot, cli, data-science, library, mcp-server,
-        micropython, online-judge-atcoder, online-judge-codeforces,
-        online-judge-kattis, ros2, web-api). For a non-interactive run,
-        use `architekton-py new <name> --preset <preset>` instead of answering
-        here.
-    choices:
-        - library
-        - web_api
-        - cli
-        - data_science
-        - online_judge
-        - script
-        - ros2
-        - micropython
-    default: library
+#   questions/01..17-*.yml   the answers (asked in file-number order)
+#        |
+#   questions/90-derived.yml values computed from the answers (never asked)
+#   questions/91-structured  the dependency and src/ directory lists
+#        |
+#        |
+#   template/ + partials/    what each generated file contains (Jinja)
+#        |
+#   _tasks (below)           commands run after the files are written
+#
+# Every question lives in questions/, one file per area, and the number in
+# the file name IS the ask order: copier asks 01 first and 99 last. To change
+# a question, open the file whose name matches its area; to see everything a
+# question touches, run `architekton-py where <question>`.
+#
+# The order is not cosmetic. A question may only read answers asked before
+# it (tests/test_copier_structure.py enforces this), so:
+# - 01-project-type comes first: the area gates and many defaults read it.
+# - The use_recommended_* gates keep their canonical relative order
+#   (CANONICAL_GATES in that test). Each asks "use the recommended
+#   settings?" (default: yes); answering No reveals the area's details.
+# - A genre's derived internals (micropython_pkg, online_judge, kaggle,
+#   oj_code) live in that genre's file, before anything that reads them.
+# - 08-layers (include_* opt-ins and the has_* booleans) follows
+#   07-online-judge (it reads kaggle) and precedes 09-data-science and
+#   15-web-api (their gates read has_data_science / has_web_api).
+# - 90-derived holds internal values nobody is asked (when: false); 91-structured
+#   holds the dependency / src-dir lists whose defaults read 90-derived.
+# - 99-files is the table of which generated files exist for which answers;
+#   it reads everything above, so it comes last. Paths computed from answers
+#   (`{{ pkg_dir }}`, the uv.lock / pixi.lock swap) keep `{% if %}` in their
+#   names instead; architekton/file_gates.py reads both layers back.
+#
+# Each include is its own YAML document: two `!include` tags in one document
+# would collide as the same mapping key.
+!include questions/01-project-type.yml
 ---
-# Adoption mode: asked right after project_type so an adopter answers it
-# before any area gate (its effect is render-time file protection only).
-!include questions/adoption.yml
+!include questions/02-adoption.yml
 ---
-# Genre follow-up questions (asked right after project_type, before the
-# cross-cutting gates). Each include is its own YAML document: two
-# `!include` tags in one document would collide as the same mapping key.
-!include questions/ros2.yml
+!include questions/03-ros2.yml
 ---
-!include questions/micropython.yml
+!include questions/04-micropython.yml
 ---
-# Cross-cutting gates, block A: agent + toolchain.
-!include questions/_common_a.yml
+!include questions/05-agent.yml
 ---
-# Genre gates that keep their canonical position mid-sequence.
-!include questions/online_judge.yml
+!include questions/06-toolchain.yml
 ---
-# Combo opt-ins (base + layer; see questions/_combo.yml). No
-# use_recommended_* gates in here, so the canonical gate order is untouched.
-!include questions/_combo.yml
+!include questions/07-online-judge.yml
 ---
-!include questions/data_science.yml
+!include questions/08-layers.yml
 ---
-# Cross-cutting gates, block B: polish, docs, quality, license, integrations.
-!include questions/_common_b.yml
+!include questions/09-data-science.yml
 ---
-# Genre gate that keeps its canonical position (after integrations).
-!include questions/web_api.yml
+!include questions/10-polish.yml
 ---
-# Cross-cutting gates, block C: security, then Project Details.
-!include questions/_common_c.yml
+!include questions/11-docs.yml
 ---
-# Derived internal variables (when: false) — last: nothing asks them, they
-# feed template rendering.
-!include questions/_internal.yml
+!include questions/12-quality.yml
 ---
-# Structured answers: the dependency and src/ directory lists,
-# as asked questions with derived defaults. LAST: their defaults read the
-# internals above, and the forward-only rule (test_copier_structure.py) makes
-# that ordering mandatory.
-!include questions/_structured.yml
+!include questions/13-license.yml
+---
+!include questions/14-integrations.yml
+---
+!include questions/15-web-api.yml
+---
+!include questions/16-security.yml
+---
+!include questions/17-project-details.yml
+---
+!include questions/90-derived.yml
+---
+!include questions/91-structured.yml
+---
+!include questions/99-files.yml
 ---
 # Template settings (underscore keys). Copier merges these across fragments;
 # they are kept here in one place so the template's runtime behaviour is
@@ -108,12 +85,20 @@ _subdirectory: "template"
 
 _exclude:
     - questions
+    # `.gate` files are template-editors' markers (a sibling `name.gate` or
+    # in-dir `.gate` holds the path's condition); questions/99-files.yml is
+    # generated from them, they are never rendered themselves.
+    - "*.gate"
+    # questions/99-files.yml: every path whose condition is false. `copier
+    # update` also applies this list while it re-renders the project's *old*
+    # template version, which may predate the table: hence the default.
+    - "{% for path, keep in (file_gates | default({})).items() if not keep %}/{{ path }}\n{% endfor %}"
 
 _skip_if_exists:
     - CHANGELOG.md
 
 _tasks:
-    # The answers copier overrides or discards silently: questions/_internal.yml's
+    # The answers copier overrides or discards silently: questions/90-derived.yml's
     # `zensical` micropython redirect and `license_effective` AGPL force (two
     # overrides), plus security_policy / scorecard, whose answers
     # `security_policy_effective` / `scorecard_effective` zero out everywhere
@@ -172,7 +157,7 @@ _tasks:
     # generation; the generated CI's ethics-block job
     # (`daimonion --lang <agents_md_language> agents-md --check`) then fails
     # until the block is filled. daimonion is pinned to a commit via
-    # `daimonion_spec` (questions/_internal.yml) -- move to a hash-pinned
+    # `daimonion_spec` (questions/90-derived.yml) -- move to a hash-pinned
     # PyPI release once daimonion is published.
     - command: |
         uvx --from {{ daimonion_spec }} daimonion --lang {{ agents_md_language | default('en') }} agents-md --write || echo "WARNING: could not render the AGENTS.md rules block (offline?); run 'uvx --from {{ daimonion_spec }} daimonion --lang {{ agents_md_language | default('en') }} agents-md --write' once network is available." >&2

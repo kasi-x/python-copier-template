@@ -166,12 +166,12 @@ def test_checklist_does_not_touch_ethics_gates(tmp_path: Path):
 
 
 def test_inventory_rows_are_backed_by_template_sources():
-    """Every 'File' cell of the inventory names a template/_shared source that exists."""
+    """Every 'File' cell of the inventory names a template/partials source that exists."""
     import re
 
     text = DOCS_PAGE.read_text(encoding="utf-8")
     assert text.startswith("# Security-sensitive defaults inventory\n")
-    cells = re.findall(r"`(template/[^`]+|_shared/[^`]+)`", text)
+    cells = re.findall(r"`(template/[^`]+|partials/[^`]+)`", text)
     assert len(cells) >= 15, f"inventory must name its sources; found {len(cells)}"
     missing = [cell for cell in cells if not (TOP / cell).exists()]
     assert not missing, f"inventory names sources that do not exist: {missing}"

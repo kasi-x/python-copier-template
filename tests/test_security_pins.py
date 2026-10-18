@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 import pytest
+import yaml
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
@@ -98,17 +99,17 @@ def test_zizmor_drift_rule_tracks_both_halves_of_the_pair():
 
 def test_daimonion_pin_is_extracted_offline():
     """The generated project's daimonion install stays commit-pinned to the spec."""
-    internal = (TOP / "questions" / "_internal.yml").read_text(encoding="utf-8")
-    spec = re.search(r'daimonion_spec:\n    type: str\n    default: "git\+[^"]+@([0-9a-f]{40})"', internal)
-    assert spec, "daimonion_spec lost its commit pin in questions/_internal.yml"
+    internal = yaml.safe_load((TOP / "questions" / "90-derived.yml").read_text(encoding="utf-8"))
+    spec = re.fullmatch(r"git\+[^@]+@([0-9a-f]{40})", internal["daimonion_spec"]["default"])
+    assert spec, "daimonion_spec lost its commit pin in questions/90-derived.yml"
     pins = _pins()
-    assert pins["daimonion pin (questions/_internal.yml)"].current == spec.group(1)
+    assert pins["daimonion pin (questions/90-derived.yml)"].current == spec.group(1)
 
 
 def test_daimonion_pin_drift_rule():
     """A commit pin that differs from upstream head is drift; equal is ok."""
     behind = cu.Pin(
-        name="daimonion pin (questions/_internal.yml)",
+        name="daimonion pin (questions/90-derived.yml)",
         current="0" * 40,
         upstream="1" * 40,
         checkable=True,
@@ -116,7 +117,7 @@ def test_daimonion_pin_drift_rule():
     is_drift, message = cu._is_drift(behind)  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
     assert is_drift and "[DRIFT]" in message
     same = cu.Pin(
-        name="daimonion pin (questions/_internal.yml)",
+        name="daimonion pin (questions/90-derived.yml)",
         current="1" * 40,
         upstream="1" * 40,
         checkable=True,

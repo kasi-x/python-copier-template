@@ -1,0 +1,13 @@
+{% import "partials/tasks-model.jinja" as _t with context %}
+{% import "partials/oj-recipes.jinja" as _oj with context -%}
+version: '3'
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmd: task --list
+{{ _t.taskfile() -}}
+{% if oj_code %}
+
+{{ _oj.taskfile_oj() }}
+{% endif -%}

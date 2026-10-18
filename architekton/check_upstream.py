@@ -14,7 +14,7 @@ upstream feed it is compared against:
 - CUDA (Dockerfile.gpu base + cu124/cu126-style uv index) — the uv index
   must still receive torch releases; the Docker base should track the
   newest long-lived CUDA minor.
-- ROS 2 distros (questions/ros2.yml choices) — no offered distro may be
+- ROS 2 distros (questions/03-ros2.yml choices) — no offered distro may be
   past EOL per REP-2000; warn when a newer LTS exists.
 - Python floor (requires-python / CI matrix / classifiers) — the oldest
   supported version must not be past EOL per endoflife.date.
@@ -32,7 +32,7 @@ upstream feed it is compared against:
     release of zizmorcore/zizmor.
   - uvx tool pins (`conventional-pre-commit`, `nbstripout`, `cffconvert` in
     the same hygiene file) — each tracks its latest release on PyPI.
-- daimonion pin (`daimonion_spec` in questions/_internal.yml) — tracks the
+- daimonion pin (`daimonion_spec` in questions/90-derived.yml) — tracks the
   head commit of politeuma/daimonion main; the generated project's uvx
   install is pinned to one commit so a render never executes whatever
   landed on main since.
@@ -58,20 +58,16 @@ from datetime import UTC
 from datetime import datetime as datetime_
 from pathlib import Path
 
+import yaml
+
 TOP = Path(__file__).resolve().parent.parent
 QUESTIONS_DIR = TOP / "questions"
 TEMPLATE_DIR = TOP / "template"
-PYPROJECT_JINJA = TEMPLATE_DIR / (
-    "{% if (not existing_project or 'pyproject' not in adopt_protect) "
-    "and not ros2_cpp %}pyproject.toml{% endif %}.jinja"
-)
-GPU_DOCKERFILE = TEMPLATE_DIR / ("{% if use_gpu_effective %}Dockerfile.gpu{% endif %}.jinja")
-COMPOSE_JINJA = TEMPLATE_DIR / ("{% if web_api and docker %}compose.local.yml{% endif %}.jinja")
-CI_JINJA = TEMPLATE_DIR / (
-    "{% if is_github %}.github{% endif %}/{% if ci_provider == 'github_actions' %}workflows{% endif %}/ci.yml.jinja"
-)
-ROS2_QUESTIONS = QUESTIONS_DIR / "ros2.yml"
-MACROS_JINJA = TEMPLATE_DIR.parent / "_shared" / "macros.jinja"
+PYPROJECT_JINJA = next(TEMPLATE_DIR.glob("*pyproject.toml*"))
+GPU_DOCKERFILE = next(TEMPLATE_DIR.glob("*Dockerfile.gpu*"))
+COMPOSE_JINJA = next(TEMPLATE_DIR.glob("*compose.local.yml*"))
+CI_JINJA = next(TEMPLATE_DIR.rglob("ci.yml.jinja"))
+CATALOG = TOP / "meta" / "catalog.yml"
 
 
 @dataclass
@@ -218,19 +214,16 @@ def eol_date(product: str, cycle: str) -> str | None:
     return None
 
 
+def _derived_default(name: str) -> str | None:
+    """A pinned value's `default:` in questions/90-derived.yml (None when the row is gone)."""
+    rows = yaml.safe_load((QUESTIONS_DIR / "90-derived.yml").read_text(encoding="utf-8"))
+    row = rows.get(name) if isinstance(rows, dict) else None
+    return str(row["default"]) if isinstance(row, dict) and "default" in row else None
+
+
 def _extract_micropython_pins() -> list[Pin]:
     """Extract MicroPython version and stubs pin from copier config."""
-    version = "?"
-    sources = [TOP / "copier.yml", *QUESTIONS_DIR.glob("*.yml")]
-    for src in sources:
-        ver_m = re.search(
-            r"^micropython_version:\n    type: str\n    default: \"([^\"]+)\"",
-            src.read_text(),
-            re.MULTILINE,
-        )
-        if ver_m:
-            version = ver_m.group(1)
-            break
+    version = _derived_default("micropython_version") or "?"
     return [
         Pin(name="MicroPython tag (micropython_version)", current=version, checkable=True),
         Pin(
@@ -247,12 +240,12 @@ def _extract_platform_pins() -> list[Pin]:
     cuda_m = re.search(r"FROM nvidia/cuda:([^\s]+) AS", gpu_src)
     cuda_base = cuda_m.group(1) if cuda_m else "?"
 
-    ros_src = ROS2_QUESTIONS.read_text()
-    distros = re.findall(r": (humble|jazzy|kilted|rolling)\n", ros_src)
-
-    macros_src = MACROS_JINJA.read_text()
-    floor_m = re.search(r"else '(\d+\.\d+)'\)\s*\}\}", macros_src)
-    floor = floor_m.group(1) if floor_m else "?"
+    # The catalog is the source of truth: [python.ros] rows are the offered
+    # distros (gen_questions.py emits the ros_distro choices from them) and
+    # python.floor is the requires-python floor (gen_macros.py emits it).
+    catalog = yaml.safe_load(CATALOG.read_text())
+    distros = sorted(catalog["python"]["ros"])
+    floor = catalog["python"]["floor"]["version"]
 
     compose_src = COMPOSE_JINJA.read_text()
     ci_src = CI_JINJA.read_text()
@@ -260,7 +253,9 @@ def _extract_platform_pins() -> list[Pin]:
         re.findall(r"image: (postgres:[^\s]+)", ci_src)
     )
 
-    docker_src = (TEMPLATE_DIR / "{% if docker or cicd_extras %}Dockerfile{% endif %}.jinja").read_text()
+    docker_src = next(
+        p for p in TEMPLATE_DIR.glob("*Dockerfile*") if "gpu" not in p.name and "ros2" not in p.name
+    ).read_text()
     ubuntu_tags = set(re.findall(r"(?:ubuntu:|ubuntu-devcontainer:)(\w+)", docker_src))
     base_m = re.search(r"FROM (ghcr\.io/\S+) AS developer", docker_src)
 
@@ -275,9 +270,9 @@ def _extract_platform_pins() -> list[Pin]:
 
 
 def _load_combined_pyproject_sources() -> str:
-    """Load pyproject template along with all _shared partials."""
+    """Load pyproject template along with all partials partials."""
     src = PYPROJECT_JINJA.read_text()
-    for partial in sorted((TOP / "_shared").glob("pyproject-*.toml.jinja")):
+    for partial in sorted((TOP / "partials").glob("pyproject-*.toml.jinja")):
         src += "\n" + partial.read_text()
     return src
 
@@ -381,14 +376,11 @@ def _extract_security_pins() -> list[Pin]:
 
 def _extract_daimonion_pin() -> list[Pin]:
     """Extract the commit-pinned daimonion uvx spec from the questionnaire."""
-    internal_src = (QUESTIONS_DIR / "_internal.yml").read_text()
-    spec_m = re.search(
-        r"daimonion_spec:\n    type: str\n    default: \"git\+https://github\.com/politeuma/daimonion@([0-9a-f]{40})\"",
-        internal_src,
-    )
+    spec = _derived_default("daimonion_spec") or ""
+    spec_m = re.fullmatch(r"git\+https://github\.com/politeuma/daimonion@([0-9a-f]{40})", spec)
     return [
         Pin(
-            name="daimonion pin (questions/_internal.yml)",
+            name="daimonion pin (questions/90-derived.yml)",
             current=spec_m.group(1) if spec_m else "?",
             checkable=True,
         )
@@ -440,14 +432,17 @@ def _resolve_torch_index(cu: str) -> str:
     return f"index current (tops out at {versions[-1]})"
 
 
-ROS_EOL = {"humble": "2027-05", "jazzy": "2029-05", "kilted": "2026-11"}
-
-
 def _resolve_ros(current: str, today: str) -> str:
-    # REP-2000 dates, hardcoded rather than scraped: the source is a
+    # REP-2000 EOL dates live next to the distro rows in the catalog
+    # ([python.ros.*.eol], `update = "pinned"`), not scraped: the source is a
     # versioned spec document, and scraping RST is brittle.
+    catalog = yaml.safe_load(CATALOG.read_text())
+    ros_eol = {name: d["eol"] for name, d in catalog["python"]["ros"].items()}
     offered = current.split(",") if current != "?" else []
-    past = [d for d in offered if d in ROS_EOL and ROS_EOL[d] < today[:7]]
+    missing = [d for d in offered if d not in ros_eol]
+    if missing:
+        return f"offered but missing from catalog: {','.join(missing)}"
+    past = [d for d in offered if ros_eol[d] < today[:7]]
     if past:
         return f"EOL passed: {','.join(past)}"
     return f"all supported (today {today})"
@@ -745,7 +740,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    for required in (PYPROJECT_JINJA, MACROS_JINJA, GPU_DOCKERFILE, ROS2_QUESTIONS):
+    for required in (PYPROJECT_JINJA, CATALOG, GPU_DOCKERFILE):
         if not required.exists():
             msg = f"Template file not found: {required}; run from the repo root."
             sys.exit(msg)

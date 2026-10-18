@@ -1,0 +1,2 @@
+{# devcontainer.json differs only on the ros2 branch — every other
+   project type shares partials/types/standard/devcontainer.json.jinja. #}{% if ros2_pkg %}{% include "partials/types/ros2/devcontainer.json.jinja" %}{% else %}{% include "partials/types/standard/devcontainer.json.jinja" %}{% endif %}

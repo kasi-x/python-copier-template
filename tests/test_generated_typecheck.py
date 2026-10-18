@@ -7,7 +7,7 @@ It stops short of the test_example_* heavy tail: no pytest run, no
 build/twine, no docs build -- the type checkers are the only goal.
 
 Path selection: tests/test_example_*.py already type-check most project types, but
-through example-answers.yml's explicit overrides (every use_recommended_*
+through tests/example-answers.yml's explicit overrides (every use_recommended_*
 gate false), so the *recommended* answer combinations -- the ones real users
 take -- were never type-checked with deps installed. TYPECHECK_PATHS picks
 fast paths whose generated stacks differ meaningfully (library = minimal,
@@ -19,7 +19,7 @@ Exclusions are declared here because this list is their single site:
 
 - data_science needs no entry: the analysis render carries no torch (the
   torch/torchvision deps gate on the kaggle internal in
-  _shared/pyproject-deps.toml.jinja; only the cu126 index pin additionally
+  partials/pyproject-deps.toml.jinja; only the cu126 index pin additionally
   gates on gpu x uv), and its recommended leaf is already executed nightly
   by the witness full tier (`project_type=data_science/gate=recommended` in
   FULL_SAMPLE, tests/test_witness_matrix.py: uv sync + basedpyright + the

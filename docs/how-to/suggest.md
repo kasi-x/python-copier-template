@@ -33,18 +33,18 @@ What is refused, and why:
 - **Answers to unasked questions** — a forced value copier keeps but the
   render discards (e.g. `include_scraping: true` on a `web_api` base).
 - **Layers on non-combinable bases** — `include_web_api: true` on `ros2`
-  trips the `combinable` / `has_*` guard in `questions/_combo.yml`.
+  trips the `combinable` / `has_*` guard in `questions/08-layers.yml`.
 - **Derived internals** — `combinable`, `has_web_api` and friends are
   computed at render time and must not be answered.
 
-A combination no `support.yml` row promises is a warning, not a rejection:
+A combination no `tests/matrix/support.yml` row promises is a warning, not a rejection:
 it renders, but no tier is promised (see
 [Support](../reference/support.md)).
 
 The same gate is available to agents over MCP as `suggest_config`
 (requirement words in, candidates out) and `validate_answers` (candidate
-answers in, `{"ok", "errors"}` out; see [Use the template's own MCP
-server](mcp-tools.md)). The logic lives in `architekton/suggest.py`; the CLI
+answers in, `{"ok", "errors"}` out; see [Generate a Project With an AI
+Agent](../tutorials/with-an-agent.md)). The logic lives in `architekton/suggest.py`; the CLI
 subcommand and the MCP tools are thin shells over it. The questionnaire
 itself is untouched — the no-model CLI/questionnaire path keeps working
 exactly as before.

@@ -1,0 +1,33 @@
+# Source for questions/03-ros2.yml (GENERATED — edit meta/questionnaire/,
+# run `task regen`). ROS 2 follow-up questions, asked when
+# project_type == 'ros2'. The distro question is built from catalog rows
+# under [python.ros]: one row = one choice, label/help/default included.
+
+pkg_language:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        Which language for the ROS 2 package?
+        - python: ament_python (rclpy) — setup.py + package.xml + resource/.
+        - cpp: ament_cmake — CMakeLists.txt + src/*.cpp + include/.
+    choices:
+        Python (rclpy): python
+        C++ (ament_cmake): cpp
+    default: python
+
+# !catalog ros_distro
+
+ros2_package_manager:
+    type: str
+    when: "{{ project_type == 'ros2' }}"
+    help: |
+        How should the ROS 2 environment be provisioned?
+        - apt: the classic ROS 2 way — Ubuntu + apt (ros-{{ ros_distro }}-*)
+          + colcon + rosdep. Docker base image ros:{{ ros_distro }}-ros-base.
+        - pixi: RoboStack conda-forge packages via pixi, using the
+          robostack-<distro> channel on prefix.dev. No
+          sudo/apt needed. See https://pixi.prefix.dev/latest/robotics/.
+    choices:
+        apt (colcon + rosdep): apt
+        pixi (RoboStack conda): pixi
+    default: apt

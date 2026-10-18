@@ -92,10 +92,10 @@ jobs:
           # sections, and --check proves the block is current. A derivation
           # change that silently drops a condition from the render keeps both
           # upstream checks green and fails here. The daimonion install is the
-          # same commit-pinned spec generated projects get (questions/_internal.yml),
+          # same commit-pinned spec generated projects get (questions/90-derived.yml),
           # never floating main.
           test -f ../e2e-project/.daimonion.yml
-          DAIMONION_SPEC="$(python3 -c 'import yaml; print(yaml.safe_load(open("questions/_internal.yml"))["daimonion_spec"]["default"])')"
+          DAIMONION_SPEC="$(python3 -c 'import yaml; print(yaml.safe_load(open("questions/90-derived.yml"))["daimonion_spec"]["default"])')"
           uvx --from "$DAIMONION_SPEC" daimonion agents-md --write --repo ../e2e-project
           python3 - <<'PY'
           from pathlib import Path

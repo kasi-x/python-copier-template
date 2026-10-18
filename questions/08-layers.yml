@@ -1,0 +1,287 @@
+# Combo follow-ups: opt-in layers on top of the single-choice base
+# project_type (base + layer booleans, same idea as include_mcp).
+#
+# Ask-time/render-time rule (see docs/explanations/template-dev.md): a
+# question `when:` runs at ask time and sees the prefix of the include chain
+# built so far — raw answers and any internal defined earlier — while
+# everything render-side (template bodies, file-name conditions,
+# partials/tasks-model.jinja, the copier.yml tasks) reads the EFFECTIVE internals: the
+# has_* booleans below and the *_effective family in questions/90-derived.yml.
+# The include_*.when gates here are the ask-time half of that rule; the
+# internals at the bottom are its render-time half.
+#
+# Ask order matters (enforced by
+# tests/test_copier_structure.py::test_question_references_are_forward_only):
+# this fragment sits after questions/07-online-judge.yml (it references kaggle)
+# and before questions/09-data-science.yml and questions/15-web-api.yml (their gates
+# reference has_data_science / has_web_api defined here).
+
+include_data_science:
+    type: bool
+    when: "{{ project_type in ['library', 'cli', 'web_api'] }}"
+    default: false
+    help: |
+        Add the data_science analysis layout (notebooks/, data/, models/,
+        reports/, Quarto paper) on top of this project?
+        The data_science detail questions follow when answered Yes.
+
+include_web_api:
+    type: bool
+    when: "{{ project_type in ['library', 'cli', 'data_science'] or kaggle }}"
+    default: false
+    help: |
+        Add the FastAPI scaffold (top-level app/ package) on top of this
+        project? The web_api detail questions follow when answered Yes.
+        (For full-stack needs use the upstream full-stack-fastapi-template —
+        this stays a minimal, API-only scaffold.)
+include_ctf:
+    type: bool
+    when: "{{ project_type in ['library', 'cli'] }}"
+    default: false
+    help: |
+        Add a CTF participant workspace (challenges/<category>/<problem>/
+        with a solve.py exploit starter, plus pwntools and z3-solver)?
+        Participant-side only: per-problem folders with an executable
+        template. Organiser scaffolds (Docker + socat + gdb) are out of
+        scope — a separate-repo concern like IaC.
+include_scraping:
+    type: bool
+    when: "{{ project_type == 'cli' }}"
+    default: false
+    help: |
+        Add a polite web-fetching layer (robots.txt + rate limit + cache)?
+        If yes, a fetcher module is generated and direct HTTP calls
+        (requests / httpx / urlopen) are banned by ruff so every fetch goes
+        through it. No CAPTCHA-solving helpers are ever generated — if a
+        site blocks bots, use its API or ask permission. No new runtime
+        dependencies for the recommended httpx fetcher.
+use_recommended_scraping:
+    type: bool
+    when: "{{ include_scraping }}"
+    default: true
+    help: |
+        Use the recommended web-fetching engine?
+        Recommended: httpx — a polite stdlib-robots fetcher (contactable
+        User-Agent, robots.txt check, per-host rate limiting, on-disk
+        cache) with offline tests. No browser, no crawler framework.
+        Answer No to pick scrapy / memorious / playwright instead (or all).
+scraping_engine:
+    type: str
+    when: "{{ include_scraping and not use_recommended_scraping }}"
+    help: |
+        Which web-fetching engine should the fetcher layer prepare?
+        - httpx: polite httpx fetcher (same as recommended).
+        - scrapy: a Scrapy spider starter (ROBOTSTXT_OBEY + AUTOTHROTTLE +
+          DOWNLOAD_DELAY enforced in settings, offline parse test).
+        - memorious: a memorious crawler config (rate-limited, cached HTTP
+          sessions). memorious4 is AGPL-3.0 — choosing it requires an
+          AGPL-3.0 project license (enforced below).
+        - playwright: a Playwright browser-fetch module (Chromium via
+          `playwright install`; robots precheck + rate limit reused from
+          the fetcher; no browser launch in tests).
+        - all: prepare every engine above (all runtime dependencies).
+        CAPTCHA-solving (2captcha-style) helpers are never generated —
+        bypassing bot protection violates the site's terms.
+    choices:
+        - httpx
+        - scrapy
+        - memorious
+        - playwright
+        - all
+    default: httpx
+
+include_bot:
+    type: bool
+    # The `include_web_api` clause mirrors include_mcp's when
+    # (questions/14-integrations.yml) and bot_effective's base guard
+    # (questions/90-derived.yml): the long-running layer rides the effective
+    # web_api too, so a library project with the web_api layer must be asked
+    # about the bot the same way it is asked about MCP. The effective `web_api`
+    # alias cannot be referenced here — questions/90-derived.yml is included
+    # after this fragment, so it would be a forward reference (Undefined — the
+    # question would never ask) — hence the raw disjunction, hand-synced.
+    # Pinned by tests/test_bot_layer.py::
+    # test_include_bot_and_include_mcp_gates_stay_in_sync.
+    when: "{{ project_type in ['cli', 'web_api'] or include_web_api }}"
+    default: false
+    help: |
+        Add a long-running chat bot on top of this project (the long-running
+        layer's second platform after the MCP server)?
+        If yes, a bot module with its own entry point is generated and the
+        detail questions follow when answered Yes. Discord, Slack, LINE and
+        Gmail are the generated platforms — choices on the same question,
+        never a new project type.
+use_recommended_bot:
+    type: bool
+    when: "{{ include_bot }}"
+    default: true
+    help: |
+        Use the recommended bot platform?
+        Recommended: discord = discord.py — the de-facto Discord library
+        (async, typed, slash commands via app_commands, actively maintained,
+        unlike the py-cord / nextcord forks).
+        Answer No to pick a platform instead (discord, slack, line and gmail).
+bot_platform:
+    type: str
+    when: "{{ include_bot and not use_recommended_bot }}"
+    help: |
+        Which chat platform should the bot layer prepare?
+        - discord: a discord.py bot (Gateway intents declared explicitly, a
+          /ping app command, DISCORD_BOT_TOKEN from the environment with a
+          startup check that refuses to start without it).
+        - slack: a slack-bolt bot on Socket Mode (an outbound WebSocket, so
+          there is no public endpoint to open or sign; an /app_mention
+          listener that answers pong, and SLACK_BOT_TOKEN + SLACK_APP_TOKEN
+          from the environment with a startup check that refuses to start
+          without either).
+        - line: a line-bot-sdk bot on the Messaging API (no long-polling and
+          no socket, so the module serves LINE's webhook itself: a small
+          FastAPI app whose POST /callback verifies the X-Line-Signature
+          HMAC before answering a text ping with pong, and
+          LINE_CHANNEL_SECRET + LINE_CHANNEL_ACCESS_TOKEN from the
+          environment with a startup check that refuses to start without
+          either). LINE listens on BOT_PORT (default 8000), unlike discord
+          and slack, which only dial out.
+        - gmail: a Gmail bot on google-api-python-client + google-auth
+          (OAuth installed-app flow: the OAuth client downloaded from
+          Google Cloud Console and the granted token are FILES, so
+          GMAIL_CREDENTIALS_JSON + GMAIL_TOKEN_JSON name their paths in
+          the environment with a startup check that refuses to start
+          without either; the poll answers an unread INBOX message whose
+          subject contains /ping with a pong reply on the same thread and
+          marks it read — an outbound poll on GMAIL_POLL_SECONDS, so
+          there is no Pub/Sub push endpoint to host and nothing listens,
+          like discord and slack).
+    choices:
+        - discord
+        - slack
+        - line
+        - gmail
+    default: discord
+
+combinable:
+    type: bool
+    default: "{{ project_type in ['library', 'cli', 'web_api', 'data_science'] or kaggle }}"
+    when: false
+
+# The domain traits: what the project is ABOUT, as opposed to which layout it
+# builds. A multiselect rather than one question per domain, because the
+# domains genuinely co-occur -- a face-recognition model that also touches
+# patient data selects both, and the emitted `.daimonion.yml` must then carry
+# both conditions. Each choice maps to a guidance `when` condition (see the
+# derivation in `partials/daimonion-when.jinja`) and, where it applies, to packages.
+#
+# Asked on every base rather than under data-science: the condition that fires
+# is chosen by *purpose*, not by layout -- a FastAPI service that verifies
+# faces is in scope, and so is an MCP server that exposes a recognition tool.
+# The derivation from this answer to the `when` list lives in
+# `partials/daimonion-when.jinja`; the predicate that holds it to this answer
+# lives in tests/test_render_invariants.py (`_domain_traits`).
+domain_traits:
+    type: str
+    multiselect: true
+    default: []
+    choices:
+        - personal-data
+        - face-recognition
+        - medtech
+    help: |
+        Which of these does the project actually touch (select all that
+        apply, or none)?
+        - personal-data: does the project handle data about identifiable
+          people — accounts, contacts, orders, logs that keep an IP or a
+          user id, messages, uploaded files, analytics events? Adds the
+          privacy rules to AGENTS.md: minimise what you collect and log,
+          give deletion a path, and know what leaves the process (error
+          trackers and cloud services included). Select this even when
+          the data only passes through. If the project also *decides*
+          something about those people automatically (scoring, ranking,
+          approving, screening, matching), say so in the same answer's
+          spirit — the rules cover automated decisions too, since that is
+          what makes them a privacy question in the first place: keep a
+          human in the loop for consequential calls, be able to explain
+          one, and record how it was made.
+        - face-recognition: identifying or verifying people from face
+          imagery (detection, embeddings, matching, liveness, attribute
+          estimation). Adds the biometric-identification rules: confirm
+          the use is lawful before implementing, store templates
+          irreversibly with a deletion path, and measure error rates per
+          demographic group instead of shipping one threshold. Biometric
+          data is a special category of personal data, so this also brings
+          the privacy rules above.
+        - medtech: anything reaching diagnosis, treatment support or
+          patient screening. Adds the medical-SaMD rules: continuous
+          learning only inside an approved change envelope, a human making
+          the final call, and post-market performance monitoring. Health
+          data is a special category of personal data too, so this also
+          brings the privacy rules above.
+        It is a question rather than a derivation from the other answers
+        on purpose: a web API with a database is not necessarily personal
+        (a product catalogue stores `Item(name)`), and a CLI that writes a
+        log is not necessarily either — the answers cannot tell "handles
+        people" from "handles things", and guessing it would ship privacy
+        rules to every service. You know which it is; the template does
+        not. Answering none is correct when the project only resembles one
+        of these domains.
+
+# How the project reaches the world, which is what decides whose rules apply.
+# A separate axis from `domain_traits` (what it handles) because the two are
+# independent: a medical CLI can stay in-house or ship as a commercial
+# product, and only the second answers to a regulator.
+#
+# Multiselect rather than one choice because the answers genuinely overlap -- a
+# project can be an internal tool that is also released as OSS -- and because
+# they are not exclusive states: `in-house` plus `oss` is normal, `in-house`
+# plus `commercial` is a contradiction the user can see and fix.
+#
+# Asked before the distribution questions it informs (`pypi`, `docker`), and
+# consumed by the daimonion `when` derivation as a second signal next to `domain_traits` (`commercial` derives the commercial condition).
+distribution:
+    type: str
+    multiselect: true
+    default: [in-house]
+    choices:
+        - in-house
+        - oss
+        - commercial
+    help: |
+        How will this project be distributed and used (select all that
+        apply)?
+        - in-house: it stays inside one organisation or one person — an
+          internal tool, a private analysis, a personal project. Nothing is
+          published, so nothing is owed to users outside.
+        - oss: the source is published for others to use, study or modify
+          (a public repository, a package on PyPI, a shared template).
+          Answer this when you expect strangers to depend on it.
+        - commercial: it is sold, packaged as a product, or offered as a
+          paid service. This is what makes a regulator care — EU rules that
+          exempt non-commercial work (the Cyber Resilience Act's treatment
+          of free software, for instance) stop applying the moment the
+          product is monetised.
+        Answering in-house alone is right for most internal work. Select
+        several when several are true: an internal tool with a public
+        repository is in-house + oss, and a product you also open-source is
+        commercial + oss.
+
+# The include question's `when` / `combinable` / `has_*` trio is THREE
+# deliberate layers, not one — do not collapse it:
+# 1. each include_*.when (above) keeps the layer question from being ASKED
+#    off a combinable base;
+# 2. `combinable` rejects a FORCED answer (`--data-file` with
+#    include_web_api=true) on a non-combinable base — real, because copier
+#    applies a data-file answer even to a question whose `when` is false
+#    (exactly why tests/test_answer_fixtures.py::
+#    test_example_answers_keeps_every_gate_off must pin every gate
+#    explicitly false instead of trusting the `when`);
+# 3. `has_*` re-checks both (base or opt-in AND combinable) so a forced
+#    include cannot leak into the render.
+
+has_web_api:
+    type: bool
+    default: "{{ project_type == 'web_api' or (include_web_api and combinable) }}"
+    when: false
+
+has_data_science:
+    type: bool
+    default: "{{ project_type == 'data_science' or (include_data_science and combinable) }}"
+    when: false

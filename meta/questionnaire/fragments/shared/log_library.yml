@@ -1,0 +1,22 @@
+log_library:
+    type: str
+    # Own exclusion list — exactly the three no-Python-package types. Not the
+    # same list as layout.when or use_src_layout (see their comments); pinned
+    # by tests/test_copier_structure.py::
+    # test_layout_exclusion_lists_stay_deliberately_different.
+    when: "{{ not use_recommended_integrations and project_type not in ['ros2', 'micropython', 'online_judge'] }}"
+    help: |
+        Which logging library should logging_setup.py use?
+        - structlog: structured, contextvars-aware logging with console/JSON
+          renderers. Recommended default.
+        - loguru: batteries-included logger — no boilerplate configuration,
+          built-in colours, exception-catching decorator.
+        - picologging: a C-accelerated, drop-in-compatible reimplementation
+          of the standard library logging module. Faster, same API.
+        - logging: the standard library logging module. No extra dependency.
+    choices:
+        - structlog
+        - loguru
+        - picologging
+        - logging
+    default: structlog

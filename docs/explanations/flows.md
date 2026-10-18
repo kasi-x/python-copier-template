@@ -72,7 +72,7 @@ and architekton-py is one way in.
 flowchart LR
     OL["open-law<br/>(world legislation corpus)"] --> LM["law-map<br/>(THE RULEBOOK:<br/>obligation graph)"]
     LM --> CX["guidance/sections<br/>(reviewed prose,<br/>generated MANIFEST.yml)"]
-    CX --> DW["_shared/daimonion-when.jinja<br/>(answers → when conditions)"]
+    CX --> DW["partials/daimonion-when.jinja<br/>(answers → when conditions)"]
     DW --> DC[".daimonion.yml<br/>(declared conditions)"]
     DC --> AM["daimonion agents-md --write<br/>(fills the marker block)"]
     AM --> AG["AGENTS.md<br/>(empty markers + linter block)"]

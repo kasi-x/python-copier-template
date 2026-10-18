@@ -1,0 +1,26 @@
+# Area gate: documentation site.
+
+use_recommended_docs:
+    type: bool
+    default: true
+    help: |
+        Use the recommended documentation tool?
+        Recommended: zensical (Zensical, an MkDocs fork with mkdocstrings).
+        Answer No to pick README-only, Sphinx or Great Docs instead.
+        (For ros2 projects the docs build needs a sourced ROS environment,
+        e.g. the devcontainer or CI.)
+
+docs_type:
+    type: str
+    when: "{{ not use_recommended_docs }}"
+    help: |
+        Which documentation tool would you like to use?
+        - README: just a README, no dedicated docs site.
+        - zensical: Zensical, an MkDocs fork with mkdocstrings. Fast to set up.
+        - sphinx: Sphinx with the pydata theme. More powerful, more config.
+        - great-docs: Great Docs, a Quarto-based tool. Requires Quarto installed.
+        (For micropython projects, Sphinx is not offered: the firmware is not
+        a CPython-importable package, and zensical can document firmware/core.
+        Answering sphinx for a micropython project falls back to zensical.)
+    choices: [README, zensical, sphinx, great-docs]
+    default: zensical

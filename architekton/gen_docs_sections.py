@@ -201,7 +201,7 @@ def _runner_list(question: Question) -> str:
 
 
 def render_support_table(support: dict[str, Any]) -> str:
-    """`docs/reference/features.md`: the compact support summary, from `support.yml`.
+    """`docs/reference/features.md`: the compact support summary, from `tests/matrix/support.yml`.
 
     Bound to the link into the full reference, which only this module knows
     (the summary is generated into the catalogue page).

@@ -1,0 +1,71 @@
+# The meta-definition of this template — the root the generator reads.
+#
+# Who writes what:
+#   - a human edits this file when a *choice* changes (a new dep, a new
+#     supported distro, a new version floor).
+#   - a bot bumps entries marked `update: "bot"` (version floors that track
+#     upstream releases). Entries marked `update: "pinned"` MUST NOT move
+#     without a human — ROS distro pins are the example: humble is ABI-locked
+#     to Python 3.10 by REP-2000, not by preference.
+#   - `architekton/gen_macros.py` renders partials/macros.jinja from this
+#     file; templates then consume that generated file verbatim, so the
+#     rendered project always agrees with the catalog.
+#
+# Layout: one section per fact family the template needs. Keep it flat —
+# the whole point of this file is that the values live in one place with
+# their update policy next to them.
+
+python:
+  # The floor every non-ROS project renders into requires-python.
+  # check_upstream.py's "Python floor" pin verifies this against endoflife.date.
+  floor:
+    version: "3.11"
+    update: "bot"
+
+  # ROS 2 distros ship their own Python, locked by REP-2000 — PINNED, never
+  # bot-updated. A new entry here is a *new template variant*: it appears in
+  # the ros_distro choices (questions/03-ros2.yml is generated), in
+  # macros.jinja's python_version()/classifiers() branches, and in
+  # check_upstream.py's EOL check — one row, every surface.
+  ros:
+    humble:
+      version: "3.10"
+      ubuntu: "22.04"
+      eol: "2027-05"
+      label: "Humble (22.04 / Python 3.10)"
+      description: "the most widely deployed"
+      default: true
+      update: "pinned"
+    jazzy:
+      version: "3.12"
+      ubuntu: "24.04"
+      eol: "2029-05"
+      label: "Jazzy (24.04 / Python 3.12)"
+      description: "the current LTS"
+      update: "pinned"
+
+# Trove classifiers emitted for a normal package (non-ROS, non-micropython).
+classifiers:
+  non_ros:
+    - "Programming Language :: Python :: 3 :: Only"
+    - "Programming Language :: Python :: 3.11"
+    - "Programming Language :: Python :: 3.12"
+    - "Programming Language :: Python :: 3.13"
+    - "Programming Language :: Python :: 3.14"
+
+# The `experiment` optional-dependency group (data-science layer).
+# "spec" = "" means "no version floor": PEP 508 wants a bare "name",
+# pixi wants "*". Both renderers derive from this one table.
+experiment_deps:
+  - {name: "httpx", spec: ">=0.27,<1", update: "bot"}
+  - {name: "ipykernel", spec: "", update: "bot"}
+  - {name: "jupyterlab", spec: "", update: "bot"}
+  - {name: "marimo", spec: "", update: "bot"}
+  - {name: "matplotlib", spec: ">=3.8", update: "bot"}
+  - {name: "nbclient", spec: "", update: "bot"}
+  - {name: "nbstripout", spec: "", update: "bot"}
+  - {name: "openai", spec: ">=2.53.0,<3", update: "bot"}
+  - {name: "pendulum", spec: ">=3.2.0,<4", update: "bot"}
+  - {name: "plotly", spec: ">=5.20", update: "bot"}
+  - {name: "seaborn", spec: ">=0.13.2", update: "bot"}
+  - {name: "wandb", spec: ">=0.16.4", update: "bot"}

@@ -1,8 +1,8 @@
 # Authoring Template Sources (.jinja)
 
 Rules for editing this repository's *template sources* — the `template/`
-tree, the `questions/` questionnaire fragments, and the root `_shared/` /
-`_tasks.jinja` partials. These are the recurring failure modes we have hit;
+tree, the `questions/` questionnaire fragments, and the root `partials/` /
+`partials/tasks-model.jinja` partials. These are the recurring failure modes we have hit;
 each rule is backed by a real bug. Where a rule is enforced by a test, the
 test name is linked so a future change can verify itself.
 
@@ -30,21 +30,21 @@ Enforced by
 `test_generated_files_end_with_single_newline` in
 `tests/test_generated_lint.py` (runs over every recommended render path).
 
-## Share large conditional bodies via `_shared/` includes
+## Share large conditional bodies via `partials/` includes
 
 When the same body must be generated at different paths per project type
 (e.g. `logging_setup.py` lives in `<pkg>/` for library/cli/... and in the
-top-level `app/` for web_api), keep the body once in a root `_shared/*.jinja`
+top-level `app/` for web_api), keep the body once in a root `partials/*.jinja`
 partial and include it from thin per-location wrappers:
 
 ```jinja
 {# template/<pkg>/logging_setup.py.jinja #}
-{% include "_shared/logging_setup.py.jinja" %}
+{% include "partials/logging_setup.py.jinja" %}
 ```
 
 - The include path is repo-root-relative (copier's Jinja loader searchpath is
-  the repository root), so `_shared/` needs no `template/` prefix.
-- `_shared/` is never copied into a generated project (it is outside
+  the repository root), so `partials/` needs no `template/` prefix.
+- `partials/` is never copied into a generated project (it is outside
   `template/`), and the wrapper picks the location.
 - Any self-reference inside the shared body that differs per location
   (e.g. `from <pkg>.logging_setup import logger` vs
@@ -55,30 +55,30 @@ partial and include it from thin per-location wrappers:
   after* the `{% include %}` tag, or the render gains a trailing blank line.
 - When a direct template file is replaced by a shared partial, keep the render
   byte-identical: put the wrapper on a *single line* —
-  `{# ... #}{% include "_shared/....jinja" %}` with no trailing newline. A
+  `{# ... #}{% include "partials/....jinja" %}` with no trailing newline. A
   two-line wrapper (comment line, then the include) emits the comment's
   newline as a leading blank line in the output. (`logging_setup.py`'s
   two-line wrappers predate this rule and carry that leading blank line as
-The same pattern applies to single-location conditional blocks that are
-edited often enough to cause hunk-boundary mistakes: the CTF `ctf` extra
-(`_shared/pyproject-ctf-extra.toml.jinja`) and the `challenges/` ruff
-ignores (`_shared/pyproject-ctf-lint.toml.jinja`) are included from
-`template/pyproject.toml.jinja`. Verify with a baseline-vs-current render
-Current inventory (all byte-identical verified over 9 render paths —
-library / cli / web_api / data_science / atcoder / kaggle / micropython /
-ros2 / cli+ctf):
-`pyproject-basedpyright.toml.jinja`, `pyproject-ty-checkers.toml.jinja`
-(pyrefly/ty), `pyproject-test-coverage.toml.jinja` (pytest/coverage/typos/
-vulture/deptry), `pyproject-ruff-lint.toml.jinja` (select/extend-ignore/
-task-tags), `pyproject-ctf-extra.toml.jinja`, `pyproject-ctf-lint.toml.jinja`,
-`pyproject-deps.toml.jinja` (the runtime `dependencies` one-liner),
-`pyproject-deptry.toml.jinja` (the `[tool.deptry]` table with the
-`per_rule_ignores` assembly, included from the test-coverage partial).
+  accepted debt.)
+The same pattern applies to files that differ per dispatch branch: the
+generated `pyproject.toml` is split per project-type family under
+`partials/types/<branch>/pyproject.toml.jinja`, selected by the one-line
+dispatcher `template/pyproject.toml.jinja` (its `pyproject.toml.gate` marker
+holds `render_pyproject`)
+(`web_api` first — a kaggle project can opt into the web-api layer — then
+ros2, micropython, online_judge, else standard). Each variant carries only the
+branches reachable on its path; flags that are definitionally false there
+(`web_api` inside ros2, `oj_*` inside standard, ...) are already gone, so the
+file you open is the file you edit. Verify with a baseline-vs-current render
+over every preset (the CTF `ctf` extra, the `challenges/` ruff ignores and the
+runtime `dependencies` one-liner all live inside the variant that can render
+them).
+
 Out of scope: inline single-line conditionals with no edit-hotspot of their
 own (README badges and the like) — extracting those would scatter one-line
 logic across files with no hunk-boundary benefit.
 
-Enforced by `_template_files()` walking `_shared/` in
+Enforced by `_template_files()` walking `partials/` in
 `tests/test_copier_structure.py` (variables inside shared partials must be
 defined questionnaire keys).
 
@@ -96,17 +96,15 @@ settings. Rules:
   that a question references (e.g. `micropython_pkg`, `online_judge`) must
   live in their genre fragment *before* that question — a back-reference
   renders as Undefined (falsy) and silently picks the wrong branch.
-- The same ordering trap applies *inside* `questions/_internal.yml`: copier
-  evaluates `when: false` defaults in definition order, so an internal
-  variable must be defined *before* any internal variable that references it
-  (e.g. `web_api` / `data_science` come first, ahead of `mcp_effective`,
-  `prometheus_effective` / `rate_limit_effective` / `cors_effective`,
-  `use_src_layout`, `pkg_dir`, ...). Referencing a later internal renders as
-  Undefined (falsy) — the questionnaire structure test does *not* catch this
-  (it skips `when: false` in the forward-only check), so verify with an
-  actual render.
+- The same ordering trap applies *inside* `questions/90-derived.yml`: copier
+  evaluates `when: false` defaults in definition order, so a row may read
+  only the rows above it (e.g. `web_api` / `data_science` sit above
+  `mcp_effective`, the web-API details, `use_src_layout` and `pkg_dir`).
+  Referencing a later row renders as Undefined (falsy);
+  `tests/test_copier_structure.py::test_internal_variable_references_are_forward_only`
+  catches it.
 - Internal variables that only feed template rendering (the `*_effective`
-  family, `pkg_dir`, `import_pkg`, ...) stay in `questions/_internal.yml`
+  family, `pkg_dir`, `import_pkg`, ...) stay in `questions/90-derived.yml`
   at the end of the chain.
 
 Enforced by `test_question_references_are_forward_only` and
@@ -131,20 +129,20 @@ lives on one side of the line:
   question's `when` / `default` / `choices` when it is reached in ask order,
   so a question sees exactly the prefix of the include chain built so far:
   raw answers *and* any internal already defined earlier
-  (`has_data_science` in questions/data_science.yml, `has_web_api` in
-  questions/web_api.yml, `oj_bare` / `online_judge` in
-  questions/_common_b.yml, `include_web_api` in questions/_combo.yml, ...).
+  (`has_data_science` / `has_web_api` / `include_web_api` in
+  questions/08-layers.yml, `oj_bare` / `online_judge` in
+  questions/07-online-judge.yml, ...).
   A reference to anything later is a forward reference — Undefined (falsy)
   — and the question silently never asks. The rule is include order, not
   vocabulary, and it is mechanically enforced by
   `test_question_references_are_forward_only` in
   `tests/test_copier_structure.py`.
 - **Everything render-side runs at render time and reads the effective
-  internal.** Template bodies, file-name conditions (`{% if ... %}` in
-  `template/` paths), `_tasks.jinja` and copier.yml's `_tasks` blocks see
+  internal.** Template bodies, `.gate` marker conditions, computed file-name
+  conditions (`{% if ... %}` in `template/` paths), `partials/tasks-model.jinja` and copier.yml's `_tasks` blocks see
   every answer, and they should read the `*_effective` family (plus the
   effective `web_api` / `data_science`, `pkg_dir`, `import_pkg`, ...) from
-  `questions/_internal.yml`, so "the base *or* the combo opt-in" is
+  `questions/90-derived.yml`, so "the base *or* the combo opt-in" is
   resolved in exactly one place and render conditions cannot drift from the
   layer rules they encode.
 
@@ -156,11 +154,11 @@ you change one, mirror the other. Two pinned consequences:
 - `include_mcp.when` spells out
   `(project_type == 'cli' or project_type == 'web_api' or include_web_api)`
   instead of the `web_api` alias. The alias lives in
-  `questions/_internal.yml`, which the include chain puts *after*
-  `questions/_common_b.yml`, so referencing it from the question would be a
+  `questions/90-derived.yml`, which the include chain puts *after*
+  `questions/14-integrations.yml`, so referencing it from the question would be a
   forward reference (Undefined — the question would silently never ask).
   `has_web_api` *would* resolve — it is defined earlier, in
-  `questions/_combo.yml`, so the include-order rule permits it — but raw
+  `questions/08-layers.yml`, so the include-order rule permits it — but raw
   answers suffice at ask time, so the gate spells its base out in raw
   form. This is the documented exception pattern to "one predicate, one
   definition": an ask-time gate that cannot reach its render-time twin is
@@ -174,7 +172,7 @@ you change one, mirror the other. Two pinned consequences:
   so the raw uses in the `.env.example` / README conditions stay correct
   without needing an internal.
 
-The render-side agreement between a file-name gate and the README section
+The render-side agreement between a file gate and the README section
 documenting the same file is enforced by
 `tests/test_bot_layer.py::test_env_example_gate_and_readme_section_agree`
 (the bot layer regressed exactly this way: `.env.example` shipped the bot
@@ -196,20 +194,20 @@ are GitHub-only machinery). The two non-asks: `layout` is not asked for
 `script` (`use_src_layout` would drop a src/ tree without a package) and
 `include_sentry` is not asked where no pkg tree can render `__main__.py`.
 
-## A file-name branch belongs to its parent directory's condition
+## A `.gate` marker holds the path's whole condition
 
-A branch is owned by the parent directory's name condition, and a child
-must not restate its parent's predicate — a duplicated condition is two
-definitions that can drift. When a path has to embed a condition of its
-own, prefer a derived internal flag
-(`{% if security_policy_effective %}SECURITY.md{% endif %}`) over
-re-spelling the raw derivation: the internal is the one definition the
-render side cannot drift from.
+A `.gate` line is the complete condition for its path — the generated row is
+self-contained, so a gated directory's children carry no marker at all. When
+a path has to carry a condition of its own, prefer a derived internal flag
+(`SECURITY.md.gate` holds `security_policy_effective`) over re-spelling the
+raw derivation: the internal is the one definition the render side cannot
+drift from.
 
 ## Keep the predicate inventory mechanical: `task predicates`
 
 The condition surface is large — question `when:`s, the `when: false`
-internals, `{% if %}` gates in template file names and bodies, `_tasks`
+internals, `{% if %}` gates in computed file names and template bodies, the
+`questions/99-files.yml` gate rows, `_tasks`
 guards — and the predicate unification (the `oj_bare` / `no_pkg` inventory) was done
 by hand against a snapshot that could rot. `architekton/predicates.py` keeps the
 inventory alive: it collects every boolean condition site, evaluates each
@@ -307,9 +305,26 @@ must keep the tags at the SAME indentation as the block-scalar content
 the shell script — harmless. Verified by rendering with
 `load_template_config` (machine gate) plus an actual `copier copy`.
 
-The same lesson applies to answer-driven file protection: conditional
-presence is expressed on the FILE NAME (`{% if x %}name{% endif %}.jinja`),
-never by jinja in `_skip_if_exists` (config values are not rendered).
+## Which files exist is a `.gate` marker beside the path
+
+A generated file's existence condition lives next to its source: a sibling
+`<name>.gate` (or `.gate` inside a directory, for a whole subtree) holds one
+line — the condition — plus optional `#`-comments (`# from:` names the
+question that feeds it). No marker means unconditional: adding a plain file
+never touches a second file, and adding a gated one is two files in the same
+directory. `architekton/gen_file_gates.py` scans the markers into
+`questions/99-files.yml` (`<path>: {{ <condition> }}` rows, the file is
+generated — edit `.gate`s, not it), and copier.yml's `_exclude` turns every
+row whose condition is false into an excluded path plus the static
+`*.gate` pattern that keeps the markers themselves out of the output, so
+`template/` keeps the plain names of the generated project. Two kinds of
+paths keep `{% if %}` in their name instead: names computed from answers
+(`{{ pkg_dir }}`, the uv.lock / pixi.lock switch), and the `src/` sub-trees
+that several project types fill (a marker keyed on an output path would also
+hit a package that happens to share it). `tests/test_file_gates.py` holds
+that line: it fails on a stale table, a gated path with no marker, and a
+marker beside nothing. Never put conditions in `_skip_if_exists`: copier
+does not render it.
 
 ## Documented generation commands must run without `--vcs-ref`
 
@@ -348,8 +363,8 @@ one-line root cause.
 
 `git_platform` offers `github.com` (default) and `gitlab.com`. The platform
 distinction is enforced in two places: the `is_github` / `is_gitlab`
-internals (questions/_internal.yml) gate whole files by filename, and
-the `repo_url` / `docs_url` internals in `questions/_internal.yml` decide URL
+internals (questions/90-derived.yml) gate whole files (rows in `questions/99-files.yml`), and
+the `repo_url` / `docs_url` internals in `questions/90-derived.yml` decide URL
 bytes. What that means for a `gitlab.com` render:
 
 Shipped, following the platform:
@@ -363,7 +378,7 @@ Shipped, following the platform:
   `docs/tutorials/installation.md`, the README clone/source links, the ros2
   `package.xml`, and the LICENSE notice text.
 - the hardened `.gitlab-ci.yml` instead of the GitHub Actions workflow set
-  (`.github/` is filename-gated to github.com), and — because
+  (`.github` is gated on `is_github` by its path name), and — because
   `security_policy_effective` / `scorecard_effective` gate on the platform —
   no `SECURITY.md` / Scorecard workflow (see
   `docs/explanations/security.md`).
@@ -383,7 +398,7 @@ roadmap — full parity would be a project of its own):
 - the OpenSSF Scorecard badge (already gated off via `scorecard_effective`);
 - README links that append GitHub routes to `repo_url` — `/issues` and
   `/releases` (GitLab's routes are `/-/issues`, `/-/releases`) — and the
-  contributing section's link to `.github/CONTRIBUTING.md`, which a GitLab
+  contributing section's link to `CONTRIBUTING.md`, which a GitLab
   render does not ship.
 
 Enforced by `test_template_gitlab_urls` in `tests/test_example_library_cli.py`
@@ -416,7 +431,7 @@ up:
 | `foundations` | `answers`, `questionnaire`, `when_model`, `render_inputs`, `support_ledger` | the questionnaire model and shared primitives: data and meaning, no behavior on real trees |
 | `machinery` | `file_merge`, `pyproject_merge`, `invariants`, `z3_witnesses`, `gen_docs_model`, `gen_docs_prose`, `gen_docs_sections`, `gen_docs_graph`, `gen_docs_blocks` | pure transformations and verifiers over template/adoption artifacts |
 | `drivers` | `detect`, `batch`, `adopt`, `adopt_cli`, `adopt_confirm`, `adopt_crash`, `adopt_journal`, `adopt_merge`, `adopt_report`, `adopt_revision`, `adopt_run`, `adopt_tree`, `adopt_types`, `git`, `predicates`, `question_graph`, `render_delta`, `answers_for`, `update_rehearsal`, `suggest` | act on real trees with copier/subprocess; consume the machinery |
-| `frontends` | `cli`, `explain`, `gen_docs`, `mcp_server` | the entry points a human or an agent calls; consume the drivers |
+| `frontends` | `cli`, `explain`, `gen_docs`, `mcp_server`, `where` | the entry points a human or an agent calls; consume the drivers |
 
 Rules:
 
@@ -458,7 +473,7 @@ in your change.
 
 ## Structured answers: lists the user can edit
 
-`questions/_structured.yml` holds two answers whose value is a list rather
+`questions/91-structured.yml` holds two answers whose value is a list rather
 than a scalar: `dependencies` (rendered into `[project] dependencies`) and
 `src_dirs` (the `src/` sub-directories). Both are **asked questions with a
 derived default**, and that shape is forced by copier, not chosen for style:
@@ -474,8 +489,8 @@ derived default**, and that shape is forced by copier, not chosen for style:
 - The questionnaire's own **forward-only rules** decide where the fragment
   goes. `test_question_references_are_forward_only` requires an asked
   question's `default` to reference only earlier variables, so
-  `questions/_structured.yml` is the **last `!include`** — after
-  `questions/_internal.yml`, whose `*_effective` internals and `ds_stack` /
+  `questions/91-structured.yml` is the **last `!include`** — after
+  `questions/90-derived.yml`, whose `*_effective` internals and `ds_stack` /
   `pkg_scaffold` the derived defaults read.
 - A `_`-prefixed name is a copier *setting*, not a question: `_derived_*`
   keys are silently swallowed by the loader and never become questions (the
@@ -516,7 +531,7 @@ section in [law-map's guidance tree](https://github.com/politeuma/law-map/tree/m
 declaring its abstract `when` and `placement` (see
 [Ethics Content Lives in Kanon](ethics-external.md)). This repo derives the
 matching `when` conditions from its answers in
-`_shared/daimonion-when.jinja` — one macro both the generated
+`partials/daimonion-when.jinja` — one macro both the generated
 `.daimonion.yml` and the composition manifest interpolate, so the derivation
 is spelled once. A new abstract condition (or a new answer implying an
 existing one) extends that macro; nothing is vendored, so the leaf space

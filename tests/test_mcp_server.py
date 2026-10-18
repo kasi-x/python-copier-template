@@ -39,32 +39,16 @@ if str(TOP) not in sys.path:
 
 from architekton import answers  # noqa: E402
 from architekton import answers_for  # noqa: E402
+from architekton import batch  # noqa: E402
+from architekton import mcp_interface  # noqa: E402
 from architekton import mcp_server  # noqa: E402
 
 # The shared Project Details (architekton/answers.py) with this tool's own package
 # name; repo_name/distribution_name are copier's derivation, not restated here.
 BASE_ANSWERS = {**answers.BASE, "package_name": "mcp_example"}
 
-TOOL_NAMES = {
-    "adopt_project",
-    "explain_choice",
-    "inspect_project",
-    "lint_render",
-    "list_batch_requests",
-    "list_questions",
-    "list_presets",
-    "list_witnesses",
-    "recommend_answers",
-    "render_diff",
-    "render_project",
-    "run_batch",
-    "run_tests",
-    "run_witness",
-    "suggest_config",
-    "validate_answers",
-    "template_fingerprint",
-    "template_status",
-}
+# Every tool, from the one list of them (architekton/mcp_interface.yml).
+TOOL_NAMES = set(mcp_interface.tools())
 
 # The convention docs/how-to/test-loop.md states: the docstring is the tool
 # description the model reads, so it says what the call costs and what comes
@@ -239,6 +223,8 @@ async def test_render_project_files_carry_digests_and_can_diff_against(client: C
             "answers": {**BASE_ANSWERS, "project_type": "script", "allow_japanese": True},
             "dest": str(tmp_path / "third"),
             "diff_against": str(first_dest),
+            # forcing a hidden answer is the point, so skip the refusal users get
+            "validate": False,
         },
     )
     moved_diff = moved["diff"]
@@ -275,6 +261,93 @@ async def test_adopt_project_plans_then_applies(client: Client, tmp_path: Path):
 
 
 @pytest.mark.anyio
+async def test_render_project_refuses_invalid_answers_and_an_occupied_dest(client: Client, tmp_path: Path):
+    """Both refusals say what to do instead, and render nothing."""
+    bad = await client.call_tool("render_project", {"answers": {"project_type": "nope"}, "dest": str(tmp_path / "a")})
+    assert bad.is_error is True
+    assert "project_type" in str(bad.content) and "'library'" in str(bad.content), "the error names the valid choices"
+    assert not (tmp_path / "a").exists()
+
+    (tmp_path / "b").mkdir()
+    (tmp_path / "b" / "README.md").write_text("# mine\n")
+    occupied = await client.call_tool(
+        "render_project", {"answers": {"project_type": "script"}, "dest": str(tmp_path / "b")}
+    )
+    assert occupied.is_error is True
+    assert "adopt_project" in str(occupied.content), "the error names the tool that fits the directory"
+    assert sorted(p.name for p in (tmp_path / "b").iterdir()) == ["README.md"]
+
+
+@pytest.mark.anyio
+async def test_update_project_plans_in_a_clone_then_applies(client: Client, tmp_path: Path):
+    """A project generated at the 7.0.0 release, updated to HEAD: the dry run
+    leaves the project untouched, applying changes it, and a dirty tree is refused."""
+    project = tmp_path / "project"
+    with batch.report_stream_only():
+        batch.render(str(TOP), project, {**BASE_ANSWERS, "project_type": "cli"}, "7.0.0", skip_tasks=True)
+    assert batch.git_snapshot(project, "test").ok
+    assert (await call(client, "inspect_project", {"path": str(project)}))["next"].startswith("update_project")
+
+    plan = await call(client, "update_project", {"path": str(project), "ref": "HEAD"})
+    assert plan["applied"] is False and plan["from_commit"] == "7.0.0"
+    assert plan["changed"], "HEAD renders differently from 7.0.0"
+    assert batch.git(project, "status", "--porcelain").stdout == "", "a dry run writes nothing into the project"
+
+    applied = await call(client, "update_project", {"path": str(project), "ref": "HEAD", "dry_run": False})
+    assert applied["applied"] is True
+    assert {entry["path"] for entry in applied["changed"]} == {entry["path"] for entry in plan["changed"]}
+    assert batch.git(project, "status", "--porcelain").stdout != ""
+
+    dirty = await client.call_tool("update_project", {"path": str(project)})
+    assert dirty.is_error is True and "uncommitted" in str(dirty.content)
+    fresh = await client.call_tool("update_project", {"path": str(tmp_path / "empty")})
+    assert fresh.is_error is True and "render_project" in str(fresh.content), "a fresh directory is pointed elsewhere"
+
+
+@pytest.mark.anyio
+async def test_update_project_runs_only_this_templates_tasks(client: Client, tmp_path: Path):
+    """copier update executes the tasks of the template `.copier-answers.yml`
+    names, so a decoy answers file that makes the directory look like ours, or
+    a local template whose git origin merely claims to be ours, is refused
+    before anything runs."""
+    decoy = tmp_path / "decoy"
+    decoy.mkdir()
+    (decoy / ".copier-answers.ours.yml").write_text("_src_path: https://github.com/politeuma/architekton-py.git\n")
+    (decoy / ".copier-answers.yml").write_text("_src_path: https://example.invalid/evil-template.git\n")
+    refused = await client.call_tool("update_project", {"path": str(decoy)})
+    assert refused.is_error is True and "evil-template" in str(refused.content)
+
+    impostor = tmp_path / "impostor-template"
+    impostor.mkdir()
+    batch.git(impostor, "init", "-q")
+    batch.git(impostor, "remote", "add", "origin", "https://github.com/politeuma/architekton-py.git")
+    vendored = tmp_path / "vendored"
+    vendored.mkdir()
+    (vendored / ".copier-answers.yml").write_text(f"_src_path: {impostor}\n")
+    refused = await client.call_tool("update_project", {"path": str(vendored)})
+    assert refused.is_error is True and "refusing to run its tasks" in str(refused.content)
+
+    # The legacy URL is rewritten by a first-occurrence text replace; a
+    # comment holding it first leaves `_src_path` on the old repository.
+    legacy = tmp_path / "legacy"
+    legacy.mkdir()
+    batch.git(legacy, "init", "-q")
+    (legacy / ".copier-answers.yml").write_text(
+        "# https://github.com/politeuma/daimonion\n_src_path: https://github.com/politeuma/daimonion\n"
+    )
+    batch.git_snapshot(legacy, "test")
+    refused = await client.call_tool("update_project", {"path": str(legacy)})
+    assert refused.is_error is True and "refusing to run its tasks" in str(refused.content)
+
+    # A bare name is a relative path to copier: the project's own directory.
+    bare = tmp_path / "bare"
+    (bare / "architekton-py").mkdir(parents=True)
+    (bare / ".copier-answers.yml").write_text("_src_path: architekton-py\n")
+    refused = await client.call_tool("update_project", {"path": str(bare)})
+    assert refused.is_error is True and "refusing to run its tasks" in str(refused.content)
+
+
+@pytest.mark.anyio
 async def test_adopt_project_refuses_a_foreign_template(client: Client, tmp_path: Path):
     (tmp_path / ".copier-answers.yml").write_text("_src_path: https://github.com/other/template.git\n")
     result = await client.call_tool("adopt_project", {"path": str(tmp_path)})
@@ -304,7 +377,9 @@ async def test_run_batch_reports_a_verdict(client: Client, tmp_path: Path):
 
 @pytest.mark.anyio
 async def test_list_batch_requests_reads_the_shipped_batch(client: Client):
-    requests = (await call(client, "list_batch_requests", {"jsonl": str(TOP / "batches" / "smoke.jsonl")}))["requests"]
+    requests = (await call(client, "list_batch_requests", {"jsonl": str(TOP / "tests" / "batches" / "smoke.jsonl")}))[
+        "requests"
+    ]
     assert requests, "the shipped batch lists its requests"
     assert any(request["has_update"] for request in requests), "the listing reports the update phase"
 
@@ -497,7 +572,7 @@ async def test_support_resource_serves_the_declared_contract(client: Client):
     """The declaration the docs and the support tests read, on the MCP surface.
 
     The point of the resource is a caller asking "what has CI actually run?",
-    so the payload must be the live `support.yml` and not a copy of it: every
+    so the payload must be the live `tests/matrix/support.yml` and not a copy of it: every
     declared `supported` combination is cross-checked against the witness
     inventory the sibling tool reports.
     """
@@ -591,8 +666,8 @@ def test_template_fingerprint_hashes_the_render_inputs(monkeypatch: pytest.Monke
 
     first = mcp_server.template_fingerprint()
     assert first["inputs"] == {
-        "dirs": ["template", "_shared"],
-        "files": ["copier.yml", "_tasks.jinja"],
+        "dirs": ["template", "partials"],
+        "files": ["copier.yml", "partials/tasks-model.jinja"],
         "paths": 3,
         "bytes": len("x = 1\n") + len("# {{ repo_name }}\n") + len("repo_name:\n  type: str\n"),
     }

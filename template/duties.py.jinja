@@ -1,0 +1,11 @@
+{% import "partials/tasks-model.jinja" as _t with context %}"""Development tasks, run via `duty <task>`."""
+
+{% import "partials/oj-recipes.jinja" as _oj with context -%}
+{% if oj_code %}{% if oj_kind != 'atcoder' %}import pathlib
+{% endif %}import shlex
+
+{% endif %}from duty import duty
+from duty.context import Context
+{{ _t.duty_duties() -}}
+{% if oj_code %}{{ _oj.duty_oj() }}
+{% endif -%}

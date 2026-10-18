@@ -187,7 +187,7 @@ def test_template_agents_md_present_by_default(tmp_path: Path):
     assert agents.exists()
     body = agents.read_text()
     assert "task check" in body
-    assert ".github/CONTRIBUTING.md" in body
+    assert "CONTRIBUTING.md" in body
     readme = (tmp_path / "README.md").read_text()
     assert "AGENTS.md" in readme
 

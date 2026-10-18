@@ -33,8 +33,8 @@ jobs:
 
             - [ ] Change `.python-version` to be the oldest supported version
             - [ ] Change `requires-python` in `pyproject.toml` to be the oldest supported version
-            - [ ] Change `classifiers` in `template/pyproject.toml.jinja` to have all 4 versions
-            - [ ] Change `requires-python` in `template/pyproject.toml.jinja` to be the oldest supported version
+            - [ ] Change `classifiers` in `template/{% if render_pyproject %}pyproject.toml{% endif %}.jinja` to have all 4 versions
+            - [ ] Change `requires-python` in `template/{% if render_pyproject %}pyproject.toml{% endif %}.jinja` to be the oldest supported version
             - [ ] Change `requires-python` in the template lockfile (`template/uv.lock` or `template/pixi.lock`) to be the oldest supported version
-            - [ ] Change `python-version` in `.github/workflows/ci.yml` and the generated `ci.yml.jinja` (under `template/.github/workflows/`, with `{% if git_platform=="github.com" %}` / `{% if ci_provider == 'github_actions' %}` conditional directory names) to have all 4 versions
-            - [ ] Change first paragraph in `template/{% if docs %}docs{% endif %}/tutorials/installation.md.jinja` (the `{% if docs %}` dir is present only when docs are enabled) to be the oldest supported version
+            - [ ] Change `python-version` in `.github/workflows/ci.yml` and the generated `ci.yml.jinja` (under `template/{% if is_github %}.github{% endif %}/{% if ci_github_actions %}workflows{% endif %}/`, with `{% if git_platform=="github.com" %}` / `{% if ci_github_actions %}` conditional directory names) to have all 4 versions
+            - [ ] Change first paragraph in `template/{% if render_docs %}docs{% endif %}/tutorials/installation.md.jinja` (the `{% if docs %}` dir is present only when docs are enabled) to be the oldest supported version

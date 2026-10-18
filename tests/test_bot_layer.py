@@ -565,7 +565,7 @@ def test_include_bot_and_include_mcp_gates_stay_in_sync():
     offer the layer wherever `include_mcp.when` offers its.
 
     Both gates are the ask-time half of the same base guard — the
-    `bot_effective` / `mcp_effective` base guards (questions/_internal.yml)
+    `bot_effective` / `mcp_effective` base guards (questions/90-derived.yml)
     accept `project_type == 'cli'`, `project_type == 'web_api'` and the
     library+`include_web_api` combo. include_mcp grew its `or include_web_api`
     clause by hand before include_bot did, so one effective configuration (a

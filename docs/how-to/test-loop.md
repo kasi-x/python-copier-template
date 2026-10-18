@@ -6,11 +6,11 @@ but the cost ledger's own guard, and it stays outside the loop.
 
 | Tier | Command | Tests | Wall time |
 | --- | --- | --- | --- |
-| Edit loop | `task test-fast` | 1236 | ~31s |
+| Edit loop | `task test-fast` | 1266 | ~31s |
 | Slow | `task test-slow` | 7 | ~35s |
 | Pre-push / nightly | `task test-heavy` | 50 | ~20s |
-| Nightly, shuffled | `task test-randomly` | 1236 | ~27s |
-| Everything | `task test` | 1305 | ~171s |
+| Nightly, shuffled | `task test-randomly` | 1266 | ~27s |
+| Everything | `task test` | 1335 | ~171s |
 | Cost ledger guard | `task test-meta` | 10 | ~18s |
 
 `task test-meta` is the odd row: it is not a speed to pick by what you changed,
@@ -212,7 +212,7 @@ uv run mcp dev architekton/mcp_server.py        # MCP Inspector
 
 The full tool/resource list (including `template://questionnaire`,
 `template://witnesses`, `template://support`, `template://ethics`) is
-[Use the template's own MCP server](mcp-tools.md).
+[Develop the Template With Its MCP Server](mcp-tools.md).
 
 Read `template_status` first: `latest_tag` is the fork's own newest release —
 what a plain `copier copy` expands since the 6.0.0 detach — and

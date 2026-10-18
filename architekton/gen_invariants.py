@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""M0 read-only prototype for PLAN S5 (notes/plan-S5-derived-invariants.md, §3 M0).
+"""M0 read-only prototype for PLAN S5 (architekton-internal:notes/architekton-py/plan-S5-derived-invariants.md, §3 M0).
 
 Recompute the file-sets of the D1-D5 rows of tests/matrix/invariants.yml
 from live machinery and print the diff table against the hand-written values
@@ -102,43 +102,47 @@ ORIGINS: dict[str, str] = {
 #: textually and the gate vector is evaluated live. `None` gate = the
 #: empty-dependencies check (the bare workspace renders `dependencies = []`).
 CONTENT_ORIGINS: dict[str, list[tuple[str, str, str, str | None, bool]]] = {
-    "layout=data_science": [("pyproject.toml", "polars", "questions/_structured.yml", "ds_stack", True)],
+    "layout=data_science": [("pyproject.toml", "polars", "questions/91-structured.yml", "ds_stack", True)],
     "layout=web_api": [
         # Anchor wording uses the template tag; the live check splits the conjunction into the
         # web_api origin cover (done above) plus a docker-defaults leg from contexts below.
         (".github/workflows/ci.yml", "postgres", "workflows/ci.yml.jinja", "web_api+docker-default", False),
-        ("pyproject.toml", "fastapi", "questions/_structured.yml", "web_api", True),
+        ("pyproject.toml", "fastapi", "questions/91-structured.yml", "web_api", True),
         ("AGENTS.md", "regions.yml", "AGENTS.md.jinja", "web_api", False),
     ],
-    "oj_kind=kaggle": [("pyproject.toml", "torch", "questions/_structured.yml", "kaggle", True)],
-    "oj_kind=ctf": [("pyproject.toml", "pwntools", "_shared/pyproject-ctf-extra.toml.jinja", "ctf_effective", False)],
-    "oj_kind=code": [("pyproject.toml", "dependencies = []", "_shared/pyproject-deps.toml.jinja", None, False)],
+    "oj_kind=kaggle": [("pyproject.toml", "torch", "questions/91-structured.yml", "kaggle", True)],
+    "oj_kind=ctf": [
+        ("pyproject.toml", "pwntools", "partials/types/online_judge/pyproject.toml.jinja", "ctf_effective", False)
+    ],
+    "oj_kind=code": [
+        ("pyproject.toml", "dependencies = []", "partials/types/online_judge/pyproject.toml.jinja", None, False)
+    ],
     "include=include_bot/bot_platform=slack": [
-        ("pyproject.toml", "slack-bolt", "questions/_structured.yml", "bot_slack_effective", True)
+        ("pyproject.toml", "slack-bolt", "questions/91-structured.yml", "bot_slack_effective", True)
     ],
     "include=include_bot/bot_platform=line": [
-        ("pyproject.toml", "line-bot-sdk", "questions/_structured.yml", "bot_line_effective", True)
+        ("pyproject.toml", "line-bot-sdk", "questions/91-structured.yml", "bot_line_effective", True)
     ],
     "include=include_bot/bot_platform=gmail": [
         (
             "pyproject.toml",
             "google-api-python-client",
-            "questions/_structured.yml",
+            "questions/91-structured.yml",
             "bot_gmail_effective",
             True,
         )
     ],
     "include=include_bot_web_api/bot_platform=slack": [
-        ("pyproject.toml", "slack-bolt", "questions/_structured.yml", "bot_slack_effective", True)
+        ("pyproject.toml", "slack-bolt", "questions/91-structured.yml", "bot_slack_effective", True)
     ],
     "include=include_bot_web_api/bot_platform=line": [
-        ("pyproject.toml", "line-bot-sdk", "questions/_structured.yml", "bot_line_effective", True)
+        ("pyproject.toml", "line-bot-sdk", "questions/91-structured.yml", "bot_line_effective", True)
     ],
     "include=include_bot_web_api/bot_platform=gmail": [
         (
             "pyproject.toml",
             "google-api-python-client",
-            "questions/_structured.yml",
+            "questions/91-structured.yml",
             "bot_gmail_effective",
             True,
         )
@@ -164,7 +168,7 @@ M1_ROWS: tuple[str, ...] = (
 # noted here only. M3 will add a --check assertion that both spellings agree.
 
 # Per-platform content needle (pyproject.toml substring) derived live from the
-# _structured.yml dependency block via `deps_for_context`.
+# questions/91-structured.yml dependency block via `deps_for_context`.
 _PLATFORM_NEEDLE: dict[str, str] = {
     "slack": "slack-bolt",
     "line": "line-bot-sdk",
@@ -831,9 +835,9 @@ def _derive_m1_files(model: Model) -> dict[str, dict[str, object]]:
     - ships: the rendered module + its test (placement via pkg_dir context, test under tests/)
     - absent: the other platforms' modules+tests in the same placement
     - content: [pyproject.toml, <needle>] where <needle> is the live dependency
-      substring wired under bot_*_effective in questions/_structured.yml and verified
+      substring wired under bot_*_effective in questions/91-structured.yml and verified
       textually plus by the dependencies vector from the rendered context.
-    The differentiation uses (i) template membership via _shared/*.jinja presence and
+    The differentiation uses (i) template membership via partials/*.jinja presence and
     (ii) the per-leaf ``dependencies`` list from copier's rendered context -- the
     two live sources the witness expect already trusts.
     """
@@ -872,9 +876,9 @@ def _derive_m1_files(model: Model) -> dict[str, dict[str, object]]:
             msg = f"bot row {row_id!r} origin {origin_eff} does not cover its leaf set (cover={cover})"
             raise RuntimeError(msg)
         # Verify dependency needle textually + live vector before emitting content.
-        anchor_hit = _anchor_text("questions/_structured.yml", origin_eff, needle)
+        anchor_hit = _anchor_text("questions/91-structured.yml", origin_eff, needle)
         if "NOT FOUND" in anchor_hit:
-            msg = f"bot row {row_id!r} needle {needle!r} not under {origin_eff} in questions/_structured.yml: {anchor_hit}"  # noqa: E501
+            msg = f"bot row {row_id!r} needle {needle!r} not under {origin_eff} in questions/91-structured.yml: {anchor_hit}"  # noqa: E501
             raise RuntimeError(msg)
         # Dependencies leg: every member leaf's rendered dependencies must contain the needle.
         deps = [str(model.contexts[leaf_id].get("dependencies")) for leaf_id in model.member_ids(row_id)]

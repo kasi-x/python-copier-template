@@ -25,8 +25,8 @@ over these three functions; the logic lives here so the wording has one
 owner (the architekton/explain.py precedent).
 
 The questionnaire itself is untouched: copier's ask-time `when` semantics,
-the `combinable` / `has_*` render-time guards (questions/_combo.yml) and the
-support.yml refusal rules are reused, never re-spelled. The question order
+the `combinable` / `has_*` render-time guards (questions/08-layers.yml) and the
+tests/matrix/support.yml refusal rules are reused, never re-spelled. The question order
 and the no-model CLI/questionnaire path keep working exactly as before.
 """
 
@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import functools
 import json
 import re
 import sys
@@ -62,80 +63,28 @@ PRESETS = answers.PRESETS
 _TOKEN = re.compile(r"[a-z0-9]+")
 """Word tokens of a requirement string: lowercased alphanumerics."""
 
-_STOPWORDS = frozenset(
-    {
-        "a",
-        "an",
-        "and",
-        "the",
-        "with",
-        "for",
-        "our",
-        "team",
-        "needs",
-        "need",
-        "want",
-        "wants",
-        "project",
-        "internal",
-        "company",
-        "please",
-        "new",
-        "using",
-        "use",
-        "plus",
-        "that",
-        "this",
-        "build",
-        "create",
-        "make",
-        "app",
-    }
-)
-"""Filler words that would otherwise match every preset's comment."""
+#: The requirement-word data (architekton/suggest.yml): which words raise which
+#: preset signal, and which filler words are dropped first.
+SUGGEST_DATA = TOP / "architekton" / "suggest.yml"
 
-#: Requirement token -> (preset signal, human reason). Each key is matched
-#: against the token set of the requirement words; the value names what the
-#: preset must carry for the weight to count, and the reason the report shows.
-#: Kept minimal on purpose: these are the families presets/*.yml pins, not a
-#: feature catalogue.
-_KEYWORDS: dict[str, tuple[str, str]] = {
-    "api": ("web_api", "serves an API (web-api scaffold)"),
-    "rest": ("web_api", "serves an API (web-api scaffold)"),
-    "fastapi": ("web_api", "serves an API (web-api scaffold)"),
-    "service": ("web_api", "runs as a service (web-api scaffold)"),
-    # The web-api family is the database-backed stack (SQLAlchemy + Alembic
-    # per support.yml's measured `why`): a Postgres requirement names it,
-    # not a new catalogue entry.
-    "postgres": ("web_api", "needs Postgres (the web-api stack's database)"),
-    "database": ("web_api", "needs a database (the web-api stack's database)"),
-    "sql": ("web_api", "needs a database (the web-api stack's SQL layer)"),
-    "data": ("data", "works with datasets (data-science layout)"),
-    "analysis": ("data", "works with datasets (data-science layout)"),
-    "notebook": ("data", "works with notebooks (data-science layout)"),
-    "ml": ("data", "works with datasets (data-science layout)"),
-    "bot": ("bot", "runs a chat bot (bot layer)"),
-    "discord": ("bot", "runs a Discord bot (bot layer)"),
-    "slack": ("bot", "runs a Slack bot (bot layer)"),
-    "chat": ("bot", "runs a chat bot (bot layer)"),
-    "mcp": ("mcp", "serves MCP tools (mcp layer)"),
-    "cli": ("cli", "ships a command-line entry point"),
-    "command": ("cli", "ships a command-line entry point"),
-    "tool": ("cli", "ships a command-line entry point"),
-    "firmware": ("micropython", "targets microcontroller firmware"),
-    "esp32": ("micropython", "targets microcontroller firmware"),
-    "micropython": ("micropython", "targets microcontroller firmware"),
-    "ros": ("ros2", "integrates with ROS 2"),
-    "robot": ("ros2", "integrates with ROS 2"),
-    "judge": ("oj", "is a competitive-programming workspace"),
-    "atcoder": ("oj:atcoder", "targets AtCoder"),
-    "codeforces": ("oj:codeforces", "targets Codeforces"),
-    "kattis": ("oj:kattis", "targets Kattis"),
-    # scraping/ctf keywords are deliberately absent: no preset pins
-    # include_scraping or include_ctf, so the signal could never rank one.
-    "library": ("library", "ships as an importable library"),
-    "package": ("library", "ships as an importable library"),
-}
+
+@functools.cache
+def _load_words(path: Path = SUGGEST_DATA) -> tuple[dict[str, tuple[str, str]], frozenset[str]]:
+    """(word -> (preset signal, human reason), ignored words), from the YAML data file.
+
+    Read on first use, not at import: an installed CLI with no checkout
+    imports this module before it delegates to one.
+    """
+    data = read_yaml_mapping(path)
+    keywords: dict[str, tuple[str, str]] = {}
+    for signal, groups in data["signals"].items():
+        for group in groups:
+            for word in group["words"]:
+                if word in keywords:
+                    msg = f"{path}: {word!r} is listed under two signals"
+                    raise ValueError(msg)
+                keywords[str(word)] = (str(signal), str(group["reason"]))
+    return keywords, frozenset(str(word) for word in data["ignored_words"])
 
 
 def questionnaire_schema(*, asked_only: bool = False) -> dict[str, Any]:
@@ -170,12 +119,12 @@ def _closest(name: str, known: list[str], limit: int = 3) -> list[str]:
 
 
 def _base_is_promised(support: dict[str, Any], project_type: str) -> bool:
-    """Whether any support.yml row carries the `project_type` base to a tier."""
+    """Whether any tests/matrix/support.yml row carries the `project_type` base to a tier."""
     return support_ledger.base_is_promised(support, project_type)
 
 
 def _support_note(answers: dict[str, Any]) -> str | None:
-    """The support.yml row the answer set names without a tier promise, if any.
+    """The tests/matrix/support.yml row the answer set names without a tier promise, if any.
 
     Matches textually (the architekton/explain.py precedent): a row is "named" when
     the combination mentions the project_type value, and no row carries the
@@ -190,7 +139,7 @@ def _support_note(answers: dict[str, Any]) -> str | None:
     if not project_type or _base_is_promised(support, project_type):
         return None  # some tier promises this base; not our warning to give
     return (
-        f"project_type {project_type!r} is not named by any support.yml row: "
+        f"project_type {project_type!r} is not named by any tests/matrix/support.yml row: "
         "it renders, but no tier is promised (see docs/reference/support.md)"
     )
 
@@ -319,7 +268,7 @@ def _copier_verdicts(
 
 
 def _support_warning(known: dict[str, Any], errors: list[dict[str, str]]) -> dict[str, str] | None:
-    """The advisory support.yml warning, or None when nothing is owed."""
+    """The advisory tests/matrix/support.yml warning, or None when nothing is owed."""
     if not known or any("unknown question" in error["reason"] for error in errors):
         return None
     note = _support_note(known)
@@ -374,10 +323,10 @@ def validate_answers(answers: dict[str, Any]) -> ValidationResult:
       are computed at render time, never answered);
     - a key whose question copier would not ask at these answers is rejected
       (a forced answer copier keeps but the render guards discard -- the
-      questions/_combo.yml `when` / `combinable` / `has_*` trio);
+      questions/08-layers.yml `when` / `combinable` / `has_*` trio);
     - a layer include on a base that cannot carry it is rejected (the
       `combinable` half of the same trio: `include_web_api=true` on ros2);
-    - an answer set whose base no support.yml row promises earns a warning
+    - an answer set whose base no tests/matrix/support.yml row promises earns a warning
       reason, not a rejection (support refusal is advisory here; the render
       still runs).
 
@@ -424,13 +373,13 @@ class Match:
 
 def _tokens(text: str) -> set[str]:
     """Lowercase alphanumeric tokens of a requirement string, minus filler."""
-    return set(_TOKEN.findall(text.lower())) - _STOPWORDS
+    return set(_TOKEN.findall(text.lower())) - _load_words()[1]
 
 
 def _preset_signals(name: str) -> set[str]:
     """The families a preset belongs to, derived from its pinned answers (never prose).
 
-    Signals are the `_KEYWORDS` left-hand sides collapsed by family: a preset
+    Signals are the signal names of architekton/suggest.yml collapsed by family: a preset
     carries `web_api` when it pins `project_type: web_api` (or the
     `include_web_api` layer), `mcp` when it pins `include_mcp: true`, and so
     on. Comment prose is deliberately unread: the bot preset's comment
@@ -500,7 +449,7 @@ def suggest_presets(requirements: list[str]) -> list[Match]:
     """Rank presets against requirement words, deterministically, with no model.
 
     Each requirement string is tokenized (lowercase alphanumerics, filler
-    dropped); a token counts when `_KEYWORDS` knows it AND the preset carries
+    dropped); a token counts when architekton/suggest.yml lists it AND the preset carries
     the signal (derived from its pinned answers by `_preset_signals`, never
     from comment prose). One signal family votes once per preset; ties break
     by preset name, so the ranking is stable across runs. A preset with no
@@ -510,7 +459,8 @@ def suggest_presets(requirements: list[str]) -> list[Match]:
     wanted = {token for text in requirements for token in _tokens(text)}
     if not wanted:
         return []
-    signals = {token: _KEYWORDS[token] for token in wanted if token in _KEYWORDS}
+    keywords = _load_words()[0]
+    signals = {token: keywords[token] for token in wanted if token in keywords}
     if not signals:
         return []
     ranked: list[Match] = []

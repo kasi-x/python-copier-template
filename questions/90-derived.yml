@@ -1,0 +1,264 @@
+# Values computed from the answers, never asked.
+#
+# One row per value, always the same two lines:
+#
+#   <name>: {type: bool, when: false, default:
+#       "{{ <expression over answers and the rows above> }}"}
+#
+# `when: false` is what makes a row internal: copier computes it from the
+# answers instead of asking. Rows are computed top to bottom, so a row may
+# read any answer and only the rows above it.
+#
+# A row exists for one of two reasons:
+# - a condition several files would otherwise re-spell gets one name here;
+# - a `*_effective` row is a layer answer AND the project types that can host
+#   the layer. The question is only asked on those types, but a data file or
+#   a render test can force the answer on any type, so the guard lives here.
+#
+# Rows are grouped by feature; each group's `from:` line names the questions
+# it reads. A group marked "one per ..." is a family: every member has the
+# same shape, so adding a member is copying a row and changing two words.
+# Values a question's own `when` / `default` reads (micropython_pkg,
+# online_judge, kaggle, oj_code, has_*) live in that question's file instead.
+#
+# Next: questions/91-structured.yml (dependency and src/ lists) and
+# the `{% if %}` gates in template/ path names (which files exist) read these
+# and partials/ (what the files contain). `task where -- <name>` lists every
+# reader of a row; after editing, `task test-fast`.
+
+# --- Git platform and CI
+#     from: questions/17-project-details.yml git_platform, 14-integrations ci_provider
+# git_platform is asked late, so it can gate files but never a question.
+is_github: {type: bool, when: false, default:
+    "{{ git_platform == 'github.com' }}"}
+is_gitlab: {type: bool, when: false, default:
+    "{{ git_platform == 'gitlab.com' }}"}
+ci_github_actions: {type: bool, when: false, default:
+    "{{ ci_provider == 'github_actions' }}"}
+
+# --- Security files (GitHub only)
+#     from: questions/16-security.yml security_policy, scorecard; 14-integrations cicd_extras
+# SECURITY.md and the Scorecard workflow are GitHub machinery; copier.yml's
+# _tasks warns when a GitLab render discards these answers.
+security_policy_effective: {type: bool, when: false, default:
+    "{{ security_policy and is_github }}"}
+scorecard_effective: {type: bool, when: false, default:
+    "{{ scorecard and is_github and cicd_extras }}"}
+
+# --- Project type
+#     from: questions/08-layers.yml has_web_api, has_data_science
+# The base project_type, or the matching combo opt-in. Most rows below read
+# these, so they come early.
+web_api: {type: bool, when: false, default:
+    "{{ has_web_api }}"}
+data_science: {type: bool, when: false, default:
+    "{{ has_data_science }}"}
+
+# --- Opt-in layers
+#     from: questions/08-layers.yml include_mcp, include_scraping, include_bot; 05-agent
+# Each layer rides an executable host (cli, or web_api for mcp and bot);
+# the agent scaffold renders when the recommended agent guide is declined.
+mcp_effective: {type: bool, when: false, default:
+    "{{ include_mcp and (project_type == 'cli' or web_api) }}"}
+scraping_effective: {type: bool, when: false, default:
+    "{{ include_scraping and project_type == 'cli' }}"}
+bot_effective: {type: bool, when: false, default:
+    "{{ include_bot and (project_type == 'cli' or web_api) }}"}
+agent_scaffold: {type: bool, when: false, default:
+    "{{ not use_recommended_agent and project_type in ['library', 'cli'] }}"}
+
+# --- Scraping engines (one per engine)
+#     from: questions/08-layers.yml use_recommended_scraping, scraping_engine
+# Recommended = httpx, the only engine with no new runtime dependency.
+# `all` ships every engine. httpx stays on beside memorious and playwright:
+# their starters reuse its politeness core. memorious forces AGPL-3.0
+# (license_effective below).
+scraping_httpx_effective: {type: bool, when: false, default:
+    "{{ scraping_effective and (use_recommended_scraping or scraping_engine in ['httpx', 'memorious', 'playwright', 'all']) }}"}
+scraping_scrapy_effective: {type: bool, when: false, default:
+    "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['scrapy', 'all'] }}"}
+scraping_memorious_effective: {type: bool, when: false, default:
+    "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['memorious', 'all'] }}"}
+scraping_playwright_effective: {type: bool, when: false, default:
+    "{{ scraping_effective and not use_recommended_scraping and scraping_engine in ['playwright', 'all'] }}"}
+
+# --- Chat bots (one per platform)
+#     from: questions/08-layers.yml use_recommended_bot, bot_platform
+# Recommended = discord; exactly one platform is ever on. Discord, Slack and
+# Gmail dial out (Gmail polls, and its credentials are file paths); LINE
+# receives a webhook, so its module owns a FastAPI app and a port. Adding a
+# platform is a choice in 08-layers, a row here and a body in partials/.
+bot_discord_effective: {type: bool, when: false, default:
+    "{{ bot_effective and (use_recommended_bot or bot_platform == 'discord') }}"}
+bot_slack_effective: {type: bool, when: false, default:
+    "{{ bot_effective and not use_recommended_bot and bot_platform == 'slack' }}"}
+bot_line_effective: {type: bool, when: false, default:
+    "{{ bot_effective and not use_recommended_bot and bot_platform == 'line' }}"}
+bot_gmail_effective: {type: bool, when: false, default:
+    "{{ bot_effective and not use_recommended_bot and bot_platform == 'gmail' }}"}
+
+# --- CTF and .env.example
+#     from: questions/07-online-judge.yml oj_ctf, 08-layers include_ctf, 14-integrations include_sentry; the layers above
+# .env.example exists when any rendered feature documents environment
+# variables. include_sentry is read raw on purpose (template-dev.md).
+needs_env_example: {type: bool, when: false, default:
+    "{{ web_api or mcp_effective or scraping_effective or include_sentry or bot_effective or agent_scaffold }}"}
+ctf_effective: {type: bool, when: false, default:
+    "{{ oj_ctf or (include_ctf and project_type in ['library', 'cli']) }}"}
+
+# --- Web API details
+#     from: questions/15-web-api.yml use_recommended_web_api, prometheus, rate_limit, cors
+# Recommended = all three on.
+prometheus_effective: {type: bool, when: false, default:
+    "{{ web_api and (use_recommended_web_api or prometheus) }}"}
+rate_limit_effective: {type: bool, when: false, default:
+    "{{ web_api and (use_recommended_web_api or rate_limit) }}"}
+cors_effective: {type: bool, when: false, default:
+    "{{ web_api and (use_recommended_web_api or cors) }}"}
+
+# --- Data science and layout
+#     from: questions/09-data-science.yml use_gpu; 10-polish layout; 07-online-judge kaggle, oj_ctf
+# ds_stack: the data_science layout and the kaggle workspace share the src/
+# data/ features/ models/ tree and the analysis dependencies.
+# use_src_layout keeps its own exclusion list, NOT layout.when's (script is
+# guarded against a forced answer, oj_ctf is re-admitted); pinned by
+# tests/test_copier_structure.py::test_layout_exclusion_lists_stay_deliberately_different.
+data_science_layout: {type: bool, when: false, default:
+    "{{ data_science }}"}
+ds_stack: {type: bool, when: false, default:
+    "{{ data_science_layout or kaggle }}"}
+use_src_layout: {type: bool, when: false, default:
+    "{{ layout == 'src' and (oj_ctf or project_type not in ['script', 'online_judge', 'ros2', 'micropython']) and not web_api }}"}
+use_gpu_effective: {type: bool, when: false, default:
+    "{{ (use_gpu and data_science) or kaggle }}"}
+
+# --- Repository and docs URLs
+#     from: questions/17-project-details.yml git_platform, github_org / gitlab_group, repo_name
+# The untaken branch's unasked name is never evaluated (Jinja's inline `if`
+# is lazy). GitLab Pages is https://<group>.gitlab.io/<repo>, group lowercased.
+# Which consumers follow the platform and which stay GitHub-only:
+# docs/explanations/template-dev.md, "GitLab scope".
+repo_url: {type: str, when: false, default:
+    "{{ 'https://gitlab.com/' ~ gitlab_group ~ '/' ~ repo_name if git_platform == 'gitlab.com' else 'https://github.com/' ~ github_org ~ '/' ~ repo_name }}"}
+docs_url: {type: str, when: false, default:
+    "{{ 'https://' ~ (gitlab_group | lower) ~ '.gitlab.io/' ~ repo_name if git_platform == 'gitlab.com' else 'https://' ~ (github_org | lower) ~ '.github.io/' ~ repo_name }}"}
+
+# --- Docs site
+#     from: questions/11-docs.yml docs_type
+# A micropython project has nothing for sphinx autodoc to import, so a sphinx
+# answer becomes zensical there (copier.yml's _tasks warns).
+# api_docs_zensical: API pages only when there is a package to document.
+sphinx: {type: bool, when: false, default:
+    "{{ docs_type == 'sphinx' and not micropython_pkg }}"}
+zensical: {type: bool, when: false, default:
+    "{{ docs_type == 'zensical' or (micropython_pkg and docs_type == 'sphinx') }}"}
+api_docs_zensical: {type: bool, when: false, default:
+    "{{ zensical and not oj_code }}"}
+great_docs: {type: bool, when: false, default:
+    "{{ docs_type == 'great-docs' }}"}
+docs: {type: bool, when: false, default:
+    "{{ docs_type != 'README' }}"}
+
+# --- ROS 2
+#     from: questions/01-project-type.yml project_type, 03-ros2 pkg_language
+ros2_pkg: {type: bool, when: false, default:
+    "{{ project_type == 'ros2' }}"}
+ros2_cpp: {type: bool, when: false, default:
+    "{{ ros2_pkg and pkg_language == 'cpp' }}"}
+ros2_python: {type: bool, when: false, default:
+    "{{ ros2_pkg and pkg_language == 'python' }}"}
+
+# --- Generated trees (adopt mode can protect each)
+#     from: questions/02-adoption.yml existing_project, adopt_protect
+# The package tree and the tests tree exclude different project types on
+# purpose (online_judge/micropython/web_api/ros2 vs ros2/micropython).
+pkg_scaffold: {type: bool, when: false, default:
+    "{{ (not existing_project or 'scaffold' not in adopt_protect) and not online_judge and not micropython_pkg and not web_api and not ros2_pkg }}"}
+tests_scaffold: {type: bool, when: false, default:
+    "{{ (not existing_project or 'scaffold' not in adopt_protect) and not ros2_pkg and not micropython_pkg }}"}
+prompts_scaffold: {type: bool, when: false, default:
+    "{{ (not existing_project or 'scaffold' not in adopt_protect) and agent_scaffold }}"}
+render_docs: {type: bool, when: false, default:
+    "{{ docs and not (existing_project and 'docs' in adopt_protect) }}"}
+
+# --- Toolchain shorthands
+#     from: questions/06-toolchain.yml package_manager, task_runner(_pixi); 12-quality strictness
+# Under pixi the task runner comes from task_runner_pixi. The four strictness
+# levels make `not strictness_minimal` mean recommended-or-full.
+task_runner_effective: {type: str, when: false, default:
+    "{{ task_runner_pixi if package_manager == 'pixi' else task_runner }}"}
+is_uv: {type: bool, when: false, default:
+    "{{ package_manager == 'uv' }}"}
+is_poetry: {type: bool, when: false, default:
+    "{{ package_manager == 'poetry' }}"}
+is_pixi: {type: bool, when: false, default:
+    "{{ package_manager == 'pixi' }}"}
+runner_just: {type: bool, when: false, default:
+    "{{ task_runner_effective == 'just' }}"}
+runner_task: {type: bool, when: false, default:
+    "{{ task_runner_effective == 'task' }}"}
+strictness_minimal: {type: bool, when: false, default:
+    "{{ strictness in ['none', 'basic'] }}"}
+
+# --- License and data governance
+#     from: questions/13-license.yml license, fair; 16-security license_check; 09-data-science, 08-layers domain_traits
+# memorious4 is AGPL-3.0, so choosing it overrides the license answer
+# (validators cannot rewrite answers; copier.yml's _tasks warns).
+# reuse_effective is off in adopt mode: the adopter's LICENSE is not rendered.
+# care: the CARE sheet lives in data/, so it needs the data-science layout;
+# a medtech project without one gets the SaMD guidance section instead.
+license_effective: {type: str, when: false, default:
+    "{{ 'AGPL-3.0' if scraping_memorious_effective else license }}"}
+proprietary: {type: bool, when: false, default:
+    "{{ license_effective in ['Proprietary', 'Confidential'] }}"}
+license_check_effective: {type: bool, when: false, default:
+    "{{ use_recommended_security or license_check }}"}
+reuse_effective: {type: bool, when: false, default:
+    "{{ fair and not proprietary and not existing_project }}"}
+duo: {type: bool, when: false, default:
+    "{{ data_reusable and data_science_layout }}"}
+care: {type: bool, when: false, default:
+    "{{ (data_ethics or 'medtech' in domain_traits) and data_science_layout }}"}
+license_year: {type: str, when: false, default:
+    "{{ '%Y' | strftime }}"}
+
+# --- Package directory
+#     from: the project type and layout above
+# web_api's application is the top-level app/ package; kaggle's is src/utils;
+# a bare online-judge workspace has none (`.`).
+pkg_dir: {type: str, when: false, default:
+    "{{ 'app' if web_api else ('src/utils' if kaggle else ('.' if online_judge and not oj_ctf else (('src/' if use_src_layout else '') + package_name))) }}"}
+import_pkg: {type: str, when: false, default:
+    "{{ 'app' if web_api else package_name }}"}
+
+# --- Pinned versions
+#     from: nothing asked: bump here
+# micropython_version: freeze.py clones this tag and the community
+# micropython-<port>-stubs pin the same version; confirm with
+# architekton/check_upstream.py. daimonion_spec: one commit, so a render never
+# runs whatever lands on daimonion's main (move to a hashed PyPI pin once
+# published).
+micropython_version: {type: str, when: false, default:
+    "v1.29.0"}
+daimonion_spec: {type: str, when: false, default:
+    "git+https://github.com/politeuma/daimonion@5ec9539fd10cb5c5bb09539261e00b7e087dbd33"}
+
+# --- Files an adopter can protect (one per file)
+#     from: questions/02-adoption.yml existing_project, adopt_protect
+# ros2 C++ packages are CMake projects, hence no pyproject.toml.
+render_readme: {type: bool, when: false, default:
+    "{{ not existing_project or 'readme' not in adopt_protect }}"}
+render_license: {type: bool, when: false, default:
+    "{{ not existing_project or 'license' not in adopt_protect }}"}
+render_gitignore: {type: bool, when: false, default:
+    "{{ not existing_project or 'gitignore' not in adopt_protect }}"}
+render_python_version: {type: bool, when: false, default:
+    "{{ not existing_project or 'python_version' not in adopt_protect }}"}
+render_pyproject: {type: bool, when: false, default:
+    "{{ (not existing_project or 'pyproject' not in adopt_protect) and not ros2_cpp }}"}
+
+# --- Agent guide
+#     from: every project type
+# Always on; a name so the guide's gate can change in one place.
+agents_md_effective: {type: bool, when: false, default:
+    true}

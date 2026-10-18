@@ -55,7 +55,7 @@ def test_scaffold_layer_dry_run(capsys: Any):
     assert rc == 0
     captured = capsys.readouterr().out
     assert "include_redis_cache" in captured
-    assert "questions/_combo.yml" in captured
+    assert "questions/08-layers.yml" in captured
     assert "include=include_redis_cache" in captured
     assert "tests/matrix/layers.yml" in captured
     assert "redis_cache_effective" in captured

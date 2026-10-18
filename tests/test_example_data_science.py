@@ -188,7 +188,7 @@ def test_template_data_governance_asked_on_recommended_path(tmp_path: Path, rend
 def test_template_data_governance_off_by_default(tmp_path: Path):
     # DUO/CARE are independent of fair -- a data_science project gets
     # neither sheet unless data_reusable/data_ethics are explicitly asked
-    # for (example-answers.yml leaves both at their default: false).
+    # for (tests/example-answers.yml leaves both at their default: false).
     copy_project(tmp_path, fair=True)
     assert not (tmp_path / "data" / "DUO.md").exists()
     assert not (tmp_path / "data" / "CARE.md").exists()

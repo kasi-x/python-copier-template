@@ -9,7 +9,7 @@ Responsibility: the tools that look at a project on disk or at this checkout
 error conversion. Ethics matching lives in the `daimonion` linter, not here.
 """
 
-# WHYNOT: the functions below are registered through @server.tool()
+# WHYNOT: the functions below are registered through @mcp_interface.tool(server)
 # inside register_*(); their call edge is the decorator, invisible to
 # the checker.
 # pyright: reportUnusedFunction=false
@@ -17,8 +17,12 @@ error conversion. Ethics matching lives in the `daimonion` linter, not here.
 from __future__ import annotations
 
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
+from typing import Literal
+
+import yaml
 
 TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
@@ -28,7 +32,9 @@ from architekton import adopt_run  # noqa: E402
 from architekton import adopt_types  # noqa: E402
 from architekton import batch  # noqa: E402
 from architekton import detect  # noqa: E402
+from architekton import mcp_interface  # noqa: E402
 from architekton import questionnaire  # noqa: E402
+from architekton.mcp_shared import repo_root  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 
 
@@ -59,48 +65,134 @@ def run_adoption(
         raise ToolError(str(exc)) from exc
 
 
+def run_update(
+    target: Path, ref: str | None, answers: dict[str, Any] | None, *, dry_run: bool, conflict: str
+) -> dict[str, Any]:
+    """Update `target` (or, for a dry run, a throwaway clone of it) and report what changed."""
+    try:
+        mode = detect.detect_mode(target)
+    except detect.DetectError as exc:
+        raise ToolError(str(exc)) from exc
+    if mode != "update":
+        msg = f"{target} is mode {mode!r}, not 'update'; call {mcp_interface.next_for_mode(mode)}"
+        raise ToolError(msg)
+    if not detect.is_legacy_src(_recorded_src(target) or ""):
+        _refuse_untrusted_src(target)  # early, so a refusal comes before any clone
+    status = batch.git(target, "status", "--porcelain")
+    if status.returncode != 0:
+        msg = f"{target} is not a git repository: copier updates only committed projects; commit it first"
+        raise ToolError(msg)
+    if status.stdout.strip():
+        msg = (
+            f"{target} has uncommitted changes; commit or stash them first (the update merges against the last commit)"
+        )
+        raise ToolError(msg)
+    where = target
+    if dry_run:
+        where = Path(tempfile.mkdtemp(prefix="mcp-update-")) / target.name
+        cloned = batch.git(target.parent, "clone", "--quiet", str(target), str(where))
+        if cloned.returncode != 0:
+            msg = f"cannot clone {target} for the dry run: {cloned.stderr.strip()}"
+            raise ToolError(msg)
+    # Judged in the tree copier is about to run on (a dry run's clone holds
+    # the committed file, which need not be the one read above), after the
+    # legacy-URL rewrite, so the check sees exactly what copier will read.
+    with batch.report_stream_only():  # its notice is a print; stdout is the MCP channel
+        detect.migrate_legacy_src(where)
+    _refuse_untrusted_src(where)
+    from_commit = _recorded_commit(where)
+    try:
+        with batch.report_stream_only():
+            batch.update(where, dict(answers or {}), ref, conflict="rej" if conflict == "rej" else "inline")
+    except Exception as exc:  # noqa: BLE001  WHYNOT: the tool must report copier's refusal, not crash the session.
+        msg = f"update failed: {type(exc).__name__}: {exc}"
+        raise ToolError(msg) from exc
+    changed = batch.git(where, "status", "--porcelain=v1", "--untracked-files=all").stdout.splitlines()
+    conflicts = batch.conflict_residue(where)
+    return {
+        "applied": not dry_run,
+        "path": str(target),
+        "work": str(where) if dry_run else None,
+        "from_commit": from_commit,
+        "to_commit": _recorded_commit(where),
+        "changed": [{"path": line[3:], "status": line[:2].strip()} for line in changed if line.strip()],
+        "conflicts": conflicts,
+        "next": _after_update(dry_run=dry_run, conflicts=bool(conflicts)),
+    }
+
+
+def _after_update(*, dry_run: bool, conflicts: bool) -> str:
+    """What the agent does after an update_project call."""
+    if dry_run:
+        return "show the user `changed` and `conflicts`, then call again with dry_run=False"
+    if conflicts:
+        return "resolve the conflicts, then commit"
+    return "review `git diff`, run the project's checks, then commit"
+
+
+def _refuse_untrusted_src(project: Path) -> None:
+    """Refuse an update whose `.copier-answers.yml` names a template that is not this one.
+
+    copier update reads that file -- not whichever answers file made
+    detect_mode say "update" -- and runs the named template's tasks.
+    """
+    recorded = _recorded_src(project)
+    if recorded is None or not detect.src_is_trusted_for_update(recorded, repo_root()):
+        msg = (
+            f"{project}/.copier-answers.yml records the template source {recorded!r}, which is not this "
+            "template's upstream URL or this checkout; refusing to run its tasks. Check it with the user."
+        )
+        raise ToolError(msg)
+
+
+def _recorded_src(project: Path) -> str | None:
+    """The `_src_path` in the answers file copier update reads."""
+    try:
+        data = yaml.safe_load((project / batch.ANSWERS_FILE).read_text(encoding="utf-8"))
+    except (yaml.YAMLError, OSError):
+        return None
+    src = data.get("_src_path") if isinstance(data, dict) else None
+    return src if isinstance(src, str) else None
+
+
+def _recorded_commit(project: Path) -> str | None:
+    """The template revision the project's .copier-answers.yml records."""
+    for answers in sorted(project.glob(".copier-answers*.yml")):
+        try:
+            data = yaml.safe_load(answers.read_text(encoding="utf-8"))
+        except (yaml.YAMLError, OSError):
+            continue
+        if isinstance(data, dict) and data.get("_commit"):
+            return str(data["_commit"])
+    return None
+
+
 def register_project(server: Any) -> None:
     """Register the project tools on `server`."""
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def inspect_project(path: str, *, takeover: bool = False) -> dict[str, Any]:
-        """Report what a project already has, and which operation fits it.
+        """What a directory already holds, and which generate tool fits it.
 
-        Returns `mode` (fresh / adopt / update / foreign), the facts found on
-        disk, the template outputs that would overwrite existing files
-        (`collisions`), and `suggested_answers` for a copy or an adoption.
-
-        Read `mode` before rendering anything: `update` means this project was
-        already generated by this template (run `copier update`, not a copy),
-        `foreign` means another template owns it and the call is refused unless
-        `takeover=True`. Filesystem only -- no render, no network.
+        Returns `mode` (fresh / adopt / update / foreign), `next` (the tool to
+        call for that mode), the facts found, `collisions` (files a render would
+        overwrite) and `suggested_answers`. `foreign` is refused unless
+        `takeover=True`; ask the user first. Cost: filesystem only.
         """
         try:
             detection = detect.detect(Path(path).resolve(), takeover=takeover)
         except (detect.DetectError, OSError) as exc:
             raise ToolError(str(exc)) from exc
-        return detection.as_dict()
+        return {**detection.as_dict(), "next": mcp_interface.next_for_mode(detection.mode)}
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def template_status() -> dict[str, Any]:
-        """Report this template checkout's own state.
+        """Which template revision a render would use, and whether the checkout is dirty.
 
-        Returns `repo`, `template_dir`, the question counts, `latest_tag`, `head`,
-        `commits_behind_latest_tag` and `dirty`. `latest_tag` and `head` come from
-        git. The fork tags its own releases
-        since the 6.0.0 detach, so `copier copy` without `--vcs-ref` expands the
-        newest release tag; `commits_behind_latest_tag` says how far that tag
-        trails the working tree, which is what an explicit ref (or the local
-        `--ref HEAD` render) exists for. `dirty` means uncommitted template
-        changes are included in any render done from this checkout.
-
-        Reads git and the questionnaire only -- no render, no network (~50 ms),
-        so it is the cheap first call.
+        Returns repo, template_dir, question counts, latest_tag, head,
+        commits_behind_latest_tag and dirty (uncommitted template changes are
+        included in renders from this checkout). Cost: git and filesystem, ~50 ms.
         """
-        from architekton.mcp_shared import (
-            repo_root,  # noqa: E402, PLC0415  -- the shim owns TOP; leaves read it lazily.
-        )
-
         top = repo_root()
         describe = batch.git(top, "describe", "--tags", "--abbrev=0").stdout.strip()
         head = batch.git(top, "rev-parse", "--short", "HEAD").stdout.strip()
@@ -120,7 +212,7 @@ def register_project(server: Any) -> None:
             "dirty": bool(batch.git(top, "status", "--porcelain").stdout.strip()),
         }
 
-    @server.tool()
+    @mcp_interface.tool(server)
     def adopt_project(
         path: str,
         *,
@@ -129,39 +221,43 @@ def register_project(server: Any) -> None:
         dry_run: bool = True,
         merge: bool = True,
     ) -> dict[str, Any]:
-        """Adopt the template into an existing project, transactionally.
+        """Add the template to an existing project it did not make (inspect_project mode `adopt`).
 
-        Returns `ok`, `applied`, `created_count`, `skip` (existing files left
-        alone), `ref` and `ref_reason`, the added `merged_dependencies`, the
-        `merged_tool_config` merge and `error` when the run was rolled back.
-
-        `dry_run=True` (the default) only plans: nothing is written, and the
-        result reports which existing files would be left alone (`skip`), which
-        revision would be expanded (`ref`, `ref_reason`), what would be added, and
-        which dependencies `merged_dependencies` would add to the project's pyproject.toml. Call
-        it first.
-
-        `merge` (default true) adds what the template generated to the files the
-        project already has, always additively: dependencies and `[tool.*]` keys
-        in pyproject.toml (an existing value is never rewritten — a difference
-        lands in `merged_dependencies.differing` / `merged_tool_config.kept`, and a value that names
-        *this* project, like `src/<pkg>`, is reported in
-        `merged_tool_config.needs_your_value` instead of copied), missing `.gitignore`
-        patterns, missing Makefile/justfile recipes, and the template's
-        read-only CI as a second `copier-ci.yml` when `ci.yml` is taken. Pass
-        false to touch nothing but the render.
-
-        With `dry_run=False` the adoption is verified: if any existing file
-        changed or disappeared -- a collision the plan did not cover -- the run is
-        rolled back (originals restored, everything it created deleted) and
-        `error` says why, so a failed adoption leaves the project exactly as it
-        was. `ref` defaults to the latest tag *only* when that tag carries this
-        questionnaire, otherwise the default branch; `answers` overrides what
-        `inspect_project` derived. Files under `skip` are never written over, and
-        everything the project does not have yet is still added.
+        `dry_run=True` (default) writes nothing and returns the plan; call it
+        first, show the user, then call again with `dry_run=False`. Existing
+        files are never overwritten (`skip`); with `merge=True` (default)
+        dependencies, tool settings, .gitignore patterns and recipes are added
+        to the files the project has, never rewriting a value. A failed run is
+        rolled back. `answers` overrides what inspect_project suggested.
+        Returns ok, applied, created_count, skip, ref, ref_reason,
+        merged_dependencies, merged_tool_config. Cost: one render; network for
+        the template's post-generation tasks.
         """
         result = run_adoption(Path(path).resolve(), ref, answers, dry_run=dry_run, merge=merge)
         if not result.ok:
             msg = f"adoption failed and was rolled back: {result.error}"
             raise ToolError(msg)
         return result.as_dict()
+
+    @mcp_interface.tool(server)
+    def update_project(
+        path: str,
+        *,
+        ref: str | None = None,
+        answers: dict[str, Any] | None = None,
+        dry_run: bool = True,
+        conflict: Literal["inline", "rej"] = "inline",
+    ) -> dict[str, Any]:
+        """Update a project this template made to a newer template revision (mode `update`).
+
+        The project must be a git repository with no uncommitted changes.
+        `dry_run=True` (default) updates a throwaway clone and returns what would
+        change; call it first, show the user, then call with `dry_run=False` to
+        update the project itself (undo with git). `ref` is the template
+        revision (default: the newest release); `answers` changes answers on the
+        way. Returns applied, from_commit, to_commit, changed ({path, status}),
+        conflicts (files with conflict markers or .rej hunks: resolve them before
+        committing) and next. Cost: one update render; network to fetch the
+        template.
+        """
+        return run_update(Path(path).resolve(), ref, answers, dry_run=dry_run, conflict=conflict)

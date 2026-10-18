@@ -1,0 +1,97 @@
+# What an agent is told about the MCP server: the interfaces, and which one
+# to use when. Nothing about how the template works inside -- that belongs in
+# the tools' code comments and in docs/.
+#
+# Read by: architekton/mcp_interface.py, which turns this file into
+#   - the server's `instructions`, which every MCP host hands the model when
+#     it connects: an audience's `summary`, then its groups and their tools;
+#   - each tool's MCP annotations (whether a host may run it without asking),
+#     from the tool's `effect`;
+#   - which tools the server registers: `--audience users` serves the users'
+#     tools only; `--audience developers` (the default, what .mcp.json starts
+#     in this checkout) serves both lists;
+#   - inspect_project's `next` field, from `next_by_mode`.
+# Next: a tool's arguments and return shape are its docstring in
+# architekton/mcp_*.py. The two how-tos list the same tools:
+# docs/tutorials/with-an-agent.md (users) and docs/how-to/mcp-tools.md
+# (developers). After editing, `task test-fast` (tests/test_mcp_interface.py).
+
+# What a tool may touch. The flags become the MCP tool annotations.
+effects:
+  read:
+    says: looks only; writes nothing
+    read_only: true
+    destructive: false
+    idempotent: true
+    network: false
+  render:
+    says: writes a new project into a new or empty directory
+    read_only: false
+    destructive: false
+    idempotent: true
+    network: true  # the template's post-generation tasks fetch a linter
+  change:
+    says: changes an existing project; call it with dry_run first
+    read_only: false
+    destructive: true
+    idempotent: false
+    network: true
+  run:
+    says: runs commands (a batch file's checks, this repository's tests); can do anything they do
+    read_only: false
+    destructive: true
+    idempotent: false
+    network: true
+
+audiences:
+  users:
+    summary: >-
+      Create, adopt or update a Python project from the architekton-py
+      template. The shape answers (project_type and the include_* layers) are
+      the user's decision: propose them, get the user's confirmation, then
+      generate.
+    groups:
+      - name: 1. Look first
+        tools:
+          template_status: {effect: read, use: "which template revision a render would use"}
+          inspect_project: {effect: read, use: "before writing to a directory: its `mode` picks the step-4 tool"}
+      - name: 2. Choose answers
+        tools:
+          suggest_config: {effect: read, use: "requirement words -> ranked presets"}
+          list_presets: {effect: read, use: "the ready-made answer sets"}
+          list_questions: {effect: read, use: "every question with its choices and default"}
+          explain_choice: {effect: read, use: "why a preset or an answer, in the template's own words"}
+      - name: 3. Check answers
+        tools:
+          validate_answers: {effect: read, use: "before generating: names each wrong answer and why"}
+      - name: 4. Generate (by inspect_project's mode)
+        tools:
+          render_project: {effect: render, use: "mode fresh: a new project"}
+          adopt_project: {effect: change, use: "mode adopt: an existing project this template did not make"}
+          update_project: {effect: change, use: "mode update: a project this template made, to a newer template"}
+  developers:
+    summary: >-
+      Changing the template itself (template/, partials/, questions/): prove
+      an edit changed only what it meant to. Someone generating a project
+      never needs these.
+    groups:
+      - name: Compare renders
+        tools:
+          render_diff: {effect: render, use: "two answer sets rendered and compared file by file"}
+          lint_render: {effect: render, use: "a render linted the way the generated project lints"}
+      - name: Run the checks
+        tools:
+          list_batch_requests: {effect: read, use: "the requests in a batch file"}
+          run_batch: {effect: run, use: "a batch file's verdict"}
+          list_witnesses: {effect: read, use: "the answer combinations the suite covers"}
+          recommend_answers: {effect: render, use: "the covered combinations that match named constraints"}
+          run_witness: {effect: run, use: "those combinations' verdicts, by tier"}
+          run_tests: {effect: run, use: "the repository's own test tiers"}
+          template_fingerprint: {effect: read, use: "a hash of everything a render depends on"}
+
+# inspect_project's `mode` -> what to call next (returned as its `next` field).
+next_by_mode:
+  fresh: render_project with dest set to this directory
+  adopt: adopt_project, dry_run first
+  update: update_project, dry_run first
+  foreign: stop; another template manages this project. Ask the user before passing takeover=True

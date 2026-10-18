@@ -105,7 +105,7 @@ def test_every_preset_has_a_sentinel():
 
 def test_every_preset_is_named_in_project_type_help():
     """The project_type help text advertises presets to interactive users
-    (copier.yml `help:` -- see notes/DESIGN-preset-guidance.md decision A).
+    (copier.yml `help:` -- see architekton-internal:notes/architekton-py/DESIGN-preset-guidance.md decision A).
     A preset added without updating the pointer would silently ship an
     invisible preset; this pins the advertisement to the preset list."""
     from architekton import when_model

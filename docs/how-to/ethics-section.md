@@ -6,14 +6,14 @@ data rules) are prose sections owned by
 (CC BY 4.0; the archived [kanon](https://github.com/politeuma/kanon) repo is
 only a pointer there now).
 This repo no longer vendors them: it maps questionnaire answers onto the
-guidance abstract `when` conditions in `_shared/daimonion-when.jinja`, emits the
+guidance abstract `when` conditions in `partials/daimonion-when.jinja`, emits the
 result as the generated project's `.daimonion.yml`, and leaves an empty
 marker block in `AGENTS.md` for `daimonion agents-md --write` to fill. The
 split is content vs. wiring: guidance is responsible for what a section says
 and whether its sources are still right; this repo decides which abstract
 conditions a generated project declares. Who decides what goes in the
 generated projects is stated in
-[GOVERNANCE.md](https://github.com/politeuma/architekton-py/blob/main/GOVERNANCE.md):
+[GOVERNANCE.md](https://github.com/politeuma/architekton-py/blob/main/.github/GOVERNANCE.md):
 contributors draft and research; the maintainer owns the defaults and
 the promotions. The architecture is explained in
 [Ethics Content Lives in Kanon](../explanations/ethics-external.md).
@@ -46,7 +46,7 @@ template-adjacent docs would still be evaluated, not printed.
 
 If the new section's guidance `when` is one this template never derives
 (a new abstract condition, or a new answer that implies an existing one),
-extend the derivation macro `_shared/daimonion-when.jinja` once — both the
+extend the derivation macro `partials/daimonion-when.jinja` once — both the
 generated `.daimonion.yml` and the composition manifest's `when:` list
 interpolate that macro, so one edit serves both. `jp`, `eu_market` and
 `ai_assisted` are deliberately not derived: the config emits them as

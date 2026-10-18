@@ -1,10 +1,10 @@
 """W4: the declared support matrix, its witness evidence, and its docs.
 
-`support.yml` is the human-approved declaration; `tests/matrix/witnesses.json`
+`tests/matrix/support.yml` is the human-approved declaration; `tests/matrix/witnesses.json`
 is what the witness tiers actually ran. These tests keep the two honest:
 every `supported` combination must be a leaf the full tier executed and
 passed, `docs/reference/support.md` must be exactly what `architekton/gen_docs.py`
-renders from `support.yml` (the same `--check` gate CI runs), and the
+renders from `tests/matrix/support.yml` (the same `--check` gate CI runs), and the
 `tier: none` exclusion hook must never be used without a reason.
 """
 

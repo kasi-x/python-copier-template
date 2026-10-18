@@ -1,0 +1,139 @@
+name: CI
+{% raw %}
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  pull_request:
+  # Queue-ready ahead of time: without merge_group a repo that later enables
+  # a merge queue would wait on checks that never fire (gh-readonly-queue/*
+  # refs match neither push nor pull_request). Until a queue is enabled the
+  # event simply never fires. Tag-gated release/pypi jobs stay off because
+  # the queue ref is a branch, not a tag.
+  merge_group:
+{% endraw %}
+jobs:
+{% if agents_md_effective %}  # AGENTS.md's rules marker block is filled after render by the copier
+  # post-gen task (`daimonion --lang <agents_md_language> agents-md --write`),
+  # which only warns when it cannot run (offline). Fail here until the block
+  # is filled and matches the pinned daimonion's guidance snapshot in the
+  # questionnaire's language (`--check` compares the full block, whose marker
+  # carries `lang=`, so the check must name the same language as the write).
+  ethics-block:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - name: AGENTS.md rules block is filled and current
+        run: uvx --from {{ daimonion_spec }} daimonion --lang {{ agents_md_language | default('en') }} agents-md --check
+{% endif %}
+  lint:
+    uses: ./.github/workflows/_tasks.yml
+    with:
+      task_runner: {{ task_runner_effective }}
+      task: lint{{ ",type-check" if not strictness_minimal else "" }}{{ ",license-check" if not strictness_minimal and license_check_effective else "" }}
+{% raw %}
+  hygiene:
+    uses: ./.github/workflows/_hygiene.yml
+{% endraw %}
+{% raw %}
+  test:
+    strategy:
+      matrix:
+        runs-on: ["ubuntu-24.04"] # can add windows-latest, macos-latest
+{% endraw %}
+        python-version: {{ '["3.11", "3.12", "3.13", "3.14"]' if is_uv else '["3.11"]' }}
+{% raw %}
+      fail-fast: false
+{% endraw %}
+
+{% raw %}
+    uses: ./.github/workflows/_test.yml
+    with:
+      runs-on: ${{ matrix.runs-on }}
+      python-version: ${{ matrix.python-version }}
+{% endraw %}      task_runner: {{ task_runner_effective }}
+
+{# No `if: always()` on this reusable-call job: GitHub fails the whole
+   workflow at startup when a reusable-workflow job with always() runs
+   alongside another reusable call (reproduced against the example repo).
+   The image simply builds only after tests succeed. #}
+{% if docker %}{% raw %}
+  container:
+    needs: test
+    uses: ./.github/workflows/_container.yml
+    with:
+      publish: ${{ needs.test.result == 'success' }}
+{% endraw %}      smoke-command: {{ '--help' if web_api else '--version' }}
+    permissions:
+      contents: read
+      packages: write
+{% endif %}{% if docs %}
+  docs:
+    uses: ./.github/workflows/_docs.yml
+    with:
+      task_runner: {{ task_runner_effective }}
+    permissions:
+      contents: write
+{% endif %}
+
+  dist:
+    uses: ./.github/workflows/_dist.yml
+{% raw %}    with:
+      # The exact check for the installed wheel: <pkg> ships a `--version`
+      # CLI; web_api's app/ has no CLI entry point, so import it instead.
+{% endraw %}      version-command: {{ 'python -m {0} --version'.format(import_pkg) if not web_api else ('python -c ' + '"import {0}; print({0}.__version__)"'.format(import_pkg)) }}
+  {% if pypi %}
+  pypi:
+    needs: [dist, test]
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/_pypi.yml
+    permissions:
+      # _pypi.yml declares top-level contents: read (artifact download);
+      # without this grant the reusable call is rejected at startup and the
+      # whole workflow fails with 0 jobs.
+      contents: read
+      id-token: write
+  {% endif %}
+  release:
+    needs: [dist, test{% if docs %}, docs{% endif %}]
+    if: github.ref_type == 'tag'
+    uses: ./.github/workflows/_release.yml
+    permissions:
+      contents: write
+
+  required-checks-passed:
+    name: all required checks passed
+    needs: [hygiene, lint, test{% if agents_md_effective %}, ethics-block{% endif %}{% if docker %}, container{% endif %}{% if docs %}, docs{% endif %}, dist]
+{% raw %}
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check all required jobs passed
+        run: |
+          failing=$(echo '${{ toJSON(needs) }}' | jq -r '
+            to_entries[] |
+            select(.value.result != "success" and .value.result != "skipped") |
+            "\(.key): \(.value.result)"
+          ')
+          if [ -n "$failing" ]; then
+            echo "$failing"
+            echo "Reproduce it locally via the blast-radius table in .github/CONTRIBUTING.md"
+            exit 1
+          fi
+{% endraw -%}

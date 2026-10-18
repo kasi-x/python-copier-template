@@ -23,7 +23,7 @@ def test_template_defaults(tmp_path: Path):
     container_doc = tmp_path / "docs" / "how-to" / "run-container.md"
     pyproject_toml = tmp_path / "pyproject.toml"
     assert container_doc.exists()
-    # example-answers.yml uses strictness: recommended
+    # tests/example-answers.yml uses strictness: recommended
     assert 'typeCheckingMode = "recommended"' in pyproject_toml.read_text()
     run("uvx --from go-task-bin task check")
     if not run_pipe("git tag --points-at HEAD"):
@@ -67,7 +67,7 @@ def test_template_library_dependencies_come_from_the_log_choice(tmp_path: Path):
     default (structlog) lands as the one dependency, and the standard-library
     choice renders the empty list the audit described.
     """
-    # The RECOMMENDED path keeps the pin independent of example-answers.yml's
+    # The RECOMMENDED path keeps the pin independent of tests/example-answers.yml's
     # own overrides (sentry and friends): the deps read here are the
     # log_library mechanism's, nothing else.
     copy_project_recommended(tmp_path, project_type="library")
@@ -178,7 +178,7 @@ def test_gitignore_same():
     # directions: exact parity catches stale root-only lines (e.g. a
     # removed input//exp/) and missing template lines, which a one-way
     # substring check would hide. the gated .gitignore template shares its
-    # CTF / scraping bodies via {% include %} (_shared/gitignore-*.jinja),
+    # CTF / scraping bodies via {% include %} (partials/gitignore-*.jinja),
     # so those are inlined before normalizing.
     def normalized(path: Path) -> set[str]:
         lines = set()
@@ -192,11 +192,11 @@ def test_gitignore_same():
             lines.add(stripped)
         return lines
 
-    template = normalized(
-        TOP
-        / "template"
-        / "{% if not existing_project or 'gitignore' not in adopt_protect %}.gitignore{% endif %}.jinja"
-    )
+    template = normalized(next((TOP / "template").glob("*.gitignore*")))
     root = normalized(TOP / ".gitignore")
     assert template - root == set(), f"missing from root .gitignore: {sorted(template - root)}"
-    assert root - template == set(), f"stale in root .gitignore: {sorted(root - template)}"
+    # Lines only this repository needs: its template/{% if ros2_python %}test{% endif %}/ (the ros2 package's
+    # test directory) would otherwise match the OJ `test/` ignore, and copier
+    # drops ignored files from dirty-checkout renders.
+    root_only = {"!/template/test/"}
+    assert root - template == root_only, f"stale in root .gitignore: {sorted(root - template - root_only)}"

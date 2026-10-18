@@ -135,6 +135,6 @@ repository's issues and the maintainers' internal notes.
 The most useful contribution right now is not a new `project_type` — see
 [Contributing](../how-to/contribute.md) — it's a bug report from an actual
 generated project, or a link to a real repo demonstrating a behavior you
-want changed (per [CONTRIBUTING](https://github.com/politeuma/architekton-py/blob/main/.github/CONTRIBUTING.md),
+want changed (per [CONTRIBUTING](https://github.com/politeuma/architekton-py/blob/main/CONTRIBUTING.md),
 this template treats "show me the repo where this matters" as the way
 changes get evaluated).

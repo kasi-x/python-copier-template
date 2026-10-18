@@ -138,17 +138,17 @@ def _is_known(name: str, keys: set[str]) -> bool:
 
 
 def template_files() -> list[Path]:
-    """Every file in template/ plus the root _tasks.jinja and _shared/
+    """Every file in template/ plus the root partials/tasks-model.jinja and partials/
     partials (both included by template files via {% import %}/{% include %})."""
     files = [Path(p) for p in TEMPLATE_DIR.rglob("*")]
-    files.append(TOP / "_tasks.jinja")
+    files.append(TOP / "partials/tasks-model.jinja")
     files.extend(shared_files())
     return files
 
 
 def shared_files() -> list[Path]:
-    """Root-level shared partials (_shared/*.jinja) that template files include."""
-    return sorted((TOP / "_shared").glob("*.jinja"))
+    """Shared partials (partials/**/*.jinja, types/ variants included) that template files include."""
+    return sorted((TOP / "partials").rglob("*.jinja"))
 
 
 def _template_local_vars(files: list[Path]) -> set[str]:
@@ -174,7 +174,7 @@ def _template_local_vars(files: list[Path]) -> set[str]:
             local |= {p.split("=", 1)[0].strip() for p in params.split(",") if p.strip()}
         # A loop may bind several names: {% for a, b in ... %} binds `a` AND
         # `b`, so the captured list is split rather than added whole. (It was
-        # added whole until a multi-name loop landed in _shared/macros.jinja
+        # added whole until a multi-name loop landed in partials/macros.jinja
         # and the undefined-variable check reported `name`; cliff.toml.jinja's
         # `{% for group, commits in ... %}` had the same latent hole, its
         # names simply never being referenced where the check looks.)
@@ -227,7 +227,7 @@ def _question_local_vars() -> set[str]:
     """Names questions/*.yml and copier.yml bind with `{% set %}`.
 
     A question's `default` may be a small Jinja program that builds its value
-    with `{% set %}` (the structured answers in questions/_structured.yml
+    with `{% set %}` (the structured answers in questions/91-structured.yml
     accumulate a list that way). Those names are local to the expression, not
     copier.yml keys, so the undefined-reference check below must not flag
     them -- the same allowance `_template_local_vars` makes for template
@@ -322,7 +322,7 @@ def test_no_dead_internal_variables():
 # package) and the `micropython_pkg … oj_code` pair (now the `no_pkg`
 # internal — renders no installable/importable CPython package). These tests
 # keep the named internals authoritative: the raw forms must not reappear in
-# template/ file names or bodies, _shared/ partials, _tasks.jinja or
+# template/ file names or bodies, partials/ partials, partials/tasks-model.jinja or
 # copier.yml, and the internals themselves must keep their documented
 # derivations (so a "simplification" of `oj_bare` to `oj_code` — which would
 # push ctf's package-less workspace through the package gates — cannot drift
@@ -343,8 +343,8 @@ _PAIR_IN_ONE_CONDITION = re.compile(
 
 def _rot_guard_sources() -> list[str]:
     """File names + bodies the raw predicate forms are banned from: template/
-    (paths carry copier's {% if %} name conditionals), _shared/ partials,
-    _tasks.jinja and copier.yml. questions/ is deliberately excluded — it
+    (paths carry copier's {% if %} name conditionals), partials/ partials,
+    partials/tasks-model.jinja and copier.yml. questions/ is deliberately excluded — it
     holds the internals' documented definitions, asserted separately below.
     """
     sources = [COPIER_YML.read_text(encoding="utf-8")]
@@ -361,7 +361,7 @@ def test_oj_predicate_raw_forms_are_named_internals():
     """The raw predicate forms the predicate unification eliminated never reappear.
 
     Nothing is allow-listed: after the unification there are zero occurrences
-    outside questions/online_judge.yml, where the internals are defined.
+    outside questions/07-online-judge.yml, where the internals are defined.
     """
     banned = "online_judge and not kaggle"
     for src in _rot_guard_sources():
@@ -422,14 +422,16 @@ def _fragment_questions() -> dict[str, dict]:
 
 
 def test_fragments_are_complete_and_duplicate_free():
-    """questions/*.yml fragments hold every resolved question exactly once."""
+    """questions/*.yml fragments hold every resolved question exactly once.
+
+    copier.yml itself declares no question: it is the include list plus the
+    template settings, so every question has exactly one file to edit.
+    """
     resolved, _ = when_model.load_questions()
     fragments = _fragment_questions()
-    # The resolved config is the union of fragments + the inline project_type
-    # in copier.yml.
     inline = set(resolved) - set(fragments)
-    assert inline == {"project_type"}, f"unexpected inline questions: {inline}"
-    assert set(fragments) == set(resolved) - {"project_type"}, (
+    assert not inline, f"questions declared inline in copier.yml instead of questions/: {inline}"
+    assert set(fragments) == set(resolved), (
         f"fragments diverge from resolved config: "
         f"only-in-fragments={sorted(set(fragments) - set(resolved))} "
         f"only-in-resolved={sorted(set(resolved) - set(fragments))}"

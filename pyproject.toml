@@ -7,10 +7,11 @@ name = "architekton-py"
 dynamic = ["version"]
 requires-python = ">=3.11"
 # The installed entry point (uvx --from git+..., pip wheel) imports copier,
-# yaml, tomlkit and jinja2 through the architekton/ chain at module load, so they
-# must ride along as runtime dependencies; the dev group keeps its own
-# copies for the repo's own tooling.
-dependencies = ["copier>=9,<10", "jinja2>=3.1,<4", "pyyaml>=6.0,<7", "tomlkit>=0.13,<1"]
+# yaml, tomlkit and jinja2 through the architekton/ chain at module load, and
+# `architekton-py mcp` (the users' MCP server) imports the MCP SDK, so they must
+# ride along as runtime dependencies; the dev group keeps its own copies for
+# the repo's own tooling.
+dependencies = ["copier>=9,<10", "jinja2>=3.1,<4", "mcp>=2.0,<3", "pyyaml>=6.0,<7", "tomlkit>=0.13,<1"]
 
 [project.scripts]
 architekton-py = "architekton.cli:main"
@@ -37,6 +38,7 @@ dev = [
     "pyyaml>=6.0,<7",
     "ruff>=0.16.2,<0.17",
     "starlette>=1.6,<2",
+    "tomli-w>=1.2,<2",
     "tomlkit>=0.13,<1",
     "typos>=1.49.0,<1.50",
     "vulture>=2.14.0,<3.0",
@@ -343,7 +345,7 @@ extend-ignore-identifiers-re = ['\b[A-Z]{3}\b', 'certifi', 'certificat', 'HashiC
 
 [tool.typos.files]
 # template/ は生成コード。生成先プロジェクト側でチェックされる。
-extend-exclude = ["template", "docs", "architekton/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS", "notes", "CHANGELOG.md"]
+extend-exclude = ["template", "docs", "architekton/licenses", "*.po", "src/3rdParty", "**/build*", "ACKNOWLEDGEMENTS", "CHANGELOG.md"]
 
 [tool.vulture]
 paths = ["tests", "architekton"]
@@ -363,7 +365,7 @@ ignore_decorators = ["*tool*", "*resource*", "*route*", "*fixture*", "@rule", "@
 
 [tool.deptry]
 # 依存はプロジェクト本体を含む。DEP002（未使用依存）は使い始めるまで出るので無視する。
-per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage|pytest-randomly,DEP003=architekton-py|tomli_w,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
+per_rule_ignores = "DEP002=copier|zensical|mkdocstrings|tox-uv|hypothesis|pip-audit|pyproject-fmt|vulture|deptry|typos|pyrefly|basedpyright|coverage|pytest-randomly,DEP003=architekton-py,DEP004=jinja2|copier|yaml|mcp|starlette|tomlkit|z3"
 # template/ は生成コード。依存は生成先プロジェクト側で検査される。
 # tests/ は pytest の暗黙パッケージ import (support, test_recommended_path) があり依存検査と相性が悪い。
 # .cache/ は tests/render_cache.py が置くレンダ済みプロジェクト（生成コード）で、

@@ -11,7 +11,7 @@ It is deliberately an *inventory*, not a questionnaire oracle: it reports
 observable facts and the one answer that follows deterministically from them
 (which mode, and which of your files the template protects). It does not
 guess `project_type`, `include_*` or any other shape question from your code
--- see notes/SPEC-adoption.md section 12, which keeps that a non-goal.
+-- see architekton-internal:notes/architekton-py/SPEC-adoption.md section 12, which keeps that a non-goal.
 
 What it derives from the template tree, not from a hardcoded list: which
 outputs exist and under which `existing_project` / `adopt_protect` condition
@@ -21,7 +21,7 @@ Conditions that name a derived flag (`render_docs`, `tests_scaffold`,
 `pkg_scaffold`, ...) are resolved through that flag's `when: false` default in
 the live questionnaire (architekton/questionnaire.py owns that shape; this module
 only caches the live read), so moving a protection clause into `questions/
-_internal.yml` does not hide it from this report either. The question-name
+questions/90-derived.yml` does not hide it from this report either. The question-name
 scan and the `_skip_if_exists` read live there too.
 
 Usage:
@@ -56,6 +56,7 @@ TOP = Path(__file__).resolve().parent.parent
 if str(TOP) not in sys.path:
     sys.path.insert(0, str(TOP))
 
+from architekton import file_gates  # noqa: E402
 from architekton import git  # noqa: E402
 from architekton import questionnaire  # noqa: E402
 from architekton.render_inputs import read_yaml_mapping  # noqa: E402
@@ -65,16 +66,17 @@ TEMPLATE_DIR = TOP / "template"
 
 RenderState = Literal["overwrite", "omit"]
 
-# The adopt_protect tokens, in questionnaire order. Facts map onto these.
-PROTECT_TOKENS: tuple[str, ...] = (
-    "readme",
-    "license",
-    "pyproject",
-    "gitignore",
-    "python_version",
-    "scaffold",
-    "docs",
-)
+
+@cache
+def protect_tokens() -> tuple[str, ...]:
+    """The adopt_protect tokens, in questionnaire order.
+
+    They are the question's own choices (questions/02-adoption.yml), read
+    when first needed: an installed CLI with no checkout imports this module
+    before it delegates to one.
+    """
+    return tuple(str(choice) for choice in questionnaire.questions_by_name()["adopt_protect"].choices)
+
 
 # Fallback for a condition that only says `not existing_project` (the tree
 # before adopt_protect existed) -- display only: whether a file is rendered
@@ -395,7 +397,7 @@ def derive_answers(target: Path, notes: list[str]) -> dict[str, Any]:
     """Project Details that have exactly one answer on disk.
 
     Shape questions (project_type, include_*, docs_type, ...) are *not*
-    guessed: notes/SPEC-adoption.md section 12 keeps that out of scope, and a
+    guessed: architekton-internal:notes/architekton-py/SPEC-adoption.md section 12 keeps that out of scope, and a
     wrong guess here would be silently baked into a generated project.
     """
     derived: dict[str, Any] = {}
@@ -522,6 +524,28 @@ def _src_is_ours(src: str) -> bool:
     return False
 
 
+def src_is_trusted_for_update(src: str, checkout: Path = TOP) -> bool:
+    """True when `copier update` may run the template `src` names with its tasks enabled.
+
+    Stricter than `_src_is_ours`, which only decides the mode: an update
+    executes the recorded template's tasks, so `src` must be, byte for byte,
+    one of this template's URLs (upstream or this checkout's own origin) or an
+    absolute path that is `checkout` itself. No bare names and no relative
+    paths: copier resolves those inside the project, whose content the
+    project controls. Legacy URLs are not trusted either: call
+    migrate_legacy_src first and judge what it left.
+    """
+    value = src
+    urls = {NEW_SRC_PATH, NEW_SRC_PATH.removesuffix(".git"), "gh:politeuma/architekton-py"}
+    origin = _git(checkout, "remote", "get-url", "origin")
+    if origin:
+        urls |= {origin, origin.removesuffix(".git")}
+    if value in urls:
+        return True
+    path = Path(value)
+    return path.is_absolute() and path.exists() and path.resolve() == checkout.resolve()
+
+
 def answers_owner(target: Path) -> tuple[str | None, str | None]:
     """(src_path, commit) recorded by the answers file that governs `target`."""
     for answers in sorted(target.glob(".copier-answers*.yml")):
@@ -603,6 +627,7 @@ def template_outputs(template_dir: Path) -> list[Output]:
     the adopter's own package tree, which `scaffold` covers.
     """
     outputs: list[Output] = []
+    gates = file_gates.load(template_dir.parent)
     for path in sorted(template_dir.rglob("*")):
         if path.is_dir():
             continue
@@ -610,7 +635,8 @@ def template_outputs(template_dir: Path) -> list[Output]:
         if any(JINJA_VAR.search(part) or not part for part in parts):
             continue
         rendered = "/".join(parts).removesuffix(".jinja")
-        condition = " ".join(JINJA_TAG.findall(str(path.relative_to(template_dir))))
+        relative = path.relative_to(template_dir).as_posix()
+        condition = " ".join(f"{{% if {expr} %}}" for expr in file_gates.conditions_for(relative, gates))
         resolved = _resolve_condition(condition)
         token: str | None = None
         match = PROTECT_CONDITION.search(resolved)
@@ -728,7 +754,7 @@ def detect(target: Path, template_dir: Path | None = None, *, takeover: bool = F
     detection.protections = protection_facts(target)
     proposed = {
         "existing_project": True,
-        "adopt_protect": [token for token in PROTECT_TOKENS if detection.protections[token]],
+        "adopt_protect": [token for token in protect_tokens() if detection.protections[token]],
         **derive_answers(target, notes),
     }
     asked = template_questions(template_dir)

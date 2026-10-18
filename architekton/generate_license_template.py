@@ -17,9 +17,10 @@ own "how to apply these terms" appendix, which uses angle brackets like
 
 Run this script (`python architekton/generate_license_template.py`) after updating
 the files in `architekton/licenses/` to refresh:
-
-- the gated LICENSE template (the full if/elif chain, one branch per
-  license choice)
+- the gated LICENSE template (an if/elif dispatch chain, one ``{% include
+  "partials/licenses/<spdx>.jinja" %}`` branch per license choice)
+- the license bodies under ``partials/licenses/`` that those branches
+  include
 
 It also prints the `license:` question's `choices:` mapping to paste into
 `copier.yml` if the license set has changed.
@@ -68,32 +69,51 @@ def load_licenses() -> list[tuple[str, str, str]]:
     return licenses
 
 
+PARTIALS_DIR = TOOLS_DIR.parent / "partials" / "licenses"
+
+
 def render_chain(licenses: list[tuple[str, str, str]]) -> str:
+    """The LICENSE template: one branch per choice, each pulling its body from a partial.
+
+    Each branch ``{% include "partials/licenses/<spdx>.jinja" %}`` so the dispatch
+    file stays small enough to scan.
+    """
     parts = []
-    for i, (spdx, _title, body) in enumerate(licenses):
+    spdxes = [spdx for spdx, _title, _body in licenses] + ["Confidential", "Proprietary"]
+    for i, spdx in enumerate(spdxes):
         tag = "if" if i == 0 else "elif"
-        parts.append(f'{{% {tag} license_effective == "{spdx}" -%}}\n{body}')
-    parts.append(f'{{% elif license_effective == "Confidential" -%}}\n{CONFIDENTIAL_BODY}')
-    parts.append(f'{{% elif license_effective == "Proprietary" -%}}\n{PROPRIETARY_BODY}')
-    # No separator: each body already ends in exactly one "\n", so whichever
-    # branch Jinja picks renders with exactly one trailing newline too. The
-    # closing tag is `{% endif -%}` followed by exactly one "\n": the `-`
-    # strips that newline (so copier's `keep_trailing_newline` has nothing to
-    # append after a rendered branch), and the newline keeps the file
-    # POSIX-final so editors and git do not re-add one behind the generator's
-    # back -- regeneration must stay byte-clean against the shipped template.
+        parts.append(f'{{% {tag} license_effective == "{spdx}" -%}}\n{{% include "partials/licenses/{spdx}.jinja" %}}')
+    # Each partial ends in exactly one "\n", so whichever branch Jinja picks
+    # renders with exactly one trailing newline too. The closing tag is
+    # `{% endif -%}` followed by exactly one "\n": the `-` strips that
+    # newline (so copier's `keep_trailing_newline` has nothing to append
+    # after a rendered branch), and the newline keeps the file POSIX-final
+    # so editors and git do not re-add one behind the generator's back --
+    # regeneration must stay byte-clean against the shipped template.
     parts.append("{% endif -%}\n")
     return "".join(parts)
+
+
+def license_bodies(licenses: list[tuple[str, str, str]]) -> dict[str, str]:
+    """``partials/licenses/<spdx>.jinja`` contents, keyed by the branch name."""
+    bodies = {spdx: body for spdx, _title, body in licenses}
+    bodies["Confidential"] = CONFIDENTIAL_BODY
+    bodies["Proprietary"] = PROPRIETARY_BODY
+    return bodies
 
 
 def main() -> None:
     licenses = load_licenses()
 
-    license_path = (
-        TEMPLATE_DIR / "{% if not existing_project or 'license' not in adopt_protect %}LICENSE{% endif %}.jinja"
-    )
+    license_path = TEMPLATE_DIR / "LICENSE.jinja"
     license_path.write_text(render_chain(licenses), encoding="utf-8")
     print(f"wrote {license_path}")
+
+    PARTIALS_DIR.mkdir(parents=True, exist_ok=True)
+    for spdx, body in license_bodies(licenses).items():
+        partial_path = PARTIALS_DIR / f"{spdx}.jinja"
+        partial_path.write_text(body, encoding="utf-8")
+    print(f"wrote {len(license_bodies(licenses))} bodies under {PARTIALS_DIR}")
 
     print("\n# Paste into copier.yml's `license:` question if the set changed:")
     print("    choices:")

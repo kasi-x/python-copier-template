@@ -205,7 +205,7 @@ def test_synthetic_template_conditions_are_parsed(tmp_path: Path):
         path.write_text("x")
 
     place("{% if not existing_project %}README.md{% endif %}.jinja")
-    place("{% if not existing_project or 'gitignore' not in adopt_protect %}.gitignore{% endif %}.jinja")
+    place("{% if render_gitignore %}.gitignore{% endif %}.jinja")
     place("{% if not existing_project %}docs{% endif %}/{% if docs %}index.md{% endif %}")
     place(".gitleaks.toml")
     place("{{ package_name }}/__init__.py")
@@ -216,7 +216,7 @@ def test_synthetic_template_conditions_are_parsed(tmp_path: Path):
     assert outputs[".gitignore"].token == "gitignore"
     assert outputs[".gitleaks.toml"].token is None
 
-    all_protected = dict.fromkeys(detect.PROTECT_TOKENS, True)
+    all_protected = dict.fromkeys(detect.protect_tokens(), True)
     assert detect.render_state(outputs["README.md"], all_protected) == "omit"
     assert detect.render_state(outputs[".gitignore"], all_protected) == "omit"
     assert detect.render_state(outputs[".gitleaks.toml"], all_protected) == "overwrite"
@@ -228,13 +228,13 @@ def test_synthetic_template_conditions_are_parsed(tmp_path: Path):
 def test_real_template_protects_its_own_files():
     """The mapping holds for whichever protection condition the tree has now."""
     outputs = {output.path: output for output in detect.template_outputs(detect.TEMPLATE_DIR)}
-    all_protected = dict.fromkeys(detect.PROTECT_TOKENS, True)
+    all_protected = dict.fromkeys(detect.protect_tokens(), True)
 
     assert "README.md" in outputs, "template must be able to render README.md"
     assert "pyproject.toml" in outputs
     assert ".gitleaks.toml" in outputs
     for path in ("README.md", "pyproject.toml", ".gitleaks.toml"):
-        assert outputs[path].token in detect.PROTECT_TOKENS or path == ".gitleaks.toml"
+        assert outputs[path].token in detect.protect_tokens() or path == ".gitleaks.toml"
     assert detect.render_state(outputs["README.md"], all_protected) == "omit"
     assert detect.render_state(outputs["pyproject.toml"], all_protected) == "omit"
     assert detect.render_state(outputs[".gitleaks.toml"], all_protected) == "overwrite"

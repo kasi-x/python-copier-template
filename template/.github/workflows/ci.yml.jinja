@@ -1,0 +1,3 @@
+{# ci.yml is split per dispatch branch under partials/types/ — same
+   dispatch order for every file: web_api first (a kaggle project can opt
+   into the web-api layer), then ros2, micropython, online_judge, else standard. #}{% if web_api %}{% include "partials/types/web_api/ci.yml.jinja" %}{% elif ros2_pkg %}{% include "partials/types/ros2/ci.yml.jinja" %}{% elif micropython_pkg %}{% include "partials/types/micropython/ci.yml.jinja" %}{% elif online_judge %}{% include "partials/types/online_judge/ci.yml.jinja" %}{% else %}{% include "partials/types/standard/ci.yml.jinja" %}{% endif %}

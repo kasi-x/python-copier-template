@@ -1,0 +1,55 @@
+# Area gate: code layout and the language of comments / AGENTS.md.
+
+use_recommended_polish:
+    type: bool
+    default: true
+    help: |
+        Use the recommended layout & repo polish?
+        Recommended: src/ layout (library/cli), no Japanese (multibyte)
+        characters in comments/docstrings, English AGENTS.md rules block.
+        Answer No to change the layout, allow Japanese text, or keep the
+        AGENTS.md rules block Japanese.
+
+layout:
+    type: str
+    # Own exclusion list — NOT use_src_layout's (questions/90-derived.yml) or
+    # log_library's below: data_science and web_api are here because neither
+    # takes a layout choice, and script joins because a src/ tree is
+    # meaningless without a package — use_src_layout would silently discard
+    # the answer, and the silent-discard rule (docs/explanations/template-dev.md)
+    # says don't ask. The three lists are pinned as deliberately different by
+    # tests/test_copier_structure.py::
+    # test_layout_exclusion_lists_stay_deliberately_different.
+    when: "{{ project_type not in ['data_science', 'online_judge', 'ros2', 'micropython', 'web_api', 'script'] and not use_recommended_polish }}"
+    help: |
+        Which layout would you like to use for the package?
+        - src: package in a src/ directory (recommended, prevents accidental
+               imports of an uninstalled package).
+        - flat: package at the repository root.
+        (web_api always uses a top-level app/ package instead.)
+    choices:
+        - src
+        - flat
+    default: src
+
+allow_japanese:
+    type: bool
+    when: "{{ not use_recommended_polish }}"
+    help: |
+        Allow Japanese (multibyte) characters in comments and docstrings?
+        If true, ruff's line-length and max-doc-length are relaxed so that
+        wide multibyte characters do not trigger E501/D rules.
+    default: false
+
+agents_md_language:
+    type: str
+    when: "{{ not use_recommended_polish }}"
+    help: |
+        Language of the AGENTS.md rules block (`daimonion --lang … agents-md --write`).
+        - en: daimonion renders each selected guidance section's `en:` title
+          and summary lines into the block.
+        - ja: daimonion renders the Japanese section titles and summary items.
+    choices:
+        - en
+        - ja
+    default: en

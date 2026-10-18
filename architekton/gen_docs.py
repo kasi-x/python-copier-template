@@ -13,14 +13,14 @@ repeats that data, so none of it can silently drift again:
   ask-order mermaid graph (each gate's Yes/No branch) and the task-runner
   bullet of the feature catalogue.
 - `docs/reference/features.md`: a compact support summary (one row per declared
-  combination), generated from `support.yml`.
+  combination), generated from `tests/matrix/support.yml`.
 - `docs/reference/support.md`: the full support matrix, prose included, also
-  generated from `support.yml`.
+  generated from `tests/matrix/support.yml`.
 - `docs/explanations/verification.md`: the cost-ledger table (selector, tests,
   budget, measured), generated from `tests/matrix/tiers.json`.
 
-The support blocks are only generated when `support.yml` exists (W4 owns
-that file; no `support.yml`, no block).
+The support blocks are only generated when `tests/matrix/support.yml` exists (W4 owns
+that file; no `tests/matrix/support.yml`, no block).
 
 Every generated region sits between an explicit marker pair::
 

@@ -8,7 +8,7 @@ finds -- so a batch run needs no eyeballing: either it exits 0 or it names
 the request, the check and the observed value that failed.
 
 Why this exists rather than more pytest cases: the same request list can be
-produced by a human, by CI, or by a generator (see notes/PLAN-improvements.md
+produced by a human, by CI, or by a generator (see architekton-internal:notes/architekton-py/PLAN-improvements.md
 W3, which turns Z3 witnesses of the questionnaire into exactly this format),
 and it runs the *real* copier against the *real* template working tree.
 
@@ -45,9 +45,9 @@ Schema (one line per request; unknown keys anywhere are an error):
 that phase is present.
 
 Usage:
-    python architekton/batch.py batches/smoke.jsonl
-    python architekton/batch.py batches/smoke.jsonl --only web-api --keep
-    python architekton/batch.py batches/smoke.jsonl --json > verdict.json
+    python architekton/batch.py tests/batches/smoke.jsonl
+    python architekton/batch.py tests/batches/smoke.jsonl --only web-api --keep
+    python architekton/batch.py tests/batches/smoke.jsonl --json > verdict.json
     python architekton/batch.py tests/matrix/witnesses.jsonl --json --jobs 16
 
 Concurrency (`--jobs N`, default 1 = strictly serial in file order):
@@ -587,20 +587,50 @@ def _run_phase(request: Request, dest: Path, repo: Path, phase: dict[str, Any] |
         raise SpecError(msg)
     update_data = _answers_for(request, phase, repo)
     conflict: Literal["inline", "rej"] = "rej" if phase.get("conflict") == "rej" else "inline"
+    update(dest, update_data, str(phase.get("ref", request.ref)), conflict=conflict)
+
+
+def update(
+    dest: Path, data: dict[str, Any], ref: str | None = None, *, conflict: Literal["inline", "rej"] = "inline"
+) -> None:
+    """Update the git-tracked project `dest` to template revision `ref` -- the one `copier update` convention.
+
+    `ref=None` lets copier pick the newest release tag. Conflicts are left in
+    the files (`inline` markers or `.rej` hunks; `conflict_residue` lists them).
+    """
     # The old template URL will soon belong to a different repository (the
     # linter): rewrite a legacy `_src_path` to the new URL before copier
     # fetches anything, so the update never clones the wrong repo.
     detect_mod.migrate_legacy_src(dest)
     copier.run_update(
         dst_path=dest,
-        data=update_data,
-        vcs_ref=str(phase.get("ref", request.ref)),
+        data=data,
+        vcs_ref=ref,
         unsafe=True,
         defaults=True,
         overwrite=True,
         quiet=True,
         conflict=conflict,
     )
+
+
+def conflict_residue(project: Path) -> list[str]:
+    """Files an update left conflict markers or `.rej` hunks in, relative to `project`."""
+    residue: list[str] = []
+    for path in project.rglob("*"):
+        if not path.is_file() or ".git" in path.parts:
+            continue
+        relative = path.relative_to(project).as_posix()
+        if path.suffix == ".rej":
+            residue.append(relative)
+            continue
+        try:
+            text = path.read_text()
+        except UnicodeDecodeError:
+            continue  # a binary artifact cannot carry an inline conflict
+        if any(line.startswith(("<<<<<<< ", ">>>>>>> ", "||||||| ")) for line in text.splitlines()):
+            residue.append(relative)
+    return residue
 
 
 def check_files(dest: Path, patterns: list[str]) -> list[Check]:

@@ -108,7 +108,7 @@ _KEEP_NAMESPACES = 2
 # clean break re-renders them once under the complete watch.
 # v4: the consumed-input matching gained the suffix rule, so pkg-tree-owned
 # bodies ({{ pkg_dir }} paths) are recorded at last -- v3 entries lack them
-# and would keep serving stale bot renders after a _shared body edit.
+# and would keep serving stale bot renders after a partials body edit.
 CACHE_SCHEME = "render-cache/4: pkg-tree inputs recorded"
 
 # The render toolchain whose behaviour the cached trees encode. A bump of any
@@ -385,7 +385,7 @@ class RenderCache:
         # strips out of the template path (`.../bot_discord.py`), while the
         # rendered name carries the real directory (`src/<pkg>/bot_discord.py`)
         # -- an exact `in outputs` never matches, and every pkg-tree-owned body
-        # (_shared/bot-*.py.jinja, ...) would silently drop out of the recorded
+        # (partials/bot-*.py.jinja, ...) would silently drop out of the recorded
         # inputs, so its edits stopped invalidating cached bot renders (found
         # while landing the gmail slice). architekton/render_delta.py matches the
         # same way. Empty names (a path that strips to nothing) match nothing.

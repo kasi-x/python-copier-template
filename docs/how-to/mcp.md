@@ -31,7 +31,7 @@ transport past local debugging — compose, replicas, auth — is
   - one **prompt** — `review_code` (a reusable message template the host
     surfaces as a slash command; the user picks it and fills in `code`).
   (The module lives in `app/mcp_server.py` when the web_api layer is present,
-  otherwise in `<pkg>/mcp_server.py` — one body shared via `_shared/`, so the
+  otherwise in `<pkg>/mcp_server.py` — one body shared via `partials/`, so the
   two locations never drift.)
 - A **console script** `mcp-server-<name>` so an MCP host can launch the
   server, and users can run it with `uvx` once published.

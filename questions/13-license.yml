@@ -1,0 +1,97 @@
+# Area gate: license, FAIR metadata and ORCID.
+
+use_recommended_license:
+    type: bool
+    default: true
+    help: |
+        Use the recommended license & metadata settings?
+        Recommended: MIT license, no FAIR research-software metadata
+        (CITATION.cff / REUSE).
+        Answer No to pick a different license or opt into FAIR metadata.
+
+license:
+    type: str
+    when: "{{ not use_recommended_license }}"
+    help: |
+        Which license would you like to use?
+        SPDX license identifiers, same set as https://choosealicense.com.
+        The full names are in docs/reference/questionnaire.md and on that site.
+    choices:
+        - AFL-3.0
+        - Apache-2.0
+        - Artistic-2.0
+        - BSD-2-Clause
+        - BSD-3-Clause
+        - BSD-3-Clause-Clear
+        - BSD-4-Clause
+        - 0BSD
+        - BSD-2-Clause-Patent
+        - BlueOak-1.0.0
+        - BSL-1.0
+        - CERN-OHL-P-2.0
+        - CERN-OHL-S-2.0
+        - CERN-OHL-W-2.0
+        - CECILL-2.1
+        - CC-BY-4.0
+        - CC-BY-SA-4.0
+        - CC0-1.0
+        - WTFPL
+        - EPL-1.0
+        - EPL-2.0
+        - ECL-2.0
+        - EUPL-1.1
+        - EUPL-1.2
+        - AGPL-3.0
+        - GFDL-1.3
+        - GPL-2.0
+        - GPL-3.0
+        - LGPL-2.1
+        - LGPL-3.0
+        - ISC
+        - LPPL-1.3c
+        - MIT
+        - MIT-0
+        - MS-PL
+        - MS-RL
+        - MPL-2.0
+        - MulanPSL-2.0
+        - ODbL-1.0
+        - OSL-3.0
+        - PostgreSQL
+        - OFL-1.1
+        - Unlicense
+        - UPL-1.0
+        - NCSA
+        - Vim
+        - Zlib
+        - Proprietary
+        - Confidential
+    default: MIT
+
+fair:
+    type: bool
+    when: "{{ not use_recommended_license }}"
+    help: |
+        Add FAIR research-software metadata?
+        - CITATION.cff for software citation, validated in CI (cffconvert)
+          (an optional ORCID iD is asked below when enabled)
+        - REUSE.toml with SPDX annotations, checked by the reuse hook — but
+          only when an open-source license is selected; Proprietary projects
+          skip REUSE
+        - the fair-software.eu badge in the README, and a .howfairis.yml
+          skipping the registry check when PyPI publishing is off
+        (data_science's DUO/CARE data-governance sheets are asked separately,
+        under use_recommended_data_science — they don't depend on this.)
+    default: false
+
+author_orcid:
+    type: str
+    default: ""
+    when: "{{ not use_recommended_license and fair }}"
+    help: |
+        Your ORCID iD (e.g. 0000-0002-1825-0099), recorded in CITATION.cff
+        so citation systems can attribute you correctly. Leave empty to skip.
+    validator: >-
+        {% if author_orcid and not (author_orcid | regex_search('^([0-9]{4}-){3}[0-9]{3}[0-9X]$|^https://orcid.org/([0-9]{4}-){3}[0-9]{3}[0-9X]$')) %}
+        {{ author_orcid }} is not a valid ORCID iD. Use 0000-0002-1825-0099 or https://orcid.org/0000-0002-1825-0099 (leave empty to skip).
+        {% endif %}

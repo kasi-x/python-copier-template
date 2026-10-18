@@ -92,7 +92,7 @@ def make_venv(project_path: Path) -> Callable[..., str]:
 
 
 def copy_project(project_path: Path, **kwargs: Any) -> None:
-    """Render example-answers.yml (+ `kwargs`) into `project_path`, with `_tasks`.
+    """Render tests/example-answers.yml (+ `kwargs`) into `project_path`, with `_tasks`.
 
     "The render that runs tasks": the render cache serves the pure render and
     this helper replays copier's `_tasks` on top (`run_tasks=True`, the
@@ -105,7 +105,7 @@ def copy_project(project_path: Path, **kwargs: Any) -> None:
     # `**extra` spreads can't collide with it in the signature.
     run_tasks = kwargs.pop("run_tasks", True)
     assert isinstance(run_tasks, bool), "run_tasks must be bool"
-    with Path(TOP / "example-answers.yml").open() as f:
+    with Path(TOP / "tests/example-answers.yml").open() as f:
         answers = yaml.safe_load(f)
     answers.update(kwargs)
     render_answers(project_path, answers, run_tasks=run_tasks)
@@ -127,9 +127,9 @@ def copy_project_capturing_stderr(project_path: Path, *, run_tasks: bool = True,
 
 
 def copy_project_recommended(project_path: Path, *, run_tasks: bool = True, **kwargs: Any) -> None:
-    """Like copy_project, but without example-answers.yml's explicit overrides.
+    """Like copy_project, but without tests/example-answers.yml's explicit overrides.
 
-    example-answers.yml sets every option (docker, license, fair, ...) sets
+    tests/example-answers.yml sets every option (docker, license, fair, ...) sets
     an explicit value so it never exercises the `use_recommended_*` gates'
     own defaults -- copier uses a `data`-supplied value even for a question
     whose `when` is false. This starts from only the required "Project
@@ -150,7 +150,7 @@ def render_answers(project_path: Path, answers: dict[str, object], *, run_tasks:
     render, and `_tasks` are replayed unless `run_tasks=False`; the
     destination is git-inited and the result git-added, exactly as in
     `copy_project`. The answers are the caller's instead of
-    example-answers.yml's, which is what a witness-leaf render
+    tests/example-answers.yml's, which is what a witness-leaf render
     (tests/test_witness_matrix.py) needs.
     """
     run_pipe(f"git init {project_path}")

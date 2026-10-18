@@ -8,19 +8,19 @@
 /.github/workflows/ @kasi-x
 /.github/zizmor.yml @kasi-x
 /.github/actionlint.yaml @kasi-x
-/renovate.json @kasi-x
+/.github/renovate.json @kasi-x
 SECURITY.md @kasi-x
 copier.yml @kasi-x
 
 # Questionnaire fragments: each layer's questions + template files + presets
 # + per-layer tests. Add a row when a layer gains a distinct owner.
-/questions/ros2.yml /presets/ros2.yml /tests/test_example_ros2.py /template/*ros2*/ @kasi-x
-/questions/micropython.yml /presets/micropython.yml /tests/test_example_micropython.py /tests/test_micropython_maintenance.py /template/*micropython*/ @kasi-x
-/questions/online_judge.yml /presets/online-judge-*.yml /tests/test_example_oj.py /template/*ctf*/ @kasi-x
-/questions/data_science.yml /presets/data-science.yml /tests/test_example_data_science.py /template/*data_science*/ /template/*data_science_layout*/ @kasi-x
-/questions/web_api.yml /presets/web-api.yml /tests/test_example_web_api.py /template/*web_api*/ @kasi-x
+/questions/03-ros2.yml /presets/ros2.yml /tests/test_example_ros2.py /template/*ros2*/ @kasi-x
+/questions/04-micropython.yml /presets/micropython.yml /tests/test_example_micropython.py /tests/test_micropython_maintenance.py /template/*micropython*/ @kasi-x
+/questions/07-online-judge.yml /presets/online-judge-*.yml /tests/test_example_oj.py /template/*ctf*/ @kasi-x
+/questions/09-data-science.yml /presets/data-science.yml /tests/test_example_data_science.py /template/*data_science*/ /template/*data_science_layout*/ @kasi-x
+/questions/15-web-api.yml /presets/web-api.yml /tests/test_example_web_api.py /template/*web_api*/ @kasi-x
 
 # Cross-cutting layers (daimonion conditions, scraping, bot, mcp) share the
 # questionnaire fragments; ownership stays with the maintainer until a
 # second maintainer exists.
-/_shared/daimonion-when.jinja @kasi-x
+/partials/daimonion-when.jinja @kasi-x

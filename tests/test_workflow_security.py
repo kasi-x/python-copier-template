@@ -13,7 +13,7 @@ checks from drifting in this repo's own CI:
 All but the renovate contract are static, offline assertions over
 `.github/workflows/*.yml`, in the same spirit as test_copier_structure.py /
 test_micropython_maintenance.py; the renovate contract parses a real render
-of `template/renovate.json.jinja` (see render_cache.py).
+of `template/{% if cicd_extras %}renovate.json{% endif %}.jinja` (see render_cache.py).
 """
 
 import json
@@ -430,13 +430,8 @@ def test_zizmor_cli_pin_is_inside_the_actions_allowlist():
     # The shipped copy is what generated projects actually run, and it is a
     # separate file (a .jinja, not a symlink): a fix applied to one side only
     # would leave every generated project red. Compare the pin lines.
-    jinja = (
-        TOP
-        / "template"
-        / "{% if is_github %}.github{% endif %}"
-        / "{% if ci_provider == 'github_actions' %}workflows{% endif %}"
-        / "{% if cicd_extras %}security.yml{% endif %}.jinja"
-    ).read_text(encoding="utf-8")
+    # Path segments may carry {% if %} gates (the file-gate names); glob for it.
+    jinja = next((TOP / "template").rglob("*security.yml*")).read_text(encoding="utf-8")
     assert action_m.group(0) in jinja, (
         "template security.yml.jinja pins a different zizmor action than the root workflow"
     )
@@ -472,7 +467,7 @@ def test_renovate_baseline_matches_generated_template(tmp_path: Path, render_cac
     documents -- the generated one comes from a real render, so a jinja
     branch (docker/pypi/docs/...) that emits invalid JSON fails here too.
     """
-    root = json.loads((TOP / "renovate.json").read_text(encoding="utf-8"))
+    root = json.loads((TOP / ".github" / "renovate.json").read_text(encoding="utf-8"))
     render_cache.render(tmp_path, {**BASE, "project_type": "library"})
     generated = json.loads((tmp_path / "renovate.json").read_text(encoding="utf-8"))
 

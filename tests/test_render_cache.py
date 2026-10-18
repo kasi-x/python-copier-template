@@ -45,7 +45,7 @@ pkg_dir:
     default: pkg
 ---
 """
-README_JINJA = 'Hello {{ who }}.\n{% include "_shared/greeting-part.jinja" %}\n'
+README_JINJA = 'Hello {{ who }}.\n{% include "partials/greeting-part.jinja" %}\n'
 GREETING_PART = "partials are prose.\n"
 BOT_X = "print('bot')\n"
 
@@ -63,17 +63,17 @@ def _scratch_tree(
     template = root / "template"
     template.mkdir(parents=True, exist_ok=True)
     (template / "README.md.jinja").write_text(README_JINJA, encoding="utf-8")
-    # the partial lives at the repo-root level, like the real _shared/
-    (root / "_shared").mkdir(parents=True, exist_ok=True)
-    (root / "_shared" / "greeting-part.jinja").write_text(greeting_part, encoding="utf-8")
+    # the partial lives at the repo-root level, like the real partials/
+    (root / "partials").mkdir(parents=True, exist_ok=True)
+    (root / "partials" / "greeting-part.jinja").write_text(greeting_part, encoding="utf-8")
     (template / "{% if bot %}bot.py{% endif %}.jinja").write_text(bot_x, encoding="utf-8")
-    # A `{{ pkg_dir }}`-interpolated path whose body is a _shared partial:
+    # A `{{ pkg_dir }}`-interpolated path whose body is a partials partial:
     # the shape the real pkg tree uses for the bot platforms, and the case
     # the recorded-inputs suffix rule exists for.
-    (root / "_shared" / "bot-part.jinja").write_text(bot_part, encoding="utf-8")
+    (root / "partials" / "bot-part.jinja").write_text(bot_part, encoding="utf-8")
     pkg = template / "{% if bot %}{{ pkg_dir }}{% endif %}"
     pkg.mkdir(exist_ok=True)
-    (pkg / "bot.py.jinja").write_text('{% include "_shared/bot-part.jinja" %}\n', encoding="utf-8")
+    (pkg / "bot.py.jinja").write_text('{% include "partials/bot-part.jinja" %}\n', encoding="utf-8")
     return root
 
 
@@ -98,7 +98,7 @@ def test_an_edit_to_a_consumed_file_misses_and_changes_the_output(tmp_path: Path
     tree = _scratch_tree(tmp_path / "tree")
     cache = RenderCache(root=tmp_path / "cache", template_root=tree)
     one = cache.render(tmp_path / "one", dict(ANSWERS_NO_BOT))
-    (tree / "_shared" / "greeting-part.jinja").write_text("partials are EDITED.\n", encoding="utf-8")
+    (tree / "partials" / "greeting-part.jinja").write_text("partials are EDITED.\n", encoding="utf-8")
     two = cache.render(tmp_path / "two", dict(ANSWERS_NO_BOT))
     assert "EDITED" in (two / "README.md").read_text(), "the edited partial must reach the new render"
     assert "EDITED" not in (one / "README.md").read_text(), "the old render must be untouched"
@@ -149,22 +149,22 @@ def test_a_path_set_change_is_a_namespace_change(tmp_path: Path):
 
 
 def test_a_pkg_dir_body_partial_is_recorded_and_invalidates(tmp_path: Path):
-    """A `{{ pkg_dir }}`-owned body's _shared partial is a recorded input.
+    """A `{{ pkg_dir }}`-owned body's partials partial is a recorded input.
 
     The pkg tree's sources interpolate the package directory into their
     template paths, so matching them to rendered outputs needs the suffix
     rule: an exact-name match drops every pkg-tree body from the recorded
-    inputs, and an edit to the _shared partial it includes (the real
-    _shared/bot-*.py.jinja shape) then keeps serving a stale bot render.
+    inputs, and an edit to the partials partial it includes (the real
+    partials/bot-*.py.jinja shape) then keeps serving a stale bot render.
     Found while landing the gmail platform slice .
     """
     tree = _scratch_tree(tmp_path / "tree")
     cache = RenderCache(root=tmp_path / "cache", template_root=tree)
     cache.render(tmp_path / "one", dict(ANSWERS_BOT))
     inputs = json.loads(next(cache.namespace.glob("*.inputs.json")).read_text(encoding="utf-8"))
-    assert "_shared/bot-part.jinja" in inputs, "the pkg tree's _shared partial must be recorded as a consumed input"
+    assert "partials/bot-part.jinja" in inputs, "the pkg tree's partials partial must be recorded as a consumed input"
 
-    (tree / "_shared" / "bot-part.jinja").write_text("bot body EDITED.\n", encoding="utf-8")
+    (tree / "partials" / "bot-part.jinja").write_text("bot body EDITED.\n", encoding="utf-8")
     reconnected = RenderCache(root=tmp_path / "cache", template_root=tree)
     reconnected.render(tmp_path / "two", dict(ANSWERS_BOT))
     assert reconnected.renders == 1, "an edit to the pkg body's partial must miss"
@@ -176,7 +176,7 @@ def test_stale_entries_are_pruned_on_open(tmp_path: Path):
     tree = _scratch_tree(tmp_path / "tree")
     cache = RenderCache(root=tmp_path / "cache", template_root=tree)
     cache.render(tmp_path / "one", dict(ANSWERS_NO_BOT))
-    (tree / "_shared" / "greeting-part.jinja").write_text("partials are EDITED.\n", encoding="utf-8")
+    (tree / "partials" / "greeting-part.jinja").write_text("partials are EDITED.\n", encoding="utf-8")
     reconnected = RenderCache(root=tmp_path / "cache", template_root=tree)
     # opening the cache is what prunes: the stale entry's tree and manifest
     # are gone, because its recorded inputs no longer describe the template
@@ -248,7 +248,11 @@ def test_render_helpers_stay_out_of_conftest():
     its existence is asserted here too.
     """
     conftest = TOP / "tests" / "conftest.py"
-    rendered = sorted((TOP / "template").glob("*tests*/conftest.py"))
+    rendered = [
+        p
+        for p in (TOP / "template").rglob("*conftest.py*")
+        if "conftest.py" in p.name and p.suffix != ".gate"  # .gate markers are editors' files, not render inputs
+    ]
     assert rendered, "the template must still ship a (symlinked) tests/conftest.py"
     for link in rendered:
         assert link.is_symlink() and link.resolve() == conftest.resolve(), (

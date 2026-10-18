@@ -42,10 +42,11 @@ TOP = Path(__file__).resolve().parent.parent
 CONFIG = TOP / "copier.yml"
 DOCUMENT_SPLIT = re.compile(r"(?m)^---\s*$")
 INCLUDE_LINE = re.compile(r"^\s*!include\s+(\S+)\s*$")
-# A question-name line in copier.yml / questions/*.yml: a top-level key with
-# no value. MULTILINE, so it also finds the names in `git show` output
-# (architekton/adopt_revision.py's ref scan reads it from there).
-QUESTION_LINE = re.compile(r"^([a-z][a-z0-9_]*):\s*$", re.MULTILINE)
+# A question-name line in copier.yml / questions/*.yml: a top-level key whose
+# details follow as a block (`name:`) or inline (`name: {type: ...}`, the
+# questions/90-derived.yml rows). MULTILINE, so it also finds the names in
+# `git show` output (architekton/adopt_revision.py's ref scan reads it from there).
+QUESTION_LINE = re.compile(r"^([a-z][a-z0-9_]*):(?:[ \t]*$|[ \t]*\{)", re.MULTILINE)
 
 #: The `use_recommended_*` gate questions' prefix (the leaf space, the
 #: invariants vocabulary and the witness tiers all key off it).

@@ -103,7 +103,7 @@ def test_web_api_ships_env_and_compose(tmp_path: Path, package_manager: str):
 def test_web_api_recommended_fastapi_stack(tmp_path: Path):
     """The recommended web_api path ships a working FastAPI scaffold.
 
-    example-answers.yml sets use_recommended_web_api=false, so the detailed
+    tests/example-answers.yml sets use_recommended_web_api=false, so the detailed
     questions (prometheus / rate_limit / cors) all default to true — this is
     the full-stack render.
     """

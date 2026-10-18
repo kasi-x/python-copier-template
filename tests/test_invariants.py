@@ -104,7 +104,7 @@ def test_every_witness_leaf_has_a_declared_tier() -> None:
     """The tier a leaf was run at is a tier its class declares.
 
     A leaf whose recorded tier no row declares is a class the file does not
-    describe -- the drift `support.yml`'s tier_policy and the ledger would hide
+    describe -- the drift `tests/matrix/support.yml`'s tier_policy and the ledger would hide
     from each other.
     """
     recorded = _declared_tiers()
@@ -129,7 +129,7 @@ def test_every_row_is_reached_by_a_declared_leaf() -> None:
 def test_an_unclassified_leaf_is_refused() -> None:
     """A leaf carrying an undeclared question is an error, not a common layout.
 
-    ``include_sentry`` is a real question (questions/_common_b.yml) no row
+    ``include_sentry`` is a real question (questions/14-integrations.yml) no row
     selects: answering it must not quietly resolve to the common row alone.
     """
     with pytest.raises(invariants.InvariantError, match="include_sentry"):

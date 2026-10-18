@@ -52,7 +52,7 @@ jobs:
     # only: the install resolves the full dependency tree from the network,
     # far too heavy for push/PR (like the ci.yml nightly heavy tier).
     # The poetry sibling (poetry-render-test below) is the same proof for
-    # the poetry venv path (support.yml, best_effort): its render carries
+    # the poetry venv path (tests/matrix/support.yml, best_effort): its render carries
     # an explicit `[tool.poetry] packages` table (Poetry 2.x auto-discovery
     # misses the renamed src/ package) and an importlib.metadata fallback
     # for the setuptools-scm version file poetry never writes.
@@ -87,14 +87,14 @@ jobs:
           set -euo pipefail
           # --defaults answers every question the --data flags leave out
           # (including the required "Project Details" block) without an
-          # interactive session; --data wins over example-answers.yml for
+          # interactive session; --data wins over tests/example-answers.yml for
           # the toolchain questions, so the leaf stays the example project
           # with only the package manager (and pixi's runner) switched.
           # package_name matches the distribution's normalized stem (both
           # derive from the same answers) so the editable install finds
           # the src/ package.
           uvx copier copy --trust --defaults \
-            --data-file example-answers.yml \
+            --data-file tests/example-answers.yml \
             --data use_recommended_toolchain=false \
             --data package_manager=pixi \
             --data task_runner_pixi=pixi \
@@ -165,7 +165,7 @@ jobs:
           # that mismatch is the Poetry 2.x discovery case the packages
           # table exists for.
           uvx copier copy --trust --defaults \
-            --data-file example-answers.yml \
+            --data-file tests/example-answers.yml \
             --data use_recommended_toolchain=false \
             --data package_manager=poetry \
             --data package_name=daemon_example \

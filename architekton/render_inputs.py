@@ -14,11 +14,11 @@ and the output-name rule from here, and the repo MCP server's
 `template_fingerprint()` tool reports the digest to an agent deciding whether
 the render it holds is stale.
 
-What is covered: every file under `template/` and `_shared/`, plus `copier.yml`
-and `_tasks.jinja`, as `sha256(relative path + \\0 + sha256(content))` over the
+What is covered: every file under `template/` and `partials/`, plus `copier.yml`
+and `partials/tasks-model.jinja`, as `sha256(relative path + \\0 + sha256(content))` over the
 sorted paths. Symlinks are followed, because copier follows them
 (`preserve_symlinks` is off): the template's payload links
-(`template/.vscode -> ../.vscode`, `template/.../tests/conftest.py -> the repo's
+(`template/{% if cicd_extras %}.vscode{% endif %} -> ../.vscode`, `template/.../tests/conftest.py -> the repo's
 tests/conftest.py`, ...) put the *linked* bytes into the render, so editing
 either side of a link must change the digest. `Path.rglob` does not descend a
 symlinked directory and a trailing `**` matches directories rather than the
@@ -78,10 +78,10 @@ def read_yaml_mapping(path: Path) -> dict[str, Any]:
     return loaded
 
 
-RENDER_INPUT_DIRS = ("template", "_shared")
+RENDER_INPUT_DIRS = ("template", "partials")
 """The trees a render expands: every file under them is a render input."""
 
-RENDER_INPUT_FILES = ("copier.yml", "_tasks.jinja")
+RENDER_INPUT_FILES = ("copier.yml", "partials/tasks-model.jinja")
 """The questions, defaults, `_exclude` patterns and task list that steer it."""
 
 INCLUDE_TAG = re.compile(r'\{%-?\s+(?:include|import)\s+"([^"]+)"')
@@ -152,7 +152,7 @@ def watched_relative_paths(root: Path = TOP) -> list[str]:
 def resolve_include_target(target: str, watched: set[str]) -> str | None:
     """An include tag's target, resolved against the watched files.
 
-    Include tags are repo-root-relative ("_shared/x.jinja" from a file in
+    Include tags are repo-root-relative ("partials/x.jinja" from a file in
     template/), so the raw target matches a watched file only when the file
     lives at that level; the suffix fallback covers tags written relative to
     the including file. None = the target names nothing we watch.

@@ -45,6 +45,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import importlib
 import os
 import shutil
 import subprocess
@@ -72,6 +73,7 @@ from architekton import detect  # noqa: E402
 from architekton import explain  # noqa: E402
 from architekton import suggest  # noqa: E402
 from architekton import verify  # noqa: E402
+from architekton import where  # noqa: E402
 from architekton.git import run as run_git  # noqa: E402
 
 PRESETS = answers.PRESETS
@@ -301,6 +303,8 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     new_command.add_argument("--dry-run", action="store_true", help="plan only; write nothing")
     _add_verify_command(subcommands)
     _add_explain_command(subcommands)
+    _add_where_command(subcommands)
+    _add_mcp_command(subcommands)
     _add_suggest_command(subcommands)
     _add_scaffold_command(subcommands)
     return parser.parse_args(argv)
@@ -337,6 +341,26 @@ def _add_explain_command(subcommands: Any) -> None:
     )
 
 
+def _add_where_command(subcommands: Any) -> None:
+    """Register the `where` subcommand: the same shape as `architekton/where.py` parses."""
+    where_command = subcommands.add_parser(
+        "where", help="show every file a question touches (where to edit to change it)"
+    )
+    where_command.add_argument("name", help="question or derived-value name, or a fragment of one (e.g. sentry)")
+    where_command.add_argument("--json", action="store_true", help="print the machine report")
+    where_command.add_argument("--all", action="store_true", help="list every file instead of the first few")
+
+
+def _add_mcp_command(subcommands: Any) -> None:
+    """Register the `mcp` subcommand: the users' MCP server (architekton/mcp_users.py)."""
+    mcp_command = subcommands.add_parser(
+        "mcp", help="serve the MCP tools an agent uses to generate, adopt or update a project"
+    )
+    mcp_command.add_argument("--transport", choices=["stdio", "streamable-http"], default="stdio")
+    mcp_command.add_argument("--host", default="127.0.0.1", help="host to bind (streamable-http)")
+    mcp_command.add_argument("--port", type=int, default=8000, help="port to bind (streamable-http)")
+
+
 def _add_suggest_command(subcommands: Any) -> None:
     """Register the `suggest` subcommand: the same shape as `architekton/suggest.py` parses."""
     suggest_command = subcommands.add_parser(
@@ -366,7 +390,7 @@ def _add_scaffold_command(subcommands: Any) -> None:
     q.add_argument("--when", default="true", help="when condition (Jinja expression)")
     q.add_argument("--default", default="true", help="default value (true, false, or literal)")
     q.add_argument("--help-text", default="", help="help/prompt text for questionnaire")
-    q.add_argument("--file", default="questions/_common_c.yml", help="target file under questions/")
+    q.add_argument("--file", default="questions/17-project-details.yml", help="target file under questions/")
     q.add_argument("--dry-run", action="store_true", help="print without writing")
 
     layer = scaffold_sub.add_parser("layer", help="scaffold a new opt-in layer (include_<name>)")
@@ -546,6 +570,20 @@ def _dispatch_explain(args: argparse.Namespace) -> int:
     return explain.main(_explain_argv(args))
 
 
+def _dispatch_where(args: argparse.Namespace) -> int:
+    """Run the `where` subcommand through `architekton/where.py`."""
+    return where.main([args.name, *(["--json"] if args.json else []), *(["--all"] if args.all else [])])
+
+
+def _dispatch_mcp(args: argparse.Namespace) -> int:
+    """Run the users' MCP server until its client disconnects."""
+    # By name, at dispatch time: the server's modules import this CLI (for the
+    # presets), and every other subcommand starts without the MCP SDK.
+    mcp_users = importlib.import_module("architekton.mcp_users")
+    mcp_users.main(["--transport", args.transport, "--host", args.host, "--port", str(args.port)])
+    return OK
+
+
 def _dispatch_suggest(args: argparse.Namespace) -> int:
     """Run the `suggest` subcommand through `architekton/suggest.py`."""
     return suggest.main(_suggest_argv(args))
@@ -592,6 +630,8 @@ def _dispatch_scaffold(args: argparse.Namespace) -> int:
 _DISPATCH: dict[str, Callable[[argparse.Namespace], int]] = {
     "verify": _dispatch_verify,
     "explain": _dispatch_explain,
+    "where": _dispatch_where,
+    "mcp": _dispatch_mcp,
     "suggest": _dispatch_suggest,
     "scaffold": _dispatch_scaffold,
 }

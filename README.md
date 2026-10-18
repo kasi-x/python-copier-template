@@ -2,164 +2,137 @@
 
 # architekton-py
 
-## TL;DR
-Prerequisites: [uv](https://docs.astral.sh/uv) (its `uvx` shim runs everything below) and [git](https://git-scm.com). No clone of this repository is needed; every command expands this fork's **newest release tag**:
+A [copier](https://copier.readthedocs.io) template for Python projects. Answer
+a few questions (or pick a preset) and get a project that starts with an
+`AGENTS.md` for coding agents, strict CI, and the field rules that match its
+kind. Later template releases reach the project through `copier update`.
+
 ```shell
-uvx --from git+https://github.com/politeuma/architekton-py.git architekton-py new my-project --preset library   # shipped CLI: picks the release, renders, records the answers (clones+caches the template on first use)
-uvx copier copy --trust https://github.com/politeuma/architekton-py.git my-project   # or drive copier directly
+uvx --from git+https://github.com/politeuma/architekton-py.git architekton-py new my-project --preset library
 ```
 
-**architekton-py** is an opinionated
-[copier](https://copier.readthedocs.io) template for Python projects: create a
-new project from it, update existing projects in line with it, and keep them
-in sync as it changes. One questionnaire covers libraries,
-web APIs, CLIs, data-science pipelines, competitive programming, ROS 2 packages
-and MicroPython firmware. Its question logic is machine-checked (Z3 shows every
-`when` condition is satisfiable and enumerates the answer leaves), every leaf's
-render is checked against declared file-set and content invariants, and a
-sample of leaves is executed for real; see
-[what each layer can and cannot prove](docs/explanations/verification.md).
-
-## What you get
-
-Each area of the questionnaire first asks "use the recommended settings?"
-(default: yes), so the recommended path is usually a single keystroke:
-
-- **Eight project types** — `library`, `web_api`, `cli`, `data_science`,
-  `online_judge`, `script`, `ros2`, `micropython`, each with its own layout,
-  CI and docs.
-- **The recommended path: uv + just + zensical.** Answering "yes" to every
-  "use the recommended …?" gate renders this toolchain, and it is the only
-  combination CI executes end to end (`uv sync`, the generated pytest,
-  basedpyright, the docs build — the `full` tier in
-  [docs/reference/support.md](docs/reference/support.md)). Everything else
-  the questionnaire offers (pixi / poetry; Task / poe / invoke / duty / make
-  / pixi tasks; Sphinx / great-docs; ty; loguru / picologging; ros2; the
-  non-AtCoder judges) keeps rendering and is ruff-checked in the fast tier,
-  but is community-supported: regressions that only break install or run are
-  not caught by CI. Nothing is removed — pick what fits, knowing the
-  guarantee level.
-- **Quality gates** — ruff (ALL rules), basedpyright + pyrefly, typos, vulture,
-  deptry, pip-audit, pytest + coverage + hypothesis, hardened CI with pinned
-  actions, SECURITY.md and OpenSSF Scorecard.
-- **Opt-in layers** — the data-science layout, a FastAPI service, MCP servers,
-  chat bots (Discord / Slack / LINE / Gmail), polite web scraping, CTF
-  tooling, cloud providers and Sentry.
-- **Field rules, not vibes** — every generated project ships an `AGENTS.md`
-  agent guide plus a `.daimonion.yml` declaring the guidance conditions matched
-  to the project kind: dependency-license drift, post-quantum crypto
-  standards, AI-and-copyright, PKI trust chains, personal data, EU CRA
-  duties, medical-device software, face recognition, ML fairness and LLM/MCP
-  security. The `daimonion` linter renders the matching sections into the
-  guide's marker block (`daimonion agents-md --write`); the emitted `when`
-  list is held to the renders by invariants.
-
-The [feature catalogue](docs/reference/features.md) walks through all of it,
-[the questionnaire reference](docs/reference/questionnaire.md) lists every
-question, and the [support tiers reference](docs/reference/support.md) says
-which combinations CI executes end to end. For the comparison with the upstream
-template and the alternatives, see
-[Vision & Positioning](docs/explanations/vision.md); the template in action is
-the [example project](https://github.com/politeuma/architekton-py-example).
-Fifteen seconds of it, end to end:
+Needs [uv](https://docs.astral.sh/uv) and [git](https://git-scm.com); no clone of this repository.
 
 ![demo: render the cli preset, then run the generated project's checks](docs/assets/demo.gif)
 
-## Create a new project
+## Start here
 
-The shipped CLI is the recommended path. It picks the release to expand,
-decides between creating a project and adopting an existing one, and reports
-the files the target already has. Installed via `uvx` it clones and caches
-the template repo on first use, so no checkout of this repository is needed:
+| I want to … | Go to |
+| --- | --- |
+| create a project | [Create a project](#create-a-project) below, then [the tutorial](docs/tutorials/create-new.md) |
+| add CI, quality tooling and `AGENTS.md` to a repo I already have | [Adopt this template](docs/tutorials/adopt-existing.md) |
+| change what the template generates | [CONTRIBUTING.md](CONTRIBUTING.md), which starts with `task where -- <setting>` |
+| know what is guaranteed, and how | [What each check can and cannot prove](docs/explanations/verification.md) |
 
-```shell
-uvx --from git+https://github.com/politeuma/architekton-py.git \
-    architekton-py new my-project --preset library
-```
+## What you get
 
-`--preset library` answers the one question that defines the project family
-(`cli`, `web-api`, `data-science`, `ros2`, `micropython`, `online-judge-atcoder`
-and `mcp-server` also exist; `bare` is `library` minus the optional
-infrastructure extras — no devcontainer, `.vscode`, renovate, secrets/lint
-config, security workflow, or issue/PR templates); drop it and copier asks the
-[whole questionnaire](docs/reference/questionnaire.md) instead, which needs a
+- **Eight project types**: `library`, `web_api`, `cli`, `data_science`,
+  `online_judge`, `script`, `ros2`, `micropython`, each with its own
+  layout, CI and docs.
+- **One recommended path**: uv + just + zensical. Each area of the
+  questionnaire first asks "use the recommended settings?" (default: yes),
+  so this path is mostly one keystroke per area, and it is the only
+  combination CI runs end to end (`uv sync`, the generated tests,
+  basedpyright, the docs build). The other choices (pixi / poetry; Task /
+  poe / invoke / duty / make; Sphinx / great-docs; ty; loguru /
+  picologging; ros2; non-AtCoder judges) still render and pass ruff in CI,
+  but install-or-run breakage is not caught. See the
+  [support tiers](docs/reference/support.md).
+- **Quality gates**: ruff (ALL rules), basedpyright + pyrefly, typos,
+  vulture, deptry, pip-audit, pytest + coverage + hypothesis, CI with pinned
+  actions, `SECURITY.md` and OpenSSF Scorecard.
+- **Opt-in layers**: the data-science layout, a FastAPI service, MCP
+  servers, chat bots (Discord / Slack / LINE / Gmail), polite web scraping,
+  CTF tooling, cloud providers and Sentry.
+- **Field rules for coding agents**: the generated `AGENTS.md` gets the
+  rules that match the project (dependency licenses, personal data, EU CRA,
+  ML fairness, LLM/MCP security, ...), with their sources, rendered by
+  [daimonion](https://github.com/politeuma/daimonion) from the
+  [law-map](https://github.com/politeuma/law-map) rulebook. Not legal advice.
+
+Every answer combination is enumerated (Z3) and each one's render is
+checked; [verification.md](docs/explanations/verification.md) says exactly
+what that proves and what it does not. The
+[feature catalogue](docs/reference/features.md) and the
+[questionnaire reference](docs/reference/questionnaire.md) list everything;
+the [example project](https://github.com/politeuma/architekton-py-example)
+shows a real render.
+
+## Create a project
+
+`--preset` answers the question that defines the project family:
+`library`, `cli`, `web-api`, `data-science`, `ros2`, `micropython`,
+`online-judge-atcoder`, `mcp-server`, `bot`, or `bare` (`library` without
+the optional extras such as the devcontainer, `.vscode` and renovate);
+`architekton-py new --list-presets` shows them all. Leave it out and
+copier asks the [whole questionnaire](docs/reference/questionnaire.md) in a
 terminal.
 
-Without a preset you can also drive copier directly, which is all the CLI
-wraps. `--trust` is required: the template runs post-generation tasks (the
-adoption report, the next-steps hint and the REUSE `LICENSES/` copy), and
-without it copier generates nothing and exits with status 4:
+The CLI only wraps copier, so you can also call copier directly.
+`--trust` is required because the template runs post-generation tasks;
+without it copier exits with status 4:
 
 ```shell
-git init --initial-branch=main /path/to/my-project
-uvx copier copy --trust https://github.com/politeuma/architekton-py.git /path/to/my-project
+git init --initial-branch=main my-project
+uvx copier copy --trust https://github.com/politeuma/architekton-py.git my-project
 ```
 
-Both paths expand this fork's newest release tag. Pointing `new` at an
-*existing* project runs the same one-liner in adopt mode instead — it adds
-the missing infrastructure (CI, quality tooling, `AGENTS.md`) and verifies
-the files you already have stay byte-identical
-([adopt this template](docs/tutorials/adopt-existing.md)):
+Both paths use the newest release tag. Pointing `new` at an existing
+project switches to adopt mode: it adds the missing infrastructure and
+checks that your own files stay byte-identical:
 
 ```shell
-cd /path/to/existing-project
+cd existing-project
 uvx --from git+https://github.com/politeuma/architekton-py.git architekton-py new .
 ```
 
-[Create a new project](docs/tutorials/create-new.md) covers the flags, the
-presets, adoption and pinning an exact release, and
-[generating a project non-interactively](docs/reference/non-interactive.md)
-covers `--defaults` with an answers file for CI. For the inverse question —
-you know the features you want, not the answers that produce them —
-`task answers-for -- --require <name>=<value>` searches the verified answer
-space (the same page's *Tell the template what you want*).
+More: [flags, presets and pinning a release](docs/tutorials/create-new.md),
+[non-interactive runs with an answers file](docs/reference/non-interactive.md),
+and `architekton-py explain --preset <name>` for why a preset answers what
+it does.
 
-## Everyday commands
+## Inside a generated project
 
-The recommended path renders `just` as the task runner; the commands below
-use it. Every other runner the questionnaire offers (`task`, `poe`,
-`invoke`, `duty`, `make`, pixi's native tasks) exposes the same task names —
-swap the runner word, nothing else — but those runners are
-community-supported (see [the recommended path](#what-you-get)).
-The generated project drives lint, type-check, test and docs through that
-runner (CI calls the same tasks, so local and CI cannot drift):
+The recommended path uses `just`; the other runners expose the same task
+names. CI calls the same tasks, so local runs and CI cannot drift:
 
 ```shell
-just lint        # ruff format --check + ruff check (check-only)
-just fix         # ruff --fix + format (typos stays report-only in type-check)
-just type-check  # basedpyright + pyrefly, vulture, deptry, typos
-just test        # pytest, with coverage at the recommended strictness
-just docs        # build the documentation site
+just fix         # ruff --fix + format
 just check       # lint + type-check + test
+just test        # pytest with coverage
+just docs        # build the documentation site
 ```
 
-`just audit` and `just license-check` need the network and so stay out of
+`just audit` and `just license-check` need the network and stay out of
 `check`.
 
-## Where to go next
+## How this repository is laid out
 
-- **[Documentation site](https://politeuma.github.io/architekton-py)** — the full docs:
-  [tutorials](docs/tutorials.md) to start, [reference](docs/reference.md)
-  for the questionnaire and guarantees, [explanations](docs/explanations.md)
-  for why it works this way — starting from the [docs index](docs/index.md).
-- **New here** — the [installation tutorial](docs/tutorials/installation.md) and
-  [create a new project](docs/tutorials/create-new.md).
-- **Already have a repo** — [adopt this template into it](docs/tutorials/adopt-existing.md), or
-  [update an existing project](docs/how-to/update-template.md) that already uses it.
-- **Changing the template itself** — [the shortest path](docs/how-to/change-template.md):
-one page, three change shapes, one proving command each. The meta-tooling
-(`architekton/`, the workflow fleet, the Quint specs) is deliberately not linked
-here — it holds the render contract and you only meet it through that page.
+```text
+copier.yml     the questionnaire's table of contents (includes questions/ in order)
+questions/     the questions, one file per area; the NN- prefix is the ask order;
+               file existence lives in template/ path names ({% if %}{% endif %} gates)
+template/      the generated project, file for file
+partials/      snippets that template files include
+presets/       ready-made answer sets for --preset
+meta/          the catalog + questionnaire tree the generated files render from
+dist/          the static distribution: every preset rendered flat (task static,
+               released on tags via _static.yml -> the release assets)
+architekton/   the CLI and the checks that prove every combination renders (map: architekton/README.md)
+tests/         tests, plus the verification matrix under tests/matrix/
+docs/          the documentation site
+```
+
+To change something, ask the repository where it lives:
+`task where -- docs_type` lists the question's file, the generated files
+that depend on it, and what to run afterwards. [CONTRIBUTING.md](CONTRIBUTING.md)
+has the rest.
 
 ## License, contributing and releases
 
-Licensed under [Apache-2.0](LICENSE). This repository is the template's own
-source (not a generated project): [source](https://github.com/politeuma/architekton-py) ·
-[docs site](https://politeuma.github.io/architekton-py) ·
-[releases](https://github.com/politeuma/architekton-py/releases), whose
-notes are generated by [git-cliff](https://git-cliff.org) from the tag's
-conventional commits ([CHANGELOG.md](CHANGELOG.md)). Contributions are welcome
-— see [CONTRIBUTING.md](.github/CONTRIBUTING.md), the
-[contributing how-to](docs/how-to/contribute.md) and
-[GOVERNANCE.md](GOVERNANCE.md); report vulnerabilities as described in
-[SECURITY.md](SECURITY.md). Pre-1.0 API: 0.x releases carry no compatibility guarantee.
+Licensed under [Apache-2.0](LICENSE). Release notes are generated by
+[git-cliff](https://git-cliff.org) from conventional commits
+([CHANGELOG.md](CHANGELOG.md)). Contributions:
+[CONTRIBUTING.md](CONTRIBUTING.md) and [GOVERNANCE.md](.github/GOVERNANCE.md);
+vulnerabilities: [SECURITY.md](SECURITY.md). Docs site:
+[politeuma.github.io/architekton-py](https://politeuma.github.io/architekton-py).

@@ -18,7 +18,7 @@ import yaml
 
 TOP = Path(__file__).resolve().parent.parent
 GITLEAKS_TOML = TOP / ".gitleaks.toml"
-TEMPLATE_LINK = TOP / "template" / "{% if cicd_extras %}.gitleaks.toml{% endif %}"
+TEMPLATE_LINK = next(p for p in (TOP / "template").glob("*.gitleaks.toml*") if p.suffix != ".gate")
 HYGIENE = TOP / ".github" / "workflows" / "_hygiene.yml"
 
 
@@ -37,7 +37,7 @@ def test_gitleaks_config_ships_into_generated_projects():
     """Generated projects scan with the same rules as this repo."""
     assert TEMPLATE_LINK.is_file(), "the template must ship .gitleaks.toml"
     assert TEMPLATE_LINK.read_text(encoding="utf-8") == GITLEAKS_TOML.read_text(encoding="utf-8"), (
-        "template/.gitleaks.toml must stay in sync with the root config"
+        "template/{% if cicd_extras %}.gitleaks.toml{% endif %} must stay in sync with the root config"
     )
 
 

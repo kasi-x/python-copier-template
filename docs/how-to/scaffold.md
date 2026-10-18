@@ -13,7 +13,7 @@ architekton-py scaffold question my_feature --when "not oj_bare" --help-text "En
 architekton-py scaffold question my_feature --when "not oj_bare" --help-text "Enable my feature?"
 
 # 3. Scaffold an opt-in layer (include_<layer>): stages the question in
-#    questions/_combo.yml and prints the invariants.yml + layers.yml rows
+#    questions/08-layers.yml and prints the invariants.yml + layers.yml rows
 architekton-py scaffold layer grpc --description "gRPC service layer" --dry-run
 architekton-py scaffold layer grpc --description "gRPC service layer"
 
@@ -30,7 +30,7 @@ architekton-py scaffold preset grpc-service --base web_api --description "gRPC m
 2. **Invariants Synchronization**: Provides exact YAML snippets for
    `tests/matrix/invariants.yml` and `tests/matrix/layers.yml` to satisfy witness generation.
 3. **Layer Wiring Guidance**: Layers render through a `<name>_effective`
-   internal in `questions/_internal.yml` (never a raw `include_*` file
+   internal in `questions/90-derived.yml` (never a raw `include_*` file
    condition); `scaffold layer` prints that wiring plus the template gate.
 4. **One-Command DoD**: After adding features, run `task regen` (Taskfile.yml;
    `task witness` regenerates witnesses) to regenerate witnesses, update

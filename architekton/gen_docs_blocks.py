@@ -85,7 +85,7 @@ def generated_blocks(support: Path = SUPPORT_YML) -> list[GeneratedBlock]:
 
     The catalogue blocks live in `docs/reference/features.md`, so the README
     keeps no generated region; the support matrix is only generated when
-    `support.yml` exists: W4 owns that file, and its blocks (the catalogue's
+    `tests/matrix/support.yml` exists: W4 owns that file, and its blocks (the catalogue's
     summary and the full `docs/reference/support.md` reference) appear with it.
     The tier-ledger block (docs/explanations/verification.md) is generated
     from the cost ledger, not the questionnaire, and the
@@ -115,7 +115,7 @@ def _mermaid_block(model: Model) -> str:
 
 
 def _support_block(support: Path) -> Callable[[Model], str]:
-    """A renderer for the catalogue's compact support summary, bound to `support.yml`."""
+    """A renderer for the catalogue's compact support summary, bound to `tests/matrix/support.yml`."""
 
     def render(_model: Model) -> str:
         return render_support_table(support_ledger.load_support(support))
@@ -124,7 +124,7 @@ def _support_block(support: Path) -> Callable[[Model], str]:
 
 
 def _support_doc_block(support: Path) -> Callable[[Model], str]:
-    """A renderer for the full `docs/reference/support.md`, bound to `support.yml`."""
+    """A renderer for the full `docs/reference/support.md`, bound to `tests/matrix/support.yml`."""
 
     def render(_model: Model) -> str:
         return render_support_doc(support_ledger.load_support(support))

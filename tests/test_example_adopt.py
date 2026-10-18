@@ -95,7 +95,7 @@ def test_template_adopt_mode_update_interop(tmp_path: Path):
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "existing"\nversion = "0.1.0"\n')
     (tmp_path / "README.md").write_text("# my own readme\n")
 
-    answers = yaml.safe_load((TOP / "example-answers.yml").read_text())
+    answers = yaml.safe_load((TOP / "tests/example-answers.yml").read_text())
     answers["existing_project"] = True
     run_copy(
         src_path=str(clean_tpl),

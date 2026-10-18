@@ -2,7 +2,7 @@
 
 The explanations are assembled, not written: `questions/*.yml` help text,
 the questions' `choices` / `when` context, the preset files' leading
-comments, `support.yml`'s measured `why` lines, and the question graph's
+comments, `tests/matrix/support.yml`'s measured `why` lines, and the question graph's
 when/default edges (`architekton/question_graph.py`). The parametrization reads
 `cli.available_presets()` so a new preset is covered the moment it exists.
 """

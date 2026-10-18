@@ -5,7 +5,7 @@ name: Quint models
 # trusting the spike transcript.  Two runs, both load-bearing: the good model
 # must verify (TLC exhausts the 51-state graph), and the late-journal mutant
 # must fail with a counterexample -- if the mutant ever passes, the property
-# the good model proves guards nothing.  See models/README.md.
+# the good model proves guards nothing.  See tests/models/README.md.
 
 permissions:
   contents: read
@@ -19,11 +19,11 @@ on:
     branches:
       - main
     paths:
-      - "models/**"
+      - "tests/models/**"
       - ".github/workflows/quint.yml"
   pull_request:
     paths:
-      - "models/**"
+      - "tests/models/**"
       - ".github/workflows/quint.yml"
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
 
       - name: Install quint (version pinned to the spike's)
         # No setup-java step on purpose: the TLC backend needs a JVM (see
-        # models/README.md) and ubuntu-latest ships Temurin JDKs preinstalled.
+        # tests/models/README.md) and ubuntu-latest ships Temurin JDKs preinstalled.
         run: npm install --global @informalsystems/quint@0.32.0
 
       - name: Verify the good model (must hold)
@@ -52,7 +52,7 @@ jobs:
         # crash point is covered: a drifted tree is either a committed,
         # verified result or still undone by the journal.
         run: |
-          quint verify --backend=tlc models/adopt_crash.qnt \
+          quint verify --backend=tlc tests/models/adopt_crash.qnt \
             --invariant=crash_window_covered,crash_point_recoverable,recovery_restores
 
       - name: Verify the late-journal mutant (must fail with a counterexample)
@@ -63,17 +63,17 @@ jobs:
         # broken toolchain cannot fake a passing guard.
         run: |
           set +e
-          quint verify --backend=tlc models/adopt_crash_journal_late.qnt \
+          quint verify --backend=tlc tests/models/adopt_crash_journal_late.qnt \
             --invariant=crash_point_recoverable >"$RUNNER_TEMP/mutant.log" 2>&1
           status=$?
           set -e
           cat "$RUNNER_TEMP/mutant.log"
           if [ "$status" -eq 0 ]; then
-            echo "::error::The late-journal mutant verified clean -- it must NEVER pass. A pass means the crash-window property no longer catches a journal written one step late, so the good model's proof guards nothing. See models/README.md."
+            echo "::error::The late-journal mutant verified clean -- it must NEVER pass. A pass means the crash-window property no longer catches a journal written one step late, so the good model's proof guards nothing. See tests/models/README.md."
             exit 1
           fi
           if ! grep -q "found a counterexample" "$RUNNER_TEMP/mutant.log"; then
-            echo "::error::The mutant step failed, but not with a counterexample -- that is a tooling failure (e.g. a missing JVM), not the guard firing. See models/README.md."
+            echo "::error::The mutant step failed, but not with a counterexample -- that is a tooling failure (e.g. a missing JVM), not the guard firing. See tests/models/README.md."
             exit 1
           fi
           echo "The mutant failed with the expected counterexample: the guard holds."
