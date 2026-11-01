@@ -60,5 +60,9 @@ today because every declared leaf has a recorded fast-tier run.
 
 ## Update rehearsal
 
-No rehearsal has been recorded yet.
+| Base | Target | Rehearsed | Failures | Skipped |
+|---|---|---|---|---|
+| `7.0.0` (84f2ab4408) | `HEAD` (2a90308561) | 272 | 0 — every leaf updated cleanly | 0 |
+
+weekly via update-rehearsal.yml; latest committed run
 <!-- END GENERATED: support-matrix -->

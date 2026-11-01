@@ -1,0 +1,16 @@
+{
+ "base": "7.0.0",
+ "base_rev": "84f2ab4408fed8988784792c297b685ef353730e",
+ "convergence": {},
+ "failures": {},
+ "rehearsed": 272,
+ "renders": {
+  "cached": 272,
+  "fresh": 0,
+  "reused": 0
+ },
+ "runner_errors": [],
+ "skipped": {},
+ "target": "HEAD",
+ "target_rev": "2a903085619f557780324afcb0540209fa02607c"
+}
